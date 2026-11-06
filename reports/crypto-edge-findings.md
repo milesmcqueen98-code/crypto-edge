@@ -203,7 +203,7 @@ Run it at $250–500K and put the rest in C3.
   - Tested with a 20-minute server death in the middle of the Oct 10 2025 crash. No bids survived, and the restarted
     bot booked every fill and exit; books matched the fake exchange to $0.0002.
   - Fixed on the way: rounding sale sizes down left sub-minimum dust that kept a coin's position "open" for an hour.
-    The first paper hours (22:30 to about 01:00 UTC Nov 7) ran with that bug, so treat them as a warm-up. Parity after
+    The first paper hours (22:30–23:51 UTC Nov 6) ran with that bug, so treat them as a warm-up. Parity after
     the fix: 128 of 128 on the crash hours.
 - **Pilot capital: $10K (Miles, Nov 6).**
   - It trades about $140K a month, which puts it in Coinbase's Advanced 2 tier after a ~2-week fee ramp (about $80).
