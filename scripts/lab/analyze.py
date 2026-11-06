@@ -110,7 +110,27 @@ def main():
     print(fam.round(2).to_string())
     print("\nWorst 10:")
     print(V.sort_values("val_real_sharpe")[cols].head(10).round(2).to_string(index=False))
-    # overfitting diagnostics on the full 2025-01 .. 2026-11 realistic daily returns
+    # paired comparison with the base on validation days (is the improvement distinguishable from noise?)
+    Rv = R[(R.index >= core.VAL[0]) & (R.index < core.VAL[1])]
+    top = elig.head(25).copy()
+    dif = Rv[top.variant].sub(Rv[base], axis=0)
+    top["d_sharpe"] = top.val_real_sharpe - b0.val_real_sharpe
+    top["paired_t"] = (dif.mean() / dif.std() * np.sqrt(len(dif))).reindex(top.variant).to_numpy()
+    top["corr_base"] = Rv[top.variant].corrwith(Rv[base]).reindex(top.variant).to_numpy()
+    print("\nTop 25 vs base on validation days (paired t of daily differences, correlation with base):")
+    print(top[["variant", "val_real_sharpe", "d_sharpe", "paired_t", "corr_base"]].round(2).to_string(index=False))
+    if "--holdout" not in sys.argv:
+        # selection phase: validation window only (the pre-registered full-window statistics need the holdout)
+        M = Rv.loc[:, V.variant]
+        pbo, lam = pbo_cscv(M)
+        print(f"\nPBO (CSCV, 16 blocks, {M.shape[1]} variants, VALIDATION window only): {pbo:.3f}; "
+              f"median logit {np.median(lam):.2f}")
+        meta, b, picks = walk_forward_selection(M)
+        print(f"Walk-forward variant selection within validation (2025Q3-2026Q1): Sharpe {sharpe(meta):.2f} vs base "
+              f"{sharpe(b):.2f}")
+        print("  picks:", picks)
+        return
+    # pre-registered diagnostics on the full 2025-01 .. 2026-11 realistic daily returns (uses the holdout)
     M = R.loc[:, V.variant]
     pbo, lam = pbo_cscv(M)
     print(f"\nPBO (CSCV, 16 blocks, {M.shape[1]} variants, full window): {pbo:.3f}; median logit {np.median(lam):.2f}")
@@ -118,7 +138,10 @@ def main():
     print(f"Walk-forward variant selection 2025Q3-2026Q4: Sharpe {sharpe(meta):.2f} vs base {sharpe(b):.2f} "
           f"(return {meta.sum():.1%} vs {b.sum():.1%})")
     print("  picks:", picks)
-    json.dump({"pbo": pbo, "wf_sharpe": sharpe(meta), "wf_base_sharpe": sharpe(b), "picks": picks},
+    hq = meta.index >= core.HOLD[0]
+    print(f"  of which holdout quarters: Sharpe {sharpe(meta[hq]):.2f} vs base {sharpe(b[hq]):.2f}")
+    json.dump({"pbo": pbo, "wf_sharpe": sharpe(meta), "wf_base_sharpe": sharpe(b), "picks": picks,
+               "wf_hold_sharpe": sharpe(meta[hq]), "wf_hold_base_sharpe": sharpe(b[hq])},
               open(os.path.join(OUT, "overfit_stats.json"), "w"), indent=1)
     if "--holdout" in sys.argv:
         sl = json.load(open(os.path.join(OUT, "shortlist.json")))
