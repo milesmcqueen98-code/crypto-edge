@@ -17,7 +17,6 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   - v1 keeps paper trading as the control.
   - Rules: stop R2-08 if its realistic net per trade is below −12 bp after about 70 paper trades. Go back to v1 if
     v1's realistic net per trade is higher after 60 trades in each book.
-
 - **Scale round (Nov 6):** the wick catcher is already largely market neutral (daily beta 0.03) and reaches ~100%/yr only at
   small size (2x the paper size, up to roughly $25–50K). Its profit tops out near $50K a year; it cannot carry $5M
   (section below).
