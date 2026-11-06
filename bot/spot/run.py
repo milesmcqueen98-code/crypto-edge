@@ -125,7 +125,8 @@ elif a.cmd == "status":
     st = json.load(open(st_path))
     cap = cfg.get("capital")
     print(f"state {sd}: last minute {st.get('last_minute')}")
-    print(f"equity ${st['equity']:,.2f} (start ${st.get('peak', cap):,.0f} peak); day start ${st['day_start_equity']:,.2f}")
+    print(f"equity ${st['equity']:,.2f} (config capital ${cap:,.0f}); marked peak ${st.get('peak', cap):,.2f}; "
+          f"day start ${st['day_start_equity']:,.2f}")
     halts = [h for h, on in (("STOP file", os.path.exists(os.path.join(ROOT, "STOP")) or os.path.exists(os.path.join(sd, "STOP"))),
                              ("drawdown stop", st.get("dd_halt")), ("daily loss limit", st.get("halted_day") == st.get("day")))
              if on]
@@ -151,8 +152,10 @@ elif a.cmd == "report":
         print(ent.groupby("rung").agg(fills=("usd", "size"), usd=("usd", "sum")).round(0).to_string())
         if "beyond_usd" in ent and ent.beyond_usd.notna().any():
             e = ent[ent.beyond_usd > 0]
-            print(f"fill / USD traded beyond our price in the fill minute: {e.usd.sum() / e.beyond_usd.sum():.2f} "
-                  "(paper: the capture setting; live: the real capture share)")
+            b = e[e.left > 1e-12] if "left" in e else e.iloc[0:0]
+            print(f"capture share (our fill / USD traded beyond our price in the fill minute), on fills that left the "
+                  f"order partly unfilled: {b.usd.sum() / max(b.beyond_usd.sum(), 1e-9):.2f} over {len(b)} fills "
+                  "(paper: the capture setting; live: the real one; the research assumed 0.5, robust at 0.25)")
     if len(ext):
         w = (ext.px - ext.entry_px) * ext["size"]
         ext = ext.assign(notional=ext.entry_px * ext["size"])

@@ -54,6 +54,11 @@ def floor_to(x, inc):
     return math.floor(x / inc + 1e-9) * inc
 
 
+def floor_size(x, lot):
+    """Round a quantity down to the lot, never above x (float noise on very large quantities, e.g. PEPE)."""
+    return math.floor(x / lot * (1 - 1e-12) + 1e-9) * lot
+
+
 def fmt(x, inc):
     dec = max(0, -int(math.floor(math.log10(inc) + 1e-12)))
     return f"{x:.{dec}f}"
@@ -447,7 +452,7 @@ class Engine:
 
     # ---------- money
     def hold_usd(self, o):
-        return (o["size"] - o["filled"]) * o["px"] * (1 + self.cfg.get("fee_bp_maker", 6.0) / 1e4)
+        return (o["size"] - o["filled"]) * o["px"] * (1 + self.fee_m())
 
     def committed(self):
         tot = 0.0
@@ -457,7 +462,11 @@ class Engine:
         return tot
 
     def free_cash(self):
+        """Dollars available for new holds. A resting buy holds its notional plus the maker fee."""
         return min(self.cfg.get("cash_cap", 1.0) * self.state["equity"] - self.committed(), self.cash_live)
+
+    def fee_m(self):
+        return self.cfg.get("fee_bp_maker", 6.0) / 1e4
 
     def signal_usd(self, c):
         S = self.cfg.get("notional_frac", 0.25) * self.state["equity"]
@@ -478,7 +487,7 @@ class Engine:
     # ---------- orders
     def _place(self, lad, key, side, px, size, t, open_rule=False):
         sp = self.spec(lad["coin"])
-        size = floor_to(size, sp.lot)
+        size = floor_size(size, sp.lot)
         if size <= 0 or size * px < sp.min_usd:
             return False, "below minimum size"
         oid, err = self.broker.place(sp, side, px, size)
@@ -534,7 +543,7 @@ class Engine:
             if o.get("first_fill") is None:
                 o["first_fill"] = minute.isoformat()
             self.log("fill_entry", t=minute, coin=c, ladder=lad["id"], rung=int(k), px=px, size=q,
-                     usd=round(q * px, 2), fee=round(fee, 4), tp_px=tr["tp_px"],
+                     usd=round(q * px, 2), fee=round(fee, 4), tp_px=tr["tp_px"], left=max(0.0, o["size"] - o["filled"]),
                      beyond_usd=None if beyond_usd is None else round(beyond_usd))
             self._tp_dirty.add((lad["id"], k))
         else:
@@ -585,7 +594,7 @@ class Engine:
         tr = lad["tranches"].get(k)
         if tr is None:
             return
-        size = floor_to(tr["size"], sp.lot)
+        size = floor_size(tr["size"], sp.lot)
         if size < sp.lot / 2:
             lad["tranches"].pop(k, None)
             return
@@ -731,9 +740,9 @@ class Engine:
                 self.count("deep_deferred_market")
                 continue
             usd, free = lad["S"] / 3.0, self.free_cash()
-            if usd > free:
-                if free >= 0.5 * usd:
-                    usd = free
+            if usd * (1 + self.fee_m()) > free:
+                if free >= 0.5 * usd * (1 + self.fee_m()):
+                    usd = 0.999 * free / (1 + self.fee_m())
                 else:
                     keep.append(k)
                     self.count("deep_deferred_cash")
@@ -778,11 +787,12 @@ class Engine:
         free = self.free_cash() + sum(self.hold_usd(l["orders"]["e4"]) for l in armed.values() if "e4" in l["orders"])
         alloc = {}
         for pred, c in cands:
-            want = self.signal_usd(c) / 3.0
-            if want <= free:
-                alloc[c], free = want, free - want
-            elif free >= 0.5 * want:
-                alloc[c], free = free, 0.0
+            want = self.signal_usd(c) / 3.0                # order notional; its hold adds the maker fee
+            need = want * (1 + self.fee_m())
+            if need <= free:
+                alloc[c], free = want, free - need
+            elif free >= 0.5 * need:
+                alloc[c], free = 0.999 * free / (1 + self.fee_m()), 0.0
             else:
                 self.count("cash_short")
                 self.log("cash_short", t=t, coin=c, pred=round(pred, 1), want=round(want), free=round(max(free, 0)))
@@ -791,24 +801,27 @@ class Engine:
                 if self._cancel(lad, "e4", t, minute=prev) and lad["status"] == "armed":
                     self.state["ladders"].pop(lad["id"], None)
                     self.count("disarm")
-        for pred, c in cands:
-            if c in alloc:
-                self._arm(c, pred, rows[c], alloc[c], t, armed.get(c))
+        # two passes, so cash released by re-priced bids is free before any new bid needs it
+        plans = [p for p in (self._arm_plan(c, pred, rows[c], alloc[c], t, armed.get(c)) for pred, c in cands
+                             if c in alloc) if p]
+        for p in plans:
+            self._arm(*p)
 
-    def _arm(self, c, pred, row, usd, t, lad):
+    def _arm_plan(self, c, pred, row, usd, t, lad):
+        """Decide the 4-sigma bid for coin c; cancel a stale one. Returns the arguments for _arm, or None."""
         sp = self.spec(c)
         px = floor_to(float(row["level"]), sp.tick)
-        size = floor_to(usd / px, sp.lot)
+        size = floor_size(usd / px, sp.lot)
         if lad is not None:
             lad.update(sig=float(row["sig"]), pred=pred)
             o = lad["orders"].get("e4")
             if o and abs(o["px"] - px) < sp.tick / 2 and abs(o["size"] - size) <= 0.02 * size:
-                return                                     # unchanged: keep the queue position
+                return None                                # unchanged: keep the queue position
             if o:
                 if not self._cancel(lad, "e4", t, minute=t - pd.Timedelta(minutes=1)):
-                    return                                 # still resting: retry next minute
+                    return None                            # still resting: retry next minute
                 if lad["status"] != "armed":               # it filled before the cancel: that ladder is now open
-                    return
+                    return None
                 self.count("reprice")
         if self.broker.live:
             bb = self._market_px(c, t)
@@ -816,7 +829,13 @@ class Engine:
                 if lad is not None and not lad["orders"]:
                     self.state["ladders"].pop(lad["id"], None)
                 self.count("skip_market_below")
-                return
+                return None
+        return c, pred, row, px, size, t, lad
+
+    def _arm(self, c, pred, row, px, size, t, lad):
+        sp = self.spec(c)
+        if lad is not None and lad["id"] not in self.state["ladders"]:
+            lad = None
         new = lad is None
         if new:
             self.state["seq"] += 1

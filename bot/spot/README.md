@@ -29,6 +29,10 @@ Research simulator, 17 coins, θ = 0.5 (we get half the volume that trades throu
 - About 3 rung fills a day at $250K.
 - Net per dollar bought is about 40 bp. One rung's result has a standard deviation of about 180 bp, so judge results over
   dozens of rungs, not days.
+- **Volumes are down now.** In the 30 days to Nov 5, 2026, Coinbase volume in most of these alts ran 40–60% below the
+  research's Sep–Nov 2026 level. The 0.2% cap shrinks positions to match, so $250K today behaves like about $425K did
+  in the check period: roughly 15% a year, not 20%. Stay at $250K until volumes recover. The bot logs each coin's
+  volume daily (`adv` events).
 - Plan on about half of these numbers. R2-08 was the best of 130 variants (deflated Sharpe 0.77, against a bar of 0.95).
   In the check period, the best 3 days made about half the P&L.
 - Gains are short-term and taxed as ordinary income (federal + New York State + New York City).
@@ -108,7 +112,7 @@ On every start the bot:
 | A. Paper on GitHub Actions (running) | $250K paper | ≥ 3 weeks and ≥ 60 rungs | No unexplained errors. Every rung closes by its rule. 1–6 rung fills a day. Mean net per $ above 0 (expected ≈ +40 bp; 0 is about 2 standard errors below). |
 | B. Live pilot | $25K | ≥ 3 weeks and ≥ 50 rungs | Live fills on ≥ 70% of the paper bot's fills (same coin and minute). Fees as reported. Mean live net within 25 bp of paper on matched rungs. No balance warnings. |
 | C. Live | $250K | 6–8 weeks | Capture share (filled $ / $ traded beyond our price, from `run.py report`) ≥ 0.25. Mean net above 0 after 150 rungs. |
-| D. Live (optional) | $500K | — | Same rules. Don't go above $500K: dollar profit stops growing near $1M. |
+| D. Live (optional) | $500K | — | Same rules, and only once alt volumes are back near the research level. Don't go above $500K: dollar profit stops growing near $1M. |
 
 - **Standing stop rule at any stage:** stop and review if, after 150 rungs, the mean net per $ bought is below 0.
 - **Pilot fees will be higher.** A $25K book trades about $0.3–0.4M a month, which is below VIP 1 (VIP 1 starts at $500K
@@ -123,8 +127,11 @@ On every start the bot:
 - **Daily loss limit 8%** (realized): no new bids until 00:00 UTC. The research's worst day was −2.8%.
 - **Drawdown stop 25%**, marked to market from the peak: no new bids until you run `run.py reset-halt`. The research's
   worst was −17.7%.
-- `python bot/spot/run.py cancel-all`: cancels every bot order. `--flatten` also sells every open rung at market.
-- After 5 straight failed minutes, the bot cancels its resting bids.
+- Everything off: `sudo systemctl stop wickbot`, then `python bot/spot/run.py cancel-all`. That cancels every bot
+  order; `--flatten` also sells every open rung at market. It refuses to run while the service is up, because the
+  running bot would bid again.
+- After 5 straight failed minutes, the bot cancels its resting bids. Every 15 minutes it also cancels any of its own
+  orders missing from its state, and warns if coin balances differ from its open rungs.
 - Last resort: revoke the key in the CDP portal. Then cancel or sell by hand in the Coinbase app, in the `wickbot`
   portfolio.
 
@@ -146,6 +153,16 @@ On every start the bot:
 
 Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
 
-## Parity test
-`python bot/spot/replay_test.py 2025-10-10 2025-10-12` runs the engine minute by minute on stored data and compares every
-rung with an independent loop implementation of the same rules. Results are in the findings doc.
+## Tests
+- **Parity:** `python bot/spot/replay_test.py 2025-10-10 2025-10-12` runs the engine minute by minute on stored data and
+  compares every rung with an independent loop implementation of the same rules (entry minute and price, exit minute,
+  type and price).
+- **Live code paths:** `python bot/spot/live_sim_test.py "2025-10-10 20:00" "2025-10-11 02:00"` runs the engine in live
+  mode against a fake exchange.
+  - The fake exchange has real balances and holds, post-only rejections and cash checks.
+  - It injects faults: 5% of cancels go unconfirmed and 15% of market sells fill only half.
+  - It checks that no orders are orphaned, that coin balances return to zero, and that the bot's equity equals the
+    exchange's USD balance.
+- Results are in the findings doc.
+- Neither test reaches the real Coinbase API. The preflight and the $25K pilot are where real API surprises would
+  show up.

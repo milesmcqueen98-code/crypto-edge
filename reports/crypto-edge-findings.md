@@ -1,4 +1,4 @@
-# Crypto edge: findings and live rules (updated Nov 6, 2026, wick at $1M)
+# Crypto edge: findings and live rules (updated Nov 6, 2026, spot bot)
 
 Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly signals, paper-trading bot)
 
@@ -16,6 +16,8 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   At $1M that earned +10% a year (Sharpe 1.8) in the Apr – Nov 2026 check period and +22% (Sharpe 2.5) in Jan 2025 –
   Mar 2026, short of the 25% bar. The efficient size is $250–500K (18–23% a year at Sharpe 2.7–3.2 in the check
   period); dollar profit stops growing near $1M (section below).
+  - **Spot bot built (bot/spot/), $250K paper run started Nov 6.** It passed parity and fake-exchange tests. The live
+    steps are compliance, then a $25K pilot, then $250K, with gates fixed in advance (bot/spot/README.md).
 - **Medallion round (Nov 6): nothing adopted; C3 stays.** Every strategy family the book describes Renaissance trying, in
   crypto versions (lunar placebo, sentiment and positioning, hidden Markov regimes, nearest-neighbour patterns,
   seasonality, pairs, factor stat-arb, alternative data, short volatility, one AI model), pre-registered with a
@@ -129,17 +131,68 @@ Run it at $250–500K and put the rest in C3.
 - Together these took the first-pass check numbers from 12.4% / 2.28 (17 coins) and 16.3% / 2.89 (wide) to 10.0% /
   1.82 and 9.2% / 1.53.
 
-**To run it at $250K–$1M:**
-1. **Bot changes (bot/v2):**
-   - Coinbase spot orders.
-   - Three post-only bids per signal at 4/6/8 sigma; cancel the deeper bids when the first takes profit or after
-     60 minutes.
-   - Per-signal size min(25% of capital, 0.2% of 30-day median daily volume).
-   - No slot cap; positions plus resting bids ≤ cash (Coinbase holds cash for open bids).
-2. **Paper test at the target size:** the share of through-volume we capture is the key unknown. The bot already logs
-   the dollars queued ahead of each bid.
-3. **Compliance:** ask Sculptor whether personal spot crypto trading needs pre-clearance (it isn't a future).
-4. **Idle cash:** keep it in USDC on Coinbase; the rewards it earns are not counted above.
+### Spot bot (Nov 6): built, tested, $250K paper run started
+- **Code and runbook:** bot/spot/ and bot/spot/README.md. Paper: GitHub Actions every 6 hours, $250K, logs to
+  paper_spot/.
+- **What it does:** the $1M rule on Coinbase spot.
+  - While the AI approves a coin, it rests a 4σ bid of S/3. The 6σ and 8σ bids go out when that bid fills.
+  - A coin can start a new ladder once its 4σ rung has closed, as in the simulator.
+  - Every rung gets a post-only take-profit and a 60-minute market exit.
+  - Coinbase holds cash for every resting bid, so positions plus resting bids stay within equity. When cash is short,
+    the highest predictions get it.
+- **Parity:** on stored data, the engine matches an independent implementation of the same rules rung for rung.
+  - Oct 10 2025 crash hours: 128 of 128 rungs identical (68 parents): entry minute and price, exit minute, type and
+    price.
+- **Live code paths:** tested against a fake exchange with real holds and injected faults (5% of cancels unconfirmed,
+  15% of market sells half-filled), over the Oct 10 2025 crash hours.
+  - Result: no orphaned orders, no leftover coins, and the bot's books equal the exchange's to $0.00001 after 540
+    minutes. That run had 192 unconfirmed cancels and 6 partial sells.
+  - Fixed on the way: sizing orders to the exact free cash ignored the maker-fee part of Coinbase's hold.
+  - Not tested against the real Coinbase API, which this environment can't reach. The preflight command and the $25K
+    pilot cover that.
+- **What it gives up vs the simulator:**
+  - Deeper fills inside the parent's own minute. The bot learns of the 4σ fill a minute later; live, it checks every
+    5 seconds. On the Oct 10 crash hours the simulator would have taken 32 such fills.
+  - Without them, at $250K and θ = 0.5: 27.6% / Sharpe 2.37 in selection and 19.6% / 3.10 in the check period. With
+    them it was 31.8% / 2.38 and 22.7% / 3.23.
+  - At $500K: 23.4% / 2.46 and 14.5% / 2.67.
+  - At θ = 0.25, $250K: 24.2% and 18.0%.
+- **Expected at $250K:**
+  - $49–69K a year before any haircut.
+  - About 3 rung fills a day, and about 40 bp net per dollar bought.
+  - One rung's net has a standard deviation of about 180 bp.
+  - Marked-to-market drawdown −17.7% on Oct 10 2025; that day's realized P&L was −2.8%.
+  - Plan on about half.
+- **Forward rules (fixed before any paper trade):**
+  - A. Paper for ≥ 3 weeks and ≥ 60 rungs. Pass: no unexplained errors, and mean net per dollar above 0.
+  - B. $25K live pilot for ≥ 3 weeks and ≥ 50 rungs. Pass:
+    - live fills on ≥ 70% of the paper bot's fills (same coin and minute);
+    - mean live net within 25 bp of paper;
+    - no balance warnings.
+  - C. $250K. Pass: capture share ≥ 0.25 on capacity-bound fills.
+  - D. $500K at most.
+  - Standing stop: mean net per dollar below 0 after 150 rungs.
+- **Kill switches:**
+  - STOP file.
+  - Daily realized loss 8%. The research's worst day was −2.8%.
+  - Marked drawdown 25% from peak, against the research's worst of −17.7%.
+  - cancel-all, with an optional flatten.
+  - Resting bids pulled after 5 failed minutes.
+  - An orphan-order and balance sweep every 15 minutes.
+- **Fees:**
+  - A $25K pilot trades about $0.3–0.4M a month, below VIP 1 ($500K of 30-day volume), so expect about 10 bp less net
+    per rung.
+  - At $250K the book passes the Intro and Advanced tiers in about a week. That ramp costs a few hundred dollars.
+- **Cash:** the bot counts only USD. Resting bids hold a large share of the cash at any time. Whether USDC can fund -USD
+  orders, and earn rewards while idle, is unverified.
+- **Volumes are down.** The first live paper minutes (Nov 6) measured trailing 30-day Coinbase volume about 40–60% below
+  the research's Sep–Nov 2026 levels for most alts (DOGE $8M a day vs $21M, LINK $9M vs $25M, XRP $104M vs $178M). The
+  bot's own volume figures match a recomputation from stored data. The 0.2% cap therefore shrinks most positions.
+  - At today's volumes, $250K behaves roughly like $425K did in the check period: about 15% a year before any haircut,
+    not 20%.
+  - Don't go to $500K until volumes recover.
+  - First paper minutes: 11–12 coins armed at once, holding $140K of the $250K in resting bids.
+- **Still first:** written compliance clearance from Sculptor, covering holding periods and blanket pre-clearance.
 
 ## Medallion round (Nov 6): every strategy family in *The Man Who Solved the Market*, crypto versions — none adopted
 Goal set by Miles: trade crypto the way Medallion did, trying every strategy the book describes Jim Simons' team

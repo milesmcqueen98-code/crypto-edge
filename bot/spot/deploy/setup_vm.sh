@@ -11,7 +11,9 @@ timedatectl set-timezone UTC
 
 id wick >/dev/null 2>&1 || useradd -m -s /bin/bash wick
 sudo -u wick bash -lc '
-  cd ~ && [ -d crypto-edge ] || git clone https://github.com/milesmcqueen98-code/crypto-edge.git
+  # only the code the bot needs (~50 MB, not the 1.8 GB of research data)
+  cd ~ && [ -d crypto-edge ] || { git clone --depth 1 --filter=blob:none --sparse https://github.com/milesmcqueen98-code/crypto-edge.git &&
+    git -C crypto-edge sparse-checkout set bot edge reports; }
   cd crypto-edge && python3 -m venv .venv && . .venv/bin/activate &&
   pip install --upgrade pip && pip install pandas numpy lightgbm requests pyarrow coinbase-advanced-py &&
   mkdir -p live_spot &&
