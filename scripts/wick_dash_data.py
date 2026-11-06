@@ -55,7 +55,8 @@ def main():
     for name, role, u, strat, cap in [
             ("Resting bids, no AI, 6 coins", "Rule alone", "core 6", "rule only", None),
             ("Resting bids + AI, 6 coins", "AI adds", "core 6", "rule + AI", None),
-            ("Resting bids, no AI, all coins", "Rule alone", uni, "rule only", None),
+            ("Resting bids, no AI, all coins", "Rule alone, no position limit", uni, "rule only", None),
+            ("Resting bids, no AI, all coins, max 6 open", "Rule alone", uni, "rule only", 6),
             ("Resting bids + AI, all coins", "No position limit", uni, "rule + AI", None),
             ("Resting bids + AI, all coins, max 6 open", "Paper trading now", uni, "rule + AI", 6),
             ("Same, with high costs ($0.20 a contract, measured spreads)", "Paper trading now, high-cost case", uni,
@@ -72,7 +73,7 @@ def main():
     btc = btc.resample("D").last().reindex(DAYS).ffill()
     eq = []
     for name, label in [("Resting bids + AI, all coins, max 6 open", "AI-filtered bids (max 6 open)"),
-                        ("Resting bids, no AI, all coins", "Same bids, no AI"), (None, "BTC buy & hold")]:
+                        ("Resting bids, no AI, all coins, max 6 open", "Same bids, no AI"), (None, "BTC buy & hold")]:
         v = (1 + btc.pct_change().fillna(0)).cumprod() * 10000 if name is None else 10000 * (1 + curves[name].cumsum())
         eq += [dict(day=str(k.date()), series=label, value=round(float(x), 2)) for k, x in v.items()]
     pd.DataFrame(eq).to_csv(os.path.join(OUT, "wick_equity.csv"), index=False)
