@@ -1,4 +1,4 @@
-# Crypto edge: findings and live rules (updated Nov 6, 2026)
+# Crypto edge: findings and live rules (updated Nov 6, 2026, wick v2 lab)
 
 Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly signals, paper-trading bot)
 
@@ -9,6 +9,105 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   Replayed on the perps' own prices it shows 5–9, but mostly from perp-only wicks whose fills are unverified (1.6–2.6
   counting only spot-confirmed fills). Not traded with money until the paper test and a 1-contract pilot pass, and
   compliance clears futures.
+- **Wick v2 lab (Nov 6):** 130 variations tested with realistic Coinbase costs (section below). None cleared all five
+  pre-set bars, so v1 stays the strategy of record. The closest, **R2-08**, paper trades beside v1 from Nov 6:
+  - Changes from v1: realistic-cost AI label, 60th-percentile threshold, 7-day beta.
+  - Realistic-cost Sharpe 3.79 / 3.06 / 2.36 (selection / check / perp-priced), vs 2.24 / 1.22 / 1.21 for v1.
+  - Switch rule: after 60 paper trades in each book, R2-08's realistic net per trade must be positive and above v1's.
+
+## Wick v2 lab (Nov 6): 130 variations of the dip-bid strategy, realistic costs first
+Goal set by Miles: a higher-Sharpe version, Renaissance-style. That meant:
+- Many small variations of the one idea that works.
+- One model across all coins.
+- Costs modeled first, strict out-of-sample selection.
+- Something he can run himself.
+
+Rules were pre-registered before any result (reports/wick_v2_prereg.md); code is in scripts/lab/.
+
+**Reality rules:**
+- **Realistic costs (used for selection):**
+  - $0.20 per contract per side on every fill. Coinbase Derivatives' exchange fee is per contract per side (CFTC
+    filing, effective Aug 17, 2026); the rest is our estimate for Coinbase's own charges.
+  - 1.5x the measured perp half-spread on market exits.
+  - 1 bp funding per trade.
+  - Whole contracts only.
+- **Fills:** a one-tick trade-through on spot 1-minute candles. The AI is walk-forward, retrained quarterly with a
+  1-day embargo.
+- **Periods:** selection Jan 2025 – Mar 2026. Check period (holdout) Apr – Nov 2026, read once after the shortlist was
+  fixed.
+- **Adoption needs all five:**
+  - Selection Sharpe at least base + 0.25.
+  - Check-period Sharpe at least base + 0.25.
+  - Perp-candle check (spot-confirmed fills) at least base.
+  - Deflated Sharpe at least 0.95, with N = 130 lab trials + ~2,000 earlier setups.
+  - Probability of backtest overfitting (PBO) at most 0.3.
+
+**What we tested:**
+- 110 single changes in six families:
+  - Entry level: depth, lookback, sigma/beta windows, reference, ladder, BTC hedge, hour-of-day sigma.
+  - Exits: take-profit, hold time, two-stage, fair-value tracking, stops, passive exits.
+  - AI: threshold, label, parameters, retraining, features, ensembles.
+  - Sizing and slots.
+  - Universe and fees.
+  - Rhyming books: rips, 15/240-minute, joint horizons.
+- 20 combinations, built by a fixed rule from the best changes.
+
+**What the selection period said (realistic costs, base 2.24):**
+- **Being pickier is the robust gain.** With per-contract fees, marginal trades lose money:
+  - Threshold 40th / 50th / 60th / 75th percentile gave 1.25 / 2.24 / 2.93 / 3.38.
+  - Realistic-cost label + 60th percentile (C29): 3.41.
+  - No bid while a contract is worth under $667 (E07): 3.46.
+  - These also held in the check period: 2.36 / 4.68 / 2.57 / 2.93 vs 1.22 for v1 (diagnostic, read after the
+    shortlist).
+- **Neutral (within noise):** model tweaks (leaves, rounds, features, retraining, decay, seeds) and passive exits:
+  2.0–2.4.
+- **Hurt:**
+  - BTC-perp hedge: 0.57. Hedge fees eat the edge.
+  - Early stops: 0.5–0.8. They sell the bottom of the wick.
+  - 15-minute book: −0.46.
+  - Sell-the-rip mirror: 0.32. Rips don't revert like forced selling.
+  - Basket reference: 0.20.
+  - Hour-of-day sigma: 1.16.
+  - No AI: 0.24.
+- **Noise warning:** neighbouring settings can differ by more than 1 Sharpe (L=60 gave 2.24, L=75 gave 0.94).
+  Across all 130 variants, the selection-period and check-period rankings correlate 0.53 (Spearman).
+
+**Shortlist (top 5 by selection Sharpe) after opening the check period:**
+
+| Variant | Changes | Selection | Check period | Perp-priced (spot-confirmed) | Deflated Sharpe (lab / all trials) |
+|---|---|---|---|---|---|
+| v1 base | — | 2.24 | 1.22 | 1.21 | 0.30 / 0.06 |
+| R2-20 | E07+C29+B08+A11+D02+F08 | 4.23 | 1.89 | 1.43 | 0.97 / 0.74 |
+| R2-03 | E07+B13 (fee floor, hold 120) | 3.84 | 1.62 | 1.37 | 0.94 / 0.57 |
+| R2-19 | E07+C03+B13+A11+D02+F08 | 3.80 | 2.09 | 1.36 | 0.85 / 0.51 |
+| **R2-08** | **C29+A11** (realistic label, 60th pct, 7-day beta) | **3.79** | **3.06** | **2.36** | **0.975 / 0.77** |
+| R2-07 | C29+B13 (… + hold 120) | 3.76 | 2.28 | 1.87 | 0.97 / 0.68 |
+
+- **Overall statistics:**
+  - PBO 0.27 (pass).
+  - Walk-forward variant selection: 2.50 vs 2.03 for v1. In the check-period quarters it scored 1.89 vs 1.22.
+- **R2-08, perp-priced from Jul 2025** (coins join as their perps list): 394 trades, 20.8 bp net per trade vs 9.6 for
+  v1. With strict fills it scored 2.16 vs 0.98.
+- **R2-08 as the bot trades** (no bids 16:55–18:05 ET, spot-priced, Jan 2025 – Nov 2026):
+  - Sharpe 3.58 vs 1.97. With the advertised 0%/0.03% fees: 3.97 vs 2.82.
+  - Max drawdown −7% vs −14%.
+- **Decision (pre-registered): none adopted.**
+  - All five pass bars 1, 2, 3 and 5. All fail bar 4: counting the ~2,000 earlier setups, deflated Sharpe is 0.51–0.77.
+  - R2-08 is closest, on the bar it failed. Picking it after seeing the check period weakens that number as evidence,
+    so the forward paper test decides.
+  - It runs as a second paper book from Nov 6: bot/v2/, logged to paper_v2/.
+  - It takes over only if, after at least 60 completed paper trades in each book, its realistic-cost net per trade is
+    positive and above v1's.
+
+**Costs, at today's prices:**
+- Realistic round trip:
+  - 3–19 bp with a take-profit exit.
+  - 10–22 bp with a time exit.
+  - ETH, LTC and BCH are the dearest: a contract is only ~$220–270, so 7.5–9 bp of fees per side.
+- Advertised schedule: about 1 bp (take-profit) and 6–12 bp (time exit).
+- Per-coin table: reports/lab/cost_table.csv.
+- Check your real futures fee in Coinbase before going live. The strategy is fee-sensitive, and the AI threshold is
+  what keeps it profitable after costs.
 
 ## Live strategy: BTC+ETH trend filter
 - BTC daily close (UTC) above its 100-day simple moving average → hold 50% BTC / 50% ETH.

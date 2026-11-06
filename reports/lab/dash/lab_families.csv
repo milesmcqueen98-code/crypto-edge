@@ -1,0 +1,8 @@
+family,family_name,n,best,median,share_beating_base
+A,Entry level and reference,24,2.8666,1.8978,0.25
+B,Exits,21,2.9261,2.2593,0.5238
+C,AI model,34,3.4088,2.2157,0.3529
+D,Sizing and portfolio,15,2.5968,2.1984,0.4
+E,Universe and fees,7,3.4635,2.2132,0.2857
+F,Rhyming books,8,2.3669,1.1211,0.25
+R2,Combinations,20,4.2274,3.6203,0.95

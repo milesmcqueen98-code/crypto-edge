@@ -38,7 +38,10 @@ def main():
                          passes=all(bars.values()), **bars))
     R = pd.DataFrame(rows)
     ok = R[R.passes].sort_values("val_real", ascending=False)
+    near = R[R[[c for c in R.columns if c[:2] in ("1 ", "2 ", "3 ", "5 ")]].all(axis=1)].sort_values("dsr_with_2000",
+                                                                                                   ascending=False)
     dec = dict(adopted=ok.variant.iloc[0] if len(ok) else None,
+               candidate=None if len(ok) else (near.variant.iloc[0] if len(near) else None),
                base=dict(val_real=b.val_real, hold_real=b.hold_real, perp_real=perp.loc[BASE, "all_real_sharpe"]),
                pbo=ov["pbo"], walk_forward=dict(sharpe=ov["wf_sharpe"], base=ov["wf_base_sharpe"],
                                                 hold=ov.get("wf_hold_sharpe"), hold_base=ov.get("wf_hold_base_sharpe")),
@@ -46,7 +49,7 @@ def main():
     json.dump(dec, open(os.path.join(OUT, "v2_decision.json"), "w"), indent=1, default=float)
     pd.set_option("display.width", 250)
     print(R.round(3).to_string(index=False))
-    print("\nADOPTED:", dec["adopted"] or "none - v1 stays")
+    print("\nADOPTED:", dec["adopted"] or f"none - v1 stays; closest to clearing every bar: {dec['candidate']}")
 
 
 if __name__ == "__main__":

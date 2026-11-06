@@ -1,0 +1,88 @@
+{
+ "adopted": null,
+ "candidate": "R2-08 C29+A11",
+ "base": {
+  "val_real": 2.241694890212912,
+  "hold_real": 1.2164120038144457,
+  "perp_real": 1.208126752944197
+ },
+ "pbo": 0.26604506604506606,
+ "walk_forward": {
+  "sharpe": 2.5033145506831302,
+  "base": 2.0259587139475563,
+  "hold": 1.8937509637679852,
+  "hold_base": 1.2164120038144457
+ },
+ "shortlist": [
+  {
+   "variant": "R2-20 E07+C29+B08+A11+D02+F08",
+   "val_real": 4.227439054712965,
+   "hold_real": 1.8937509637679848,
+   "perp_real": 1.431766402892147,
+   "dsr_v2": 0.9727737985780678,
+   "dsr_with_2000": 0.7400796219731959,
+   "passes": false,
+   "1 validation >= base + 0.25": true,
+   "2 holdout >= base holdout + 0.25": true,
+   "3 perp check (spot-confirmed) >= base": true,
+   "4 deflated Sharpe >= 0.95 (N = v2 trials + 2,000)": false,
+   "5 PBO <= 0.3": true
+  },
+  {
+   "variant": "R2-03 E07+B13",
+   "val_real": 3.83537716125381,
+   "hold_real": 1.6231307890408602,
+   "perp_real": 1.373704665289588,
+   "dsr_v2": 0.9435545014985154,
+   "dsr_with_2000": 0.5663517185846332,
+   "passes": false,
+   "1 validation >= base + 0.25": true,
+   "2 holdout >= base holdout + 0.25": true,
+   "3 perp check (spot-confirmed) >= base": true,
+   "4 deflated Sharpe >= 0.95 (N = v2 trials + 2,000)": false,
+   "5 PBO <= 0.3": true
+  },
+  {
+   "variant": "R2-19 E07+C03+B13+A11+D02+F08",
+   "val_real": 3.803414382461305,
+   "hold_real": 2.09318262837229,
+   "perp_real": 1.3556585127111824,
+   "dsr_v2": 0.8509716216391181,
+   "dsr_with_2000": 0.5045557972286479,
+   "passes": false,
+   "1 validation >= base + 0.25": true,
+   "2 holdout >= base holdout + 0.25": true,
+   "3 perp check (spot-confirmed) >= base": true,
+   "4 deflated Sharpe >= 0.95 (N = v2 trials + 2,000)": false,
+   "5 PBO <= 0.3": true
+  },
+  {
+   "variant": "R2-08 C29+A11",
+   "val_real": 3.793264182139182,
+   "hold_real": 3.0609793551357045,
+   "perp_real": 2.362724981213536,
+   "dsr_v2": 0.9750499279822382,
+   "dsr_with_2000": 0.767543379386016,
+   "passes": false,
+   "1 validation >= base + 0.25": true,
+   "2 holdout >= base holdout + 0.25": true,
+   "3 perp check (spot-confirmed) >= base": true,
+   "4 deflated Sharpe >= 0.95 (N = v2 trials + 2,000)": false,
+   "5 PBO <= 0.3": true
+  },
+  {
+   "variant": "R2-07 C29+B13",
+   "val_real": 3.763090885864788,
+   "hold_real": 2.277799034826945,
+   "perp_real": 1.8659465536552813,
+   "dsr_v2": 0.9704607593326212,
+   "dsr_with_2000": 0.6757058288527292,
+   "passes": false,
+   "1 validation >= base + 0.25": true,
+   "2 holdout >= base holdout + 0.25": true,
+   "3 perp check (spot-confirmed) >= base": true,
+   "4 deflated Sharpe >= 0.95 (N = v2 trials + 2,000)": false,
+   "5 PBO <= 0.3": true
+  }
+ ]
+}

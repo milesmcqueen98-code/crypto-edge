@@ -16,9 +16,11 @@ p.add_argument("--mode", default="paper", choices=["paper", "live"])
 p.add_argument("--minutes", type=float, default=345)
 p.add_argument("--config", default=os.path.join(ROOT, "bot", "config.json"))
 p.add_argument("--state-dir", default=None, help="where state.json and events.jsonl live (default: paper/ or live/)")
+p.add_argument("--model-dir", default=os.path.join(ROOT, "bot"), help="model_meta.json and model files (default: bot/)")
 a = p.parse_args()
 cfg = json.load(open(a.config))
 if a.mode == "live" and os.environ.get("I_UNDERSTAND_LIVE_TRADING") != "yes":
     sys.exit("Live mode places real orders. Set I_UNDERSTAND_LIVE_TRADING=yes after reading bot/README.md.")
 d = a.state_dir or os.path.join(ROOT, a.mode)
-Engine(mode=a.mode, cfg=cfg, state_path=os.path.join(d, "state.json"), log_path=os.path.join(d, "events.jsonl")).run(a.minutes)
+Engine(mode=a.mode, cfg=cfg, state_path=os.path.join(d, "state.json"), log_path=os.path.join(d, "events.jsonl"),
+       model_dir=a.model_dir).run(a.minutes)

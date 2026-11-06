@@ -1,0 +1,131 @@
+variant,code,family,family_name,val_real_sharpe,val_base_sharpe,val_trades,val_net_real_bp,val_hit,val_real_maxdd,shortlisted
+R2-20 E07+C29+B08+A11+D02+F08,R2-20,R2,Combinations,4.2274,4.3924,568,37.8543,0.7271,-0.0487,True
+R2-03 E07+B13,R2-03,R2,Combinations,3.8354,4.0137,562,47.11,0.7153,-0.0576,True
+R2-19 E07+C03+B13+A11+D02+F08,R2-19,R2,Combinations,3.8034,3.8774,286,66.4471,0.7727,-0.0527,True
+R2-08 C29+A11,R2-08,R2,Combinations,3.7933,4.1649,916,42.8199,0.691,-0.0737,True
+R2-07 C29+B13,R2-07,R2,Combinations,3.7631,4.0808,883,46.2337,0.718,-0.052,True
+R2-02 E07+C29,R2-02,R2,Combinations,3.7515,3.9488,538,45.3237,0.7119,-0.057,False
+R2-17 E07+C29+B13,R2-17,R2,Combinations,3.7005,3.827,433,55.4315,0.7229,-0.0619,False
+R2-10 C29+F08,R2-10,R2,Combinations,3.6954,4.1793,1844,33.0245,0.7066,-0.1319,False
+R2-04 E07+A11,R2-04,R2,Combinations,3.6791,3.8375,619,51.7074,0.7221,-0.0516,False
+R2-18 E06+C29+B13+A11+D02+F08,R2-18,R2,Combinations,3.6544,3.8717,900,30.6935,0.7256,-0.2021,False
+R2-16 D02+F08,R2-16,R2,Combinations,3.5862,5.5564,1743,13.6199,0.6546,-0.1508,False
+R2-09 C29+D02,R2-09,R2,Combinations,3.5113,3.9879,725,26.7716,0.6566,-0.092,False
+E07 no bid while a contract is under $667 (fee > 3 bp/side),E07,E,Universe and fees,3.4635,3.7205,688,35.4223,0.673,-0.0532,False
+C29 realistic label + 60th pct,C29,C,AI model,3.4088,3.8496,1004,35.0953,0.6813,-0.0659,False
+C03 threshold 75th pct,C03,C,AI model,3.3794,3.7307,607,60.1242,0.7265,-0.0466,False
+R2-06 E07+F08,R2-06,R2,Combinations,3.3293,3.5704,1132,33.2708,0.7023,-0.0645,False
+R2-14 A11+D02,R2-14,R2,Combinations,3.3273,4.1215,834,20.398,0.6355,-0.146,False
+R2-05 E07+D02,R2-05,R2,Combinations,3.3155,3.5997,525,25.4918,0.6419,-0.0649,False
+"E06 drop the 4 dearest contracts per $ (ETH, LTC, BCH, ZEC)",E06,E,Universe and fees,3.0841,3.3994,932,31.3,0.6749,-0.0893,False
+R2-12 B13+D02,R2-12,R2,Combinations,2.9774,3.7226,789,19.0087,0.6565,-0.1725,False
+C02 threshold 60th pct,C02,C,AI model,2.9269,3.644,977,30.3596,0.6725,-0.0945,False
+"B13 take-profit 0.6, hold 120",B13,B,Exits,2.9261,3.8391,1060,27.0408,0.6783,-0.075,False
+A11 beta 7 days,A11,A,Entry level and reference,2.8666,3.6372,1138,28.5423,0.6643,-0.1109,False
+B08 two-stage TP 0.4/0.8,B08,B,Exits,2.7772,3.8856,1130,22.6422,0.6673,-0.0827,False
+A10 beta 1 day,A10,A,Entry level and reference,2.7619,3.6025,1147,24.2548,0.6617,-0.0787,False
+A20 k=4.25,A20,A,Entry level and reference,2.7351,3.4434,909,32.5905,0.659,-0.0973,False
+R2-01 E07+C29+B13+A11+D02+F08,R2-01,R2,Combinations,2.6712,2.7434,588,51.547,0.7347,-0.0557,False
+D02 size by prediction^2,D02,D,Sizing and portfolio,2.5968,3.5663,853,12.1598,0.6096,-0.1405,False
+C06 label realistic-cost net,C06,C,AI model,2.5927,3.2143,1207,21.6093,0.6396,-0.1338,False
+R2-11 B13+A11,R2-11,R2,Combinations,2.5867,3.2572,1088,30.566,0.6866,-0.0821,False
+A09 sigma 7 days,A09,A,Entry level and reference,2.5518,3.2195,1108,27.6406,0.657,-0.091,False
+D09 volatility-regime scaling,D09,D,Sizing and portfolio,2.5442,3.3591,1100,13.0761,0.6255,-0.0754,False
+B16 take-profit 0.55,B16,B,Exits,2.4944,3.4658,1188,21.1312,0.6591,-0.1044,False
+C32 threshold 55th pct,C32,C,AI model,2.4944,3.3164,1086,23.9344,0.6565,-0.1112,False
+B17 take-profit 0.65,B17,B,Exits,2.4576,3.3885,1208,22.6228,0.6308,-0.1254,False
+"D07 10 x $1,500",D07,D,Sizing and portfolio,2.4309,3.2092,1404,23.7712,0.6481,-0.0902,False
+C19 rolling 12-month window,C19,C,AI model,2.4267,3.2518,1167,21.766,0.641,-0.0933,False
+C14 feature_fraction 0.5,C14,C,AI model,2.4115,3.3456,1195,20.9931,0.6427,-0.1194,False
+B01 take-profit 0.4,B01,B,Exits,2.4106,3.5748,1265,18.2341,0.7209,-0.0873,False
+B04 take-profit 0.8,B04,B,Exits,2.4018,3.2224,1159,25.293,0.6022,-0.1419,False
+A05 L=45,A05,A,Entry level and reference,2.3916,3.3036,1491,21.4424,0.6533,-0.1173,False
+D11 prediction-priority slots,D11,D,Sizing and portfolio,2.3794,3.239,1199,23.4067,0.6447,-0.1315,False
+F08 60-minute + 15-minute k=5 books,F08,F,Rhyming books,2.3669,4.0739,2277,15.4898,0.664,-0.1438,False
+C09 label clip 200,C09,C,AI model,2.3561,3.3092,1198,21.1498,0.6444,-0.1237,False
+B03 take-profit 0.7,B03,B,Exits,2.3446,3.2333,1196,22.3242,0.6212,-0.1434,False
+R2-13 B13+F08,R2-13,R2,Combinations,2.3404,4.0555,2138,14.7512,0.696,-0.1412,False
+B02 take-profit 0.5,B02,B,Exits,2.3274,3.3714,1207,19.0126,0.6752,-0.0918,False
+F07 weekdays only (diagnostic),F07,F,Rhyming books,2.325,3.0859,928,24.179,0.6412,-0.0755,False
+C25 extra features: all,C25,C,AI model,2.3068,3.2833,1187,19.3305,0.6369,-0.1141,False
+"C12 500 rounds, half learning rate",C12,C,AI model,2.301,3.2436,1199,20.5013,0.6389,-0.1368,False
+D12 fractional sizing (diagnostic),D12,D,Sizing and portfolio,2.2992,3.1742,1189,20.3032,0.6417,-0.1578,False
+"B20 passive time exit (5 min, then market)",B20,B,Exits,2.273,3.0643,1193,20.2575,0.6446,-0.1002,False
+B19 hold 75,B19,B,Exits,2.2596,3.1453,1197,21.9196,0.6533,-0.1045,False
+"B21 passive time exit (15 min, then market)",B21,B,Exits,2.2593,3.0093,1190,20.0767,0.6462,-0.0955,False
+C13 min_data_in_leaf 200,C13,C,AI model,2.2551,3.2402,1214,19.0825,0.6367,-0.1225,False
+A15 add BTC,A15,A,Entry level and reference,2.2486,3.3103,1330,17.01,0.6338,-0.1168,False
+C16 huber alpha 120,C16,C,AI model,2.2471,3.3135,1247,18.4401,0.6359,-0.1288,False
+"D15 7 x $2,143",D15,D,Sizing and portfolio,2.242,3.1358,1257,20.712,0.6428,-0.1222,False
+V000 base (v1),V000,base,v1 base,2.2417,3.171,1189,20.3032,0.6417,-0.1356,False
+C30 5 seeds,C30,C,AI model,2.2347,3.1726,1195,20.0337,0.6402,-0.1347,False
+R2-15 A11+F08,R2-15,R2,Combinations,2.2304,3.7833,2206,15.7725,0.6646,-0.1499,False
+C22 extra features: price structure,C22,C,AI model,2.2279,3.2043,1195,19.1699,0.6368,-0.1354,False
+C21 no episode weighting,C21,C,AI model,2.2242,3.2074,1152,19.9281,0.645,-0.1061,False
+C10 num_leaves 3,C10,C,AI model,2.2227,3.2076,1064,21.2152,0.64,-0.086,False
+C23 extra features: flow,C23,C,AI model,2.2226,3.1839,1211,19.5001,0.6424,-0.1207,False
+D01 size by prediction,D01,D,Sizing and portfolio,2.2137,3.1407,1014,12.8621,0.6203,-0.1416,False
+E03 17 without ZEC,E03,E,Universe and fees,2.2135,2.7744,1138,19.2718,0.6476,-0.106,False
+E04 size by perp liquidity,E04,E,Universe and fees,2.2132,3.2579,1187,20.4747,0.642,-0.1602,False
+C26 top-12 features (2024 model),C26,C,AI model,2.2087,3.176,1167,19.5391,0.6384,-0.1453,False
+E01 6 core coins,E01,E,Universe and fees,2.2063,2.8092,705,19.8151,0.6553,-0.0929,False
+A02 k=4.5,A02,A,Entry level and reference,2.2041,2.8699,773,29.208,0.6494,-0.0889,False
+C24 extra features: calendar,C24,C,AI model,2.2002,3.1704,1203,18.8879,0.6392,-0.1262,False
+"D06 8 x $1,875",D06,D,Sizing and portfolio,2.1984,3.0406,1321,22.7827,0.6457,-0.1157,False
+A08 sigma 1 day,A08,A,Entry level and reference,2.1983,2.9999,1254,19.123,0.6491,-0.1574,False
+C18 monthly retraining,C18,C,AI model,2.192,3.0918,1175,19.7953,0.6451,-0.1258,False
+A03 k=5,A03,A,Entry level and reference,2.1791,2.5622,592,41.9341,0.6672,-0.1113,False
+C20 time-decay weights (180d),C20,C,AI model,2.1771,3.1202,1195,18.7779,0.6377,-0.1329,False
+C17 monotone on top 2 features,C17,C,AI model,2.177,3.1141,1175,19.6358,0.6366,-0.1262,False
+C33 150 rounds,C33,C,AI model,2.1602,3.1324,1190,19.0979,0.6412,-0.1402,False
+"C34 learning rate 0.06, 125 rounds",C34,C,AI model,2.1517,3.1076,1196,19.2787,0.6371,-0.1371,False
+A23 beta 2 days,A23,A,Entry level and reference,2.1412,3.0465,1165,20.4487,0.6421,-0.1317,False
+A16 ladder k=4 + k=6,A16,A,Entry level and reference,2.119,3.0574,1284,19.6232,0.6324,-0.125,False
+D08 max 2 new fills per minute,D08,D,Sizing and portfolio,2.1091,3.0229,1095,20.1986,0.6402,-0.124,False
+"D14 5 x $3,000",D14,D,Sizing and portfolio,2.079,3.0785,1107,19.1931,0.6369,-0.1453,False
+B18 hold 50,B18,B,Exits,2.0773,3.0914,1245,17.9634,0.6185,-0.1341,False
+A22 sigma 2 days,A22,A,Entry level and reference,2.0458,2.9474,1248,18.6929,0.6378,-0.1076,False
+C11 num_leaves 15,C11,C,AI model,2.0419,3.0059,1251,17.7084,0.6347,-0.1771,False
+C15 huber alpha 30,C15,C,AI model,1.9927,2.9042,1182,17.5693,0.6413,-0.1414,False
+B06 hold 45,B06,B,Exits,1.96,3.0037,1281,17.233,0.6105,-0.1602,False
+B09 TP tracks fair value - 1 sigma,B09,B,Exits,1.9532,2.6895,1237,19.7995,0.5942,-0.1213,False
+B10 TP tracks fair value - 0.5 sigma,B10,B,Exits,1.927,2.6543,1218,20.8027,0.5747,-0.1493,False
+B07 hold 90,B07,B,Exits,1.8665,2.7829,1137,19.1747,0.6596,-0.0927,False
+"B14 take-profit 1.0, hold 120",B14,B,Exits,1.8334,2.5933,1078,20.7734,0.5761,-0.1122,False
+D04 prediction / sigma,D04,D,Sizing and portfolio,1.7543,2.644,971,15.7588,0.6251,-0.1531,False
+A07 L=120,A07,A,Entry level and reference,1.7498,2.5972,799,20.1453,0.5945,-0.1447,False
+C31 threshold 45th pct,C31,C,AI model,1.7227,2.7968,1310,14.2915,0.626,-0.1695,False
+D03 equal risk (1/sigma),D03,D,Sizing and portfolio,1.6473,2.551,1147,22.2613,0.646,-0.1603,False
+A19 k=3.75,A19,A,Entry level and reference,1.6157,2.5825,1538,14.0556,0.6372,-0.2058,False
+D10 drawdown throttle 5%,D10,D,Sizing and portfolio,1.6141,2.5812,1189,20.3032,0.6417,-0.1428,False
+E02 17 + AVAX + ADA,E02,E,Universe and fees,1.6124,2.5563,1212,15.8332,0.6436,-0.1446,False
+A06 L=90,A06,A,Entry level and reference,1.611,2.2499,858,20.6882,0.6049,-0.1445,False
+"E05 ETH, SOL, XRP only",E05,E,Universe and fees,1.6109,2.3553,415,14.2409,0.653,-0.049,False
+C27 LightGBM + logistic ensemble,C27,C,AI model,1.5664,2.4929,1278,13.8429,0.6291,-0.201,False
+"D05 4 x $3,750",D05,D,Sizing and portfolio,1.5625,2.5739,1006,14.8797,0.6282,-0.1701,False
+C08 label net / sigma,C08,C,AI model,1.5005,2.5825,1328,12.744,0.616,-0.1706,False
+"D13 3 x $5,000",D13,D,Sizing and portfolio,1.4375,2.4728,882,12.9495,0.6179,-0.1763,False
+F03 240-minute book,F03,F,Rhyming books,1.3916,1.9156,521,21.5056,0.5893,-0.1024,False
+A01 k=3.5,A01,A,Entry level and reference,1.3871,2.5552,1824,10.4998,0.6305,-0.2289,False
+B15 no take-profit,B15,B,Exits,1.3505,2.1338,1134,18.6689,0.5485,-0.1675,False
+F05 dips + rips,F05,F,Rhyming books,1.28,2.6125,3133,8.6413,0.6103,-0.1978,False
+C01 threshold 40th pct,C01,C,AI model,1.2468,2.4377,1397,9.7438,0.6127,-0.1771,False
+A12 raw reference,A12,A,Entry level and reference,1.1805,1.9653,1072,12.3266,0.5569,-0.2049,False
+A14 BTC+ETH reference,A14,A,Entry level and reference,1.1759,2.1526,1522,9.142,0.6518,-0.1946,False
+A24 sigma scaled by hour-of-day volatility,A24,A,Entry level and reference,1.1566,2.2923,1515,9.5274,0.6198,-0.1822,False
+A04 L=30,A04,A,Entry level and reference,0.9692,2.3925,1899,7.1248,0.6503,-0.1663,False
+F04 joint 30/60/120 books,F04,F,Rhyming books,0.9621,2.5812,2744,7.1515,0.6126,-0.2936,False
+A21 L=75,A21,A,Entry level and reference,0.9392,1.7605,934,10.9212,0.6071,-0.1319,False
+C07 label take-profit hit (classifier),C07,C,AI model,0.922,1.7775,1147,8.7542,0.6356,-0.192,False
+B12 stop at 15m if < -1.5 sigma,B12,B,Exits,0.8311,1.9344,1443,8.229,0.6057,-0.1824,False
+A17 BTC-perp beta hedge,A17,A,Entry level and reference,0.5703,2.258,1189,4.2456,0.5694,-0.1243,False
+C05 threshold pred > 15 bp,C05,C,AI model,0.5629,1.9697,1770,3.8605,0.5927,-0.231,False
+B11 stop at 30m if < -1 sigma,B11,B,Exits,0.511,1.4543,1367,6.3485,0.5903,-0.166,False
+B05 hold 30,B05,B,Exits,0.3183,1.4521,1450,4.6936,0.5821,-0.2105,False
+F01 sell-the-rip mirror,F01,F,Rhyming books,0.3165,1.1425,2010,4.4257,0.596,-0.257,False
+A18 k=3,A18,A,Entry level and reference,0.3132,1.8942,2837,1.9107,0.6267,-0.263,False
+F06 weekends only (diagnostic),F06,F,Rhyming books,0.288,0.7858,266,4.1327,0.6391,-0.0996,False
+C04 threshold pred > 0,C04,C,AI model,0.2531,1.8376,2022,1.902,0.5816,-0.232,False
+C28 no AI (rule only),C28,C,AI model,0.2374,1.8305,2037,1.8073,0.5812,-0.2335,False
+A13 basket reference,A13,A,Entry level and reference,0.1958,1.1723,1501,2.7028,0.6902,-0.1661,False
+F02 15-minute book,F02,F,Rhyming books,-0.4614,1.5849,3210,-0.6452,0.6794,-0.4344,False

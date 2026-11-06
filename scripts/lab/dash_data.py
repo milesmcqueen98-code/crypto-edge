@@ -17,6 +17,15 @@ FAMILY = {"base": "v1 base", "A": "Entry level and reference", "B": "Exits", "C"
           "E": "Universe and fees", "F": "Rhyming books", "R2": "Combinations"}
 
 
+def candidate(dec):
+    """Without an adopted variant: the shortlisted one closest to clearing every bar (all bars but the deflated
+    Sharpe pass, highest deflated Sharpe)."""
+    S = pd.DataFrame(dec["shortlist"])
+    others = [c for c in S.columns if c[:2] in ("1 ", "2 ", "3 ", "5 ")]
+    S = S[S[others].all(axis=1)].sort_values("dsr_with_2000", ascending=False)
+    return S.variant.iloc[0]
+
+
 def main():
     os.makedirs(DASH, exist_ok=True)
     tags = [t for t in ("round1", "round1b", "round2") if os.path.exists(os.path.join(OUT, f"results_val_{t}.csv"))]
@@ -37,7 +46,7 @@ def main():
     S.round(4).to_csv(os.path.join(DASH, "lab_shortlist.csv"), index=False)
     # equity: base vs the adopted variant (or the best candidate), realistic and advertised costs, spot-priced,
     # as the bot trades (quiet window), from the quiet futures check run
-    pick = dec["adopted"] or sl["variants"][0]
+    pick = dec["adopted"] or candidate(dec)
     qp = os.path.join(OUT, "futures_daily_quiet.parquet")
     Dq = pd.read_parquet(qp) if os.path.exists(qp) else pd.read_parquet(os.path.join(OUT, "futures_daily.parquet"))
     rows = []

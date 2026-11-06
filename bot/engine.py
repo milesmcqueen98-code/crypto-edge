@@ -166,15 +166,23 @@ class Engine:
     cfg: dict = field(default_factory=dict)
     state_path: str = os.path.join(ROOT, "paper", "state.json")
     log_path: str = os.path.join(ROOT, "paper", "events.jsonl")
+    model_dir: str = os.path.join(ROOT, "bot")
 
     def __post_init__(self):
-        meta = json.load(open(os.path.join(ROOT, "bot", "model_meta.json")))
+        meta = json.load(open(os.path.join(self.model_dir, "model_meta.json")))
         self.meta = meta
         files = meta.get("models", ["model.txt"])
-        self.models = [lgb.Booster(model_file=os.path.join(ROOT, "bot", f)) for f in files]
+        self.models = [lgb.Booster(model_file=os.path.join(self.model_dir, f)) for f in files]
         self.coins = meta["coins"]
         self.codes = {c: i for i, c in enumerate(sorted(self.coins))}
         self.thr = meta["threshold"]
+        # strategy settings travel with the model (v1 meta files carry the same values as edge.wick)
+        self.theta = float(meta.get("THETA", wick.THETA))
+        self.k = float(meta.get("K", wick.K))
+        self.hold = int(meta.get("H", wick.H))
+        self.lookback = int(meta.get("L", wick.L))
+        self.wbeta = int(meta.get("wbeta") or wick.W)
+        self.min_contract = float(meta.get("min_contract_usd") or 0.0)
         self.specs = load_specs()
         self.log = Log(self.log_path)
         self.state = self._load_state()
@@ -240,7 +248,7 @@ class Engine:
                     fill["minute_contracts"] = b.get("volume")
                     self._on_fill(c, fill, prev)
         idx, cf, vol, last = self.arrays(t)
-        pn = wick.panel(cf, vol, self.coins, idx, coin_codes=self.codes)
+        pn = wick.panel(cf, vol, self.coins, idx, k=self.k, lookback=self.lookback, coin_codes=self.codes, wbeta=self.wbeta)
         cands = []
         for c in self.coins:
             row = pn[c].iloc[-1]
@@ -280,6 +288,9 @@ class Engine:
                     px = float(wick.round_down(row.level * basis, sp.tick))
                     if px >= bid:                    # market already below the level: no order this minute
                         px = np.nan
+                    elif sp.size * px < self.min_contract:   # per-contract fees too large for this contract
+                        self.log("skip", coin=c, reason="contract under minimum", contract_usd=round(sp.size * px, 2))
+                        px = np.nan
                     else:                            # resting bids at or above ours: selling needed before we fill
                         ahead = sum(p * q * sp.size for p, q in bids if p >= px)
             if not np.isfinite(px):
@@ -313,11 +324,11 @@ class Engine:
             fee = fill["px"] * sp.size * fill["contracts"] * bp / 1e4
         if fill["side"] == "BUY":
             sig = self.state.get("pending_sig", {}).get(c, np.nan)
-            tp = float(wick.round_down(fill["px"] * math.exp(wick.THETA * wick.K * sig), sp.tick))
+            tp = float(wick.round_down(fill["px"] * math.exp(self.theta * self.k * sig), sp.tick))
             self.state["positions"][c] = dict(contracts=fill["contracts"], entry_px=fill["px"], entry_ts=minute.isoformat(),
                                               # research holds to the close of minute entry+H; the exit
                                               # order goes out at the start of the following minute
-                                              exit_due=(minute + pd.Timedelta(minutes=wick.H + 1)).isoformat(), tp_px=tp,
+                                              exit_due=(minute + pd.Timedelta(minutes=self.hold + 1)).isoformat(), tp_px=tp,
                                               fees=fee)
             self.log("fill_entry", coin=c, px=fill["px"], contracts=fill["contracts"], tp=tp, fee=round(fee, 4),
                      minute_contracts_traded=fill.get("minute_contracts"))

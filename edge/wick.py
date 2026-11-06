@@ -39,32 +39,35 @@ def _rz(x):
     return x / _rstd(x)
 
 
-def _rbeta(ri, rb):
+def _rbeta(ri, rb, w=W):
     a, b = pd.Series(ri), pd.Series(rb)
-    m = lambda s: s.rolling(W, min_periods=MINP).mean()  # noqa: E731
+    mp = min(MINP, w)
+    m = lambda s: s.rolling(w, min_periods=mp).mean()  # noqa: E731
     cov = m(a * b) - m(a) * m(b)
-    return (cov / b.rolling(W, min_periods=MINP).var()).clip(0.0, 3.0).to_numpy()
+    return (cov / b.rolling(w, min_periods=mp).var()).clip(0.0, 3.0).to_numpy()
 
 
-def levels(cf, coins, k=K, lookback=L):
-    """Just the order level and sigma per coin (cheap; used to find candidate fill minutes)."""
+def levels(cf, coins, k=K, lookback=L, wbeta=W):
+    """Just the order level and sigma per coin (cheap; used to find candidate fill minutes). wbeta: window
+    (minutes) of the BTC beta behind the level (the z-score features keep the 3-day beta)."""
     lpb = np.log(cf["BTC"])
     r1b = np.diff(lpb, prepend=np.nan)
     rb = lpb - shift(lpb, lookback)
     out = {}
     for c in coins:
         x = np.log(cf[c])
-        b = _rbeta(np.diff(x, prepend=np.nan), r1b)
+        b = _rbeta(np.diff(x, prepend=np.nan), r1b, wbeta)
         sig_now = _rstd((x - shift(x, lookback)) - b * rb)
         out[c] = (np.exp(shift(x, lookback) + shift(b, 1) * (shift(lpb, 1) - shift(lpb, lookback)) - k * shift(sig_now, 1)),
                   shift(sig_now, 1))
     return out
 
 
-def panel(cf, vol, coins, idx, k=K, lookback=L, coin_codes=None, keep_rows=None):
+def panel(cf, vol, coins, idx, k=K, lookback=L, coin_codes=None, keep_rows=None, wbeta=W):
     """cf, vol: {coin: np.ndarray} aligned to idx, including "BTC". coins: the alts to trade.
     Returns {coin: DataFrame(index=idx)} with level, sig (residual sigma of `lookback`-minute moves) and FEATS.
-    keep_rows: optional {coin: integer positions}; then each frame holds only those rows (saves memory)."""
+    keep_rows: optional {coin: integer positions}; then each frame holds only those rows (saves memory).
+    wbeta: window (minutes) of the BTC beta behind level, sig, bid_depth_bp and the beta feature (default 3 days)."""
     lpb = np.log(cf["BTC"])
     r1b = np.diff(lpb, prepend=np.nan)
     btc_r = {h: lpb - shift(lpb, h) for h in sorted({5, 15, 60, 240, 1440, lookback})}
@@ -83,6 +86,8 @@ def panel(cf, vol, coins, idx, k=K, lookback=L, coin_codes=None, keep_rows=None)
     out = {}
     for c in coins:
         x, b = lp[c], beta[c]
+        if wbeta != W:                       # level, sigma and the beta feature from a beta over wbeta minutes
+            b = _rbeta(np.diff(x, prepend=np.nan), r1b, wbeta)
         e = (x - shift(x, lookback)) - b * btc_r[lookback]
         sig_now = _rstd(e)
         level = np.exp(shift(x, lookback) + p(b) * (p(lpb) - shift(lpb, lookback)) - k * p(sig_now))

@@ -1,0 +1,6 @@
+variant,val_real,hold_real,perp_real,dsr_v2,dsr_with_2000,passes,1 validation >= base + 0.25,2 holdout >= base holdout + 0.25,3 perp check (spot-confirmed) >= base,"4 deflated Sharpe >= 0.95 (N = v2 trials + 2,000)",5 PBO <= 0.3
+R2-20 E07+C29+B08+A11+D02+F08,4.2274,1.8938,1.4318,0.9728,0.7401,False,True,True,True,False,True
+R2-03 E07+B13,3.8354,1.6231,1.3737,0.9436,0.5664,False,True,True,True,False,True
+R2-19 E07+C03+B13+A11+D02+F08,3.8034,2.0932,1.3557,0.851,0.5046,False,True,True,True,False,True
+R2-08 C29+A11,3.7933,3.061,2.3627,0.975,0.7675,False,True,True,True,False,True
+R2-07 C29+B13,3.7631,2.2778,1.8659,0.9705,0.6757,False,True,True,True,False,True

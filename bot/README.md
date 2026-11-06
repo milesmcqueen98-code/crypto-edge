@@ -23,6 +23,39 @@ The perp-priced figure is mostly wicks that printed only on the new perps' thin 
 on Sharpe ~2–3; the paper test logs the dollars of bids ahead of ours and the volume traded in each fill minute so the
 answer comes from live data. Full write-up: `reports/crypto-edge-findings.md`; audit: `audit/`.
 
+## v2 candidate, paper trading beside v1 (from Nov 6, 2026)
+
+The wick v2 lab (`scripts/lab/`, pre-registration `reports/wick_v2_prereg.md`) tested 130 variations of this
+strategy under realistic Coinbase costs:
+- $0.20 per contract per side.
+- 1.5x the measured perp half-spread on market exits.
+- 1 bp funding.
+- Whole contracts.
+
+The best candidate is **R2-08**, two changes to v1:
+- The AI learns from the realistic-cost net instead of a flat 2 bp fee, and keeps a bid only when its
+  prediction beats the **60th** percentile (not the median) of its training predictions.
+- The BTC beta behind the fair-value level is measured over **7 days** instead of 3.
+
+| Realistic costs | v1 | R2-08 |
+|---|---|---|
+| Validation Sharpe, Jan 2025 – Mar 2026 | 2.24 | 3.79 |
+| Holdout Sharpe, Apr – Nov 2026 (read once, after the shortlist was fixed) | 1.22 | 3.06 |
+| Perp-priced, spot-confirmed fills, Jul 2025 – Nov 2026 | 1.21 | 2.36 |
+| Net per trade, perp-priced | 9.6 bp | 20.8 bp |
+
+R2-08 passed four of the five pre-registered bars. It failed one: its deflated Sharpe is 0.77 when every
+setup tried in this project counts (about 2,130), against the 0.95 needed. So v1 remains the strategy of
+record. R2-08 runs as a second paper book with its own state:
+- Models: `bot/v2/` (`python bot/train_v2.py "R2-08 C29+A11" bot/v2`).
+- Log: `paper_v2/`.
+- Live, it would be `python bot/run.py --mode live --model-dir bot/v2`, but only after the paper rule below.
+
+**Forward rule, fixed now:** switch to R2-08 only if, after at least 60 completed paper trades in each book,
+both of these hold:
+- R2-08's mean realistic-cost net per trade is positive.
+- It is above v1's.
+
 ## Files
 
 | File | Purpose |
@@ -30,12 +63,14 @@ answer comes from live data. Full write-up: `reports/crypto-edge-findings.md`; a
 | `edge/wick.py` | Order levels and AI features — the exact code the research used (parity-tested) |
 | `bot/engine.py` | Minute loop, paper broker, live broker (Coinbase Advanced SDK), risk limits |
 | `bot/market.py` | Public market data (no keys): spot candles, futures candles, order book |
-| `bot/train.py` | Retrains the model on all history for the chosen universe |
+| `bot/train.py` | Retrains the v1 model on all history for the chosen universe |
+| `bot/train_v2.py` | Trains a lab variant's models with the lab's own code (e.g. the R2-08 candidate into `bot/v2/`) |
+| `bot/v2/` | The R2-08 candidate's five models and settings (threshold, 7-day beta), read with `--model-dir bot/v2` |
 | `bot/model_s*.txt`, `bot/model_meta.json` | The five trained models (averaged) and the threshold |
-| `bot/paper_report.py` | Summarises the paper log: trades, net bp, P&L |
+| `bot/paper_report.py` | Summarises a paper log (`paper/` or `paper_v2/`): trades, net bp with paper and realistic costs, P&L |
 | `bot/config.json` | Capital, size per trade, max positions, daily loss limit, paper fee model |
 | `bot/replay_test.py` | Runs the live engine over historical data and checks it trades exactly like the research |
-| `.github/workflows/paper.yml` | Forward paper test on live data, every 6 hours, no keys, results in `paper/` |
+| `.github/workflows/paper.yml` | Forward paper test on live data, every 6 hours, no keys: v1 in `paper/`, R2-08 in `paper_v2/` |
 
 ## Venue and account (New York)
 

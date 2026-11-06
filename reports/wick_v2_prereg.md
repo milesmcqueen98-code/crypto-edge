@@ -160,3 +160,13 @@ scripts/lab/futures_check.py with core.futures_trades:
   - **Final numbers for the shortlist are also run "as the bot trades":**
     - No new bids 16:55-18:05 ET.
     - Reason: the lab, like v1, ignores that window.
+- 2026-11-06 ~11:30 ET, after the holdout was opened (results: reports/lab/v2_decision.json, v2_report.md):
+  - No shortlisted variant cleared all five bars. All five passed bars 1, 2, 3 and 5. All failed bar 4: the
+    deflated Sharpe with N = 130 + 2,000 was 0.51-0.77; with N = 130 alone it was 0.85-0.975. So v1 stays the
+    strategy of record.
+  - The best candidate, R2-08 (C29 + A11), runs as a second paper book.
+  - **Forward rule, fixed before any v2 paper trade:** switch to R2-08 only if, after at least 60 completed
+    paper trades in each book, both of these hold:
+    - R2-08's mean realistic-cost net per trade is positive.
+    - It is above v1's.
+
