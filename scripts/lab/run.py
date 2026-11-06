@@ -85,6 +85,8 @@ def build_spec(ls, X, ex_d, ai_d, lab_cache, state):
         objective=ai_d.get("objective"), monotone=ai_d.get("monotone"), rounds=ai_d.get("rounds"),
         logit_ens=ai_d.get("logit_ens", False))
     keep = (pred > thr) | (X.ts < core.TEST0)
+    if ai_d.get("thr_floor") is not None:
+        keep &= (pred > ai_d["thr_floor"]) | (X.ts < core.TEST0)
     return ex, keep, pred, thr
 
 
@@ -173,7 +175,11 @@ if __name__ == "__main__":
     import variants as VV
     which = sys.argv[1] if len(sys.argv) > 1 else "round1"
     flt = sys.argv[2] if len(sys.argv) > 2 else None
-    vs = {"round1": VV.VARIANTS, "round1b": VV.ROUND1B}.get(which) or VV.make_round2()
+    vs = {"round1": VV.VARIANTS, "round1b": VV.ROUND1B, "round3": VV.ROUND3}.get(which)
+    if vs is None:
+        vs = VV.fresh_variants() if which == "fresh" else VV.make_round2()
+    if core.ERA == "early":
+        which = f"early_{which}"
     if flt:
         vs = [v for v in vs if flt in v["name"]]
     run(vs, which if not flt else f"{which}_{flt.replace(' ', '_')}")

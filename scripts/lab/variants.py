@@ -227,3 +227,36 @@ ROUND1B = [
     v("E07 no bid while a contract is under $667 (fee > 3 bp/side)", "E", ls=dict(minc=667.0)),
     v("A24 sigma scaled by hour-of-day volatility", "A", ls=dict(hod=True)),
 ]
+
+
+# ---- round 3 (reports/wick_v3_prereg.md): refinements of R2-08, tested on the fresh 2021-2023 era
+R208 = dict(ls=dict(wbeta=10080), ai=dict(label="net_real", thr_q=0.6))
+E4 = core.EXTRA4
+
+
+def r3(name, ls=None, exit=None, ai=None, port=None):
+    return v(name, "R3", ls={**R208["ls"], **(ls or {})}, exit=exit, ai={**R208["ai"], **(ai or {})}, port=port)
+
+
+ROUND3 = [
+    r3("R3-01 R2-08 + threshold 65th pct", ai=dict(thr_q=0.65)),
+    r3("R3-02 R2-08 + threshold 70th pct", ai=dict(thr_q=0.70)),
+    r3("R3-03 R2-08 + threshold 75th pct", ai=dict(thr_q=0.75)),
+    r3("R3-04 R2-08 + predicted net > 0 bp", ai=dict(thr_floor=0.0)),
+    r3("R3-05 R2-08 + prediction-priority slots", port=dict(priority="pred")),
+    r3("R3-06 R2-08 + 8 slots x $1,875", port=dict(cap=8, target=1875.0)),
+    r3("R3-07 R2-08 + trend-regime features", ai=dict(feats=F + tuple(E4))),
+    r3("R3-08 R2-08 + size by perp liquidity", port=dict(size_liq=True)),
+    r3("R3-09 R2-08 + 10 seeds", ai=dict(seeds=(7, 11, 23, 42, 101, 3, 5, 13, 17, 19))),
+]
+
+
+def fresh_variants():
+    """The 14 variants of the fresh-era test: incumbents, earlier finalists, round-3 refinements."""
+    allv = {x["name"]: x for x in VARIANTS + ROUND1B}
+    r2 = {x["name"]: x for x in make_round2()}
+    names = ["R2-08 C29+A11", "R2-07 C29+B13", "R2-20 E07+C29+B08+A11+D02+F08", "R2-03 E07+B13"]
+    return [allv["V000 base (v1)"]] + [r2[n] for n in names] + ROUND3
+
+
+FRESH = None  # built lazily (make_round2 reads the round-1 results)

@@ -26,13 +26,30 @@ import wick_sim as ws  # noqa: E402
 
 COINS17 = ["ETH", "SOL", "XRP", "DOGE", "LTC", "LINK", "BCH", "SUI", "XLM", "HBAR", "NEAR", "AAVE", "HYPE", "ENA",
            "PEPE", "ONDO", "ZEC"]
-TEST0 = pd.Timestamp("2025-01-01")
-VAL = (pd.Timestamp("2025-01-01"), pd.Timestamp("2026-04-01"))
-HOLD = (pd.Timestamp("2026-04-01"), pd.Timestamp("2026-11-06"))
-DAYS = pd.date_range("2025-01-01", "2026-11-05", freq="D")
+# Era: "main" = 2024-01 .. 2026-11 (lab rounds 1-2); "early" = 2021-01 .. 2023-12, never used by any wick research
+# before reports/wick_v3_prereg.md (first model trained on 2021, test 2022-2023, fees held at today's bp per coin)
+ERA = os.environ.get("LAB_ERA", "main")
+if ERA == "early":
+    SRC, START, END = "minute_early", "2021-01-01", "2024-01-01"
+    TEST0 = pd.Timestamp("2022-01-01")
+    VAL = (pd.Timestamp("2022-01-01"), pd.Timestamp("2024-01-01"))
+    HOLD = (pd.Timestamp("2024-01-01"), pd.Timestamp("2024-01-01"))
+    DAYS = pd.date_range("2022-01-01", "2023-12-31", freq="D")
+    WF_Q, WF_M = ("2022Q1", "2023Q4"), ("2022-01", "2023-12")
+else:
+    SRC, START, END = "minute", "2024-01-01", "2026-11-06"
+    TEST0 = pd.Timestamp("2025-01-01")
+    VAL = (pd.Timestamp("2025-01-01"), pd.Timestamp("2026-04-01"))
+    HOLD = (pd.Timestamp("2026-04-01"), pd.Timestamp("2026-11-06"))
+    DAYS = pd.date_range("2025-01-01", "2026-11-05", freq="D")
+    WF_Q, WF_M = ("2025Q1", "2026Q4"), ("2025-01", "2026-11")
 FEE_USD, FUND_BP, HS_MULT = 0.20, 1.0, 1.5
 CAPITAL, TARGET, GROSS_CAP = 10000.0, 2500.0, 15000.0
 HS = wf.half_spread_bp()                                   # measured perp half-spread (bp) by coin
+_CT = os.path.join(ROOT, "reports", "lab", "cost_table.csv")
+_ct = pd.read_csv(_CT).set_index("coin") if os.path.exists(_CT) else None
+FEE_BP_NOW = _ct.fee_bp_side.to_dict() if _ct is not None else {}      # today's $0.20/contract in bp, per coin
+CONTRACT_USD_NOW = _ct.contract_usd.to_dict() if _ct is not None else {}
 BTC_HEDGE_BP = {"real": None, "base": 2.0 + 0.66}          # per side; real computed from price
 
 
@@ -56,7 +73,7 @@ def rbeta(ri, rf, w):
 class Data:
     def __init__(self, coins):
         need = sorted(set(["BTC", "ETH"] + list(coins)))
-        self.idx, self.D = ws.load_ohlc(coins=need)
+        self.idx, self.D = ws.load_ohlc(src=SRC, coins=need, start=START, end=END)
         self.lp = {c: np.log(self.D[c]["cf"]) for c in self.D}
         self.T = len(self.idx)
         self.i_test = int(self.idx.get_indexer([TEST0])[0])
@@ -126,8 +143,12 @@ class LevelSet:
             if t:
                 lvl = np.floor(lvl / t + 1e-9) * t if side == 1 else np.ceil(lvl / t - 1e-9) * t
             if minc:
-                with np.errstate(invalid="ignore"):
-                    lvl = np.where(ws.PERP[c][1] * shift(D[c]["cf"], 1) >= minc, lvl, np.nan)
+                if ERA == "early":                   # today's contract values decide (fees are today's)
+                    if CONTRACT_USD_NOW.get(c, 0) < minc:
+                        lvl = np.full_like(lvl, np.nan)
+                else:
+                    with np.errstate(invalid="ignore"):
+                        lvl = np.where(ws.PERP[c][1] * shift(D[c]["cf"], 1) >= minc, lvl, np.nan)
             tick = np.nan_to_num(ws.spot_tick(c) / D[c]["cf"], nan=1.0)
             with np.errstate(invalid="ignore"):
                 if side == 1:
@@ -170,6 +191,7 @@ class LevelSet:
 EXTRA1 = ["dist_7d_high_bp", "dist_3d_low_bp", "range_pos_1d", "ret15_bp", "ret60_bp", "btc_dist_1d_high_bp"]
 EXTRA2 = ["clv5", "sellvol5", "btc_sellvol5", "panic_breadth", "mins_since_prev_ep", "eps_24h"]
 EXTRA3 = ["hour_of_week", "mins_to_midnight", "us_session"]
+EXTRA4 = ["btc_dist_sma100_bp", "btc_ret30d_bp"]
 
 
 def add_extra(d, ls, X):
@@ -230,6 +252,15 @@ def add_extra(d, ls, X):
         f["us_session"] = ((ts.dayofweek < 5) & (mins >= 810) & (mins < 1200)).astype(int)
         out.append(f)
     E = pd.concat(out).loc[X.index]
+    # trend regime (BTC vs its 100-day average, BTC 30-day return), known at t-1
+    bcf = pd.Series(btc["cf"])
+    sma100 = bcf.rolling(144000, min_periods=100000).mean().to_numpy()
+    with np.errstate(invalid="ignore", divide="ignore"):
+        dist = p(np.log(btc["cf"] / sma100)) * 1e4
+        r30 = p(d.lp["BTC"] - shift(d.lp["BTC"], 43200)) * 1e4
+    pos = X.pos.to_numpy()
+    E["btc_dist_sma100_bp"] = dist[pos]
+    E["btc_ret30d_bp"] = r30[pos]
     return pd.concat([X, E.astype(np.float32)], axis=1)
 
 
@@ -435,7 +466,7 @@ def costs_bp(c, px, ty, model):
         hs = HS_MULT * HS.get(c, ws.PERP[c][2] / px * 1e4)
         return np.where((ty == 1) | (ty == 4), 0.0, ADV_TAKER_BP + hs)
     if model == "real":
-        fee = FEE_USD / (ws.PERP[c][1] * px) * 1e4
+        fee = FEE_BP_NOW[c] if ERA == "early" else FEE_USD / (ws.PERP[c][1] * px) * 1e4
         hs = HS_MULT * HS.get(c, ws.PERP[c][2] / px * 1e4)
         return fee + np.where((ty == 1) | (ty == 4), 0.0, hs)
     tick_bp = ws.PERP[c][2] / px * 1e4
@@ -446,6 +477,8 @@ def entry_cost_bp(c, px, model):
     if model == "adv":
         return FUND_BP + 0.0 * px
     if model == "real":
+        if ERA == "early":
+            return FEE_BP_NOW[c] + FUND_BP + 0.0 * px
         return FEE_USD / (ws.PERP[c][1] * px) * 1e4 + FUND_BP
     return 2.0 + 0.0 * px
 
@@ -488,7 +521,7 @@ def walk_forward(X, y, feats, params=None, seeds=(7, 11, 23), freq="Q", window_d
         params["monotone_constraints"] = [monotone.get(f, 0) for f in feats]
         params["monotone_constraints_method"] = "advanced"
     rounds = rounds or wick.ROUNDS
-    periods = pd.period_range("2025Q1", "2026Q4", freq="Q") if freq == "Q" else pd.period_range("2025-01", "2026-11", freq="M")
+    periods = pd.period_range(*WF_Q, freq="Q") if freq == "Q" else pd.period_range(*WF_M, freq="M")
     pred = pd.Series(np.nan, index=X.index)
     thr = pd.Series(np.nan, index=X.index)
     if X_extra is not None:
@@ -680,8 +713,10 @@ def hedge(tr, data, model):
 
 
 def portfolio(tr, cap=6, target=TARGET, gross_cap=GROSS_CAP, size=None, priority="coin", max_new_per_min=None,
-              regime=None, throttle=None, fractional=False, hedged=False, data=None, size_scale=None):
+              regime=None, throttle=None, fractional=None, hedged=False, data=None, size_scale=None):
     """Daily returns (fraction of $10k) under both cost models + trade stats."""
+    if fractional is None:
+        fractional = ERA == "early"
     if tr.empty:
         z = pd.Series(0.0, index=DAYS)
         return {"real": z, "base": z, "adv": z}, tr
