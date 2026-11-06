@@ -38,6 +38,16 @@ TICK_BP = {"BTC": 0.66, "ETH": 0.45, "SOL": 0.6, "XRP": 0.5, "DOGE": 1.0, "LTC":
 # half-spread paid on a market order, bp (Coinbase futures book; replaced by measured values when available)
 HALF_SPREAD_BP = {"BTC": 0.7, "ETH": 1.0, "SOL": 1.2, "XRP": 1.2, "DOGE": 2.0, "LTC": 3.0, "AVAX": 2.0, "LINK": 2.0}
 W = 4320                      # 3-day trailing window for beta and sigma
+PERP = {  # Coinbase Derivatives perp-style futures: (product, contract size in coin, tick in USD)
+    "BTC": ("BIP-20DEC30-CDE", 0.01, 5.0), "ETH": ("ETP-20DEC30-CDE", 0.1, 0.5), "SOL": ("SLP-20DEC30-CDE", 5, 0.01),
+    "XRP": ("XPP-20DEC30-CDE", 500, 0.0001), "DOGE": ("DOP-20DEC30-CDE", 5000, 0.00001),
+    "LTC": ("LCP-20DEC30-CDE", 5, 0.01), "AVAX": ("AVP-20DEC30-CDE", 10, 0.01), "LINK": ("LNP-20DEC30-CDE", 50, 0.001),
+    "ADA": ("ADP-20DEC30-CDE", 1000, 0.0001), "BCH": ("BCP-20DEC30-CDE", 1, 0.05), "SUI": ("SUP-20DEC30-CDE", 500, 0.0001),
+    "XLM": ("XLP-20DEC30-CDE", 5000, 0.00001), "HBAR": ("HEP-20DEC30-CDE", 5000, 0.00001),
+    "NEAR": ("NER-20DEC30-CDE", 500, 0.0001), "AAVE": ("AVE-20DEC30-CDE", 5, 0.01), "HYPE": ("HYP-20DEC30-CDE", 10, 0.01),
+    "ENA": ("ENA-20DEC30-CDE", 5000, 0.00001), "PEPE": ("PEP-20DEC30-CDE", 1e8, 1e-9),           # 1000PEPE perp: 100k x 1000 PEPE
+    "ONDO": ("OND-20DEC30-CDE", 1000, 0.0001),
+}
 
 
 def load_ohlc(src="minute", coins=ALL, start=START, end=END):
@@ -134,9 +144,9 @@ def run_book(O, Hh, Lo, Cf, lvl, tpd, stpd, side, tick, hmax, cooldown):
             if np.isnan(b) or np.isnan(Lo[t]) or np.isnan(O[t]):
                 continue
             if side == 1:
-                filled = (O[t] > b) and (Lo[t] <= b * (1.0 - tick))
+                filled = (O[t] > b) and (Lo[t] <= b * (1.0 - tick[t]))
             else:
-                filled = (O[t] < b) and (Hh[t] >= b * (1.0 + tick))
+                filled = (O[t] < b) and (Hh[t] >= b * (1.0 + tick[t]))
             if not filled:
                 continue
             pos = 1
@@ -171,7 +181,7 @@ def run_book(O, Hh, Lo, Cf, lvl, tpd, stpd, side, tick, hmax, cooldown):
             if Lo[t] <= st:
                 px = min(st, O[t])
                 ty_ = 2
-            elif Hh[t] >= tp * (1.0 + tick):
+            elif Hh[t] >= tp * (1.0 + tick[t]):
                 px = tp
                 ty_ = 1
             elif t - e_i >= hmax:
@@ -183,7 +193,7 @@ def run_book(O, Hh, Lo, Cf, lvl, tpd, stpd, side, tick, hmax, cooldown):
             if Hh[t] >= st:
                 px = max(st, O[t])
                 ty_ = 2
-            elif Lo[t] <= tp * (1.0 - tick):
+            elif Lo[t] <= tp * (1.0 - tick[t]):
                 px = tp
                 ty_ = 1
             elif t - e_i >= hmax:
@@ -253,7 +263,7 @@ def main():
                 tpd = theta * k * sig if np.isfinite(theta) else np.full_like(sig, np.nan)
                 stpd = np.full_like(sig, np.nan)
                 out = run_book(D[c]["open"], D[c]["high"], D[c]["low"], D[c]["cf"], lvl, tpd, stpd, side,
-                               TICK_BP[c] / 1e4, H, 0)
+                               np.full(len(lvl), TICK_BP[c] / 1e4), H, 0)
                 trs.append(trades_df(idx, c, side, out, fee_m, fee_t, HALF_SPREAD_BP[c]))
             tr = pd.concat(trs, ignore_index=True)
             r = dict(L=L, k=k, theta=theta, H=H, side=side, ref=ref,

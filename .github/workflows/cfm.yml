@@ -7,6 +7,8 @@ on:
         default: "2025-06-01"
       book_minutes:
         default: "45"
+      coins:
+        default: '["BTC","ETH","SOL","XRP","DOGE","LTC","AVAX","LINK","ADA"]'
 
 permissions:
   contents: write
@@ -32,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        coin: [BTC, ETH, SOL, XRP, DOGE, LTC, AVAX, LINK, ADA]
+        coin: ${{ fromJSON(inputs.coins) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -48,6 +50,7 @@ jobs:
           if-no-files-found: ignore
 
   book:
+    if: inputs.book_minutes != '0'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:

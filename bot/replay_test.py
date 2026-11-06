@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+"""Parity test: run the live engine (bot/engine.py) minute by minute over a historical window, with the
+network replaced by local data, and compare its trades with the vectorised research simulation of the
+same rule and the same model. Any difference is a bug in one of the two.
+
+Usage: python bot/replay_test.py 2026-01-12 2026-01-26
+"""
+import os
+import sys
+import tempfile
+
+import numpy as np
+import pandas as pd
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+sys.path.insert(0, os.path.join(ROOT, "scripts"))
+from bot import engine, market  # noqa: E402
+from edge import wick  # noqa: E402
+import wick_sim as ws  # noqa: E402
+
+CLOCK = {"t": None}
+SPOT, FUT = {}, {}
+
+
+def fake_now():
+    return CLOCK["t"] + pd.Timedelta(seconds=6)
+
+
+def fake_spot(coin, start, end):
+    df = SPOT[coin]
+    return df[(df.index >= pd.Timestamp(start)) & (df.index < pd.Timestamp(end).floor("min"))]
+
+
+def fake_fut(product, start, end):
+    df = FUT[product]
+    return df[(df.index >= pd.Timestamp(start)) & (df.index < pd.Timestamp(end))]
+
+
+def fake_book(product):
+    df = FUT[product]
+    t = CLOCK["t"]
+    last = df.close[(df.index < t) & (df.index >= t - pd.Timedelta(minutes=31))]
+    if last.empty:
+        return np.nan, np.nan
+    px = last.iloc[-1]
+    tick = SPEC_BY_PRODUCT[product].tick
+    return px - tick / 2, px + tick / 2
+
+
+def main(start, end):
+    global SPEC_BY_PRODUCT
+    specs = engine.load_specs()
+    SPEC_BY_PRODUCT = {s.product: s for s in specs.values()}
+    meta = __import__("json").load(open(os.path.join(ROOT, "bot", "model_meta.json")))
+    coins = meta["coins"]
+    for c in ["BTC"] + coins:
+        d = pd.read_parquet(os.path.join(ROOT, "data", "minute", f"{c}.parquet")).drop_duplicates("ts").set_index("ts")
+        SPOT[c] = d[["open", "high", "low", "close", "volume"]].astype(float)
+    for c in coins:
+        d = pd.read_parquet(os.path.join(ROOT, "data", "cfm", f"{c}.parquet")).drop_duplicates("ts").set_index("ts")
+        FUT[specs[c].product] = d[d.volume > 0][["open", "high", "low", "close", "volume"]].astype(float)
+    engine.now_utc = fake_now
+    market.spot_candles, market.futures_candles, market.book_top = fake_spot, fake_fut, fake_book
+    tmp = tempfile.mkdtemp()
+    cfg = dict(capital=10000, notional_frac=0.25, max_positions=99, daily_loss_limit=1.0, fee_bp_maker=2.0, fee_bp_taker=2.0)
+    CLOCK["t"] = pd.Timestamp(start)
+    eng = engine.Engine(mode="paper", cfg=cfg, state_path=os.path.join(tmp, "state.json"),
+                        log_path=os.path.join(tmp, "events.jsonl"))
+    eng.backfill()
+    import builtins
+    _print = builtins.print
+    builtins.print = lambda *a, **k: None                         # keep the replay quiet
+    try:
+        for t in pd.date_range(start, end, freq="min", inclusive="left"):
+            CLOCK["t"] = t
+            eng.step()
+    finally:
+        builtins.print = _print
+    ev = pd.read_json(os.path.join(tmp, "events.jsonl"), lines=True)
+    ent = ev[ev.kind == "fill_entry"][["ts", "coin", "px"]]
+    ext = ev[ev.kind == "fill_exit"][["ts", "coin", "kind", "px", "entry_px", "net_bp"]]
+    print(f"engine: {len(ent)} entries, {len(ext)} exits, mean net {ext.net_bp.mean():.1f} bp")
+    # ---- vectorised research simulation of the same rule + same model over the same window
+    idx, D = ws.load_ohlc(coins=["BTC"] + coins)
+    pn = wick.panel({c: D[c]["cf"] for c in D}, {c: D[c]["vol"] for c in D}, coins, idx)
+    import lightgbm as lgb
+    m = lgb.Booster(model_file=os.path.join(ROOT, "bot", "model.txt"))
+    rows = []
+    i0, i1 = idx.get_indexer([pd.Timestamp(start), pd.Timestamp(end)])
+    for c in coins:
+        sp = specs[c]
+        F = FUT[sp.product].reindex(idx)
+        fcf = F.close.ffill(limit=30).to_numpy()
+        basis = wick.shift(fcf / D[c]["cf"], 1)
+        lv = wick.round_down(pn[c].level.to_numpy() * basis, sp.tick)
+        lv[:i0] = np.nan
+        lv[i1:] = np.nan
+        pred = np.full(len(idx), -np.inf)
+        rng = np.arange(i0, i1)
+        pred[rng] = m.predict(pn[c].iloc[rng][wick.FEATS])
+        lv[pred <= meta["threshold"]] = np.nan
+        # engine skips when level >= best bid (= last futures close - tick/2 in this replay)
+        lv[lv >= wick.shift(fcf, 1) - sp.tick / 2] = np.nan
+        tick = np.nan_to_num(sp.tick / fcf, nan=1.0)
+        ei, xi, ep, xp, ty = ws.run_book(F.open.to_numpy(), F.high.to_numpy(), F.low.to_numpy(), fcf, lv,
+                                         wick.THETA * wick.K * pn[c].sig.to_numpy(), np.full(len(idx), np.nan), 1,
+                                         tick, wick.H, 0)
+        for a, b, p, q, y in zip(ei, xi, ep, xp, ty):
+            rows.append(dict(coin=c, entry_ts=idx[a], exit_ts=idx[b], entry_px=p, type=y))
+    R = pd.DataFrame(rows)
+    print(f"research: {len(R)} trades")
+    e2 = ent.assign(minute=pd.to_datetime(ent.ts).dt.floor("min") - pd.Timedelta(minutes=1))
+    both = R.merge(e2, left_on=["coin", "entry_ts"], right_on=["coin", "minute"], how="outer", indicator=True)
+    print(both._merge.value_counts().to_string())
+    mism = both[both._merge != "both"]
+    if len(mism):
+        print(mism[["coin", "entry_ts", "minute", "entry_px", "px", "_merge"]].head(20).to_string())
+    else:
+        print("PARITY OK: identical entry minutes")
+    print("max entry price diff:", float(np.nanmax(np.abs(both.entry_px - both.px))) if len(both) else 0)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1], sys.argv[2])
