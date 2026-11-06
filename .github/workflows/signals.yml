@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: daily-signals
@@ -36,3 +37,12 @@ jobs:
           git commit -m "Signals $(date -u +%Y-%m-%d)"
           git pull --rebase origin main
           git push
+      - name: Alert when a trade is needed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if python -c "import json,sys; sys.exit(0 if json.load(open('signals/latest.json'))['action_needed'] else 1)"; then
+            asof=$(python -c "import json; print(json.load(open('signals/latest.json'))['asof'])")
+            target=$(python -c "import json; t=json.load(open('signals/latest.json'))['live_target']; print('BUY BTC + ETH' if t=='BTC+ETH' else 'SELL TO CASH')")
+            gh issue create --title "Trade signal ${asof}: ${target}" --body-file signals/latest.md
+          fi
