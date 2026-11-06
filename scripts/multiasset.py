@@ -109,16 +109,19 @@ def stats_row(name, x):
 
 
 def lever_for(x, target):
+    """Smallest leverage whose compounded return since Jul 2017 reaches `target` (CAGR rises with leverage only up to
+    the Kelly point, so scan a grid instead of bisecting). Returns (leverage, max drawdown) or (nan, nan)."""
     xx = x.loc["2017-07-01":]
     rf = book.rf_daily(xx.index)
-    lo, hi = 0.0, 20.0
-    for _ in range(60):
-        mid = (lo + hi) / 2
-        eq_end = (1 + mid * xx + rf).clip(lower=0).prod()
-        tot = eq_end ** (365.25 / len(xx)) - 1 if eq_end > 0 else -1.0
-        lo, hi = (mid, hi) if tot < target else (lo, mid)
-    eq = (1 + lo * xx + rf).cumprod()
-    return lo, float((eq / eq.cummax() - 1).min())
+    for L in np.arange(0.05, 8.0, 0.01):
+        g = (1 + L * xx + rf).clip(lower=0)
+        eq = g.cumprod()
+        if eq.iloc[-1] <= 0:
+            break
+        cagr = eq.iloc[-1] ** (365.25 / len(xx)) - 1
+        if cagr >= target:
+            return float(L), float((eq / eq.cummax() - 1).min())
+    return float("nan"), float("nan")
 
 
 def main():
@@ -181,6 +184,8 @@ def main():
     code = prods.product_id.str.split("-").str[0]
     best = prods.assign(code=code).sort_values("usd_vol", ascending=False).drop_duplicates("code").set_index("code")
     L100 = float(lev[(lev.book == keep) & (lev.target == 1.0)].leverage.iloc[0])
+    if not np.isfinite(L100):
+        L100 = float(lev[(lev.book == "C3") & (lev.target == 1.0)].leverage.iloc[0])
     w_c3, w_ma = (a1, b1) if keep != "C3" else (1.0, 0.0)
     cap_rows = []
     last = slice("2025-11-01", None)
