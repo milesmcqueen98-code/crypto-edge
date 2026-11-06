@@ -17,8 +17,13 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install pandas numpy lightgbm requests pyarrow
-      - run: python bot/run.py --mode paper --minutes ${{ inputs.minutes }} --state-dir /tmp/smoke
+      - name: v1 and the v2 candidate side by side
+        run: |
+          python bot/run.py --mode paper --minutes ${{ inputs.minutes }} --state-dir /tmp/smoke &
+          python bot/run.py --mode paper --minutes ${{ inputs.minutes }} --model-dir bot/v2 --state-dir /tmp/smoke_v2 &
+          wait
       - if: always()
         run: |
-          echo "---- events"; cat /tmp/smoke/events.jsonl || true
-          echo "---- state"; cat /tmp/smoke/state.json || true
+          echo "---- v1 events"; cat /tmp/smoke/events.jsonl || true
+          echo "---- v2 events"; cat /tmp/smoke_v2/events.jsonl || true
+          echo "---- v2 state"; cat /tmp/smoke_v2/state.json || true
