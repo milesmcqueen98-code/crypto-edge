@@ -1,0 +1,31 @@
+{
+  "selected_mode": 0,
+  "selected_name": "S0 symmetric",
+  "rule": "highest dev Sharpe at base latency, risk-averse queue, 0% maker fee, $10K book",
+  "dev_candidates": [
+    {
+      "mode": 0,
+      "sharpe_fee0": -54.49741241851103,
+      "t_fee0": -12.102238362605178,
+      "breakeven_maker_bp": -0.8525462625187165,
+      "V_day": 117225646.00056148,
+      "gross_day": -9994.02863691208
+    },
+    {
+      "mode": 1,
+      "sharpe_fee0": -57.62291371399369,
+      "t_fee0": -12.796318319834748,
+      "breakeven_maker_bp": -0.8179280623383423,
+      "V_day": 98023196.72056535,
+      "gross_day": -8017.592335786216
+    },
+    {
+      "mode": 2,
+      "sharpe_fee0": -61.31039392326082,
+      "t_fee0": -13.61519691368853,
+      "breakeven_maker_bp": -0.7415933880208092,
+      "V_day": 30254099.603234675,
+      "gross_day": -2243.6240226281825
+    }
+  ]
+}
