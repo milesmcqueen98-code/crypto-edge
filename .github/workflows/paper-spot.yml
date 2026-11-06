@@ -1,0 +1,44 @@
+name: paper-spot
+
+# Forward paper test of the spot bot with the $1M rules (bot/spot/, $250K paper capital, capture 0.5, VIP-1 fees) on
+# live public Coinbase data: no keys, no money. Each job runs ~5h45m; the schedule restarts it every 6 hours, and the
+# bot settles the gap from the candles (catch_up). State carries over through paper_spot/state.json.
+on:
+  schedule:
+    - cron: "33 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      minutes:
+        default: "345"
+
+concurrency:
+  group: paper-spot
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  paper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas numpy lightgbm requests pyarrow
+      - name: Paper trade the spot bot ($1M rules, $250K paper capital)
+        run: |
+          python bot/spot/run.py paper --minutes ${{ inputs.minutes || '345' }} > spot.out 2>&1 || true
+          grep -E '"kind": "(fill_entry|fill_exit|halt|error|warning|catch_up)"' spot.out | tail -n 40 || true
+          python bot/spot/run.py report | tail -n 40
+      - name: Commit paper log
+        if: always()
+        run: |
+          git config user.name "crypto-edge-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add paper_spot
+          git diff --cached --quiet && exit 0
+          git commit -m "Spot paper log $(date -u +%Y-%m-%dT%H:%MZ)"
+          for i in 1 2 3 4 5; do git pull --rebase origin main && git push && break; sleep $((i*5)); done

@@ -1,0 +1,22 @@
+# systemd unit for the live spot bot. Installed by setup_vm.sh as /etc/systemd/system/wickbot.service.
+# Keys and the live-trading switch live in /etc/wickbot.env (root-readable only), never in the repo.
+[Unit]
+Description=Wick catcher spot bot (Coinbase Advanced, $1M rules)
+After=network-online.target time-sync.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=wick
+WorkingDirectory=/home/wick/crypto-edge
+EnvironmentFile=/etc/wickbot.env
+ExecStart=/home/wick/crypto-edge/.venv/bin/python bot/spot/run.py live --config bot/spot/config.live.json
+Restart=always
+RestartSec=15
+# the bot reconciles orders and balances on every start, so a restart is safe
+TimeoutStopSec=30
+StandardOutput=append:/home/wick/crypto-edge/live_spot/stdout.log
+StandardError=append:/home/wick/crypto-edge/live_spot/stdout.log
+
+[Install]
+WantedBy=multi-user.target
