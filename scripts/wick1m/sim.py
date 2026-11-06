@@ -99,9 +99,13 @@ def above_usd(d, i0, i1, level):
     return tot
 
 
-def precompute(tag):
+def precompute(tag, bitstamp=True, out_tag=None):
     start, end, src, _ = PERIODS[tag]
     tr = pd.read_parquet(os.path.join(OUT, f"trades_{tag}.parquet"))
+    ticks = {}
+    if tag == "wide":                          # spot execution: estimated spot ticks for every coin (trades_wide.py)
+        tk = pd.read_csv(os.path.join(OUT, "spot_ticks_wide.csv"))
+        ticks = dict(zip(tk.coin, tk.tick))
     idx = pd.date_range(start, end, freq="min", inclusive="left")
     pm = perp_mult()
     rows = []
@@ -111,15 +115,18 @@ def precompute(tag):
             p = load_venue(os.path.join(ROOT, "data", "cfm", f"{c}.parquet"), idx, pm[c])
             if p is not None:
                 V["perp"] = p
-        b = load_venue(os.path.join(ROOT, "data", "bitstamp", f"{c}.parquet"), idx)
+        b = load_venue(os.path.join(ROOT, "data", "bitstamp", f"{c}.parquet"), idx) if bitstamp else None
         if b is not None:
             V["bitstamp"] = b
         adv, vol_d = daily_stats(V, idx)
         S = V["spot"]
-        try:                                   # the lab's fill tick: the coarser of the spot and perp ticks
-            tick_abs = ws.spot_tick(c)
-        except KeyError:
-            tick_abs = ws.SPOT_TICK.get(c, np.nan)
+        if c in ticks:
+            tick_abs = ticks[c]
+        else:
+            try:                               # the lab's fill tick: the coarser of the spot and perp ticks
+                tick_abs = ws.spot_tick(c)
+            except KeyError:
+                tick_abs = ws.SPOT_TICK.get(c, np.nan)
         for t in tr[tr.coin == c].itertuples():
             i0 = idx.get_indexer([t.ts])[0]
             if i0 < 1:
@@ -180,8 +187,9 @@ def precompute(tag):
             if f"{p_}{n}" not in P:
                 P[f"{p_}{n}"] = 0.0
             P[f"{p_}{n}"] = P[f"{p_}{n}"].fillna(0.0)
-    P.to_pickle(os.path.join(OUT, f"pre_{tag}.pkl"))
-    print(f"precomputed {len(P)} tranche rows for {P.ts.nunique()} trades -> pre_{tag}.pkl")
+    name = out_tag or tag
+    P.to_pickle(os.path.join(OUT, f"pre_{name}.pkl"))
+    print(f"precomputed {len(P)} tranche rows for {P.ts.nunique()} trades -> pre_{name}.pkl")
     return P
 
 
@@ -299,4 +307,5 @@ def period_stats(daily, C, lo, hi):
 
 if __name__ == "__main__":
     if sys.argv[1] == "pre":
-        precompute(sys.argv[2])
+        bs = os.environ.get("NO_BITSTAMP") != "1"
+        precompute(sys.argv[2], bitstamp=bs, out_tag=sys.argv[3] if len(sys.argv) > 3 else None)
