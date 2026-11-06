@@ -1,4 +1,4 @@
-# Crypto edge: findings and live rules (updated Nov 6, 2026, scale round)
+# Crypto edge: findings and live rules (updated Nov 6, 2026, scale round 2)
 
 Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly signals, paper-trading bot)
 
@@ -17,6 +17,9 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   - v1 keeps paper trading as the control.
   - Rules: stop R2-08 if its realistic net per trade is below −12 bp after about 70 paper trades. Go back to v1 if
     v1's realistic net per trade is higher after 60 trades in each book.
+- **Scale round 2 (Nov 6):** adding Coinbase's non-crypto contracts (and CME bonds/FX) as a trend sleeve lowered
+  Sharpe; C3 stays the highest-Sharpe book that fits $5M (1.41 since 2017, 0.52 since 2024). 1.9x leverage gave
+  100%/yr since 2017 but only 20%/yr since 2024, with a −40% drawdown (section below).
 - **Scale round (Nov 6):** the wick catcher is already largely market neutral (daily beta 0.03) and reaches ~100%/yr only at
   small size (2x the paper size, up to roughly $25–50K). Its profit tops out near $50K a year; it cannot carry $5M
   (section below).
@@ -696,12 +699,54 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
   - $5M + high return: directional (C3 at 1.5x: ~60% a year in backtest, −33% drawdown).
 - Untested ways to raise capacity: more books for the same dips (the Coinbase spot long tail, since dip bids don't need perps, and other NY-licensed spot venues such as Gemini and Bitstamp); perp-vs-spot basis wicks (market neutral by construction); exits worked over several minutes.
 
+## Scale round 2 (Nov 6): highest Sharpe at $5M — multi-asset trend doesn't help
+- Goal set by Miles: $5M of capacity and high Sharpe; returns come from leverage.
+- Pre-registered (reports/multiasset_prereg.md) before any data was downloaded: add a trend sleeve built from the
+  non-crypto contracts Coinbase Derivatives lists (US500, Tech100, China index, gold, silver, crude oil, natural gas,
+  copper, platinum; ETF total-return proxies), plus a CME extension (Treasuries, dollar, euro, yen).
+  - Carver EWMAC book defaults (8/32–64/256 days), equal instrument weights, IDM 2.1–2.2 from dev correlations.
+  - Combined with C3 by inverse dev volatility (the rule that built C3). Costs 3–6 bp per side; C3 at realistic costs.
+- Code: scripts/multiasset.py, scripts/fetch_multiasset.py. Results: reports/multiasset.csv, multiasset_leverage.csv,
+  multiasset_capacity.csv, multiasset_returns.parquet.
+
+| Sharpe above T-bills | Dev | 2024+ | Jul 2017 – Nov 2019 | 7 years | Jul 2017+ |
+|---|---|---|---|---|---|
+| C3 | 1.62 | 0.52 | 1.93 | 1.21 | 1.41 |
+| Multi-asset trend, Coinbase-listed | 0.27 | 0.51 | −0.16 | 0.37 | 0.25 |
+| Same + CME bonds and currencies | 0.66 | 0.02 | 0.23 | 0.41 | 0.37 |
+| P1 = C3 + Coinbase sleeve | 1.25 | 0.69 | 1.32 | 1.03 | 1.10 |
+| P2 = C3 + Coinbase + CME sleeve | 1.54 | 0.35 | 1.68 | 1.10 | 1.24 |
+
+- The sleeves barely move with C3 (correlation 0.14), but their own Sharpe is too low (~0.3–0.4 since 2007), so
+  equal risk dilutes C3. Neither passes the replacement rule. An in-sample optimizer would have given the sleeve
+  ~29% weight (not a trial).
+- **Capacity:** C3 fits $5M on Coinbase alone. At 1.9x:
+  - BTC: average position $1.7M (max $6.1M = 4% of perp open interest); $2.0M traded a day = 0.3% of perp volume.
+  - ETH: average $1.3M (max $4.7M = 9% of open interest); $1.45M a day = 1.1% of volume.
+  - Coinbase spot and CME futures can take anything beyond.
+- **Leverage (C3, realistic costs):**
+
+| Leverage | Jul 2017+ | Nov 2019+ | 2024+ | Max drawdown |
+|---|---|---|---|---|
+| 1.0x | 52%/yr | 42% | 16% | −23% |
+| 1.5x | 79% | 61% | 19% | −33% |
+| 1.9x | 100% | 75% | 20% | −40% |
+| 2.5x | 132% | 95% | 19% | −51% |
+
+  - Since 2024, leverage past ~1.5x adds drawdown, not return: at a Sharpe near 0.5 the extra volatility drag
+    cancels the extra exposure.
+- Deflated Sharpe of C3: 0.11 (N = 484). Not proven skill.
+- **Verdict:** C3 is still the highest-Sharpe book that holds at $5M. The wick catcher adds ~$50K a year on top.
+- Untested next candidate for scalable Sharpe: short BTC volatility, delta-hedged (listed BTC options at CME or on
+  IBIT are deep enough for $5M). It earns a premium that trend complements (trend profits in the crashes that hurt
+  short volatility), but it carries crash risk and employer rules on options.
+
 ## Method notes
 - Point-in-time top-50 universe by 30-day median dollar volume.
 - Walk-forward retraining every quarter, with an 8-day purge between training data and the test period.
 - Hyperparameters frozen before seeing any results.
 - Weekly-only trend checks were fragile: 7%–26% CAGR depending on the weekday. Fixed with daily checks and averaging across all 7 weekday phases.
-- About 482 variants in the earlier rounds (incl. the maker and C3 upgrade rounds), about 2,000 setups in the execution round and
+- About 484 variants in the earlier rounds (incl. the maker, C3 upgrade and scale-2 rounds), about 2,000 setups in the execution round and
   130 in the wick v2 lab, so an improvement needs t ≈ 3 to be believable.
 - Tick-data rounds: pre-register, freeze the dev choice in a commit, then run the hold-out once. Raw tick files stay on the
   CI runner.
