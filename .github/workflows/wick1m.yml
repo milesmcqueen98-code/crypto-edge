@@ -1,0 +1,27 @@
+name: wick1m-wide
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  wide:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas pyarrow numpy numba lightgbm scipy scikit-learn
+      - run: python scripts/wick1m/trades_wide.py
+      - name: Commit
+        run: |
+          git config user.name "crypto-edge-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add reports/wick1m/trades_wide.parquet reports/wick1m/spot_ticks_wide.csv
+          git diff --cached --quiet && exit 0
+          git commit -m "Wick at \$1M: Phase 2 trade list (R2-08 on the wider spot universe)"
+          for i in 1 2 3 4 5; do git pull --rebase -X theirs origin main && git push && break; sleep $((i*7)); done
