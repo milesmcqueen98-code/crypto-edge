@@ -1,0 +1,95 @@
+# Medallion round: every Renaissance strategy, crypto version — pre-registration
+
+Committed 2026-11-06 before any of the new data (data/alt/) was opened. Rules here are fixed; deviations go in the
+log at the bottom with a reason.
+
+## Goal (Miles, Nov 6)
+
+Trade crypto the way Medallion did; try every strategy family the book describes Renaissance trying; get new data
+where needed; must be implementable by a retail investor in New York; priority is high Sharpe at $5M (returns via
+leverage).
+
+## What the book says Renaissance tried → crypto test here
+
+| Book (who) | Crypto test (family) |
+|---|---|
+| Sunspots, lunar phases (Simons, Baum, Straus) — failed | F0 placebo: lunar phase. Must fail; checks our false-positive rate |
+| Weather → coffee (Straus); sentiment and futures traders' holdings — few patterns | F1 positioning and sentiment: fear & greed, funding, open interest, top-trader and taker ratios |
+| Markov-chain / hidden Markov models (Ax, Baum; Brown & Mercer's background) | F2 HMM regime book |
+| "Find past periods like now and see what prices did" — Carmona's kernel regression | F3 nearest-neighbour (kernel) pattern book |
+| Trend-following (Axcom) | Already tested: C3 is the base |
+| Reversion; "24-hour effect": yesterday predicts today; cross-period correlations (Berlekamp, Laufer) | F4 daily return-sequence signals |
+| Day-of-week (Monday follows Friday; Tuesday reverts), best day and time, week split into sessions (Laufer) | F5 calendar and session seasonality, incl. weekend / CME-gap and funding-hour effects |
+| Pairs and relative value | F6 cointegration pairs on Coinbase-perp coins |
+| Factor models → statistical arbitrage, predictions relative to peers (Frey, Brown, Mercer) | F7 cross-sectional factor book (residual reversal, momentum, funding carry, open interest) |
+| "Hundreds of metrics", alternative data | F8 alternative data: Coinbase premium, CME basis, stablecoin supply, ETF flows, implied vol, on-chain, macro |
+| Humans most predictable under stress; option buyers overpay | F9 short volatility (variance risk premium) |
+| One model for everything; online learner searching for signals (Laufer, Brown & Mercer) | F10 one combined model (ridge and LightGBM) |
+| Cost model "The Devil"; leverage via basket options | Realistic Coinbase costs everywhere; leverage via perps |
+
+## Data (all free and public; offshore-exchange data used only as research signals)
+
+Coinbase hourly/daily prices (existing); Binance USD-M archive (funding since 2019-09, 1h perp klines, 5-minute
+open-interest and taker/top-trader metrics since 2021-12 for BTC/ETH/SOL/XRP/DOGE); Binance spot 1h (Coinbase
+premium); Deribit DVOL (2021-03+); alternative.me fear & greed (2018-02+); DefiLlama stablecoin supply; Coin Metrics
+community on-chain; blockchain.com hash rate/transactions; Farside ETF flows (2024+); yfinance CME BTC/ETH futures,
+VIX, dollar index, 10y yield, S&P and Nasdaq futures, gold.
+
+## Timing and periods
+
+- Daily bars close at 00:00 UTC (Coinbase). A signal for day t uses only data published by the end of day t (US
+  market data from the prior US close, one-day lag for on-chain and ETF flows); it predicts day t+1 (or t+1..t+7).
+- Development: 2020-01-01 – 2023-12-31 (from first data where later). Hold-out: 2024-01-01 – 2026-11-05, opened once.
+- Hourly families: development 2017-07-01 – 2023-12-31, hold-out 2024+.
+
+## Signal screen (F0, F1, F4, F8; time-series, BTC and ETH, 1-day and 7-day forward returns)
+
+Each signal is a rolling z-score (365-day window, 90-day minimum) of the raw quantity:
+- F0: cosine of lunar phase.
+- F1: fear & greed level and 7-day change; funding (daily mean) level and 7-day change; open interest 1-day and 7-day
+  change; top-trader long/short ratio (accounts and positions); taker buy/sell volume ratio.
+- F4: returns over 1, 2, 3, 5, 20 days; 5/30-day realized-vol ratio; volume z-score; distance from 20-day high.
+- F8: Coinbase premium level and 7-day change; CME basis (annualized, front month); stablecoin supply growth 7d and
+  30d; DVOL level, DVOL − 30-day realized vol, DVOL 7-day change; on-chain growth (active addresses, transactions,
+  fees, hash rate) 30d, MVRV and NVT levels; prior-day VIX change, dollar index, 10y yield, S&P and Nasdaq futures
+  and gold returns. ETF flows start in 2024, inside the hold-out, so they are described but cannot pass.
+- Statistic: Spearman IC between signal and forward return; t-stat with Newey-West lags = horizon.
+- **Pass:** development |t| ≥ 3, then the hold-out has the same sign and |t| ≥ 2.
+
+## Books (one fixed specification each; no tuning)
+
+- **F2 HMM:** 2-state Gaussian HMM on daily log returns (BTC; ETH), refit monthly on all prior data (min 2 years);
+  long when the filtered probability of the higher-mean state > 0.5, else flat; and a long/short version.
+- **F3 nearest-neighbour:** features = last 1, 2, 3, 5, 10, 20-day returns and 20-day vol (z-scored); predict
+  next-day return as the mean of the 50 nearest past days (Euclidean, all prior data, ≥ 1 year); position =
+  sign(prediction), long/short, vol-targeted.
+- **F5 seasonality:** (a) hour-of-week book: trailing 52-week mean return per hour-of-week per coin (9 coins); hold
+  the hour when |mean| > 2 × one-way cost; (b) day-of-week book: trailing 104-week mean by weekday, daily
+  long/short; (c) weekend/CME-gap: the Friday 21:00 → Sunday 23:00 UTC move, faded from Sunday 23:00 to Monday
+  21:00 UTC; (d) funding-hour book: the hour into 00/08/16 UTC vs the hour after.
+- **F6 pairs:** monthly, pairs among the Coinbase-perp coins with Engle-Granger p < 0.05 on the trailing year; enter
+  at |z| > 2 of the spread, exit at |z| < 0.5 or after 20 days; equal risk per pair.
+- **F7 factor book:** daily, Coinbase-perp coins with Binance perp history; z-scored signals of 1-day residual reversal
+  vs BTC, 7- and 30-day momentum, funding carry (short high funding), 7-day open-interest change; combined with
+  signs and equal weights from development ICs; dollar- and beta-neutral; plus funding carry alone.
+- **F9 short volatility:** each day sell one day of BTC (and ETH) variance at DVOL²/365 and pay the realized squared
+  return (delta-hedged short straddle proxy), minus 1 vol point of option spread per 30 days; scaled to 20% vol.
+- **F10 one model:** all F0/F1/F4/F8 signals, ridge (alpha fixed at 10 on standardized features) and LightGBM (book
+  defaults, 200 trees, depth 3), retrained monthly on prior data from 2021; predicts next-day BTC and ETH returns;
+  position = prediction / its trailing 1-year std, capped ±1, vol-targeted.
+- Costs: Coinbase perps BTC 2.5 bp, ETH 6.5 bp, alts measured half-spread + $0.20/contract (reports/lab/cost_table.csv
+  where available, else 15 bp) per side; F9 as stated. All Sharpe ratios above T-bills, daily.
+
+## Pass bars and combination
+
+- **A book passes** if development Sharpe ≥ 1.0 and hold-out Sharpe ≥ 0.5 with the same sign.
+- **Portfolio:** passing books are added to C3 by inverse development volatility. The portfolio replaces C3 only if
+  its development Sharpe is higher and neither hold-out is worse (same rule as the earlier rounds).
+- Report: deflated Sharpe (N = 484 earlier trials + this round's books), capacity at $5M against Coinbase volume and
+  open interest, leverage for 50% and 100% a year with the drawdown.
+- Trial count this round: 17 books (F2 4 = BTC/ETH × long-flat/long-short; F3 2; F5 4; F6 1; F7 2; F9 2; F10 2).
+  The signal screen is ~150 tests, handled by the t ≥ 3 + hold-out rule, not by deflated Sharpe.
+
+## Deviation log
+
+(none yet)
