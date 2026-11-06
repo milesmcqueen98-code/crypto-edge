@@ -132,7 +132,11 @@ def main():
         P = P[P.cap.astype(str) == "6"]
         P["version"] = P.strategy.map({"rule only": "No AI", "rule + AI": "With AI"}) + ", " + P.venue + " prices, " + \
             P.fills.map({"base": "fill needs 1 tick", "strict": "fill needs 3 ticks + volume"})
-        P[["version", "window", "trades", "per_day", "net_bp", "sharpe", "t", "ann_ret", "maxdd", "worst_day"]].to_csv(
+        P["id"] = (P.strategy.map({"rule only": "noai", "rule + AI": "ai"}) + "_" + P.venue + "_" + P.fills + "_" +
+                   np.where(P.window.str.startswith("all"), "all", "eth_sol_xrp"))
+        P["window"] = np.where(P.window.str.startswith("all"), "17 perps, Dec 13 2025 – Nov 5 2026", "ETH, SOL, XRP perps, Aug 16 2025 – Nov 5 2026")
+        P = P[~((P.venue == "spot") & (P.fills == "strict"))]          # strict fills only change the futures rows
+        P[["id", "version", "window", "trades", "per_day", "net_bp", "sharpe", "t", "ann_ret", "maxdd", "worst_day"]].to_csv(
             os.path.join(OUT, "wick_futures_portfolio.csv"), index=False)
     print(H.round(2).to_string(index=False))
 
