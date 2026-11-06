@@ -97,85 +97,122 @@ def load_futures(c, idx):
         "cf": df["close"].ffill(limit=30).to_numpy(np.float64), "first": df["close"].first_valid_index()}
 
 
+def fut_specs():
+    df = pd.read_csv(os.path.join(ROOT, "reports", "cfm_products.csv"))
+    df = df[df.expiry_type == "PERPETUAL"]
+    return {r.root: (r.product_id, float(r.contract_size), float(r.price_increment)) for r in df.itertuples()}
+
+
+def fee_fut(c, px_fut, size_fut, maker):
+    """Fee in bp for a futures fill (prices in futures units)."""
+    if FEES == "contract":
+        return wr.FEE_CONTRACT_USD / (size_fut * px_fut) * 1e4
+    return wr.fee_bp(FEES, c, px_fut, maker)
+
+
+def portfolio(tr, start, cap=None, notional=0.25):
+    if cap:
+        tr = tr.sort_values("ts").reset_index(drop=True)
+        keep, open_ = [], []
+        for r in tr.itertuples():
+            open_ = [e for e in open_ if e > r.ts]
+            if len(open_) < cap:
+                keep.append(r.Index)
+                open_.append(r.exit_ts)
+        tr = tr.loc[keep]
+    days = pd.date_range(start, pd.Timestamp(ws.END) - pd.Timedelta(days=1), freq="D")
+    d = (tr.set_index("exit_ts").net_bp * notional / 1e4).resample("D").sum().reindex(days, fill_value=0.0)
+    eq = d.cumsum()
+    sd = d.std()
+    return dict(trades=len(tr), per_day=len(tr) / len(days), net_bp=tr.net_bp.mean(), hit=(tr.net_bp > 0).mean(),
+                sharpe=d.mean() / sd * np.sqrt(365) if sd > 0 else np.nan, t=d.mean() / sd * np.sqrt(len(d)) if sd > 0 else np.nan,
+                ann_ret=d.mean() * 365, maxdd=(eq - eq.cummax()).min(), worst_day=d.min()), d
+
+
 def main():
     t0 = time.time()
     idx, D = ws.load_ohlc(coins=["BTC"] + COINS)
     cf = {c: D[c]["cf"] for c in D}
     vol = {c: D[c]["vol"] for c in D}
-    pn = wick.panel(cf, vol, COINS, idx)
-    X = spot_training_set(D, pn, idx, COINS)
+    LV = wick.levels(cf, COINS)
+    spot_c = spot_candidates(D, LV, COINS)
+    FS = fut_specs()
+    fut, fut_c, lvl_fut = {}, {}, {}
+    for c in COINS:
+        F = load_futures(c, idx)
+        if F is None or c not in FS:
+            continue
+        fut[c] = F
+        basis = wick.shift(F["cf"] / D[c]["cf"], 1)
+        lvl_fut[c] = wick.round_down(LV[c][0] * basis, FS[c][2])
+        tick_f = np.nan_to_num(FS[c][2] / F["cf"], nan=1.0)
+        fut_c[c] = candidates(F["open"], F["low"], lvl_fut[c], tick_f)
+    keep_rows = {c: np.union1d(spot_c[c], fut_c.get(c, np.array([], dtype=np.int64))) for c in COINS}
+    pn = wick.panel(cf, vol, COINS, idx, keep_rows=keep_rows)
+    X = spot_training_set(D, pn, idx, COINS, lv=LV, cands=spot_c)
     models = quarterly_models(X)
     print(f"spot candidates {len(X)}; models for {len(models)} quarters ({time.time() - t0:.0f}s)", flush=True)
     hs_meas = half_spread_bp()
     print("measured futures half-spreads (bp):", {k: round(v, 2) for k, v in hs_meas.items()})
-    rows, all_tr = [], []
-    for c in COINS:
-        F = load_futures(c, idx)
-        if F is None:
-            print(f"{c}: no futures data")
-            continue
-        start = (F["first"] + pd.Timedelta(days=1)).normalize()
-        i0 = idx.get_indexer([start])[0]
-        sl = slice(i0, len(idx))
-        size, tick_usd = ws.PERP[c][1], ws.PERP[c][2]
-        basis = wick.shift(F["cf"] / D[c]["cf"], 1)
-        lvl_spot, sig = pn[c].level.to_numpy(), pn[c].sig.to_numpy()
-        lvl_f = wick.round_down(lvl_spot * basis, tick_usd)
-        tick_f = np.nan_to_num(tick_usd / F["cf"], nan=1.0)
-        # AI decision at every futures-candidate minute (features are the spot features at t-1)
-        cand = candidates(F["open"], F["low"], lvl_f, tick_f)
-        cand = cand[cand >= i0]
+
+    def ai_keep(c, cand):
         keep = np.zeros(len(idx), dtype=bool)
+        cand = cand[idx[cand] >= pd.Timestamp("2025-01-01")]
         if len(cand):
-            feats = pn[c].iloc[cand][wick.FEATS]
+            feats = pn[c].loc[idx[cand]][wick.FEATS]
             qs = pd.PeriodIndex(idx[cand], freq="Q")
             for q in np.unique(qs):
                 m, thr = models[q]
-                j = cand[qs == q]
-                keep[j] = m.predict(feats[qs == q]) > thr
+                keep[cand[qs == q]] = m.predict(feats[qs == q]) > thr
+        return keep
+
+    rows, all_tr = [], []
+    for c, F in fut.items():
+        start = (F["first"] + pd.Timedelta(days=1)).normalize()
+        i0 = idx.get_indexer([start])[0]
+        pid, size_f, tick_f_usd = FS[c]
+        sig = LV[c][1]
+        tpd = wick.THETA * wick.K * sig
         hs = hs_meas.get(c, np.nan)
-        for name, mask in [("rule only", None), ("rule + AI", keep)]:
-            lv = lvl_f.copy()
+        tick_f = np.nan_to_num(tick_f_usd / F["cf"], nan=1.0)
+        tick_s = np.nan_to_num(ws.PERP[c][2] / D[c]["cf"], nan=1.0)
+        keep_f, keep_s = ai_keep(c, fut_c[c]), ai_keep(c, spot_c[c])
+        for name in ("rule only", "rule + AI"):
+            # futures execution
+            lv = lvl_fut[c].copy()
             lv[:i0] = np.nan
-            if mask is not None:
-                lv[np.isin(np.arange(len(idx)), cand) & ~mask] = np.nan
-            tpd = wick.THETA * wick.K * sig
-            ei, xi, ep, xp, ty = ws.run_book(F["open"], F["high"], F["low"], F["cf"], lv, tpd,
-                                             np.full(len(idx), np.nan), 1, tick_f, wick.H, 0)
-            xp = np.where(ty == 1, wick.round_down(xp, tick_usd), xp)            # TP limit sits on the tick grid (conservative)
+            if name == "rule + AI":
+                off = np.zeros(len(idx), dtype=bool)
+                off[fut_c[c]] = True
+                lv[off & ~keep_f] = np.nan
+            ei, xi, ep, xp, ty = ws.run_book(F["open"], F["high"], F["low"], F["cf"], lv, tpd, np.full(len(idx), np.nan),
+                                             1, tick_f, wick.H, 0)
+            xp = np.where(ty == 1, wick.round_down(xp, tick_f_usd), xp)
             gross = np.log(xp / ep) * 1e4
-            hs_bp = np.where(np.isfinite(hs), hs, tick_usd / ep * 1e4)
-            f_in = wr.fee_bp(FEES, c, ep, True)
-            f_out = np.where(ty == 1, wr.fee_bp(FEES, c, xp, True), wr.fee_bp(FEES, c, xp, False) + hs_bp)
-            tr = pd.DataFrame({"ts": idx[ei], "exit_ts": idx[xi], "coin": c, "strategy": name, "type": ty,
-                               "gross_bp": gross, "net_bp": gross - f_in - f_out, "entry_px": ep,
-                               "contracts_per_10k": 1e4 / (size * ep)})
-            all_tr.append(tr)
-            # the same strategy simulated on spot over the same window, for comparison
-            lv_s = lvl_spot.copy()
-            lv_s[:i0] = np.nan
-            if mask is not None:
-                sc = candidates(D[c]["open"], D[c]["low"], lvl_spot, np.nan_to_num(tick_usd / D[c]["cf"], nan=1.0))
-                sc = sc[sc >= i0]
-                ks = np.zeros(len(idx), dtype=bool)
-                if len(sc):
-                    fs = pn[c].iloc[sc][wick.FEATS]
-                    qs = pd.PeriodIndex(idx[sc], freq="Q")
-                    for q in np.unique(qs):
-                        m, thr = models[q]
-                        ks[sc[qs == q]] = m.predict(fs[qs == q]) > thr
-                lv_s[np.isin(np.arange(len(idx)), sc) & ~ks] = np.nan
-            ei2, xi2, ep2, xp2, ty2 = ws.run_book(D[c]["open"], D[c]["high"], D[c]["low"], D[c]["cf"], lv_s, tpd,
-                                                  np.full(len(idx), np.nan), 1,
-                                                  np.nan_to_num(tick_usd / D[c]["cf"], nan=1.0), wick.H, 0)
-            g2 = np.log(xp2 / ep2) * 1e4
-            n2 = g2 - wr.fee_bp(FEES, c, ep2, True) - np.where(ty2 == 1, wr.fee_bp(FEES, c, xp2, True),
-                                                               wr.fee_bp(FEES, c, xp2, False) + tick_usd / ep2 * 1e4)
-            days = (idx[-1] - idx[i0]).days
-            rows.append(dict(coin=c, strategy=name, start=str(idx[i0].date()), futures_minutes_traded=
-                             float(np.isfinite(F["close"][i0:]).mean()),
-                             fut_trades=len(tr), fut_per_day=len(tr) / days, fut_net_bp=tr.net_bp.mean(),
-                             fut_hit=(tr.net_bp > 0).mean(), spot_trades=len(ep2), spot_net_bp=np.nanmean(n2),
+            hs_bp = np.where(np.isfinite(hs), hs, tick_f_usd / ep * 1e4)
+            net = gross - fee_fut(c, ep, size_f, True) - np.where(ty == 1, fee_fut(c, xp, size_f, True),
+                                                                   fee_fut(c, xp, size_f, False) + hs_bp)
+            trf = pd.DataFrame({"ts": idx[ei], "exit_ts": idx[xi], "coin": c, "strategy": name, "venue": "futures",
+                                "type": ty, "gross_bp": gross, "net_bp": net})
+            # spot execution of the same rule over the same window
+            lv = LV[c][0].copy()
+            lv[:i0] = np.nan
+            if name == "rule + AI":
+                off = np.zeros(len(idx), dtype=bool)
+                off[spot_c[c]] = True
+                lv[off & ~keep_s] = np.nan
+            ei, xi, ep, xp, ty = ws.run_book(D[c]["open"], D[c]["high"], D[c]["low"], D[c]["cf"], lv, tpd,
+                                             np.full(len(idx), np.nan), 1, tick_s, wick.H, 0)
+            g2 = np.log(xp / ep) * 1e4
+            n2 = g2 - wr.fee_bp(FEES, c, ep, True) - np.where(ty == 1, wr.fee_bp(FEES, c, xp, True),
+                                                               wr.fee_bp(FEES, c, xp, False) + ws.PERP[c][2] / ep * 1e4)
+            trs = pd.DataFrame({"ts": idx[ei], "exit_ts": idx[xi], "coin": c, "strategy": name, "venue": "spot",
+                                "type": ty, "gross_bp": g2, "net_bp": n2})
+            all_tr += [trf, trs]
+            rows.append(dict(coin=c, strategy=name, start=str(start.date()),
+                             fut_minutes_traded=float(np.isfinite(F["close"][i0:]).mean()),
+                             fut_trades=len(trf), fut_net_bp=trf.net_bp.mean(), fut_hit=(trf.net_bp > 0).mean(),
+                             spot_trades=len(trs), spot_net_bp=trs.net_bp.mean(), spot_hit=(trs.net_bp > 0).mean(),
                              half_spread_bp=float(np.nanmean(hs_bp)) if len(hs_bp) else np.nan))
         print(f"  {c} done ({time.time() - t0:.0f}s)", flush=True)
     R = pd.DataFrame(rows)
@@ -183,18 +220,26 @@ def main():
     T.to_parquet(os.path.join(ROOT, "reports", "wick_futures_trades.parquet"), index=False)
     pd.set_option("display.width", 250)
     print(R.round(2).to_string(index=False))
-    for name in ("rule only", "rule + AI"):
-        tr = T[T.strategy == name]
-        start = tr.ts.min().normalize() if len(tr) else pd.Timestamp("2025-08-01")
-        d = wr.daily(tr).loc[start:]
-        s = wr.sstats(d, (start, ws.END))
-        print(f"{name}: futures-executed portfolio from {start.date()}: Sharpe {s['sharpe']:.2f}, t {s['t']:.2f}, "
-              f"ann return {s['ann_ret']:.1%} at 0.25x notional per trade, max DD {s['maxdd']:.1%}, "
-              f"{len(tr)} trades, net {tr.net_bp.mean():.1f} bp/trade")
-        R.loc[len(R)] = dict(coin="PORTFOLIO", strategy=name, start=str(start.date()), fut_trades=len(tr),
-                             fut_net_bp=tr.net_bp.mean(), fut_hit=(tr.net_bp > 0).mean(), sharpe=s["sharpe"], t=s["t"],
-                             ann_ret=s["ann_ret"], maxdd=s["maxdd"])
+    # portfolio over the window where every included perp has data (latest listing start), and the longer
+    # window of the four oldest perps
+    starts = {r.coin: pd.Timestamp(r.start) for r in R.itertuples()}
+    old3 = [c for c in ("ETH", "SOL", "XRP") if c in starts]
+    windows = [("all listed perps, from 2025-12-13 (coins join as their perps list)", list(starts), pd.Timestamp("2025-12-13"))]
+    if old3:
+        windows.append(("ETH/SOL/XRP perps, from " + str(max(starts[c] for c in old3).date()), old3,
+                        max(starts[c] for c in old3)))
+    port = []
+    for label, coins_, st in windows:
+        for name in ("rule only", "rule + AI"):
+            for venue in ("futures", "spot"):
+                for cap in (None, 6):
+                    tr = T[(T.strategy == name) & (T.venue == venue) & T.coin.isin(coins_) & (T.ts >= st)]
+                    s_, _ = portfolio(tr, st, cap)
+                    port.append(dict(window=label, strategy=name, venue=venue, cap=cap or "none", **s_))
+    P = pd.DataFrame(port)
+    P.to_csv(os.path.join(ROOT, "reports", "wick_futures_portfolio.csv"), index=False)
     R.to_csv(os.path.join(ROOT, "reports", "wick_futures.csv"), index=False)
+    print(P.round(3).to_string(index=False))
     print(f"done in {time.time() - t0:.0f}s")
 
 

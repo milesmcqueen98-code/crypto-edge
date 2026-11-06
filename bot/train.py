@@ -21,8 +21,10 @@ def main(coins):
     idx, D = ws.load_ohlc(coins=["BTC"] + coins)
     cf = {c: D[c]["cf"] for c in D}
     vol = {c: D[c]["vol"] for c in D}
-    pn = wick.panel(cf, vol, coins, idx)
-    X = wf.spot_training_set(D, pn, idx, coins)
+    LV = wick.levels(cf, coins)
+    cands = wf.spot_candidates(D, LV, coins)
+    pn = wick.panel(cf, vol, coins, idx, keep_rows=cands)
+    X = wf.spot_training_set(D, pn, idx, coins, lv=LV, cands=cands)
     w = 1.0 / X.groupby(["coin", "episode"]).ts.transform("size")
     m = lgb.train(wick.PARAMS, lgb.Dataset(X[wick.FEATS], X.net_bp.clip(-400, 400), weight=w,
                                            categorical_feature=["coin_id"]), num_boost_round=wick.ROUNDS)

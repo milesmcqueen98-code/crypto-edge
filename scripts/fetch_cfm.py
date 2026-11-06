@@ -178,7 +178,7 @@ def mode_book(minutes):
         print("no perps found; nothing to sample")
         return
     books = [(c["product_id"], c["root"], float(c["contract_size"] or 1)) for c in perps]
-    books += [(f"{c['root']}-USD", c["root"], 1.0) for c in perps]
+    books += [(f"{c['root']}-USD", c["root"], 1.0) for c in perps if not c["root"].startswith("CDE")]
     print("sampling", [b[0] for b in books], flush=True)
     rec, t_end = [], time.time() + 60 * float(minutes)
     while time.time() < t_end:

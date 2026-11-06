@@ -43,11 +43,9 @@ def load_specs():
     df = df[df.expiry_type == "PERPETUAL"]
     out = {}
     for r in df.itertuples():
-        root = r.root
-        if root == "PEPE":                       # 1000PEPE perp quoted per 1000 PEPE, 100k of them per contract
-            out[root] = Spec(r.product_id, float(r.contract_size) * 1000, float(r.price_increment) / 1000)
-        else:
-            out[root] = Spec(r.product_id, float(r.contract_size), float(r.price_increment))
+        # futures units throughout (1000PEPE is quoted per 1000 PEPE): order prices come from the spot level x the
+        # futures/spot price ratio, so they land in futures units automatically
+        out[r.root] = Spec(r.product_id, float(r.contract_size), float(r.price_increment))
     return out
 
 
@@ -77,6 +75,7 @@ class PaperBroker:
 
     def cancel(self, coin):
         self.s["orders"].pop(coin, None)
+        return 0.0
 
     def settle(self, coin, bar, minute):
         """bar: futures candle (open, high, low, close) for `minute` (NaN when no futures trade)."""
@@ -120,9 +119,19 @@ class LiveBroker:
         return oid
 
     def cancel(self, coin):
+        """Cancel and return how many contracts of it had already filled (partial fills)."""
         o = self.s["orders"].pop(coin, None)
-        if o:
-            self.c.cancel_orders(order_ids=[o["id"]])
+        if not o:
+            return 0.0
+        self.c.cancel_orders(order_ids=[o["id"]])
+        r = self.c.get_order(o["id"])
+        r = r.to_dict() if hasattr(r, "to_dict") else r
+        return float(r.get("order", {}).get("filled_size") or 0)
+
+    def positions(self):
+        r = self.c.list_futures_positions()
+        r = r.to_dict() if hasattr(r, "to_dict") else r
+        return {p.get("product_id"): float(p.get("number_of_contracts") or 0) for p in r.get("positions", [])}
 
     def settle(self, coin, bar, minute):
         o = self.s["orders"].get(coin)
@@ -235,7 +244,8 @@ class Engine:
             pos = self.state["positions"].get(c)
             if pos:
                 self._manage_position(c, pos, t)
-                continue
+                if c in self.state["positions"]:
+                    continue
             ok = all(np.isfinite(row[k]) for k in ("level", "sig", "z_res60", "bid_depth_bp"))
             pred = float(self.model.predict(row[wick.FEATS].to_numpy(np.float64)[None, :])[0]) if ok else np.nan
             if ok and pred > self.thr:
@@ -308,8 +318,17 @@ class Engine:
     def _manage_position(self, c, pos, t):
         sp = self.specs[c]
         if t >= pd.Timestamp(pos["exit_due"]):
-            if c in self.state["orders"]:
-                self.broker.cancel(c)
+            partial = self.broker.cancel(c) if c in self.state["orders"] else 0.0
+            if partial:                                     # part of the take-profit filled before the cancel
+                pos["contracts"] -= partial
+                pos["fees"] *= pos["contracts"] / (pos["contracts"] + partial)
+                pnl = (pos["tp_px"] - pos["entry_px"]) * sp.size * partial
+                self.state["equity"] += pnl
+                self.log("fill_exit", coin=c, kind="tp_partial", px=pos["tp_px"], entry_px=pos["entry_px"],
+                         contracts=partial, pnl=round(pnl, 2), equity=round(self.state["equity"], 2))
+                if pos["contracts"] <= 0:
+                    self.state["positions"].pop(c, None)
+                    return
             bid, ask = market.book_top(sp.product)
             ref = (bid + ask) / 2 if np.isfinite(bid) and np.isfinite(ask) else pos["entry_px"]
             hs = (ask - bid) / 2 if np.isfinite(bid) and np.isfinite(ask) else sp.tick
@@ -360,9 +379,25 @@ class Engine:
         self.log("catch_up", gap_minutes=int((end - start) / pd.Timedelta(minutes=1)),
                  open_positions=list(self.state["positions"]))
 
+    def reconcile(self):
+        """Live only: compare the exchange's futures positions with the bot's state and log any difference."""
+        if self.mode != "live":
+            return
+        try:
+            ex = self.broker.positions()
+        except Exception as err:
+            self.log("error", error=f"reconcile failed: {err!r}")
+            return
+        mine = {self.specs[c].product: p["contracts"] for c, p in self.state["positions"].items()}
+        for pid in set(ex) | set(mine):
+            if abs(ex.get(pid, 0) - mine.get(pid, 0)) > 1e-9:
+                self.log("warning", msg="position mismatch: check manually before continuing", product=pid,
+                         exchange=ex.get(pid, 0), bot=mine.get(pid, 0))
+
     def run(self, minutes):
         self.backfill()
         self.catch_up()
+        self.reconcile()
         end = time.time() + 60 * minutes
         while time.time() < end:
             nxt = (math.floor(time.time() / 60) + 1) * 60 + 6        # 6 s after each minute closes

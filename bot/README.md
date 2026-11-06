@@ -68,7 +68,9 @@ Kill switch: create a file named `STOP` in the repo folder — the bot stops pla
 * `notional_frac` 0.25 — each trade is 25% of equity in notional.
 * `max_positions` 6 — never more than 6 open trades (≤ 1.5x gross); when more coins qualify, the bot
   bids only on the highest-scoring ones.
-* `daily_loss_limit` 0.05 — after a 5% loss in a UTC day, no new entries until the next day.
+* `daily_loss_limit` 0.08 — after an 8% loss in a UTC day, no new entries until the next day. This is a
+  safety switch for bugs and outages, not part of the strategy: in the backtest a tighter limit cut the Sharpe
+  ratio, because bad days usually recovered later the same day.
 * Every position has a hard 60-minute time exit; there is no stop-loss, by design (stops at 1x the
   dislocation turned the backtest negative).
 

@@ -3,7 +3,7 @@
 
 Universe rule fixed before looking at results (implementability only): a Coinbase US perp exists, its
 tick is <= 3 bp of price, one contract is >= $150, 24h perp volume >= $1M (product listing, 6 Nov 2026).
-  -> ETH SOL XRP DOGE LTC LINK  + BCH SUI XLM HBAR NEAR AAVE HYPE ENA PEPE ONDO
+  -> ETH SOL XRP DOGE LTC LINK  + BCH SUI XLM HBAR NEAR AAVE HYPE ENA PEPE ONDO ZEC
 Same walk-forward protocol as wick_ai (quarterly expanding-window LightGBM, first model on 2024 only,
 bid off when prediction <= training median), simulated on spot 1-minute data with futures ticks.
 Writes reports/wick_breadth.csv, reports/wick_breadth_trades.parquet
@@ -24,7 +24,8 @@ import wick_robust as wr  # noqa: E402
 import wick_sim as ws  # noqa: E402
 
 CORE = ["ETH", "SOL", "XRP", "DOGE", "LTC", "LINK"]
-WIDE = CORE + ["BCH", "SUI", "XLM", "HBAR", "NEAR", "AAVE", "HYPE", "ENA", "PEPE", "ONDO"]
+WIDE16 = CORE + ["BCH", "SUI", "XLM", "HBAR", "NEAR", "AAVE", "HYPE", "ENA", "PEPE", "ONDO"]
+WIDE = WIDE16 + ["ZEC"]          # ZEC also passes the rule; it was missed in the first pass
 
 
 def evaluate(coins, tag):
@@ -82,7 +83,7 @@ def evaluate(coins, tag):
 
 def main():
     rows, trades = [], []
-    for coins, tag in [(CORE, "core 6"), (WIDE, "wide 16")]:
+    for coins, tag in [(CORE, "core 6"), (WIDE16, "wide 16"), (WIDE, "wide 17")]:
         r, T = evaluate(coins, tag)
         rows += r
         trades.append(T)

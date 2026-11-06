@@ -46,7 +46,7 @@ PERP = {  # Coinbase Derivatives perp-style futures: (product, contract size in 
     "XLM": ("XLP-20DEC30-CDE", 5000, 0.00001), "HBAR": ("HEP-20DEC30-CDE", 5000, 0.00001),
     "NEAR": ("NER-20DEC30-CDE", 500, 0.0001), "AAVE": ("AVE-20DEC30-CDE", 5, 0.01), "HYPE": ("HYP-20DEC30-CDE", 10, 0.01),
     "ENA": ("ENA-20DEC30-CDE", 5000, 0.00001), "PEPE": ("PEP-20DEC30-CDE", 1e8, 1e-9),           # 1000PEPE perp: 100k x 1000 PEPE
-    "ONDO": ("OND-20DEC30-CDE", 1000, 0.0001),
+    "ONDO": ("OND-20DEC30-CDE", 1000, 0.0001), "ZEC": ("ZEC-20DEC30-CDE", 1, 0.05),
 }
 
 
