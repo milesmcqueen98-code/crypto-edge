@@ -136,7 +136,14 @@ def update_prices():
                 done.add(base)          # already sourced from a higher-priority venue
                 continue
             sym = bases[base]
-            if old is None:
+            if old is None and vname == "kraken":
+                # Kraken only serves the latest 720 daily candles; one call gets all of it
+                try:
+                    rows = ex.fetch_ohlcv(sym, "1d", limit=720)
+                except ccxt.BaseError as e:
+                    log(f"    kraken {sym}: {type(e).__name__}")
+                    rows = []
+            elif old is None:
                 rows = fetch_history(ex, sym)
             else:
                 since = pd.Timestamp(old["date"].max(), tz="UTC") - pd.Timedelta(days=3)
