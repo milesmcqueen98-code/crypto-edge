@@ -104,6 +104,10 @@ The specification above left these details open; they are fixed here. Developmen
 4. CME basis: yfinance continuous front-month close vs the Coinbase close at the matching Chicago time (the hour is
    chosen by the smallest variance of daily basis changes, a measurement check that uses no forward returns);
    annualized with days to the last Friday of the month, floored at 7.
+   *Update after the data arrived (measurement checks only, no forward returns):* 15:00 CT matches best (s.d. of daily
+   basis changes 0.70% vs 1.3–1.7% at 13, 14, 16, 17 CT; Yahoo's close is the settlement). Yahoo rolls the series a
+   few days before expiry and prints the final settlement on expiry day, which makes jumps of 3–6%; days within 5 of
+   expiry are therefore left out (no signal), replacing the floor of 7.
 5. On-chain growth: 7-day mean, then 30-day log change, lagged one day. NVT: NVTAdj, else market cap / adjusted
    transfer value. Macro: change from the previous US close on the US date; missing on days without a US close.
 6. F2: hmmlearn GaussianHMM (diagonal, 200 iterations, seed 0) on 100 × log returns; positions of one unit.

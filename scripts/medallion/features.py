@@ -118,9 +118,10 @@ def cme_dte(dates):
     return pd.Series(out, index=dates)
 
 
-def cme_basis(coin, idx, ct_hour=16):
-    """Annualized front-month CME basis: yfinance continuous future close vs the Coinbase hourly close at `ct_hour`
-    Chicago time on the same US date; days to expiry floored at 7."""
+def cme_basis(coin, idx, ct_hour=15):
+    """Annualized front-month CME basis: yfinance continuous future close (the 15:00 CT settlement, chosen by the
+    measurement check) vs the Coinbase hourly close at that time on the same US date. Days within 5 days of expiry are
+    left out (Yahoo rolls the continuous series a few days early and prints the final settlement on expiry day)."""
     fut = yf_close("cme_btc" if coin == "BTC" else "cme_eth")
     if fut is None:
         return None
@@ -131,8 +132,8 @@ def cme_basis(coin, idx, ct_hour=16):
               .tz_localize(None) for d in fut.index]
     spot = cb_utc.reindex(stamps).to_numpy()
     raw = pd.Series(fut.to_numpy() / spot - 1.0, index=fut.index)
-    dte = cme_dte(fut.index).clip(lower=7)
-    return (raw * 365.0 / dte).reindex(idx)
+    dte = cme_dte(fut.index)
+    return (raw * 365.0 / dte).where(dte >= 5).reindex(idx)
 
 
 def raw_signals(coin):
