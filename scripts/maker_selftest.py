@@ -10,7 +10,7 @@ from edge.maker import simulate  # noqa: E402
 
 
 def run(quotes, trades, mode=0, qmodel=0, lat_md=1, lat_ord=1, throttle=0, quote_usd=100.0, qmax=1000.0,
-        sig=None):
+        sig=None, sticky_bp=0.0, cross_cap=False):
     qa = np.array(quotes, dtype=float).reshape(-1, 5)
     ta = np.array(trades, dtype=float).reshape(-1, 4) if trades else np.zeros((0, 4))
     st = np.array([s[0] for s in sig], dtype=np.int64) if sig else np.zeros(0, np.int64)
@@ -18,7 +18,7 @@ def run(quotes, trades, mode=0, qmodel=0, lat_md=1, lat_ord=1, throttle=0, quote
     out = simulate(qa[:, 0].astype(np.int64), qa[:, 1], qa[:, 2], qa[:, 3], qa[:, 4],
                    ta[:, 0].astype(np.int64), ta[:, 1].astype(np.int8), ta[:, 2], ta[:, 3], st, sE,
                    np.int64(lat_md), np.int64(lat_ord), np.int64(throttle), quote_usd, qmax, mode, 1.0, qmodel,
-                   np.int64(0), 1000)
+                   np.int64(0), 1000, sticky_bp, cross_cap)
     f_t, f_side, f_px, f_qty, f_kind, nf, q, n_new, n_cxl, n_rej, msgs = out
     return [(int(a), int(b), float(c), round(float(d), 6), int(e)) for a, b, c, d, e in
             zip(f_t, f_side, f_px, f_qty, f_kind)], q, n_new, n_cxl, n_rej
@@ -63,6 +63,20 @@ def main():
     # 9. after observing the new touch we re-quote at 99 behind 3 -> a 0.4 sell at 99 no longer fills
     f, *_ = run([[0, 100, 5, 101, 5], [5, 99, 3, 101, 5]], [[8, -1, 99, 0.4]])
     ok &= check("re-quoted behind the new queue", f, [])
+    # 10. capped crossing: the ask drops to our bid with only 0.3 displayed -> fill 0.3, not our full 1.0;
+    #     the same displayed 0.3 does not fill twice; an increase to 0.5 fills 0.2 more
+    q3 = [[0, 100, 5, 101, 5], [20, 99, 1, 100, 0.3], [21, 99, 1, 100, 0.3], [22, 99, 1, 100, 0.5]]
+    f, *_ = run(q3, [], cross_cap=True)
+    ok &= check("capped crossing", f, [(20, 0, 100.0, 0.3, 2), (22, 0, 100.0, 0.2, 2)])
+    f, *_ = run(q3, [])
+    ok &= check("uncapped crossing (pre-registered)", f, [(20, 0, 100.0, 1.0, 2)])
+    # 11. sticky: the best bid ticks up from 100.00 to 100.01 (1 bp at this price); with sticky 2 bp we keep our
+    #     queue place at 100 (no re-send), without it we cancel and rejoin at 100.01
+    q4 = [[0, 100, 5, 101, 5], [10, 100.01, 1, 101, 5]]
+    f, q, n_new, n_cxl, n_rej = run(q4, [], sticky_bp=2.0)
+    ok &= check("sticky keeps place (orders sent)", n_new, 2)
+    f, q, n_new, n_cxl, n_rej = run(q4, [])
+    ok &= check("pre-registered chases the touch (orders sent)", n_new, 3)
     print("ALL PASS" if ok else "SOME FAILED")
     sys.exit(0 if ok else 1)
 

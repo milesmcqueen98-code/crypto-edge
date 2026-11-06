@@ -134,4 +134,11 @@ Dev 2019-11-06 to 2023-12-31; hold-outs 2024-01-01+ and 2017-07-01 to 2019-11-05
 
 ## Deviation log
 
-(none yet)
+- 2026-11-06, after the hold-out ran (verdict already fixed: reject). An independent review found no bug that
+  flips the sign, but flagged two rules that bias results against the strategy: (1) orders chase every move of
+  the touch and re-send on small size drift, losing queue place; (2) crossings fill our full remaining size.
+  It also found the signal-alignment split confounded (E at the fill second includes the move that filled us).
+  Added a robustness run (`maker_day.py sens`): crossing fills capped at the displayed size, and "sticky" quotes
+  that keep queue place within 0.5 or 2 bp of the touch; alignment measured with E 60 s before the fill.
+  S0 and S2, $10K, risk-averse queue, base and colo latency, all 35 days. Not a selection trial; it cannot
+  change the verdict to adopt. It adds 6 variants to the trial count.

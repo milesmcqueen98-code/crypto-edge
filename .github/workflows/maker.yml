@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "probe (data checks only) or run (all pre-registered configs)"
+        description: "probe (data checks only), run (all pre-registered configs) or sens (robustness check)"
         default: "run"
       days:
         description: "dev, holdout, or comma-separated YYYY-MM-01 dates"
@@ -65,30 +65,29 @@ jobs:
       - run: python scripts/maker_day.py ${{ inputs.mode }} ${{ matrix.day }} ${{ inputs.coins }}
         env:
           MAKER_TMP: ${{ runner.temp }}/ticks
-      - if: inputs.mode == 'run'
+      - if: inputs.mode != 'probe'
         uses: actions/upload-artifact@v4
         with:
           name: maker-${{ matrix.day }}
-          path: reports/maker/raw/${{ matrix.day }}*
+          path: reports/maker/${{ inputs.mode == 'sens' && 'raw_sens' || 'raw' }}/${{ matrix.day }}*
           retention-days: 3
 
   commit:
     needs: sim
-    if: always() && inputs.mode == 'run'
+    if: always() && inputs.mode != 'probe'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           pattern: maker-*
-          path: reports/maker/raw
+          path: reports/maker/${{ inputs.mode == 'sens' && 'raw_sens' || 'raw' }}
           merge-multiple: true
       - name: Commit derived results
         run: |
-          ls -la reports/maker/raw
           git config user.name "crypto-edge-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add reports/maker/raw
+          git add reports/maker
           git diff --cached --quiet && exit 0
-          git commit -m "Maker sim results (${{ inputs.days }})"
+          git commit -m "Maker sim results (${{ inputs.mode }}, ${{ inputs.days }})"
           for i in 1 2 3 4 5; do git pull --rebase origin main && git push && break; sleep 7; done

@@ -156,7 +156,7 @@ def run(day, coins):
                         tic = time.time()
                         f_t, f_side, f_px, f_qty, f_kind, nf, q, n_new, n_cxl, n_rej, msgs = simulate(
                             qt, bp, bs, ap, as_, tt, ts, tpx, tsz, st, E[c], np.int64(lmd), np.int64(lord),
-                            np.int64(THROTTLE), qsz, qmax, mode, eref, qmodel, np.int64(t0), MAX_FILLS)
+                            np.int64(THROTTLE), qsz, qmax, mode, eref, qmodel, np.int64(t0), MAX_FILLS, 0.0, False)
                         sgn = np.where(f_side == 0, 1.0, -1.0)            # +1 buy (our bid filled), -1 sell
                         notional = f_qty * f_px
                         cash = -np.sum(sgn * notional)
@@ -197,7 +197,65 @@ def run(day, coins):
     print(f"{day}: wrote {len(rows)} rows", flush=True)
 
 
+def sens(day, coins):
+    """Robustness check added after the hold-out (deviation log in reports/maker_prereg.md): the two rules the
+    independent review flagged as biased against the strategy. Variants (sticky_bp, cross_cap): (0, False) is the
+    pre-registered rule, (0, True) caps crossing fills at the displayed size, (0.5, True) and (2.0, True) also keep
+    queue place while within 0.5 / 2 bp of the touch. S0 and S2, $10K, risk-averse queue, base and colo latency.
+    Markouts are split by fill kind; signal alignment uses E 60 s before the fill (before the move that filled us)."""
+    sigp = json.load(open(os.path.join(ROOT, "reports", "maker_signal.json")))
+    beta, eref = sigp["beta"], sigp["E_ref_bp"]
+    t0, t1 = day_bounds(day)
+    books, trades = {}, {}
+    for c in coins:
+        qp, tp = download("quotes", day, c), download("trades", day, c)
+        books[c] = load_quotes(qp)
+        trades[c] = load_trades(tp)
+        os.remove(qp)
+        os.remove(tp)
+    st, E = signal_grid(day, books, beta)
+    rows = []
+    qsz, qmax = SIZES["10k"]
+    for c in coins:
+        qt, bp, bs, ap, as_ = books[c]
+        tt, ts, tpx, tsz = trades[c]
+        mid = 0.5 * (bp + ap)
+        m_end = mid_at(qt, mid, np.array([t1 - 1]))[0]
+        hs_end = 0.5 * (ap[-1] - bp[-1])
+        dvol = float(np.sum(tpx * tsz))
+        for sticky, cap in ((0.0, False), (0.0, True), (0.5, True), (2.0, True)):
+            for lat_name in ("base", "colo"):
+                lmd, lord = LAT[lat_name]
+                for mode in (0, 2):
+                    f_t, f_side, f_px, f_qty, f_kind, nf, q, n_new, n_cxl, n_rej, msgs = simulate(
+                        qt, bp, bs, ap, as_, tt, ts, tpx, tsz, st, E[c], np.int64(lmd), np.int64(lord),
+                        np.int64(THROTTLE), qsz, qmax, mode, eref, 0, np.int64(t0), MAX_FILLS, sticky, cap)
+                    sgn = np.where(f_side == 0, 1.0, -1.0)
+                    notional = f_qty * f_px
+                    gross = -np.sum(sgn * notional) + q * m_end
+                    m60 = mid_at(qt, mid, f_t + 60_000_000)
+                    rs60 = sgn * f_qty * (m60 - f_px)
+                    ks = np.clip((f_t - t0) // 1_000_000 - 61, 0, 86_399)
+                    al = sgn * E[c][ks] > 0
+                    rec = dict(day=day, coin=c, sticky_bp=sticky, cross_cap=cap, lat=lat_name, mode=mode,
+                               n_fills=int(nf), notional=float(notional.sum()), coin_volume_usd=dvol,
+                               gross_pnl=float(gross), eod_halfspread_cost=float(abs(q) * hs_end),
+                               rs60_usd=float(np.nansum(rs60)), n_new=int(n_new), n_cxl=int(n_cxl),
+                               msg_mean=float(msgs.mean()), msg_peak=int(msgs.max()),
+                               aligned_usd=float(notional[al].sum()), aligned_rs60_usd=float(np.nansum(rs60[al])))
+                    for kind, nm in ((0, "queue"), (1, "through"), (2, "cross")):
+                        m = f_kind == kind
+                        rec[f"{nm}_usd"] = float(notional[m].sum())
+                        rec[f"{nm}_rs60_usd"] = float(np.nansum(rs60[m]))
+                    rows.append(rec)
+        print(f"{day} {c}: done", flush=True)
+    out = os.path.join(ROOT, "reports", "maker", "raw_sens")
+    os.makedirs(out, exist_ok=True)
+    pd.DataFrame(rows).to_csv(os.path.join(out, f"{day}.csv"), index=False)
+    print(f"{day}: wrote {len(rows)} rows", flush=True)
+
+
 if __name__ == "__main__":
     mode, day = sys.argv[1], sys.argv[2]
     coins = sys.argv[3].split(",") if len(sys.argv) > 3 else COINS
-    probe(day, coins) if mode == "probe" else run(day, coins)
+    {"probe": probe, "run": run, "sens": sens}[mode](day, coins)

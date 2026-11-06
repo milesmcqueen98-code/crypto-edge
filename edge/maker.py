@@ -33,7 +33,12 @@ def _fill(nf, f_t, f_side, f_px, f_qty, f_kind, t, side, px, qty, kind):
 
 @njit(cache=True)
 def simulate(qt, qbp, qbs, qap, qas, tt, tside, tpx, tsz, st, sE,
-             lat_md, lat_ord, throttle, quote_usd, qmax, mode, eref, qmodel, day_start, max_fills):
+             lat_md, lat_ord, throttle, quote_usd, qmax, mode, eref, qmodel, day_start, max_fills,
+             sticky_bp, cross_cap):
+    """sticky_bp = 0 and cross_cap = False are the pre-registered rules. Robustness switches (added after the
+    hold-out, see the deviation log): sticky_bp > 0 keeps a working order that sits at or behind the touch by at
+    most sticky_bp (keeps queue place) and only resizes on a real inventory-limit breach; cross_cap fills a
+    crossing only up to the displayed opposite size, once per displayed quantity."""
     nq, nt, ns = qt.shape[0], tt.shape[0], st.shape[0]
     act = np.zeros((2, NSLOT), np.bool_)
     live = np.zeros((2, NSLOT), np.bool_)
@@ -46,6 +51,8 @@ def simulate(qt, qbp, qbs, qap, qas, tt, tside, tpx, tsz, st, sE,
     hint = np.zeros((2, NSLOT))
     lastL = np.full((2, NSLOT), -1.0)
     tsince = np.zeros((2, NSLOT))
+    xpx = np.full((2, NSLOT), np.nan)                 # cross_cap: opposite price/size already used
+    xsz = np.zeros((2, NSLOT))
     last_send = np.full(2, -INF, np.int64)
 
     f_t = np.zeros(max_fills, np.int64)
@@ -134,10 +141,23 @@ def simulate(qt, qbp, qbs, qap, qas, tt, tside, tpx, tsz, st, sE,
                     crossed = (opp <= b) if ms == 0 else (opp >= b)
                     if crossed:
                         fq = rem[ms, k]
-                        nf = _fill(nf, f_t, f_side, f_px, f_qty, f_kind, tmin, ms, b, fq, 2)
-                        q += fq if ms == 0 else -fq
-                        rem[ms, k] = 0.0
-                        act[ms, k] = False
+                        if cross_cap:
+                            osz = bas if ms == 0 else bbs
+                            if xpx[ms, k] == opp:
+                                avail = osz - xsz[ms, k]
+                            else:
+                                avail = osz
+                            if avail < fq:
+                                fq = avail if avail > 0.0 else 0.0
+                            xpx[ms, k] = opp
+                            xsz[ms, k] = osz
+                        if fq > 0.0:
+                            nf = _fill(nf, f_t, f_side, f_px, f_qty, f_kind, tmin, ms, b, fq, 2)
+                            q += fq if ms == 0 else -fq
+                            rem[ms, k] -= fq
+                        if rem[ms, k] <= 1e-12:
+                            rem[ms, k] = 0.0
+                            act[ms, k] = False
                         continue
                     if same == b:
                         if qmodel == 1 and lastL[ms, k] >= 0.0:
@@ -239,7 +259,14 @@ def simulate(qt, qbp, qbs, qap, qas, tt, tside, tpx, tsz, st, sE,
             keep = False
             for k in range(NSLOT):
                 if act[ms, k] and not cxl[ms, k]:
-                    if ok and (not keep) and spx[ms, k] == px and rem[ms, k] * px <= size_usd + 1.0:
+                    if sticky_bp > 0.0:
+                        tol = sticky_bp * 1e-4 * mid
+                        near = (px - tol <= spx[ms, k] <= px) if ms == 0 else (px <= spx[ms, k] <= px + tol)
+                        fits = rem[ms, k] * spx[ms, k] <= room + 1.0
+                    else:
+                        near = spx[ms, k] == px
+                        fits = rem[ms, k] * px <= size_usd + 1.0
+                    if ok and (not keep) and near and fits:
                         keep = True
                     else:
                         cxl[ms, k] = True                   # cancels are never throttled
@@ -262,6 +289,8 @@ def simulate(qt, qbp, qbs, qap, qas, tt, tside, tpx, tsz, st, sE,
                         hint[ms, k] = hsz
                         lastL[ms, k] = -1.0
                         tsince[ms, k] = 0.0
+                        xpx[ms, k] = np.nan
+                        xsz[ms, k] = 0.0
                         last_send[ms] = tmin
                         n_new += 1
                         sec = (tmin - day_start) // 1_000_000
