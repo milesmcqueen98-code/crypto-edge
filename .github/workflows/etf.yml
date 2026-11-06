@@ -1,0 +1,28 @@
+name: fetch-etf
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  etf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install yfinance pandas
+      - run: python scripts/fetch_spy.py
+      - name: Commit
+        run: |
+          git config user.name "crypto-edge-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/etf
+          git diff --cached --quiet && exit 0
+          git commit -m "ETF price history $(date -u +%Y-%m-%d)"
+          git pull --rebase origin main
+          git push
