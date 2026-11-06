@@ -97,3 +97,12 @@ coin's daily volume, ladder at 4/6/8σ, market exit at 60 minutes, every AI-appr
 year, Sharpe 2.75, max drawdown −3.8%, $216K a year; at θ = 0.25: 18.5%, Sharpe 2.41. Baseline (current rules):
 −7.7%, Sharpe −0.83. This rule is now fixed for Phase 2 and the check period. Grid files:
 reports/wick1m/grid_main_1000k_g1.csv (the 300%-gross first pass: grid_main_1000k.csv).
+
+**Deviation 3 (Phase 2, before it ran): spot details.**
+- The AI's cost label uses the tier the $1M book actually reaches in Phase 1: Coinbase VIP 1, 6 bp maker and 12.5 bp
+  taker, plus a 2 bp half-spread on market exits, no funding. The registered 0% maker / 3.5 bp taker assumed a tier
+  ($50M a month) the book doesn't reach.
+- Every coin uses its spot tick for fills and level rounding, estimated from its minute prices (the smallest step in
+  H2 2024). The $1M book trades spot, so the lab's coarser perp ticks no longer apply.
+- Phase 2 runs on GitHub Actions (scripts/wick1m/trades_wide.py, .github/workflows/wick1m.yml), because it needs
+  about 10 GB of memory.
