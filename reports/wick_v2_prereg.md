@@ -1,0 +1,119 @@
+# Wick catcher v2: pre-registration
+
+Written 2026-11-06, before any v2 variant result exists. Nothing below changes after the first
+variant runs; deviations get logged at the bottom with a reason.
+
+## Goal
+Find a higher-Sharpe version of the AI-filtered resting-bid dip buyer (v1: L=60, k=4, take-profit 0.6 of
+the move, 60-minute cap, 17 coins, at most 6 open, AI bid filter = prediction above the training median)
+that Miles can run himself on Coinbase US perps. Renaissance-style practice: many small variations of
+one idea, many weak signals, strict out-of-sample selection, costs modelled first.
+
+## Reality rules (apply to every variant)
+- **Primary cost model "realistic":**
+  - $0.20 per contract per side on every fill, maker and taker (exchange $0.10 + clearing/NFA/FCM, guessed high).
+  - Every market (taker) exit also pays 1.5x the measured perp half-spread (reports/cfm_book_summary.csv).
+  - 1 bp of funding per trade.
+  - Whole contracts only: contracts = max(1, floor(target $ / contract value)); P&L on the actual notional.
+- **Optimistic cost model "base"** (v1 headline): 2 bp per side plus one perp tick on market exits, fractional
+  sizing. Reported for continuity only, never used for selection.
+- **Fills:** spot 1-minute candles, an order resting during minute t fills only if the minute opened above it and
+  traded through it by at least one tick (the coarser of the spot and perp tick); the fill price is the limit.
+  Take-profits fill only on a trade-through in a later minute.
+- **Signals:** use data through the end of minute t−1 only. Models are walk-forward: trained only on candidates
+  before each test period, with a 1-day embargo.
+- **Capital:** $10,000. Target $2,500 per trade; at most 1.5x gross (6 x $2,500) unless a variant changes the
+  split at the same maximum gross.
+- **Implementable only:** every variant must be something the bot can do with REST orders once a minute
+  (post-only limits, market exits, BTC-perp hedges). Nothing that needs co-location or sub-second reaction.
+
+## Periods
+- Training data begins 2024-01-01; the first model is trained on 2024 only.
+- **Validation (selection): 2025-01-01 → 2026-03-31** (15 months).
+- **Holdout: 2026-04-01 → 2026-11-05** (7 months). Holdout metrics are written to a separate file and not
+  read until the shortlist is fixed.
+- The base strategy's 2026 quarterly results were already seen in v1. That is why the holdout compares
+  variants against the base on the same data, and why the forward paper test (from 2026-11-06) is the real
+  out-of-sample.
+
+## Selection
+- Score: validation Sharpe (daily, √365, calendar days incl. zero days) under realistic costs.
+- Eligible: at least 150 validation trades.
+- Round 1: single changes to v1 (below), at least 100 variants. Model noise is reduced by averaging 3 LightGBM
+  seeds per variant.
+- Round 2: up to 20 combinations of the best round-1 changes from different families, screened on validation only.
+- **Shortlist:**
+  - The top 5 eligible variants by validation score over rounds 1 and 2.
+  - ENS10: the equal-weight average of the top-10 variants' daily returns.
+  - The base.
+- **Adoption** (all must hold, otherwise v1 stays and the best is reported as a candidate):
+  1. Validation score ≥ base + 0.25.
+  2. Holdout realistic Sharpe ≥ base holdout realistic Sharpe + 0.25.
+  3. Futures-priced check (perp 1-minute candles since each perp listed, realistic costs, counting only fills where
+     spot also reached its level) ≥ base on the same check.
+  4. Deflated Sharpe ratio ≥ 0.95 with N = every variant tried in v2 (plus the ~2,000 earlier setups noted).
+  5. Probability of backtest overfitting (CSCV, 16 blocks, all variants, full 2025-01 → 2026-11 window) ≤ 0.3.
+- **Walk-forward variant selection** (a fully out-of-sample meta-strategy, reported regardless):
+  - From 2025Q3, each quarter trade the variant with the best realistic Sharpe over all previous quarters.
+  - Compare with the base over the same quarters.
+
+## Round-1 variant families (planned list)
+- **A. Entry level and reference:**
+  - Depth k: 3.5, 4.5, 5.
+  - Lookback L: 30, 45, 90, 120.
+  - Sigma window: 1 day, 7 days.
+  - Beta window: 1 day, 7 days.
+  - Reference: raw (no BTC adjustment); residual vs an equal-weight coin basket; residual vs BTC+ETH.
+  - Add BTC (raw dips); add BTC and ETH raw dips.
+  - Ladder (second unit at k=6).
+  - BTC-perp beta hedge on every fill.
+- **B. Exits:**
+  - Take-profit 0.4, 0.5, 0.7, 0.8.
+  - Hold cap 30, 45, 90.
+  - Two-stage take-profit (half at 0.4, half at 0.8).
+  - Take-profit that tracks fair value (fair minus 1σ, updated each minute).
+  - Early stop at 30 minutes if more than 1σ underwater.
+  - Early stop at 15 minutes if more than 1.5σ underwater.
+- **C. AI model:**
+  - Threshold rule: 40th, 60th, 75th percentile of training predictions; prediction > 0; prediction > 15 bp.
+  - Label: realistic-cost net (instead of base-cost net); take-profit-hit classifier; net/σ; clip ±200.
+  - Parameters:
+    - num_leaves 3 and 15.
+    - 500 rounds at half the learning rate.
+    - min_data_in_leaf 200.
+    - feature_fraction 0.5.
+    - Huber alpha 30 and 120.
+    - Monotone constraints on the two strongest features.
+  - Training: monthly retraining; rolling 12-month window; time-decay weights (half-life 180 days); no episode
+    weighting.
+  - Features:
+    - Extra set 1, price structure: 7-day high, 3-day low, 1-day range position, raw 15/60-minute moves, BTC's
+      distance from its 24-hour high.
+    - Extra set 2, flow: close-location of the last 5 minutes, abnormal selling volume for the coin and BTC,
+      number of other coins filling in the last 5 minutes, time since the coin's last dislocation, dislocations
+      in the last 24 hours.
+    - Extra set 3, calendar: hour of week, minutes to UTC midnight, US session.
+    - Sets 1+2+3 together.
+    - Top-12 features only (ranked on the 2024-trained model).
+    - LightGBM + logistic-regression rank ensemble.
+- **D. Sizing and portfolio:**
+  - Size by prediction (linear, clipped 0.5–2x); by prediction squared; equal risk (1/σ); by prediction/σ.
+  - 4 x $3,750, 8 x $1,875, 10 x $1,500 positions.
+  - At most 2 new fills per minute.
+  - Volatility-regime scaling.
+  - Drawdown throttle.
+  - Prediction-priority slot allocation (as the bot does).
+- **E. Universe:**
+  - 6 core coins.
+  - 17 + AVAX + ADA (tests the end-of-sample universe rule).
+  - 17 without ZEC.
+  - Size scaled by perp liquidity.
+- **F. Rhyming books:**
+  - Sell-the-rip mirror with AI.
+  - 15- and 240-minute residual books with AI.
+  - Joint 30/60/120 book with one model.
+  - Dips + rips combined.
+  - Weekend-only and weekday-only (diagnostics).
+
+## Deviation log
+(none yet)
