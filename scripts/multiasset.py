@@ -114,7 +114,8 @@ def lever_for(x, target):
     lo, hi = 0.0, 20.0
     for _ in range(60):
         mid = (lo + hi) / 2
-        tot = (1 + mid * xx + rf).prod() ** (365.25 / len(xx)) - 1
+        eq_end = (1 + mid * xx + rf).clip(lower=0).prod()
+        tot = eq_end ** (365.25 / len(xx)) - 1 if eq_end > 0 else -1.0
         lo, hi = (mid, hi) if tot < target else (lo, mid)
     eq = (1 + lo * xx + rf).cumprod()
     return lo, float((eq / eq.cummax() - 1).min())
@@ -172,30 +173,32 @@ def main():
     lev.to_csv(os.path.join(ROOT, "reports", "multiasset_leverage.csv"), index=False)
     pd.DataFrame(rets).to_parquet(os.path.join(ROOT, "reports", "multiasset_returns.parquet"))
 
-    # capacity at $5M for the 100%-a-year leverage of P1 (Coinbase-only book)
+    # capacity at $5M at the 100%-a-year leverage of the book the rule keeps (C3 unless P1 replaced it)
+    keep = "P1 C3 + Coinbase" if p1_wins else "C3"
     prods = pd.read_csv(os.path.join(ROOT, "reports", "cfm_products.csv"))
     prods["usd_vol"] = prods.volume_24h * prods.price * prods.contract_size
     prods["usd_oi"] = prods.open_interest * prods.price * prods.contract_size
     code = prods.product_id.str.split("-").str[0]
     best = prods.assign(code=code).sort_values("usd_vol", ascending=False).drop_duplicates("code").set_index("code")
-    L100 = float(lev[(lev.book == "P1 C3 + Coinbase") & (lev.target == 1.0)].leverage.iloc[0])
+    L100 = float(lev[(lev.book == keep) & (lev.target == 1.0)].leverage.iloc[0])
+    w_c3, w_ma = (a1, b1) if keep != "C3" else (1.0, 0.0)
     cap_rows = []
     last = slice("2025-11-01", None)
     c3p = c3_pos.loc[last]
     c3_daily_trade = c3p.diff().abs().resample("D").sum()
-    for t_ in COINBASE + ["BTC", "ETH"]:
+    for t_ in (COINBASE if w_ma > 0 else []) + ["BTC", "ETH"]:
         if t_ in ("BTC", "ETH"):
-            pos = a1 * c3p[t_].abs().resample("D").mean()
-            trade = a1 * c3_daily_trade[t_]
+            pos = w_c3 * c3p[t_].abs().resample("D").mean()
+            trade = w_c3 * c3_daily_trade[t_]
         else:
             pp = ma_pos[t_].loc[last]
-            pos, trade = b1 * pp.abs(), b1 * pp.diff().abs()
+            pos, trade = w_ma * pp.abs(), w_ma * pp.diff().abs()
         cb = best.loc[CFM[t_]] if CFM[t_] in best.index else None
         avg_pos = float(pos.mean() * L100 * 5e6)
         max_pos = float(pos.max() * L100 * 5e6)
         avg_trade = float(trade.mean() * L100 * 5e6)
-        cap_rows.append(dict(instrument=t_, coinbase_contract=CFM[t_], avg_position_usd=avg_pos, max_position_usd=max_pos,
-                             avg_daily_trade_usd=avg_trade,
+        cap_rows.append(dict(book=keep, leverage=L100, instrument=t_, coinbase_contract=CFM[t_], avg_position_usd=avg_pos,
+                             max_position_usd=max_pos, avg_daily_trade_usd=avg_trade,
                              coinbase_24h_volume_usd=float(cb.usd_vol) if cb is not None else np.nan,
                              coinbase_open_interest_usd=float(cb.usd_oi) if cb is not None else np.nan))
     cap = pd.DataFrame(cap_rows)
@@ -210,7 +213,7 @@ def main():
     print(tab[["book"] + [c for c in tab.columns if c.startswith("y20")]].round(2).to_string(index=False))
     print(tab[["book"] + [c for c in tab.columns if c.startswith("z_vs")]].dropna(how="all", subset=[c for c in tab.columns if c.startswith("z_vs")]).round(2).to_string(index=False))
     print(lev.round(2).to_string(index=False))
-    print(f"Capacity at $5M, P1 at {L100:.2f}x (100% a year):")
+    print(f"Capacity at $5M, {keep} at {L100:.2f}x (100% a year):")
     print(cap.round(3).to_string(index=False))
 
 
