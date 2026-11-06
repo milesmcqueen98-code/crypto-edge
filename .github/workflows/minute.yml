@@ -9,6 +9,8 @@ on:
         default: "2026-11-06"
       coins:
         default: '["BTC","ETH","SOL","XRP","DOGE","LTC","ADA","AVAX","LINK"]'
+      outdir:
+        default: "minute"
 
 permissions:
   contents: write
@@ -27,11 +29,11 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install ccxt pandas pyarrow
-      - run: python scripts/fetch_minute.py ${{ matrix.coin }} ${{ inputs.start }} ${{ inputs.end }}
+      - run: python scripts/fetch_minute.py ${{ matrix.coin }} ${{ inputs.start }} ${{ inputs.end }} ${{ inputs.outdir }}
       - uses: actions/upload-artifact@v4
         with:
           name: minute-${{ matrix.coin }}
-          path: data/minute/${{ matrix.coin }}.parquet
+          path: data/${{ inputs.outdir }}/${{ matrix.coin }}.parquet
           if-no-files-found: ignore
 
   commit:
@@ -43,15 +45,14 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           pattern: minute-*
-          path: data/minute
+          path: data/${{ inputs.outdir }}
           merge-multiple: true
       - name: Commit minute data
         run: |
-          ls -la data/minute
+          ls -la data/${{ inputs.outdir }}
           git config user.name "crypto-edge-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/minute
+          git add data/${{ inputs.outdir }}
           git diff --cached --quiet && exit 0
-          git commit -m "Minute price history ${{ inputs.start }} to ${{ inputs.end }}"
-          git pull --rebase origin main
-          git push
+          git commit -m "Minute price history ${{ inputs.start }} to ${{ inputs.end }} (${{ inputs.outdir }})"
+          for i in 1 2 3 4 5; do git pull --rebase -X theirs origin main && git push && break; sleep $((i*7)); done
