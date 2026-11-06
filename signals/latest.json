@@ -2,7 +2,7 @@
  "asof": "2026-11-05",
  "risk_on": false,
  "flipped_today": true,
- "action_needed": true,
+ "action_needed": false,
  "live_target": "CASH",
  "btc_close": 75969.06,
  "btc_sma100": 76942.1159,

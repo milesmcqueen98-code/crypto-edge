@@ -2,7 +2,7 @@
 
 BTC $75,969 is 1.3% below its 100-day average ($76,942) → **RISK OFF**.
 
-**Starting position: cash.** Don't buy yet; the first buy comes when BTC closes above its 100-day average.
+No trade today. Hold **cash** (USD or USDC). (unchanged since 2026-11-05)
 
 ## Shadow tracking (logged daily, never traded)
 - AI model top 10 (would hold if risk on): ADA, BTC, DOGE, ETH, HYPE, LTC, SOL, SUI, XMR, XRP
