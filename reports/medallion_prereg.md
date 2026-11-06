@@ -152,3 +152,9 @@ variance swaps, one sold each day at (DVOL − 1)², marked daily to DVOL, minus
 notional × |daily return|) and the 20% margin T-bill drag, scaled to 20% development vol. Rule: F9 is still judged
 as registered and reported, but only F9L can enter the portfolio, and only if F9L itself passes (development ≥ 1.0,
 hold-out ≥ 0.5). Development Sharpe before this rule was fixed: F9L BTC ≈ 1.6, ETH ≈ 0.6 (review and own check).
+
+**Hold-out opened once (2026-11-06, after commit 30a5010).** Results: reports/medallion/ (screen.csv, books_*.csv,
+portfolio.json, robustness.csv). 0 of 146 signals pass. Only the registered F9 BTC proxy passes the book bar
+(2.93 / 0.76); its tradable stand-in F9L BTC misses (1.50 / 0.45), so no book is eligible and C3 stays. After the
+hold-out, descriptive only (not trials): C3 + F9L blends (blend_descriptive.py) and portfolio-level vol targeting,
+reported as leads for a future pre-registered round.

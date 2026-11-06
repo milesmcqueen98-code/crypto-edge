@@ -1,0 +1,4 @@
+book,weights,sharpe_dev,sharpe_hold,sharpe_since_2021_03,sharpe_full,cagr_hold,maxdd_hold,dsr,memmel_z_hold,memmel_p_hold,corr_with_c3
+C3,{'C3': 1.0},1.64305,0.519181,0.705732,1.41269,0.158013,-0.211919,0.101481,,,
+C3 + F9L_short_vol_ladder_BTC,"{'C3': np.float64(0.381), 'F9L_short_vol_ladder_BTC': np.float64(0.619)}",2.1519,0.818517,1.54628,1.73058,0.122779,-0.0808893,0.403079,0.918086,0.358574,-0.338167
+C3 + F9_short_vol_BTC,"{'C3': np.float64(0.381), 'F9_short_vol_BTC': np.float64(0.619)}",2.60675,1.02688,2.29001,1.95934,0.155889,-0.0934299,0.695093,1.2415,0.21442,-0.283293

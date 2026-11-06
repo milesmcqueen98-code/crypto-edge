@@ -1,4 +1,4 @@
-# Crypto edge: findings and live rules (updated Nov 6, 2026, scale round 2)
+# Crypto edge: findings and live rules (updated Nov 6, 2026, Medallion round)
 
 Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly signals, paper-trading bot)
 
@@ -9,6 +9,13 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   Replayed on the perps' own prices it shows 5–9, but mostly from perp-only wicks whose fills are unverified (1.6–2.6
   counting only spot-confirmed fills). Not traded with money until the paper test and a 1-contract pilot pass, and
   compliance clears futures.
+- **Medallion round (Nov 6): nothing adopted; C3 stays.** Every strategy family the book describes Renaissance trying, in
+  crypto versions (lunar placebo, sentiment and positioning, hidden Markov regimes, nearest-neighbour patterns,
+  seasonality, pairs, factor stat-arb, alternative data, short volatility, one AI model), pre-registered with a
+  2024–26 hold-out opened once. 0 of 146 signals and no eligible book passed. The one near miss is short BTC
+  volatility: the strict, tradable version scored 0.45 in the hold-out against a 0.5 bar. Added to C3 it would have
+  lifted the 2024–26 Sharpe from 0.52 to 0.82, but that gain isn't significant (p = 0.36). Paper-track candidate only
+  (section below).
 - **Wick v3 (Nov 6):** on fresh 2022–2023 data that no wick research had touched, R2-08 beat v1 again: Sharpe 2.63 vs
   1.77, and +4.2% vs −3.3% in the FTX quarter. The complex 2025–26 finalists failed there. No refinement replaced it.
 - **Trend v2 (Nov 6):** signal unchanged (no refinement passed the bars). Execution matters:
@@ -31,6 +38,123 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   (section below).
 - **Maker round (Nov 6): rejected.** Two-sided quoting at the touch loses 0.7–0.9 bp per dollar before fees in all 36 setups.
 - **C3 upgrade round (Nov 6):** turnover cuts tie on Sharpe; C3 unchanged, still a paper-trade candidate.
+
+## Medallion round (Nov 6): every strategy family in *The Man Who Solved the Market*, crypto versions — none adopted
+Goal set by Miles: trade crypto the way Medallion did, trying every strategy the book describes Jim Simons' team
+trying, with new data where needed. It must be implementable by a retail investor in New York; the priority is $5M of
+capacity and a high Sharpe, with returns coming from leverage.
+
+**Protocol:**
+- Pre-registered before any new data was opened (reports/medallion_prereg.md, commit 8cc3f3f). Implementation notes
+  were committed before any statistic was computed (c0c5495).
+- Development results were frozen (d961ae5). An independent code review followed, then a re-freeze (30a5010). The
+  hold-out was then opened once for everything.
+- Development 2020–2023 (hourly families from 2017-07); hold-out 2024-01-01 – 2026-11-05.
+- **A book passes** with development Sharpe ≥ 1.0 and hold-out ≥ 0.5.
+- **A signal passes** with development |t| ≥ 3, then the same sign and |t| ≥ 2 in the hold-out.
+- Passing books join C3 by inverse development volatility. They replace C3 only if development Sharpe rises and no
+  out-of-sample period gets worse.
+- Costs: BTC 2.5 bp, ETH 6.5 bp, alts measured per side. Funding: Binance (paid by longs).
+
+**New data** (free sources, fetched by GitHub Actions into data/alt/; offshore data is research input only):
+- Binance USD-M: funding, 1h perp candles, open interest and top-trader/taker ratios (BTC, ETH, SOL, XRP and DOGE,
+  from Dec 2021; top-trader ratios are missing for most of 2022). Binance spot, for the Coinbase premium.
+- Deribit DVOL implied vol (Mar 2021+), fear & greed, DefiLlama stablecoin supply.
+- On-chain: Coin Metrics community data, and blockchain.com fees and transfer volume.
+- CME BTC/ETH futures, VIX, dollar index, 10-year yield, S&P and Nasdaq futures, and gold (via yfinance).
+- Farside ETF flows returned only a few weeks of history, so they weren't tested.
+
+**Signal screen:** 38 signals × BTC/ETH × 1- and 7-day horizons = 146 rank-IC tests (lunar placebo, positioning and
+sentiment, return sequences, alternative data).
+- 2 development passes, about what chance gives: ETH's 7-day funding change (t −3.95) and ETH's 1-day reversal
+  (t −3.28). Hold-out t: +0.25 and −0.52. **0 of 146 pass.**
+- The lunar placebo had development |t| ≤ 1.4, then hold-out t −2.0 for BTC next day. A |t| of 2 happens by chance;
+  the two-stage rule caught it.
+- Development and hold-out t-stats correlate 0.36 (68% have the same sign): faint persistence. The most consistent,
+  still under the bars:
+  - Coinbase premium, 7-day, ETH: t +1.4–1.7 in development, +2.3–2.5 in the hold-out.
+  - Prior-day Nasdaq futures return, BTC: t −1.7 / −2.0.
+
+**Books** (Sharpe above T-bills, development / hold-out):
+
+| Book idea (who) → crypto test | Book | Dev | Hold-out |
+|---|---|---|---|
+| Hidden Markov regimes (Baum) | BTC long/flat · long/short | 0.61 · 0.07 | 0.57 · 0.37 |
+| | ETH long/flat · long/short | 0.77 · −0.19 | −0.10 · −0.33 |
+| "Find past days like today" (Carmona's kernels) | BTC nearest neighbours | **1.26** (1.58 in 2017–19) | **−0.26** |
+| | ETH nearest neighbours | 0.61 | 0.55 |
+| Seasonality (Laufer) | Hour of week (gross ~1.0 in dev) | −5.0 | −8.4 |
+| | Day of week · weekend/CME gap | −0.34 · −0.40 | −0.20 · −0.54 |
+| | Funding hours | −8.5 | −13.6 |
+| Pairs (cointegration, ~5 pairs a month) | | −0.76 | −1.09 |
+| Factor stat-arb (Frey, Brown & Mercer) | Composite · funding carry | −1.49 · −0.20 | −2.53 · −1.08 |
+| Short volatility, registered proxy | BTC · ETH | **2.93** · 0.88 | **0.76** · −0.61 |
+| Short volatility, strict ladder (F9L) | BTC · ETH | **1.50** · 0.47 | **0.45** · −0.72 |
+| One model for everything (Laufer, Brown & Mercer) | Ridge · LightGBM | 0.50 · 0.68 | 0.97 · 0.21 |
+
+- **Only the registered short-vol proxy passes, and it overstates what can be traded.** It sells one day of variance
+  at yesterday's DVOL, with no loss when implied vol jumps and no hedging cost. By a rule logged before the hold-out,
+  only the strict ladder could enter the portfolio, and it scored 0.45 vs the 0.5 bar. **Portfolio = C3,
+  unchanged:** Sharpe 1.64 dev, 0.52 hold-out, 1.41 since Jul 2017; deflated Sharpe 0.10 (N = 503).
+- **Nearest neighbours:** the best pattern model in development (1.26, and 1.58 in 2017–19) lost money in the
+  hold-out.
+- **LightGBM one model is unstable:** float-level changes to two features moved its development Sharpe from 0.90 to
+  0.68. It fails either way.
+- **Code review** (separate agent): no look-ahead; books re-run on data cut at mid-2022 match to the bit. Fixed before
+  the hold-out:
+  - F7 turned identical funding cross-sections into full-size directional bets (3 days).
+  - F10 had been charged 14 months before it could trade.
+  - Funding was booked 8 hours early.
+
+**Near miss: short BTC volatility, the one premium that persists.**
+- **What F9L does:** a ladder of 30-day short variance swaps, one sold each day at DVOL − 1 vol point, marked daily
+  to DVOL. It pays delta-hedging costs and the margin T-bill drag, scaled to 20% development vol.
+- **The premium is shrinking.** Implied vol topped the next 30 days' realized vol on 74% of days in 2021–23, by 17.7,
+  12.0 and 6.5 vol points a year.
+- **By year:** 2021 +51%, 2022 +35%, 2023 +15%, 2024 +15%, 2025 +13%, 2026 YTD −4%.
+  - Hold-out excess return 4.0%/yr at 8.8% vol; worst day −8.9%.
+  - At 2× costs (2 vol points plus double hedging): 1.30 dev / 0.11 hold-out.
+- **It hedges the trend.** Correlation with C3 is −0.34: trend gains from big moves, short vol loses on them.
+- **Descriptive only, not adopted:** C3 + F9L BTC, weighted 38/62 by the registered rule.
+  - Sharpe 2.15 dev, 0.82 hold-out (C3: 0.52), 1.73 since Jul 2017 (C3: 1.41).
+  - Hold-out max drawdown −8% vs −21%.
+  - Hold-out improvement z = 0.92 (p = 0.36); deflated Sharpe 0.40.
+  - Results: reports/medallion/blend_descriptive.csv and blend_leverage.csv.
+
+| Leverage | C3: since 2017 / 2024+ | C3 + F9L: since 2017 / 2024+ | Max DD (both) |
+|---|---|---|---|
+| 1.0x | 52% / 16% | 54% / 12% | −23% |
+| 1.5x | 79% / 19% | 84% / 16% | −33% |
+| 2.0x | 106% / 20% | 117% / 20% | −42% |
+| 2.5x | 132% / 19% | 152% / 23% | −51% / −50% |
+
+- **No leverage reaches 100%/yr after 2023.** At fixed leverage up to 3x, neither book tops ~26%/yr since 2024 (C3
+  peaks at 20% near 2x).
+  - Return ≈ Sharpe × vol: at the hold-out Sharpe of 0.5–0.8, 100%/yr needs 125–200% vol.
+  - Scaled to 100% target vol, drawdowns ran −64% to −74%.
+- **Untested lead (post hoc, not a trial):** scaling the whole book to a 30% vol target, using its trailing 30–120-day
+  vol, lifted C3's 2024–26 Sharpe from 0.52 to 0.68–0.88. Development was 1.61–1.88 vs 1.64. This needs its own
+  pre-registered test before any use.
+- **Tradable from New York:**
+  - IBIT options: listed on Nasdaq; open interest ~$27.6B in May 2026, above Deribit's. Or CME BTC options.
+  - Delta-hedge daily with IBIT shares or nano BTC perps.
+  - $5M is not the constraint. The constraints are compliance (options and futures both need Sculptor
+    pre-clearance; the current rule is ETFs only) and the data gap (DVOL is a Deribit index, Deribit doesn't serve
+    US persons, and IBIT implied vols carry more put skew).
+- **Status: paper-track candidate only.** Next step: a 3-month paper ladder of 30-day IBIT ATM straddles (1/30 of the
+  sleeve sold each day, hedged at the close), recording real bid-ask and IBIT IV vs DVOL.
+
+**Why Medallion's methods don't carry over to a retail crypto book:**
+1. Medallion earned its money at very short horizons, with institutional costs and queue priority. Crypto's
+   equivalent, the 1–15-minute reversal (gross Sharpe 4+), is real but harvestable only by a privileged maker. The
+   maker round tested and rejected it.
+2. At daily horizons, 146 signals and 19 books produced nothing beyond chance. What worked in 2020–23 (nearest
+   neighbours, ETH funding) didn't persist.
+3. What persists is a risk premium (insurance selling), not a pattern. It has shrunk as institutions sell BTC vol
+   (ETF covered-call funds, IBIT option writing).
+
+Code: scripts/medallion/ (common, features, screen, books, onemodel, portfolio, robustness, blend_descriptive).
+Results: reports/medallion/. Data: data/alt/ (.github/workflows/altdata.yml).
 
 ## Wick v3 (Nov 6): fresh-era test, 2022–2023
 Pre-registered in reports/wick_v3_prereg.md before any of this data was loaded. No wick research had touched pre-2024
@@ -836,17 +960,18 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
     cancels the extra exposure.
 - Deflated Sharpe of C3: 0.11 (N = 484). Not proven skill.
 - **Verdict:** C3 is still the highest-Sharpe book that holds at $5M. The wick catcher adds ~$50K a year on top.
-- Untested next candidate for scalable Sharpe: short BTC volatility, delta-hedged (listed BTC options at CME or on
-  IBIT are deep enough for $5M). It earns a premium that trend complements (trend profits in the crashes that hurt
-  short volatility), but it carries crash risk and employer rules on options.
+- Next candidate for scalable Sharpe was short BTC volatility, delta-hedged (listed BTC options at CME or on IBIT are
+  deep enough for $5M). It was tested in the Medallion round: a near miss (strict version 0.45 in the 2024–26
+  hold-out vs the 0.5 bar), now a paper-track candidate.
 
 ## Method notes
 - Point-in-time top-50 universe by 30-day median dollar volume.
 - Walk-forward retraining every quarter, with an 8-day purge between training data and the test period.
 - Hyperparameters frozen before seeing any results.
 - Weekly-only trend checks were fragile: 7%–26% CAGR depending on the weekday. Fixed with daily checks and averaging across all 7 weekday phases.
-- About 484 variants in the earlier rounds (incl. the maker, C3 upgrade and scale-2 rounds), about 2,000 setups in the execution round and
-  130 in the wick v2 lab, so an improvement needs t ≈ 3 to be believable.
+- About 484 variants in the earlier rounds (incl. the maker, C3 upgrade and scale-2 rounds), 19 books and 146 signal tests
+  in the Medallion round, about 2,000 setups in the execution round and 130 in the wick v2 lab, so an improvement
+  needs t ≈ 3 to be believable.
 - Tick-data rounds: pre-register, freeze the dev choice in a commit, then run the hold-out once. Raw tick files stay on the
   CI runner.
 
@@ -862,5 +987,8 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
   aren't observable there; the paper test logs order-book depth ahead of each bid to measure them.
 - Tick data (maker round) covers only the first day of each month (35 days, Tardis free tier). Coinbase Derivatives order-book
   history isn't available.
+- No option-price history: short volatility is tested on Deribit's DVOL index, not on IBIT or CME option quotes.
+- Binance open-interest and positioning metrics exist only from Dec 2021 for five coins, with top-trader ratios
+  missing for most of 2022.
 - Wick-catcher capacity is estimated from 1-minute candles (volume spread evenly over each candle's range); real depth
   during wicks is unobserved until the paper test logs it.
