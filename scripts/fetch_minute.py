@@ -18,6 +18,9 @@ def main(coin, start, end):
     ex = ccxt.coinbaseexchange({"enableRateLimit": True, "timeout": 30_000})
     ex.load_markets()
     sym = f"{coin}/USD"
+    if sym not in ex.markets:
+        print(f"{coin}: {sym} not listed on Coinbase spot; skipping")
+        return
     s = int(pd.Timestamp(start, tz="UTC").timestamp() * 1000)
     e = int(pd.Timestamp(end, tz="UTC").timestamp() * 1000)
     rows, n_req, t0 = {}, 0, time.time()
