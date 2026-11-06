@@ -64,7 +64,8 @@ Get written clearance from Sculptor compliance before any live order. Ask four t
 
 ### 2. Server (an always-on Linux VM)
 1. Create an Ubuntu 24.04 VM in a US east region: DigitalOcean NYC, AWS us-east-1, or Vultr New Jersey.
-   - Size: 2 vCPU / 4 GB (about $24 a month). The minute loop uses about 0.5 GB and under a second of CPU per minute.
+   - Size: 2 GB of memory is enough (about $12 a month, e.g. AWS Lightsail us-east-1 with its included static IP).
+     The minute loop uses about 0.5 GB and under a second of CPU per minute; avoid 1 GB plans.
    - Reserve a static IP. Log in with an SSH key only, and allow only SSH in the firewall.
 2. Copy `deploy/setup_vm.sh` to the server and run it as root:
    `curl -O https://raw.githubusercontent.com/milesmcqueen98-code/crypto-edge/main/bot/spot/deploy/setup_vm.sh && sudo bash setup_vm.sh`

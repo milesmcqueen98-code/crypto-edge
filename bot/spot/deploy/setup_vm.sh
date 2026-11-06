@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-time setup of an always-on Ubuntu 24.04 server (e.g. a $12-24/month DigitalOcean / Vultr / Lightsail VM in a US
+# One-time setup of an always-on Ubuntu 24.04 server (e.g. a ~$12/month 2 GB Lightsail / DigitalOcean / Hetzner VM in a US
 # east region) for the live spot bot. Run as root:  bash setup_vm.sh
 # Afterwards: fill in /etc/wickbot.env, run the preflight, then start the service (bot/spot/README.md, steps 5-7).
 set -euo pipefail
