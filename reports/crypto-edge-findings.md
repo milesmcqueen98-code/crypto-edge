@@ -1,4 +1,4 @@
-# Crypto edge: findings and live rules (updated Nov 6, 2026, Medallion round)
+# Crypto edge: findings and live rules (updated Nov 6, 2026, wick at $1M)
 
 Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly signals, paper-trading bot)
 
@@ -9,6 +9,13 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   Replayed on the perps' own prices it shows 5–9, but mostly from perp-only wicks whose fills are unverified (1.6–2.6
   counting only spot-confirmed fills). Not traded with money until the paper test and a 1-contract pilot pass, and
   compliance clears futures.
+- **Wick catcher at $1M (Nov 6):** three changes turn the current rules' −18% a year at $1M into a profit:
+  - each trade capped at 0.2% of the coin's daily volume;
+  - each bid split into a 4/6/8-sigma ladder;
+  - every AI signal taken, with positions capped at 100% of cash.
+  At $1M that earned +10% a year (Sharpe 1.8) in the Apr – Nov 2026 check period and +22% (Sharpe 2.5) in Jan 2025 –
+  Mar 2026, short of the 25% bar. The efficient size is $250–500K (18–23% a year at Sharpe 2.7–3.2 in the check
+  period); dollar profit stops growing near $1M (section below).
 - **Medallion round (Nov 6): nothing adopted; C3 stays.** Every strategy family the book describes Renaissance trying, in
   crypto versions (lunar placebo, sentiment and positioning, hidden Markov regimes, nearest-neighbour patterns,
   seasonality, pairs, factor stat-arb, alternative data, short volatility, one AI model), pre-registered with a
@@ -38,6 +45,101 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   (section below).
 - **Maker round (Nov 6): rejected.** Two-sided quoting at the touch loses 0.7–0.9 bp per dollar before fees in all 36 setups.
 - **C3 upgrade round (Nov 6):** turnover cuts tie on Sharpe; C3 unchanged, still a paper-trade candidate.
+
+## Wick catcher at $1M (Nov 6): best at $250–500K; about 10–20% a year at $1M
+Goal set by Miles: get the wick catcher (R2-08) to work with $1M. Pre-registered in reports/wick1m_prereg.md. The bar,
+at $1M in the Apr – Nov 2026 check period:
+- Sharpe ≥ 2.
+- Return ≥ 25% a year.
+- Max drawdown no worse than −20%.
+- Still profitable if we capture only a quarter of the volume through our bids.
+
+Code: scripts/wick1m/. New data: 19 more Coinbase coins (data/minute) and Bitstamp 1-minute history (data/bitstamp).
+Results: reports/wick1m/.
+
+**Why the current rules lose at size: adverse selection by size.**
+- The trades where the most volume trades through our bid are the losers. By quintile of through-volume, mean gross is
+  +77, +84, +44, +42 and −5 bp.
+- So a big book fills fully in selloffs that keep going and only partly in quick wicks.
+- At $1M the current rules lose 18% a year in the check period.
+
+**The $1M rule** (chosen on Jan 2025 – Mar 2026 from 72 combinations, then fixed):
+1. **Size cap:** each signal at most 0.2% of the coin's trailing 30-day median daily Coinbase volume (spot + perp).
+2. **Ladder:** split each signal into three bids at 4, 6 and 8 sigma below fair value, a third each. Cancel the
+   deeper bids when the 4-sigma position takes profit, or after 60 minutes. The deep bids fill only in real cascades,
+   at better prices, and earn more than half the P&L.
+3. **Every AI-approved signal** (no 6-slot cap), with total positions ≤ 100% of cash. US spot has no margin; without
+   this cap the book would have peaked at 264% of capital on Oct 10 2025.
+4. **Exits as now:** take-profit at 60% of each bid's dislocation, otherwise market after 60 minutes. Selling slowly
+   over hours ties up cash and did worse.
+- **Venue:** Coinbase spot. The book trades about $8M a month, which is Coinbase VIP 1 (0.06% maker, 0.125% taker).
+
+**Results** (corrected after an independent review; we capture half of the volume through our bids):
+
+| $1M, 17 coins | Jan 2025 – Mar 2026 (selection) | Apr – Nov 2026 (check) | 2022–23 (fresh era, spot only) |
+|---|---|---|---|
+| Return / Sharpe | 21.7% / 2.53 | 10.0% / 1.82 | 6.6% / 1.21 |
+| Dollars a year | $217K | $100K | $66K |
+| Max drawdown, marked to market | −14% (Oct 10 2025) | −4% | −4.5% |
+| Best 3 days' share of P&L | 31% | 60% | 31% |
+| Current rules at $1M | −4.2% | −18.0% | −7.2% |
+
+**Capacity:**
+
+| Capital | Check: return / Sharpe | Selection: return / Sharpe |
+|---|---|---|
+| $100K | 23.5% / 3.3 | 35.1% / 2.6 |
+| $250K | 22.7% / 3.2 | 31.8% / 2.4 |
+| $500K | 18.1% / 2.7 | 27.1% / 2.5 |
+| $1M | 10.0% / 1.8 | 21.7% / 2.5 |
+| $2M | 4.9% / 0.6 | 15.8% / 2.2 |
+
+- In the check period, dollar profit is flat at about $100K a year from $1M up.
+- Check-period volumes on Coinbase were roughly half of the selection period's, so trades were smaller. Profit per
+  dollar traded was the same (about 42–43 bp).
+
+**What didn't help:**
+- **More coins and Bitstamp:** 31 coins plus Bitstamp gave 9.2% (Sharpe 1.53) in the check period, though 24.4% (2.84)
+  in selection.
+- **Bitstamp specifically:** its volume is 0–23% of Coinbase's per coin, but at the book's small Bitstamp volume its
+  fees eat the edge.
+
+**Uncertainty:**
+- The check-period Sharpe's 90% interval is 0.0–3.1 (weekly-block bootstrap); 60% of the check-period P&L came from 3
+  days.
+- Sensitivities (check, $1M):
+  - Coinbase's VIP-page fee tiers: 10.5% / 1.97.
+  - Dropping deeper fills in the first bid's own minute: 8.5% / 1.73.
+  - Capturing a quarter of the volume instead of half: 8.3% / 1.46.
+
+**Fit with the rest of the book:** correlation with C3 is 0.07. 3 losing months of 23; worst month −1.1%.
+
+**Verdict:** the bar is not met at $1M. The rule fixes the size problem, but the market's wick volume caps the dollars.
+Run it at $250–500K and put the rest in C3.
+
+**Independent review (separate agent):**
+- No look-ahead.
+- Fixed before the final numbers:
+  - Deeper bids were left resting after the take-profit.
+  - Tick sizes were 10x too fine in the wide universe.
+  - The same sellers filled several bids, and take-profits sold on venues where nothing was bought.
+  - The cash cap was timed at the first bid.
+  - Bitstamp volume enlarged the size cap.
+  - Drawdowns were on daily closes only.
+- Together these took the first-pass check numbers from 12.4% / 2.28 (17 coins) and 16.3% / 2.89 (wide) to 10.0% /
+  1.82 and 9.2% / 1.53.
+
+**To run it at $250K–$1M:**
+1. **Bot changes (bot/v2):**
+   - Coinbase spot orders.
+   - Three post-only bids per signal at 4/6/8 sigma; cancel the deeper bids when the first takes profit or after
+     60 minutes.
+   - Per-signal size min(25% of capital, 0.2% of 30-day median daily volume).
+   - No slot cap; positions plus resting bids ≤ cash (Coinbase holds cash for open bids).
+2. **Paper test at the target size:** the share of through-volume we capture is the key unknown. The bot already logs
+   the dollars queued ahead of each bid.
+3. **Compliance:** ask Sculptor whether personal spot crypto trading needs pre-clearance (it isn't a future).
+4. **Idle cash:** keep it in USDC on Coinbase; the rewards it earns are not counted above.
 
 ## Medallion round (Nov 6): every strategy family in *The Man Who Solved the Market*, crypto versions — none adopted
 Goal set by Miles: trade crypto the way Medallion did, trying every strategy the book describes Jim Simons' team
@@ -990,5 +1092,7 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
 - No option-price history: short volatility is tested on Deribit's DVOL index, not on IBIT or CME option quotes.
 - Binance open-interest and positioning metrics exist only from Dec 2021 for five coins, with top-trader ratios
   missing for most of 2022.
+- Wick at $1M: the share of through-volume we capture is assumed (a quarter or a half). Cash held by resting spot bids
+  isn't modelled. Spot ticks for added coins are estimated from price grids.
 - Wick-catcher capacity is estimated from 1-minute candles (volume spread evenly over each candle's range); real depth
   during wicks is unobserved until the paper test logs it.
