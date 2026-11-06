@@ -65,4 +65,35 @@ For the chosen rule, Phase 1 and Phase 1 + 2: return, Sharpe, max drawdown and d
 
 ## Deviation log
 
-(none yet)
+**Implementation notes (fixed before any lever was evaluated).**
+1. Trade lists come from the wick lab's own pipeline (scripts/wick1m/trades.py imports scripts/lab unchanged): 1,568
+   AI-approved R2-08 trades in 2025–26, of which the bot's portfolio rule keeps 1,264 (identical to
+   reports/lab/futures_trades.parquet). Bids all day (no quiet window), as in the scale round. Fresh era: 744 / 691.
+2. Deeper tranches: levels from the fair value and sigma at the first fill, fixed while they rest (60 minutes); a
+   tranche fills in the first minute whose spot low trades through it by a tick, at its level; it then has its own
+   take-profit and 60-minute window.
+3. Take-profit orders rest for 60 minutes; capacity = θ × USD volume above the take-profit price on all venues in the
+   60 minutes after the fill minute.
+4. Participation exits pay the taker fee, half-spread and square-root impact on the amount they sell; anything left
+   after 240 minutes is sold at market with impact.
+5. Bitstamp fees: 2 bp maker / 5 bp taker once the book trades ≥ $10M a month (published range 0.00–0.30% maker,
+   0.03–0.40% taker); below that, Coinbase's schedule as a proxy.
+6. Uncapped list: each tranche's fill counts against the 300% gross cap for 60 minutes (plus 240 for participation
+   exits); a trade is skipped when less than 10% of its size fits.
+7. Fee tier, gross cap and statistics are computed inside each period separately. P&L is booked on the fill day.
+8. Check-period statistics are computed only with WICK1M_CHECK=1.
+
+**Deviation 1 (before the check period): gross ≤ 100% of capital.** The registered grid allowed 300% gross for the
+uncapped list. But 97% of the entry capacity is Coinbase spot volume, and US spot accounts have no margin, so spot
+positions need cash. The first grid peaked at 264% gross (Oct 10 2025 crash). The grid was re-run with gross ≤ 100%
+for both trade lists. Under that limit the participation exits rank below the market exit, because they hold capital
+for up to 5 hours.
+
+**Deviation 2 (before the check period): two more size caps.** The best cap was the largest in the grid (10 bp of
+daily volume, i.e. 0.1%), so 20 bp and 40 bp were added, with the same ladder / exit / list options.
+
+**Phase 1 selection (selection period only, $1M, θ = 0.5, gross ≤ 100%).** Best by Sharpe: size cap 20 bp of the
+coin's daily volume, ladder at 4/6/8σ, market exit at 60 minutes, every AI-approved signal. Selection period: 21.6% a
+year, Sharpe 2.75, max drawdown −3.8%, $216K a year; at θ = 0.25: 18.5%, Sharpe 2.41. Baseline (current rules):
+−7.7%, Sharpe −0.83. This rule is now fixed for Phase 2 and the check period. Grid files:
+reports/wick1m/grid_main_1000k_g1.csv (the 300%-gross first pass: grid_main_1000k.csv).
