@@ -1,0 +1,54 @@
+name: fetch-minute
+
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        default: "2024-01-01"
+      end:
+        default: "2026-11-06"
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        coin: [BTC, ETH, SOL, XRP, DOGE, LTC, ADA, AVAX, LINK]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ccxt pandas pyarrow
+      - run: python scripts/fetch_minute.py ${{ matrix.coin }} ${{ inputs.start }} ${{ inputs.end }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: minute-${{ matrix.coin }}
+          path: data/minute/${{ matrix.coin }}.parquet
+
+  commit:
+    needs: fetch
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: minute-*
+          path: data/minute
+          merge-multiple: true
+      - name: Commit minute data
+        run: |
+          ls -la data/minute
+          git config user.name "crypto-edge-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/minute
+          git diff --cached --quiet && exit 0
+          git commit -m "Minute price history ${{ inputs.start }} to ${{ inputs.end }}"
+          git pull --rebase origin main
+          git push
