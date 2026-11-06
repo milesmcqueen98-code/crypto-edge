@@ -39,16 +39,43 @@ def get(path, **params):
             time.sleep(1 + 2 * attempt)
 
 
-def futures_products():
+def _page_all(**params):
     out, offset = [], 0
     while True:
-        js = get("products", product_type="FUTURE", limit=250, offset=offset)
+        js = get("products", limit=100, offset=offset, **params)
         prods = js.get("products", [])
         out += prods
-        if len(prods) < 250:
+        total = js.get("num_products") or 0
+        offset += len(prods)
+        if not prods or (total and offset >= total) or len(prods) < 100 and not total:
             break
-        offset += 250
     return out
+
+
+def futures_products():
+    seen = {}
+    for params in ({"product_type": "FUTURE", "contract_expiry_type": "PERPETUAL"},
+                   {"product_type": "FUTURE"}):
+        try:
+            for p in _page_all(**params):
+                seen[p["product_id"]] = p
+        except Exception as err:
+            print("listing failed", params, err, flush=True)
+    return list(seen.values())
+
+
+def is_perp(p):
+    f = p.get("future_product_details") or {}
+    pid = (p.get("product_id") or "").upper()
+    disp = (p.get("display_name") or "").upper()
+    return (f.get("contract_expiry_type") == "PERPETUAL" or bool((f.get("perpetual_details") or {}).get("funding_rate"))
+            or "PERP" in disp or "20DEC30" in pid or "PERP" in pid)
+
+
+def root_of(p):
+    f = p.get("future_product_details") or {}
+    r = f.get("contract_root_unit") or p.get("base_display_symbol") or p.get("base_currency_id") or ""
+    return r.upper()
 
 
 def flat(p):
@@ -59,7 +86,8 @@ def flat(p):
                 price_increment=p.get("price_increment"), base_increment=p.get("base_increment"),
                 volume_24h=p.get("volume_24h"), contract_code=f.get("contract_code"),
                 contract_size=f.get("contract_size"), contract_root_unit=f.get("contract_root_unit"),
-                expiry_type=f.get("contract_expiry_type"), expiry=f.get("contract_expiry"),
+                expiry_type="PERPETUAL" if is_perp(p) else (f.get("contract_expiry_type") or "EXPIRING"),
+                expiry=f.get("contract_expiry"), root=root_of(p),
                 venue=f.get("venue"), max_leverage=perp.get("max_leverage"), funding_rate=perp.get("funding_rate"),
                 open_interest=perp.get("open_interest"), twenty_four_by_seven=f.get("twenty_four_by_seven"),
                 group=f.get("group_description"))
@@ -68,7 +96,7 @@ def flat(p):
 def perp_for(root, prods=None):
     prods = prods or futures_products()
     cands = [flat(p) for p in prods]
-    cands = [c for c in cands if c["contract_root_unit"] == root and c["expiry_type"] == "PERPETUAL"]
+    cands = [c for c in cands if c["root"] == root and c["expiry_type"] == "PERPETUAL"]
     if not cands:
         return None
     cands.sort(key=lambda c: float(c["volume_24h"] or 0), reverse=True)
@@ -84,8 +112,11 @@ def mode_products():
     df.to_csv(os.path.join(ROOT, "reports", "cfm_products.csv"), index=False)
     perps = df[df.expiry_type == "PERPETUAL"]
     print(f"{len(df)} futures products, {len(perps)} perp-style")
-    print(perps[["product_id", "display", "contract_size", "contract_root_unit", "price", "price_increment",
-                 "volume_24h", "max_leverage", "open_interest"]].to_string(index=False))
+    pd.set_option("display.width", 250)
+    print(df[["product_id", "display", "root", "expiry_type", "contract_size", "price", "price_increment",
+              "volume_24h", "max_leverage"]].to_string(index=False))
+    pp = [p for p in prods if is_perp(p)] or prods
+    print("example product json:", json.dumps(pp[0])[:2500])
 
 
 def mode_candles(root, start):
@@ -142,9 +173,12 @@ def depth(levels, mid, side, bps):
 def mode_book(minutes):
     prods = futures_products()
     perps = [flat(p) for p in prods]
-    perps = [c for c in perps if c["expiry_type"] == "PERPETUAL" and c["status"] in ("ONLINE", None)]
-    books = [(c["product_id"], c["contract_root_unit"], float(c["contract_size"] or 1)) for c in perps]
-    books += [(f"{c['contract_root_unit']}-USD", c["contract_root_unit"], 1.0) for c in perps]
+    perps = [c for c in perps if c["expiry_type"] == "PERPETUAL" and str(c["status"] or "online").lower() == "online"]
+    if not perps:
+        print("no perps found; nothing to sample")
+        return
+    books = [(c["product_id"], c["root"], float(c["contract_size"] or 1)) for c in perps]
+    books += [(f"{c['root']}-USD", c["root"], 1.0) for c in perps]
     print("sampling", [b[0] for b in books], flush=True)
     rec, t_end = [], time.time() + 60 * float(minutes)
     while time.time() < t_end:
