@@ -115,5 +115,31 @@ one idea, many weak signals, strict out-of-sample selection, costs modelled firs
   - Dips + rips combined.
   - Weekend-only and weekday-only (diagnostics).
 
+## Round-2 construction rule (written 2026-11-06 ~10:45 ET, while round 1 was still running and before any round-1 result was read)
+- Candidates: round-1 variants from families A-F with at least 150 validation trades whose validation realistic
+  Sharpe beats the base by at least 0.05, excluding diagnostics (D12 fractional sizing, F06 weekends only,
+  F07 weekdays only).
+- Per family keep the best two by validation realistic Sharpe. The family's best is its "lead".
+- Combinations, in this order until 20 are made (incompatible pairs, i.e. two changes to the same setting with
+  different values, are skipped):
+  1. All family leads together.
+  2. Every pair of family leads.
+  3. Every triple of the three best family leads.
+  4. All leads with each family's runner-up swapped in for its lead.
+- The combined variant is built by merging the changes (level set, exit, AI, portfolio, books).
+- Screened on validation only, like round 1.
+
+## Futures-priced check implementation (bar 3)
+scripts/lab/futures_check.py with core.futures_trades:
+- Perp bid = spot level x basis (last perp trade / spot close at t-1), rounded down to the perp tick.
+- Fill if the perp minute opened above the bid and traded through it by one perp tick AND the spot minute
+  traded through the spot level (spot-confirmed).
+- Exits on perp candles: take-profit on perp highs (price rounded down to the tick); time exits at the lower of
+  the last perp trade and spot x last basis.
+- Realistic costs on spot-equivalent prices, whole contracts, same portfolio rules.
+- Each perp from its first full day of data; coins join as their perps list.
+- Also reported: the spot-priced result on the same coins and window, and a strict perp fill (3 ticks,
+  at least 3x our contracts traded in the minute).
+
 ## Deviation log
 (none yet)
