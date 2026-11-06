@@ -258,6 +258,15 @@ def fetch(parts):
             d = yf.download(t, start="2015-01-01", auto_adjust=False, progress=False)
             d.columns = [c[0] if isinstance(c, tuple) else c for c in d.columns]
             save(d.reset_index().rename(columns={"Date": "date"}), f"yf_{nm}.parquet")
+    if "bcextra" in parts:          # BTC fees and on-chain transfer volume (Coin Metrics community withholds them)
+        for chart in ["transaction-fees-usd", "estimated-transaction-volume-usd"]:
+            r = get(f"https://api.blockchain.info/charts/{chart}?timespan=all&format=json&sampled=false")
+            if r is not None and r.status_code == 200:
+                v = pd.DataFrame(r.json()["values"])
+                v["date"] = pd.to_datetime(v.x, unit="s")
+                save(v[["date", "y"]].rename(columns={"y": chart}), f"bc_{chart}.parquet")
+            else:
+                print("blockchain.com", chart, r.status_code if r is not None else None, flush=True)
     if "farside" in parts:
         for page, nm in (("btc", "etf_flows_btc"), ("eth", "etf_flows_eth")):
             r = get(f"https://farside.co.uk/{page}/")
