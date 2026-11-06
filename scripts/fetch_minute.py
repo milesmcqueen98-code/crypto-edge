@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """1-minute Coinbase candles for one coin over a date range (fixed 300-minute windows, so gaps
-with no trades never stop the walk). Writes data/minute/<COIN>.parquet (ts, open, close, volume; float32).
+with no trades never stop the walk). Writes data/minute/<COIN>.parquet (ts, open, high, low, close, volume; float32).
 Usage: python scripts/fetch_minute.py BTC 2024-01-01 2026-11-06"""
 import os
 import sys
@@ -37,7 +37,7 @@ def main(coin, start, end):
             print(f"{coin}: {n_req} requests, {len(rows)} minutes, {time.time() - t0:.0f}s", flush=True)
     df = pd.DataFrame([rows[k] for k in sorted(rows)], columns=["ts", "open", "high", "low", "close", "volume"])
     df["ts"] = pd.to_datetime(df["ts"], unit="ms")
-    out = df[["ts", "open", "close", "volume"]].astype({"open": np.float32, "close": np.float32, "volume": np.float32})
+    out = df[["ts", "open", "high", "low", "close", "volume"]].astype({c: np.float32 for c in ["open", "high", "low", "close", "volume"]})
     os.makedirs(os.path.join(ROOT, "data", "minute"), exist_ok=True)
     out.to_parquet(os.path.join(ROOT, "data", "minute", f"{coin}.parquet"), index=False, compression="zstd")
     print(f"{coin}: {len(out)} minutes {out.ts.min()} -> {out.ts.max()} in {time.time() - t0:.0f}s", flush=True)
