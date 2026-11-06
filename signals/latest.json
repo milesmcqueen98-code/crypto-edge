@@ -1,0 +1,99 @@
+{
+ "asof": "2026-11-05",
+ "risk_on": false,
+ "flipped_today": true,
+ "action_needed": true,
+ "live_target": "CASH",
+ "btc_close": 75969.06,
+ "btc_sma100": 76942.1159,
+ "gap_pct": -0.01264659658261369,
+ "eth_close": 2234.61,
+ "shadow": {
+  "ai_top10": [
+   "ADA",
+   "BTC",
+   "DOGE",
+   "ETH",
+   "HYPE",
+   "LTC",
+   "SOL",
+   "SUI",
+   "XMR",
+   "XRP"
+  ],
+  "lowvol_top10": [
+   "BNB",
+   "BTC",
+   "DOGE",
+   "ETH",
+   "LTC",
+   "SOL",
+   "TRX",
+   "XLM",
+   "XMR",
+   "XRP"
+  ]
+ },
+ "ai_top15": [
+  [
+   "BTC",
+   0.1203
+  ],
+  [
+   "ETH",
+   0.1141
+  ],
+  [
+   "XRP",
+   0.0818
+  ],
+  [
+   "SOL",
+   0.0743
+  ],
+  [
+   "LTC",
+   0.066
+  ],
+  [
+   "HYPE",
+   0.0548
+  ],
+  [
+   "DOGE",
+   0.0541
+  ],
+  [
+   "XMR",
+   0.053
+  ],
+  [
+   "SUI",
+   0.0519
+  ],
+  [
+   "ADA",
+   0.0508
+  ],
+  [
+   "LINK",
+   0.0436
+  ],
+  [
+   "TAO",
+   0.0423
+  ],
+  [
+   "XLM",
+   0.0395
+  ],
+  [
+   "NEAR",
+   0.0394
+  ],
+  [
+   "HBAR",
+   0.0362
+  ]
+ ]
+}

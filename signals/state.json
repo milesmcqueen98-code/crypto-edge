@@ -1,0 +1,28 @@
+{
+ "ai_top10": [
+  "ADA",
+  "BTC",
+  "DOGE",
+  "ETH",
+  "HYPE",
+  "LTC",
+  "SOL",
+  "SUI",
+  "XMR",
+  "XRP"
+ ],
+ "lowvol_top10": [
+  "BNB",
+  "BTC",
+  "DOGE",
+  "ETH",
+  "LTC",
+  "SOL",
+  "TRX",
+  "XLM",
+  "XMR",
+  "XRP"
+ ],
+ "live_position": "CASH",
+ "last_trade": "2026-11-05"
+}
