@@ -77,7 +77,7 @@ class Data:
         self.lp = {c: np.log(self.D[c]["cf"]) for c in self.D}
         self.T = len(self.idx)
         self.i_test = int(self.idx.get_indexer([TEST0])[0])
-        r = np.vstack([np.diff(self.lp[c], prepend=np.nan) for c in need])
+        r = np.vstack([np.diff(self.lp[c], prepend=np.nan) for c in need if c in self.lp])
         self.basket_lp = np.nancumsum(np.nanmean(r, axis=0))          # equal-weight market factor (log level)
         b1 = np.diff(self.lp["BTC"], prepend=np.nan)
         rv = pd.Series(b1).rolling(1440, min_periods=600).std()
@@ -117,7 +117,8 @@ class LevelSet:
     def __init__(self, data, coins, L=60, k=4.0, wsig=4320, wbeta=4320, ref="btc", side=1, minc=None, hod=False):
         """minc: no bid while one contract is worth less than this many dollars (per-contract fees too large);
         hod: scale sigma by the coin's hour-of-day volatility factor (trailing 30 days)."""
-        self.data, self.coins, self.L, self.k, self.side, self.ref = data, list(coins), L, k, side, ref
+        self.data, self.L, self.k, self.side, self.ref = data, L, k, side, ref
+        self.coins = [c for c in coins if c in data.D]          # coins without data in this era are skipped
         self.lvl, self.sig, self.beta, self.cands = {}, {}, {}, {}
         D = data.D
         for c in self.coins:

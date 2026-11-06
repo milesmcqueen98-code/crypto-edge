@@ -1,0 +1,8 @@
+route,sharpe,cagr,maxdd,trades
+"Old assumption, 0.25% per side",1.1644,0.6385,-0.6074,125
+"Coinbase spot, market orders, $10k",1.0401,0.5374,-0.6469,125
+"Coinbase spot, post-only limit orders, $10k",1.1343,0.6135,-0.618,125
+"Coinbase spot, limit orders, $100k",1.1708,0.6439,-0.6044,125
+"Spot ETFs, 3 pm signal, 4 pm close",1.2138,0.6935,-0.588,108
+"Spot ETFs, UTC-close signal, next 4 pm close",1.2764,0.7415,-0.5234,107
+Spot ETFs with a 30-day minimum hold,1.1169,0.5847,-0.5959,45

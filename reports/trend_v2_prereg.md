@@ -73,3 +73,21 @@ incumbent (lesson from the wick v2 decision).
 
 ## Also reported
 A trend + wick portfolio: R2-08 at its efficient $10k against the trend sleeve, by calendar year where both exist.
+
+## Results (2026-11-06 ~13:20 ET; reports/trend_lab/)
+- **Signal: no change adopted.**
+  - The best paired weekly t was 2.49 (2% band, Coinbase maker), against the 3.0 needed.
+  - Cross-market wins were at most 5 of 9 (SMA 110/125, 2% band).
+  - All 7 round-2 combinations stayed below t = 3.0. The best (SMA 110 + SOL leg) had t 2.90.
+  - Clarification: adding SOL (S25 and the combinations with it) uses hindsight, because SOL is in the universe for having
+    become a top coin. It would not have been adopted even with t > 3.
+- **Implementation:**
+  - Coinbase taker at small-account tiers: 53.7%/yr, Sharpe 1.04. That is paired t −7.6 vs the old 0.25% assumption.
+  - Coinbase maker ($10k): 61.3%, Sharpe 1.13.
+  - Spot ETFs: 69–77%, Sharpe 1.21–1.31. The timing variants differ only by noise.
+  - **Recommended:** spot ETFs with the signal at the UTC close and execution in the next US session, if compliance
+    allows ETFs without a minimum hold. With a 30-day minimum hold the ETFs score Sharpe 1.12 / 58.5%, so the fallback is
+    Coinbase post-only maker orders.
+- **Trend + wick:** daily correlation 0.0.
+  - $90k/$10k: 2022 −17% vs −21% for trend alone; 2026 YTD −4% vs −8%.
+  - Sharpe 0.85 vs 0.72 over 2022–23 and 2025–26.

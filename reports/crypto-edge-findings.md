@@ -9,6 +9,12 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   Replayed on the perps' own prices it shows 5–9, but mostly from perp-only wicks whose fills are unverified (1.6–2.6
   counting only spot-confirmed fills). Not traded with money until the paper test and a 1-contract pilot pass, and
   compliance clears futures.
+- **Wick v3 (Nov 6):** on fresh 2022–2023 data that no wick research had touched, R2-08 beat v1 again: Sharpe 2.63 vs
+  1.77, and +4.2% vs −3.3% in the FTX quarter. The complex 2025–26 finalists failed there. No refinement replaced it.
+- **Trend v2 (Nov 6):** signal unchanged (no refinement passed the bars). Execution matters:
+  - Spot ETFs beat Coinbase taker orders by about 10–15 points a year.
+  - Unless compliance imposes a minimum holding period; then use Coinbase maker orders.
+  - The wick sleeve is uncorrelated with the trend and softens its down years.
 - **Wick v2 lab (Nov 6):** 130 variations tested with realistic Coinbase costs (section below).
   - **R2-08 is now the strategy of record:** realistic-cost AI label, 60th-percentile threshold, 7-day beta.
   - Its realistic-cost Sharpe is 3.79 / 3.06 / 2.36 (selection / check / perp-priced), vs 2.24 / 1.22 / 1.21 for v1.
@@ -25,6 +31,99 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   (section below).
 - **Maker round (Nov 6): rejected.** Two-sided quoting at the touch loses 0.7–0.9 bp per dollar before fees in all 36 setups.
 - **C3 upgrade round (Nov 6):** turnover cuts tie on Sharpe; C3 unchanged, still a paper-trade candidate.
+
+## Wick v3 (Nov 6): fresh-era test, 2022–2023
+Pre-registered in reports/wick_v3_prereg.md before any of this data was loaded. No wick research had touched pre-2024
+data, so this is the first test of the v2 selection on data nobody had seen.
+
+**Set-up:**
+- Coinbase spot minute data 2021–2023 (data/minute_early/): 13 of the 17 coins existed (no HYPE, ENA, PEPE or ONDO;
+  XRP only from Jul 2023).
+- First model trained on 2021; walk-forward over 2022–2023.
+- Fees held at today's bp per coin ($0.20 per contract at today's prices), today's spreads, fractional sizing.
+- Spot-priced only: no perps existed.
+
+| 2022–2023, realistic costs | Sharpe | Return on $10k | 2022 | 2023 | Trades | Net/trade |
+|---|---|---|---|---|---|---|
+| v1 | 1.77 | +51% | +16% (Sharpe 0.95) | +36% | 988 | 21 bp |
+| **R2-08 (strategy of record)** | **2.63** | **+60%** | **+22% (1.88)** | **+38%** | 691 | 35 bp |
+| R2-07 (hold 120) | 1.32 | +40% | −3% | +43% | 585 | 27 bp |
+| R2-20 (6-change combination, best in 2025–26 selection) | 1.73 | +34% | +18% | +16% | 230 | 22 bp |
+| R2-03 (fee floor + hold 120) | 1.58 | +13% | +2% | +11% | 157 | 32 bp |
+
+- **R2-08 confirmed.** It beat v1 in both years, including the FTX quarter (2022Q4: +4.2% vs −3.3%). Paired t vs v1
+  is 0.75: most of the gain is lower volatility from fewer, better trades, not a higher return.
+- **The complex finalists failed out of sample.** Picking R2-20 on 2025–26 selection would have been a mistake.
+- **Nine refinements of R2-08:**
+  - Thresholds 65/70/75th percentile, a predicted-net floor, prediction-priority slots, 8 slots, trend-regime
+    features, liquidity sizing, 10 seeds.
+  - None met the replacement rule (fresh paired t ≥ 2 vs R2-08 and better in both years). The 70th/75th
+    percentile had higher Sharpe (2.99/3.10) but lower returns (t −0.3/−0.5), and no gain in 2025–26.
+  - Prediction-priority slots, which is what the bot already does: 2.75, t +1.2.
+- **Decision: R2-08 unchanged.** Code: scripts/lab (LAB_ERA=early), fresh_report.py. Results:
+  reports/lab/fresh_report.csv.
+
+## Trend v2 (Nov 6): real execution costs and 70 refinements
+Pre-registered in reports/trend_v2_prereg.md. Code: scripts/trend_lab.py and trend_analyze.py; results are in
+reports/trend_lab/.
+
+- **The engine reproduces the reported live rule:** Sharpe 1.16 (reported 1.17), 63.9%/yr, max DD −60.7%.
+- **Window:** Jul 2017 – Nov 2026. Sharpe is measured above T-bills, and cash earns T-bills.
+
+**Implementation (same signal):**
+
+| Route | Sharpe | Return/yr | Max DD | Trades |
+|---|---|---|---|---|
+| Old assumption, 0.25%/side | 1.16 | 64% | −61% | 125 |
+| Coinbase spot, taker, $10k book (0.90/0.75% tiers) | 1.04 | 54% | −65% | 125 |
+| Coinbase spot, post-only maker, $10k (0.50/0.35%) | 1.13 | 61% | −62% | 125 |
+| Coinbase spot, maker, $100k (0.50/0.15%) | 1.17 | 64% | −60% | 125 |
+| Spot ETFs, signal at 3 pm ET, 4 pm market-on-close | 1.21 | 69% | −59% | 108 |
+| Spot ETFs, signal at the UTC close, next 4 pm close | 1.28 | 74% | −52% | 107 |
+| Spot ETFs, signal at the UTC close, next 10 am | 1.31 | 77% | −54% | 107 |
+| Spot ETFs + 30-day minimum holding period | 1.12 | 59% | −60% | 45 |
+| Spot ETFs + 60-day minimum holding period | 1.03 | 54% | −62% | 37 |
+
+- Real Coinbase taker fees cost about 10 points a year against the old 0.25% assumption (paired t −7.6).
+- ETFs cost 2 bp per side plus 0.15–0.25%/yr while held. The three ETF timings differ only by noise
+  (paired t ≤ 0.8). A one-day timing shift moves single years by 30–100 points.
+- **Compliance matters more than fees.** A 30-day minimum hold on ETFs gives back the whole ETF advantage. Spot crypto
+  on Coinbase with maker orders is then the equivalent route.
+
+**Signals: no change adopted.**
+- 26 signal changes were run under both Coinbase maker and ETFs, plus 7 mechanical combinations.
+- The bar was paired weekly t > 3.0, no sub-period worse by more than 0.10 Sharpe, and a gain on at least 6 of 9 other
+  markets.
+- Best near-misses:
+
+  | Change | Sharpe change (maker / ETF) | Paired t | Other markets improved |
+  |---|---|---|---|
+  | 2% band | +0.17 / +0.11 | 2.5 | 5/9 |
+  | 3% band | +0.18 / +0.12 | 2.4 | 4/9 |
+  | 110-day average | +0.18 / +0.19 | 2.4 | 5/9 |
+  | 125-day average | +0.23 / +0.10 | 2.1 | 5/9 |
+
+- Adding SOL as a third leg looked best (combinations up to 100%/yr) but is hindsight: SOL is chosen because it
+  became a top coin.
+- Weekly decisions, own-asset filters, golden cross, 90-day TSMOM, crash guards and vol caps were all worse or ties.
+- This matches every earlier round: the BTC/ETH daily history is fully mined.
+
+**Calendar years, ETF route** (next 4 pm close): 2017 (Jul–Dec) +185%, 2018 −27%, 2019 +79%, 2020 +348%, 2021 +250%,
+2022 −21%, 2023 +79%, 2024 +32%, 2025 +78%, 2026 YTD −8%.
+
+**Trend + wick portfolio** ($90k trend on ETFs + $10k R2-08, where both have out-of-sample wick data):
+- The two are uncorrelated: daily correlation 0.0.
+- The wick sleeve made money in the trend's down years: 2022 +22% on $10k vs trend −21%; 2026 YTD +31% vs −8%.
+
+| Year | Trend alone | 90/10 portfolio |
+|---|---|---|
+| 2022 | −21% | −17% |
+| 2023 | +79% | +76% |
+| 2025 | +78% | +82% |
+| 2026 YTD | −8% | −4% |
+
+- Sharpe over those years: 0.72 → 0.85.
+- The wick's capacity (~$10–25k) caps how much it can offset.
 
 ## Wick v2 lab (Nov 6): 130 variations of the dip-bid strategy, realistic costs first
 Goal set by Miles: a higher-Sharpe version, Renaissance-style. That meant:

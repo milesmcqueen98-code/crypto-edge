@@ -80,6 +80,15 @@ def main():
     md.append(trade_line if action else f"No trade today. {hold_line} (unchanged since {state.get('last_trade', 'start')})")
     if action and hold_line:
         md += ["", hold_line]
+    if action and not (first_run and target == "CASH"):
+        # execution, from the trend v2 lab (reports/trend_v2_prereg.md, findings doc "Trend v2")
+        md += ["", "**How to execute (cheapest first):**",
+               "- Spot ETFs, if your compliance rules allow them without a minimum holding period: one market-on-close "
+               "order on the next US trading day, split 50/50 between a spot BTC ETF and a spot ETH ETF (e.g. the "
+               "Grayscale BTC / ETH mini trusts at 0.15%/yr, or IBIT / ETHA at 0.25%/yr). A signal on a Friday, Saturday "
+               "or Sunday close executes on Monday.",
+               "- Coinbase spot: post-only limit orders (maker, 0.35–0.50% at small sizes), never market orders "
+               "(taker, 0.75–0.90%). In the backtest, taker fees cost roughly 10–15 percentage points a year versus ETFs."]
     md += ["", "## Shadow tracking (logged daily, never traded)",
            f"- AI model top 10{'' if risk_on else ' (would hold if risk on)'}: {', '.join(shadow['ai_top10'])}",
            f"- Low-vol top 10{'' if risk_on else ' (would hold if risk on)'}: {', '.join(shadow['lowvol_top10'])}"]

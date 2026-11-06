@@ -49,3 +49,14 @@ had been loaded. No wick research has ever used data before 2024-01-01.
   - It is not worse than R2-08 on 2025–2026 (paired t > −1).
   - The bot can do it with changes already in train_v2 / engine, or with a small parity-tested change.
 - Nothing else is tried on the fresh era. Its results are reported whatever they show.
+
+## Results (2026-11-06 ~13:30 ET; reports/lab/fresh_report.csv)
+- **R2-08 stays.**
+  - Fresh-era Sharpe 2.63 vs 1.77 for v1, with +60% vs +51% on $10k.
+  - 2022 +22% vs +16%; 2023 +38% vs +36%.
+  - Paired t of v1 minus R2-08 is −0.75, so the switch is not reversed.
+- **Earlier finalists fell back:** R2-07 1.32, R2-20 1.73, R2-03 1.58.
+- **No refinement replaces R2-08.**
+  - None reached a fresh paired t of 2.0 vs R2-08.
+  - The 70th/75th percentile thresholds had a higher Sharpe (2.99/3.10) but lower returns (t −0.30/−0.54).
+  - Prediction-priority slots, which the bot already uses: 2.75 (t +1.16).
