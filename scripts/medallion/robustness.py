@@ -36,6 +36,36 @@ def rerun(name, mult):
     return out
 
 
+def f9_ladder(coin, haircut=1.0, tenor=30):
+    """Stricter short-vol proxy: a ladder of 30-day short variance swaps, one sold each day at (DVOL - haircut)^2,
+    marked to market daily at the current DVOL (adds the vega losses of implied-vol spikes that the one-day proxy
+    leaves out). Same constant scale rule (20% development vol)."""
+    close = C.daily_close([coin])[coin]
+    dv = B.dvol(coin).reindex(close.index)
+    r2 = (np.log(close).diff() ** 2).to_numpy()
+    K = (((dv - haircut) / 100.0) ** 2).to_numpy()          # annualized variance strike sold each day
+    T = len(close)
+    pnl = np.full(T, np.nan)
+    n = 1.0 / tenor                                          # each swap: 1/tenor of the book
+    for t in range(tenor + 1, T):
+        if np.isnan(K[t]) or np.isnan(K[t - 1]) or np.isnan(r2[t]):
+            continue
+        tot = 0.0
+        for s in range(t - tenor, t):                        # swaps alive over day t (sold at the close of s)
+            if np.isnan(K[s]):
+                continue
+            accrual = K[s] / 365.0 - r2[t]
+            left_before = s + tenor - (t - 1)                # days left at the close of t-1
+            left_after = left_before - 1
+            mtm_before = left_before * (K[s] - K[t - 1]) / 365.0 if s < t - 1 else 0.0
+            mtm_after = left_after * (K[s] - K[t]) / 365.0
+            tot += n * (accrual + mtm_after - mtm_before)
+        pnl[t] = tot
+    x = pd.Series(pnl, index=close.index).dropna()
+    k = 0.20 / (x.loc[C.DEV[0]:C.DEV[1]].std() * np.sqrt(365))
+    return k * x
+
+
 def cde_volume_usd():
     p = pd.read_csv(os.path.join(C.ROOT, "reports", "cfm_products.csv"))
     p = p[p.expiry_type == "PERPETUAL"]

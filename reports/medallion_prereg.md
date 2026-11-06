@@ -122,3 +122,8 @@ The specification above left these details open; they are fixed here. Developmen
 11. F9: constant scale giving 20% development vol; sold implied vol = DVOL − 1 point.
 12. F10: one pooled BTC+ETH model; missing features 0 for ridge, native for LightGBM; 12.5% vol target per coin.
 13. Hold-out lock: hold-out numbers are computed only when MEDALLION_HOLDOUT=1.
+14. Coin Metrics' community API withholds FeeTotUSD, NVTAdj and TxTfrValAdjUSD. BTC fees and NVT come from
+    blockchain.com instead (transaction-fees-usd; market cap / estimated-transaction-volume-usd, both 7-day means),
+    lagged one day. ETH has no free source for them, so its fee and NVT signals are dropped (4 fewer tests).
+15. Data coverage as delivered: Binance funding and perp klines start 2020-01 (not 2019-09); DVOL 2021-03-24;
+    Farside ETF pages show only recent weeks (19–21 rows), so ETF flows are not tested at all.

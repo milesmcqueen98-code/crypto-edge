@@ -67,6 +67,14 @@ def yf_close(nm):
     return d.drop_duplicates("date").set_index("date")["Close"].astype(float).dropna().sort_index()
 
 
+def bc_chart(chart):
+    d = _pq(f"bc_{chart}.parquet")
+    if d is None:
+        return None
+    d["date"] = pd.to_datetime(d["date"]).dt.normalize()
+    return d.drop_duplicates("date").set_index("date")[chart].astype(float).sort_index()
+
+
 def binance_metrics(coin):
     d = _pq(f"binance/metrics_{coin}.parquet")
     if d is None:
@@ -209,15 +217,24 @@ def raw_signals(coin):
             S["F8_mvrv"] = oc["CapMVRVCur"].shift(1)
         if "NVTAdj" in oc and oc["NVTAdj"].notna().sum() > 400:
             S["F8_nvt"] = oc["NVTAdj"].shift(1)
-        elif "CapMrktCurUSD" in oc and "TxTfrValAdjUSD" in oc:
+        elif "CapMrktCurUSD" in oc and "TxTfrValAdjUSD" in oc and oc["TxTfrValAdjUSD"].notna().sum() > 400:
             S["F8_nvt"] = (oc["CapMrktCurUSD"] / oc["TxTfrValAdjUSD"]).shift(1)
+        if coin == "BTC":                       # Coin Metrics community withholds fees and transfer value
+            fees = bc_chart("transaction-fees-usd")
+            if fees is not None and "F8_fees_g30" not in S:
+                x7 = fees.reindex(idx).rolling(7, min_periods=5).mean()
+                S["F8_fees_g30"] = np.log(x7 / x7.shift(30)).shift(1)
+            tv = bc_chart("estimated-transaction-volume-usd")
+            if tv is not None and "F8_nvt" not in S and "CapMrktCurUSD" in oc:
+                tv7 = tv.reindex(idx).rolling(7, min_periods=5).mean()
+                S["F8_nvt"] = (oc["CapMrktCurUSD"].rolling(7, min_periods=5).mean() / tv7).shift(1)
     for nm, kind in (("vix", "diff"), ("dxy", "ret"), ("tnx", "diff"), ("es", "ret"), ("nq", "ret"), ("gold", "ret")):
         y = yf_close(nm)
         if y is None:
             continue
         ch = y.diff() if kind == "diff" else y.pct_change()
         S[f"F8_{nm}"] = ch.reindex(idx)                  # NaN on days without a US close
-    return pd.DataFrame(S, index=idx), close
+    return pd.DataFrame(S, index=idx).replace([np.inf, -np.inf], np.nan), close
 
 
 def z_signals(coin):

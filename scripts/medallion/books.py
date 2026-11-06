@@ -280,8 +280,9 @@ def f7_books():
     for k, s in sig.items():
         ics[k] = xs_ic(s, fwd, univ & s.notna(), *DEV)
         Z[k] = xs_z(s, univ & s.notna()).reindex_like(close).where(univ, np.nan).fillna(0.0)
-    signs = {k: float(np.sign(v.mean())) for k, v in ics.items()}
-    score = sum(signs[k] * Z[k] for k in sig) / len(sig)
+    signs = {k: float(np.sign(v.mean())) if len(v) else np.nan for k, v in ics.items()}
+    used = [k for k in sig if np.isfinite(signs[k])]
+    score = sum(signs[k] * Z[k] for k in used) / len(used)
     W = neutral_weights(score.where(univ), beta, univ)
     Wc = neutral_weights(Z["carry"].where(univ), beta, univ)
     out = {"F7_factor": run_daily(W, close), "F7_carry": run_daily(Wc, close)}

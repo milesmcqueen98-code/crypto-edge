@@ -1,0 +1,3 @@
+book,sharpe_dev,sharpe_hold,start,t_dev,cagr_dev,maxdd_dev,vol_dev,passes,turnover_per_year,ic_dev_BTC,ic_dev_ETH
+F10_ridge,0.417167,,2015-07-20,0.839653,0.0627875,-0.161002,0.117085,False,39.7947,0.0326951,0.0287068
+F10_lgbm,0.753836,,2015-07-20,1.50473,0.102809,-0.161661,0.113135,False,52.1575,0.0339997,0.0479983
