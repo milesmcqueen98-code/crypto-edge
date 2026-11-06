@@ -1,0 +1,55 @@
+47 signals built in 1s
+  horizon 1h screened
+  horizon 4h screened
+  horizon 12h screened
+  horizon 24h screened
+
+179 signal-horizon tests. Passing |t_dev| >= 3: 81
+  of those, same sign on hold-out: 79, hold-out |t| >= 2 same sign: 71
+     signal  h  ic_dev   t_dev  ic_hold  t_hold  n_dev
+     mom_2h  1  -0.061 -21.337   -0.042 -16.628  21930
+     mom_1h  1  -0.060 -21.220   -0.040 -15.967  21930
+   resid_1h  1  -0.057 -20.204   -0.037 -14.832  21930
+ leadlag_1h  1  +0.057 +20.204   +0.037 +14.832  21930
+     mom_3h  1  -0.057 -20.107   -0.039 -15.222  21930
+ leadlag_2h  1  +0.057 +20.088   +0.037 +15.048  21930
+     mom_4h  1  -0.053 -18.473   -0.037 -14.696  21930
+   resid_4h  1  -0.050 -17.914   -0.033 -13.249  21930
+ leadlag_4h  1  +0.050 +17.914   +0.033 +13.249  21930
+     mom_6h  1  -0.049 -17.310   -0.035 -13.810  21930
+     mom_8h  1  -0.047 -16.392   -0.031 -12.408  21930
+    mom_12h  1  -0.044 -15.369   -0.026 -10.309  21930
+  donch_24h  1  -0.039 -14.037   -0.027 -10.960  21368
+    mom_24h  1  -0.032 -11.081   -0.023  -8.885  21930
+momskip_12h  1  -0.029 -10.330   -0.014  -5.517  21930
+  resid_24h  1  -0.029 -10.297   -0.022  -8.522  21930
+ momskip_6h  1  -0.026  -9.029   -0.019  -7.342  21930
+     mom_4h  4  -0.050  -8.925   -0.037  -7.311   5482
+ leadlag_4h  4  +0.048  +8.581   +0.033  +6.654   5482
+   resid_4h  4  -0.048  -8.581   -0.033  -6.654   5482
+     mom_8h  4  -0.047  -8.264   -0.024  -4.847   5482
+     mom_3h  4  -0.046  -8.248   -0.035  -7.075   5482
+     mom_6h  4  -0.045  -8.052   -0.033  -6.505   5482
+    mom_12h  4  -0.044  -7.770   -0.023  -4.530   5482
+ donch_168h  1  -0.021  -7.520   -0.013  -5.393  21852
+h= 1 base       signals=19 turnover   5594x/yr | Sharpe dev -7.24 | hold-out -11.39 | vol 20.8%
+h= 1 1h delay   signals=19 turnover   5594x/yr | Sharpe dev -10.51 | hold-out -13.26 | vol 20.5%
+h= 1 cost 0.08% signals=19 turnover   5594x/yr | Sharpe dev -16.96 | hold-out -24.50 | vol 19.8%
+h= 1 gross      signals=19 turnover   5594x/yr | Sharpe dev  1.80 | hold-out  0.57 | vol 21.8%
+     kept: -mom_2h, -mom_1h, -mom_4h, -mom_8h, -mom_12h, -donch_24h, -mom_24h, -momskip_6h, -donch_168h, -vol_168h, -mom_48h, -maxret_24h, -maxret_720h, +season_14d, +season_28d, +retxvol_1h, -mom_168h, -skew_168h, +season_7d
+h= 4 base       signals=14 turnover   1760x/yr | Sharpe dev -3.44 | hold-out -4.12 | vol 20.5%
+h= 4 1h delay   signals=14 turnover   1760x/yr | Sharpe dev -4.21 | hold-out -4.68 | vol 20.3%
+h= 4 cost 0.08% signals=14 turnover   1760x/yr | Sharpe dev -6.35 | hold-out -8.14 | vol 20.2%
+h= 4 gross      signals=14 turnover   1760x/yr | Sharpe dev -0.64 | hold-out -0.29 | vol 21.0%
+     kept: -mom_4h, -mom_8h, -mom_12h, -mom_2h, -momskip_6h, -resid_1h, -vol_168h, -mom_24h, -donch_24h, -maxret_24h, -maxret_720h, -mom_48h, -donch_168h, -skew_168h
+h=12 base       signals=8 turnover    782x/yr | Sharpe dev -1.31 | hold-out -2.44 | vol 20.2%
+h=12 1h delay   signals=8 turnover    782x/yr | Sharpe dev -1.78 | hold-out -2.38 | vol 19.8%
+h=12 cost 0.08% signals=8 turnover    782x/yr | Sharpe dev -2.75 | hold-out -4.19 | vol 20.1%
+h=12 gross      signals=8 turnover    782x/yr | Sharpe dev  0.08 | hold-out -0.74 | vol 20.4%
+     kept: -vol_168h, -maxret_24h, -maxret_720h, -mom_8h, -mom_12h, -momskip_6h, -mom_4h, -skew_168h
+h=24 base       signals=3 turnover    231x/yr | Sharpe dev -0.44 | hold-out -1.41 | vol 19.9%
+h=24 1h delay   signals=3 turnover    231x/yr | Sharpe dev -0.39 | hold-out -1.37 | vol 19.8%
+h=24 cost 0.08% signals=3 turnover    231x/yr | Sharpe dev -0.87 | hold-out -1.93 | vol 19.9%
+h=24 gross      signals=3 turnover    231x/yr | Sharpe dev -0.03 | hold-out -0.90 | vol 20.0%
+     kept: -vol_168h, -maxret_24h, -maxret_720h
+done in 81s
