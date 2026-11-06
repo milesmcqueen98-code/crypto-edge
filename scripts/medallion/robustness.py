@@ -66,6 +66,18 @@ def f9_ladder(coin, haircut=1.0, tenor=30):
     return k * x
 
 
+def knn_variants(coin="BTC"):
+    """Neighbour-count sensitivity for F3 (k = 25, 100 vs the registered 50). Diagnostic only."""
+    close = C.daily_close([coin])
+    unit = C.vol_unit(close)[coin]
+    out = {}
+    for k in (25, 50, 100):
+        pred = B.knn_pred(coin, k=k).reindex(close.index)
+        W = pd.DataFrame({coin: (np.sign(pred) * unit).fillna(0.0).clip(-2, 2)})
+        out[k] = C.run_daily(W, close)[0]
+    return out
+
+
 def cde_volume_usd():
     p = pd.read_csv(os.path.join(C.ROOT, "reports", "cfm_products.csv"))
     p = p[p.expiry_type == "PERPETUAL"]

@@ -36,9 +36,10 @@ def combine(series, dev=DEV):
     s = sum(w.values())
     w = {k: v / s for k, v in w.items()}
     df = pd.DataFrame(series)
-    first = {k: v.first_valid_index() for k, v in series.items()}
-    x = sum(w[k] * df[k].fillna(0.0) for k in series)
-    return x.loc[min(first.values()):], w
+    W = pd.DataFrame({k: np.where(df[k].notna(), w[k], 0.0) for k in series}, index=df.index)
+    W = W.div(W.sum(axis=1), axis=0)                  # weights renormalized over the books trading that day
+    x = (W * df.fillna(0.0)).sum(axis=1)
+    return x.loc[df.dropna(how="all").index.min():], w
 
 
 def main():
