@@ -125,7 +125,17 @@ def update_prices():
     return stats
 
 
-def update_funding(bases):
+def bases_by_volume():
+    """Coins ordered by recent USD volume, so a time-boxed run covers the important ones first."""
+    vols = {}
+    for path in os.listdir(PRICES):
+        df = pd.read_csv(os.path.join(PRICES, path)).tail(30)
+        vols[path[:-4]] = (df["volume"] * df["close"]).median()
+    return [b for b, _ in sorted(vols.items(), key=lambda kv: -(kv[1] if kv[1] == kv[1] else 0))]
+
+
+def update_funding(bases, budget_min=40, max_coins=80):
+    """Hyperliquid hourly funding, summed per day. Time-boxed: backfill finishes over a few daily runs."""
     os.makedirs(FUNDING, exist_ok=True)
     try:
         hl = ccxt.hyperliquid({"enableRateLimit": True, "timeout": 30_000})
@@ -133,8 +143,11 @@ def update_funding(bases):
     except Exception as e:
         log(f"hyperliquid unavailable: {e}")
         return 0
-    n = 0
-    for base in sorted(bases):
+    n, deadline = 0, time.time() + budget_min * 60
+    for base in list(bases)[:max_coins]:
+        if time.time() > deadline:
+            log("funding time budget reached; continuing next run")
+            break
         sym = f"{base}/USDC:USDC"
         if sym not in hl.markets:
             continue
@@ -143,7 +156,7 @@ def update_funding(bases):
         since = pd.Timestamp("2023-05-01", tz="UTC") if old is None else \
             pd.Timestamp(old["date"].max(), tz="UTC") - pd.Timedelta(days=2)
         rows = paginate(lambda s: hl.fetch_funding_rate_history(sym, since=s, limit=500),
-                        int(since.timestamp() * 1000), 3_600_000)
+                        int(since.timestamp() * 1000), 3_600_000, max_pages=120)
         if not rows:
             continue
         f = pd.DataFrame([{"ts": r["timestamp"], "rate": r["fundingRate"]} for r in rows])
@@ -158,10 +171,13 @@ def update_funding(bases):
 
 def main():
     t0 = time.time()
-    stats = update_prices()
-    log(f"prices updated for {len(stats)} coins")
-    nf = update_funding(stats.keys() if stats else [f[:-4] for f in os.listdir(PRICES)])
-    log(f"funding updated for {nf} coins")
+    what = sys.argv[1] if len(sys.argv) > 1 else "all"
+    if what in ("prices", "all"):
+        stats = update_prices()
+        log(f"prices updated for {len(stats)} coins")
+    if what in ("funding", "all"):
+        nf = update_funding(bases_by_volume())
+        log(f"funding updated for {nf} coins")
     meta = {"last_run_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "coins_with_prices": len(os.listdir(PRICES)),
             "coins_with_funding": len(os.listdir(FUNDING)) if os.path.isdir(FUNDING) else 0,
