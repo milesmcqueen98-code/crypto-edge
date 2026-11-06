@@ -17,6 +17,7 @@ jobs:
           python-version: "3.12"
       - run: pip install yfinance pandas
       - run: python scripts/fetch_spy.py
+      - run: python scripts/fetch_multiasset.py
       - name: Commit
         run: |
           git config user.name "crypto-edge-bot"
