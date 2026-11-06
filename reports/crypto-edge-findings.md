@@ -1,4 +1,4 @@
-# Crypto edge: findings and live rules (updated Nov 6, 2026, wick v2 lab)
+# Crypto edge: findings and live rules (updated Nov 6, 2026, scale round)
 
 Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly signals, paper-trading bot)
 
@@ -17,6 +17,12 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   - v1 keeps paper trading as the control.
   - Rules: stop R2-08 if its realistic net per trade is below −12 bp after about 70 paper trades. Go back to v1 if
     v1's realistic net per trade is higher after 60 trades in each book.
+
+- **Scale round (Nov 6):** the wick catcher is already largely market neutral (daily beta 0.03) and reaches ~100%/yr only at
+  small size (2x the paper size, up to roughly $25–50K). Its profit tops out near $50K a year; it cannot carry $5M
+  (section below).
+- **Maker round (Nov 6): rejected.** Two-sided quoting at the touch loses 0.7–0.9 bp per dollar before fees in all 36 setups.
+- **C3 upgrade round (Nov 6):** turnover cuts tie on Sharpe; C3 unchanged, still a paper-trade candidate.
 
 ## Wick v2 lab (Nov 6): 130 variations of the dip-bid strategy, realistic costs first
 Goal set by Miles: a higher-Sharpe version, Renaissance-style. That meant:
@@ -293,24 +299,27 @@ sell at the lower of the last futures trade and the spot-implied price.
 - The futures windows are 11–15 months long.
 
 ## Exchange costs (checked Nov 6, 2026)
-- **Coinbase Advanced spot tiers (maker / taker, 30-day volume):**
+- **Coinbase Advanced spot, US (maker / taker by trailing 30-day volume, after the Sep 16, 2026 change):**
 
 | Tier | 30-day volume | Maker | Taker |
 |---|---|---|---|
-| Intro 1 | $0+ | 0.60% | 1.20% |
-| Advanced 1 | $25K | 0.25% | 0.50% |
+| Intro | $0+ | 0.50% | 0.90% |
+| Advanced 1 | $10K | 0.35% | 0.75% |
+| Advanced 2 | $50K | 0.15% | 0.30% |
+| Advanced 3 | $250K | 0.10% | 0.15% |
 | VIP 1 | $500K | 0.06% | 0.125% |
 | VIP 5 | $20M | 0.01% | 0.05% |
 | VIP 6 | $50M | 0.000% | 0.035% |
 | VIP 8 | $250M | 0.000% | 0.020% |
 
-  - Spot or derivatives volume qualifies, or asset balances ($5M–25M for the Advanced tiers).
-  - Note: a news report gave the entry tier as 0.50% / 0.90% after the Sep 16, 2026 change, so check the live schedule.
+  - VIP 2–4 and VIP 7 not found; models charge the next-lower listed tier. Tiers update hourly.
+  - No maker rebate at any tier: 0.00% is the floor.
+  - Spot or derivatives volume qualifies, or USDC balances ($500K for Advanced 1 up to $15M for VIP 2).
 - **Coinbase US perpetual-style futures** (nano BTC = 0.01 BTC; nano ETH = 0.1 ETH):
   - Fees "from 0.02%", up to 10x leverage, available in all 50 states.
   - Funding accrues hourly and is settled twice daily.
   - Exchange fee (CFTC filing): $0.10 per contract per side for retail on BIP/ETP ($0.07 for signed market makers), before
-    Coinbase's own charges.
+    Coinbase's own charges: 1.3 bp on nano BTC, 4.5 bp on nano ETH at today's prices. Makers pay it too.
   - Full product list, ticks and contract sizes: reports/cfm_products.csv (29 perp-style products incl. 17 crypto alts).
 - **Kraken Derivatives US perps (Bitnomial):**
   - 16 contracts, including BTC, ETH, SOL, XRP, ADA, AVAX, LINK, DOGE, LTC.
@@ -319,7 +328,9 @@ sell at the lower of the last futures trade and the spot-implied price.
   - Not available in New York or Maine.
 - **Kraken Futures (global, non-US):** maker rebate −0.5 to −1 bp at $250M–$1B+ per month; taker 1.25–5 bp.
 - **Kalshi perps:** 5 bp maker / 12 bp taker at the base tier; 0.6 / 2.6 bp above $3B volume.
-- Our perps model: 0.04% per side, plus funding (Hyperliquid data 2023+, 8%/yr assumed before).
+- Our perps model: 0.04% per side, plus funding (Hyperliquid data 2023+, 8%/yr assumed before). Realistic nano-perp model
+  (C3 upgrade round): BTC 2.5 bp, ETH 6.5 bp per side, whole contracts.
+- Coinbase Advanced REST API limit: 30 requests per second.
 
 ## Benchmarks: SPY and elite funds (Nov 6)
 Same rules on SPY, Nov 2019 – Nov 2026 (Sharpe above T-bills):
@@ -566,12 +577,135 @@ Results:
 - **Meaningful capital:** at ~48,000x turnover, about $63K of capital already trades $250M a month (Coinbase VIP 8: 0% maker / 0.02% taker). Volume tiers come quickly, but they don't fix the spread, and capacity caps the strategy around $100K.
 - **Conclusion:** the continuous reversal can only be harvested as a maker. A two-sided spot market-making test (other session, reports/maker_prereg.md) was rejected. The tradable version is the one-sided, event-driven "wick catcher" in the Execution round above.
 
+## Maker round (Nov 6): quoting the reversal passively on Coinbase tick data — rejected
+- Question: can the 1–15 minute reversal (edge ~0.2–0.3 bp, smaller than the spread) be harvested as a maker — post-only quotes at the touch, skewed by signal and inventory?
+- Pre-registered before any test: reports/maker_prereg.md (commit 01c84b4). Dev selection frozen before the hold-out ran (commit f92b83b). One logged deviation: the robustness re-run below.
+- Data: Tardis.dev free first-of-month Coinbase files (top of book with sizes + trades), BTC, ETH, SOL, XRP, DOGE.
+  - 35 days: development Jan 2024 – Jun 2025 (18), hold-out Jul 2025 – Nov 2026 (17).
+  - Checks: no trade ever printed inside the prior quote; each book update follows its trade by ~5 ms (median).
+  - Quoted spreads on 1 Jan 2024: BTC 0.67 bp, ETH 0.82, SOL 1.96, XRP 1.62, DOGE 2.22 (median).
+- Simulator (edge/maker.py, 14 hand-checked tests): queue position at our price, fills from queue depletion, trades through our price and crossings, post-only rejects, latency, inventory caps.
+  - Latency: 3 ms (co-located; out of reach at retail), 60 ms (cloud VM, REST orders), 120 ms (2×).
+  - Queue: risk-averse (only trades move us up) and proportional (cancels spread through the queue).
+  - Book: $1,000 quotes, $2,000 per-coin inventory cap ($10K); ×10 for $100K.
+- Strategies: S0 symmetric, S1 skewed toward the signal's target inventory, S2 passive tracker of the reversal portfolio.
+- Signal, fit on dev only: 3.4% of a coin's 15-minute move vs the others reverses in the next 15 minutes (t = 4.1). Typical expected edge 0.34 bp; 80th percentile 0.76 bp.
+- Code: scripts/maker_day.py (runs on GitHub Actions; raw ticks never committed), scripts/maker_analyze.py. Results: reports/maker/.
+
+Results: P&L per dollar traded before fees, measured as the realized spread against the mid 60 s after each fill.
+
+| Setups ($10K book) | Dev | Hold-out |
+|---|---|---|
+| All 18 (3 strategies × 3 latencies × 2 queue models) | −0.70 to −0.86 bp | −0.66 to −0.82 bp |
+| Selected S0, 60 ms, risk-averse | −0.85 bp | −0.73 bp (per-day t = −28) |
+| 3 ms latency only | −0.70 to −0.81 bp | −0.75 to −0.82 bp |
+| By coin (S0, 60 ms) | BTC −0.61, ETH −0.74, SOL −1.02, XRP −0.82, DOGE −1.23 | BTC −0.58, ETH −0.66, SOL −0.88, XRP −0.71, DOGE −1.03 |
+
+- Every setup loses before fees, in both periods, on every coin. S0 was positive on 0 of 35 days.
+- Hold-out S0, $10K: −$11.3K per day on $153M traded. It lost the whole $10K within the day on 19 of 35 days. S2, the lowest-volume version, lost $2.9K per day.
+- Why it loses: adverse selection, not inventory drift. Most of the loss lands within a second of the fill (S0 dev: −0.41 bp at the fill, −0.77 bp at 1 s, −0.85 bp at 60 s, flat to 15 min).
+  - A newcomer at the back of the queue gets filled mainly when the price runs through its resting quote (69–72% of fills at 60 ms, 53–54% even at 3 ms) or by trades big enough to clear the whole queue. That flow is informed.
+  - Being faster cut the loss in dollars (fewer stale fills) but not per dollar traded. Profitable quoting needs queue priority, i.e. being first at new price levels: HFT infrastructure.
+- The signal helps, but by a tenth of the gap: the signal-driven versions lose 0.04–0.11 bp less per dollar than symmetric quoting (S2 vs S0: dev −0.74 vs −0.85 bp, hold-out −0.67 vs −0.73 bp).
+- Fees can't fix it: break-even is a −0.74 bp maker fee, i.e. a rebate. Coinbase's best maker fee at any tier is 0.00%. Climbing to 0% (VIP 6, $50M a month) costs up to ~$15K in fees on the way at the listed rates, more than the capital.
+- Realism limits, both of which flatter the strategy: S0 needs ~31 API requests/s on average (peaks ~200/s) vs Coinbase's 30/s; and simulated fills exceed what thin books could supply (about 40% of DOGE's Coinbase volume at $10K; more than the whole market for four coins at $100K). So the $100K figures overstate capacity; neither changes the sign.
+- All 7 pre-registered bars fail (t, deflated Sharpe, Sharpe ≥ 2.4, no losing year, $100K capacity, 2× stress). **Verdict: reject.**
+- Independent review (separate agent, read-only): no bug that flips the sign. It flagged two rules that bias against the strategy (chasing every move of the touch; crossings filling our full size). A logged re-run fixing both (crossings capped at the displayed size; quotes that keep queue place within 0.5 or 2 bp of the touch) changed nothing: −0.72 to −0.97 bp per dollar, 0 positive days in any variant, and even pure queue fills lost 0.42–0.63 bp per dollar. Sticky quoting cut API load to 2–25 requests/s but lost more per dollar. Results: reports/maker/sens_summary.csv.
+- US perps (judged by arithmetic, no order-book history exists): the Coinbase Derivatives fee is $0.10 per contract per side for makers too = 1.3 bp on nano BTC, 4.5 bp on nano ETH, before clearing/FCM charges. The best case for a maker before adverse selection is ~0.7–1.1 bp (half a $5 tick + the signal). Rejected.
+- Not tested: posting inside the spread (price improvement). Historical data can't show competitors re-pricing around us, so any result would be optimistic.
+
+## C3 upgrade round (Nov 6): turnover cuts and realistic nano-perp costs
+- Pre-registered with the maker round. Book run as one netted account.
+- Realistic costs: BTC 2.5 bp, ETH 6.5 bp per side (exchange fee + clearing/FCM + half a tick), positions rounded to whole contracts (0.01 BTC, 0.1 ETH) at $10K. 2× stress doubles both.
+- Code: scripts/c3_improve.py. Results: reports/c3_improve.csv.
+
+| Book (Sharpe above T-bills) | Turnover/yr | Dev | 2024+ | Jul 2017 – Nov 2019 | 7 years | 7 years at 2× cost |
+|---|---|---|---|---|---|---|
+| C3 | 104x | 1.61 | 0.53 | 1.92 | 1.21 | 1.05 |
+| C3-B: buffer 0.25 | 76x | 1.60 | 0.55 | 1.89 | 1.21 | 1.09 |
+| C3-F: drop 4/16 h speed | 69x | 1.59 | 0.57 | 1.90 | 1.21 | 1.11 |
+| C3-BF: both | 54x | 1.60 | 0.56 | 1.84 | 1.22 | 1.13 |
+
+- Realistic costs barely move C3 (7-year Sharpe 1.22 → 1.21): buffering already made it cost-efficient.
+- No variant passes the pre-registered replacement rule (every dev Sharpe ≤ C3's; all differences |z| < 1.4). **C3 stays as is.**
+- C3-BF halves turnover at the same Sharpe and holds up better at 2× costs. It is the pre-declared fallback if measured costs run ≥ 2× the model.
+- C3 risk at realistic costs (Jul 2017 – Nov 2026): vol 31%, max DD −22.5% at 1x and −32.5% at 1.5x, longest time under water 430 days, worst 30 days −16% at 1x.
+  - 2024+: 16%/yr, max DD −21% at 1x.
+  - Years at 1x: 2022 +2.7%, 2025 +0.1% (no losing year, barely). At 1.5x, 2025 is −4.1%.
+- Deflated Sharpe 0.10 after 476 trials. **Verdict: paper-trade C3; nothing reaches the 2.4 Sharpe target.**
+
+### C3 kill switches (paper and live)
+1. Drawdown: stop and review at −30% from peak at 1x (backtest worst −22.5%); −42% at 1.5x.
+2. 30-day loss worse than −11% at 1x (backtest 1st percentile): halve size until a new equity high.
+3. Rolling 6-month Sharpe below −1.6 (backtest 1st percentile): stop and re-test.
+4. Costs: measured all-in cost per side above 2× model (BTC > 5 bp, ETH > 13 bp) for two weeks: switch to C3-BF.
+5. Funding: Coinbase funding paid above the model by more than 10 points a year over 30 days: re-run the backtest on live funding before continuing.
+6. Tracking: live P&L differs from the paper model by more than 0.5% of capital on 3 of 10 days: stop and reconcile.
+7. Operations: a missed hourly signal 2 hours running, or a position more than 1 contract off target for 15 minutes: alert. Stale for 3 hours: flatten the hourly sleeve.
+8. Leverage: gross ≤ 1.5× equity; margin used ≤ 50% of available.
+
+### C3 30-day build plan (from Nov 9)
+- Week 1:
+  - Sculptor compliance pre-clearance for personal crypto futures trading (blocking for anything live).
+  - Open the Coinbase Financial Markets futures account; create a read-only API key.
+  - Hourly signal job: C3 target contracts for nano BTC/ETH perps, contract rounding, kill-switch checks; writes signals/c3_latest.json and a paper ledger.
+- Week 2:
+  - Paper fills at the live Coinbase Derivatives touch plus per-contract fees, from public market data.
+  - Record actual spreads, depth and funding to replace the 2.5 / 6.5 bp and Hyperliquid-funding assumptions.
+  - Daily paper-vs-backtest report.
+- Week 3:
+  - Execution module in dry-run: post-only at the touch, marketable after 60 s; hourly position reconciliation; kill switches in code; alerts through GitHub issues (email + app) as today.
+  - After compliance approval only: a one-contract live test of order and position plumbing.
+- Week 4: go / no-go.
+  - Go live at 1x on $10K only if tracking error, measured cost per side, funding and uptime are within tolerance.
+  - 1.5x only after 3 months without a kill-switch trigger.
+- AI in the loop: none for decisions; every AI decision component tested so far failed (direction, volatility, crash guard, allocator). Use AI to review the daily reconciliation report.
+
+## Scale round (Nov 6): Simons lessons vs. 100% a year at $5M
+- Target set by Miles: 100%+ a year on average, working up to $5M, retail tools, AI where useful, largely market neutral.
+- Lessons from *The Man Who Solved the Market* (Zuckerman), as they apply here:
+  1. **Many small edges, many bets.** Medallion was right only about 50.75% of the time, over a huge number of trades. Here: the wick catcher (R2-08) wins 70% of 1,264 trades at ~38 bp net each.
+  2. **Overreaction and snap-back.** Prices overshoot and revert; the trick is being there when they do. Here: resting bids under forced selling work; quoting at the touch for everyone doesn't (maker round).
+  3. **Costs first.** Per-contract fees and adverse selection decided every round here.
+  4. **One model over many weak signals.** Here the LightGBM filter is the edge (Sharpe 0.24 without it, ~3 with it); AI direction calls and overlays failed.
+  5. **Leverage only on short-horizon, high-Sharpe books.** Medallion ran roughly 12x on a low-volatility book.
+  6. **Capacity rules everything.** Medallion was capped around $10B and returned outside money. Renaissance's scalable funds earned ordinary returns: in 2020 Medallion made about +76% while RIEF lost 22.6% and RIDA 33.6%.
+  7. **No overrides; rules set before results.**
+- Math: return ≈ Sharpe × volatility. At the wick catcher's Sharpe ~3, 100% a year needs ~33% volatility, twice the paper-trade size. At $5M, 100% means $5M of profit a year.
+- Capacity test (scripts/wick_capacity.py; reports/wick_capacity.csv, wick_capacity_trades.parquet):
+  - A resting bid can buy at most the volume that traded below its level while the price stayed there; those sellers had already cleared every bid at our price. Each 1-minute candle's volume is spread evenly over its range; Coinbase spot and perp books both count.
+  - Take-profits are capped by the volume above the exit price; the rest sells at the 60-minute mark with square-root impact (0.7 × daily vol × √(size / daily volume)).
+  - Fees: the cheaper of the lab's realistic perp costs and Coinbase spot fees at the tier the book itself reaches.
+  - Entry capacity per trade: median $280K across both books (p25 $55K, p10 $9K); ETH/SOL/XRP $1–3M; ENA/NEAR ~$40K.
+
+| Capital (we capture half the through-volume) | 25% of capital per trade (paper size) | 50% per trade (2x) |
+|---|---|---|
+| $10K | 58%/yr, Sharpe 3.1, max DD −10% | 110%/yr, Sharpe 3.1, max DD −18% |
+| $50K | 46% | 75% |
+| $100K | 38% | 52% |
+| $250K | 22% | 11% |
+| $500K | 6% | −14% |
+| $1M | −7% | −26% |
+| $5M | −20% | −40% |
+
+  - Exits bind before entries: at size, the take-profit can't all sell into the rebound and market exits pay impact.
+  - Capping the size per trade instead: profit peaks near $50K a year (range $30–80K across capture assumptions), at about $50K per trade. At $5M that is ~1% a year.
+- Market neutrality: daily P&L beta to BTC 0.03 (correlation 0.07); a trade on 42% of days, ~35-minute holds. Already largely market neutral; a BTC hedge hurt (lab: 0.57).
+- **Verdict: no edge found meets 100%+, $5M and market neutral together.**
+  - 100% + market neutral: the wick catcher at 2x, only up to roughly $25–50K of capital.
+  - $5M + market neutral: carry and basis trades, single-digit to low-teens returns.
+  - $5M + high return: directional (C3 at 1.5x: ~60% a year in backtest, −33% drawdown).
+- Untested ways to raise capacity: more books for the same dips (the Coinbase spot long tail, since dip bids don't need perps, and other NY-licensed spot venues such as Gemini and Bitstamp); perp-vs-spot basis wicks (market neutral by construction); exits worked over several minutes.
+
 ## Method notes
 - Point-in-time top-50 universe by 30-day median dollar volume.
 - Walk-forward retraining every quarter, with an 8-day purge between training data and the test period.
 - Hyperparameters frozen before seeing any results.
 - Weekly-only trend checks were fragile: 7%–26% CAGR depending on the weekday. Fixed with daily checks and averaging across all 7 weekday phases.
-- About 470 variants tested in total across the earlier rounds, plus about 2,000 setups in the execution round, so an improvement needs t ≈ 3 to be believable.
+- About 482 variants in the earlier rounds (incl. the maker and C3 upgrade rounds), about 2,000 setups in the execution round and
+  130 in the wick v2 lab, so an improvement needs t ≈ 3 to be believable.
+- Tick-data rounds: pre-register, freeze the dev choice in a commit, then run the hold-out once. Raw tick files stay on the
+  CI runner.
 
 ## Known gaps
 - Coins delisted from Coinbase are missing (survivorship bias favors the alt strategies).
@@ -583,3 +717,7 @@ Results:
 - Retail fills on hourly rebalances may cost more than 0.04%/side.
 - Maker fills are simulated from 1-minute candles (trade-through rule). Queue position inside the minute and partial fills
   aren't observable there; the paper test logs order-book depth ahead of each bid to measure them.
+- Tick data (maker round) covers only the first day of each month (35 days, Tardis free tier). Coinbase Derivatives order-book
+  history isn't available.
+- Wick-catcher capacity is estimated from 1-minute candles (volume spread evenly over each candle's range); real depth
+  during wicks is unobserved until the paper test logs it.
