@@ -32,16 +32,27 @@ MAKER, TAKER, HS_BP = 6.0, 12.5, 2.0
 
 
 def est_tick(c):
+    """Spot tick from the price grid: the largest power of ten that >= 95% of prices sit on (allowing for float32
+    storage error). Uses H2 2024, or the first six months of data for coins listed later."""
     d = pd.read_parquet(os.path.join(ROOT, "data", "minute", f"{c}.parquet"), columns=["ts", "close"])
-    d = d[(d.ts >= "2024-07-01") & (d.ts < "2025-01-01")]
-    px = np.unique(d.close.astype(np.float64).round(12))
-    step = np.diff(px)
-    step = step[step > 0]
-    if len(step) == 0:
+    w = d[(d.ts >= "2024-07-01") & (d.ts < "2025-01-01")]
+    if len(w) < 10000:
+        w = d[d.ts < d.ts.min() + pd.Timedelta(days=183)]
+    px = w.close.to_numpy(np.float64)
+    px = px[px > 0]
+    if len(px) == 0:
         return np.nan, np.nan
-    t = float(10 ** np.floor(np.log10(step.min() * 1.0001)))
-    last = float(d.close.iloc[-1])
-    return t, t / last * 1e4
+    best = np.nan
+    for k in range(-10, 3):
+        t = 10.0 ** k
+        if t > 0.01 * np.median(px):                       # a tick is far below the price
+            break
+        tol = np.maximum(0.02, 2.0 * px * 6e-8 / t)
+        on = np.abs(px / t - np.round(px / t)) <= tol
+        if on.mean() >= 0.95:
+            best = t
+    last = float(w.close.iloc[-1])
+    return best, best / last * 1e4
 
 
 def patch_costs():
@@ -76,12 +87,14 @@ def main():
     os.makedirs(os.path.join(ROOT, "reports", "wick1m"), exist_ok=True)
     T.to_csv(os.path.join(ROOT, "reports", "wick1m", "spot_ticks_wide.csv"), index=False)
     coins = [r.coin for r in T.itertuples() if r.keep or r.coin in base]
+    T["used"] = T.coin.isin(coins)
+    T.to_csv(os.path.join(ROOT, "reports", "wick1m", "spot_ticks_wide.csv"), index=False)
     print(T.to_string(index=False), flush=True)
     for r in T.itertuples():
-        if np.isfinite(r.tick):
+        if np.isfinite(r.tick) and r.coin not in ws.SPOT_TICK:          # keep audited values (PEPE 1e-8)
             ws.SPOT_TICK[r.coin] = r.tick
-            if r.coin not in ws.PERP:
-                ws.PERP[r.coin] = (None, 1.0, r.tick)
+        if r.coin not in ws.PERP:
+            ws.PERP[r.coin] = (None, 1.0, ws.SPOT_TICK.get(r.coin, r.tick))
     ws.spot_tick = lambda c: ws.SPOT_TICK.get(c, ws.PERP[c][2])        # spot execution: spot tick for every coin
     patch_costs()
     allv = {v["name"]: v for v in VV.VARIANTS + VV.ROUND1B + VV.make_round2()}
