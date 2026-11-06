@@ -1,7 +1,7 @@
 name: paper-trade
 
 # Forward paper test of the AI-filtered resting-bid dip buyer on live Coinbase data (no keys, no money):
-# v1 (bot/, the strategy of record) and the v2 candidate (bot/v2/) run side by side with separate state.
+# R2-08 (bot/v2/, the strategy of record, log paper_v2/) and v1 (bot/, the control, log paper/) side by side.
 # Each job runs ~5h45m; the schedule restarts it every 6 hours. State carries over through paper/state.json.
 on:
   schedule:
@@ -28,12 +28,13 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install pandas numpy lightgbm requests pyarrow
-      - name: Paper trade v1 and the v2 candidate side by side
+      - name: Paper trade R2-08 (strategy of record) and v1 (control) side by side
         run: |
           M=${{ inputs.minutes || '345' }}
-          python bot/run.py --mode paper --minutes $M > v1.out 2>&1 &
-          # v2 candidate (wick v2 lab R2-08): realistic-cost label, 60th-percentile threshold, 7-day beta
+          # R2-08 (bot/v2/, the strategy of record since Nov 6): realistic-cost label, 60th-pct threshold, 7-day beta
           python bot/run.py --mode paper --minutes $M --model-dir bot/v2 --state-dir paper_v2 > v2.out 2>&1 &
+          # v1 (bot/), kept running as the control
+          python bot/run.py --mode paper --minutes $M --model-dir bot --state-dir paper > v1.out 2>&1 &
           wait
           tail -n 25 v1.out v2.out
       - name: Commit paper log

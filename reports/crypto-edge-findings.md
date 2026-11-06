@@ -9,11 +9,14 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   Replayed on the perps' own prices it shows 5–9, but mostly from perp-only wicks whose fills are unverified (1.6–2.6
   counting only spot-confirmed fills). Not traded with money until the paper test and a 1-contract pilot pass, and
   compliance clears futures.
-- **Wick v2 lab (Nov 6):** 130 variations tested with realistic Coinbase costs (section below). None cleared all five
-  pre-set bars, so v1 stays the strategy of record. The closest, **R2-08**, paper trades beside v1 from Nov 6:
-  - Changes from v1: realistic-cost AI label, 60th-percentile threshold, 7-day beta.
-  - Realistic-cost Sharpe 3.79 / 3.06 / 2.36 (selection / check / perp-priced), vs 2.24 / 1.22 / 1.21 for v1.
-  - Switch rule: after 60 paper trades in each book, R2-08's realistic net per trade must be positive and above v1's.
+- **Wick v2 lab (Nov 6):** 130 variations tested with realistic Coinbase costs (section below).
+  - **R2-08 is now the strategy of record:** realistic-cost AI label, 60th-percentile threshold, 7-day beta.
+  - Its realistic-cost Sharpe is 3.79 / 3.06 / 2.36 (selection / check / perp-priced), vs 2.24 / 1.22 / 1.21 for v1.
+  - Head-to-head paired t of the daily differences is 2.1 in the check period and 1.7 on perp prices.
+  - It missed the deflated-Sharpe bar (0.77 vs 0.95), but v1 scores 0.06 on the same bar.
+  - v1 keeps paper trading as the control.
+  - Rules: stop R2-08 if its realistic net per trade is below −12 bp after about 70 paper trades. Go back to v1 if
+    v1's realistic net per trade is higher after 60 trades in each book.
 
 ## Wick v2 lab (Nov 6): 130 variations of the dip-bid strategy, realistic costs first
 Goal set by Miles: a higher-Sharpe version, Renaissance-style. That meant:
@@ -91,13 +94,27 @@ Rules were pre-registered before any result (reports/wick_v2_prereg.md); code is
 - **R2-08 as the bot trades** (no bids 16:55–18:05 ET, spot-priced, Jan 2025 – Nov 2026):
   - Sharpe 3.58 vs 1.97. With the advertised 0%/0.03% fees: 3.97 vs 2.82.
   - Max drawdown −7% vs −14%.
-- **Decision (pre-registered): none adopted.**
-  - All five pass bars 1, 2, 3 and 5. All fail bar 4: counting the ~2,000 earlier setups, deflated Sharpe is 0.51–0.77.
-  - R2-08 is closest, on the bar it failed. Picking it after seeing the check period weakens that number as evidence,
-    so the forward paper test decides.
-  - It runs as a second paper book from Nov 6: bot/v2/, logged to paper_v2/.
-  - It takes over only if, after at least 60 completed paper trades in each book, its realistic-cost net per trade is
-    positive and above v1's.
+- **Decision.** The pre-registered verdict was "none adopted": all five passed bars 1, 2, 3 and 5, and all failed
+  bar 4 (deflated Sharpe 0.51–0.77 counting the ~2,000 earlier setups).
+- **Revised the same day** (logged in the pre-registration). Bar 4 tests against zero skill, and v1 scores 0.06 on it.
+  The decision that matters is head-to-head:
+
+  | R2-08 vs v1, realistic costs, same days | Paired t | Bootstrap P(R2-08 Sharpe higher) |
+  |---|---|---|
+  | Selection period | 3.27 | 1.00 |
+  | Check period | 2.11 | 0.995 |
+  | Perp-priced, spot-confirmed | 1.68 | 0.993 |
+  | As the bot trades | 3.89 | 1.00 |
+
+  - The head-to-head also wins under advertised and base fees (paired t 2.8 and 2.7).
+  - Picking R2-08 after seeing the check period weakens the 2.11 to about p = 0.09 on its own. But every finalist
+    beat v1 there, as did its core single change C29 (2.57 vs 1.22).
+  - The two are about 0.87 correlated, so the downside of switching is small.
+- **R2-08 is the strategy of record** (bot/v2/, logged to paper_v2/). v1 keeps paper trading as the control
+  (paper/).
+- **Forward rules:**
+  - Stop R2-08 if its realistic net per trade is below −12 bp after about 70 paper trades.
+  - Go back to v1 if v1's realistic net per trade is higher after 60 trades in each book.
 
 **Costs, at today's prices:**
 - Realistic round trip:

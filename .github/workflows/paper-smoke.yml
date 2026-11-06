@@ -17,9 +17,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install pandas numpy lightgbm requests pyarrow
-      - name: v1 and the v2 candidate side by side
+      - name: R2-08 (strategy of record) and v1 (control) side by side
         run: |
-          python bot/run.py --mode paper --minutes ${{ inputs.minutes }} --state-dir /tmp/smoke &
+          python bot/run.py --mode paper --minutes ${{ inputs.minutes }} --model-dir bot --state-dir /tmp/smoke &
           python bot/run.py --mode paper --minutes ${{ inputs.minutes }} --model-dir bot/v2 --state-dir /tmp/smoke_v2 &
           wait
       - if: always()

@@ -11,6 +11,9 @@ minutes it exits at market.
 
 ## What to expect (simulated, out of sample, after an independent audit)
 
+These are v1's numbers, with v1's cost assumptions. The strategy of record since Nov 6 is R2-08: see the next
+section for its numbers under realistic costs.
+
 | Version | Sharpe | Return/yr on $10k | Worst drawdown |
 |---|---|---|---|
 | Spot-priced, Jan 2025 – Nov 2026, base costs (2 bp/side) | 2.95 (t 4.0) | 57% | −12% |
@@ -23,7 +26,7 @@ The perp-priced figure is mostly wicks that printed only on the new perps' thin 
 on Sharpe ~2–3; the paper test logs the dollars of bids ahead of ours and the volume traded in each fill minute so the
 answer comes from live data. Full write-up: `reports/crypto-edge-findings.md`; audit: `audit/`.
 
-## v2 candidate, paper trading beside v1 (from Nov 6, 2026)
+## Strategy of record: R2-08 (from Nov 6, 2026); v1 keeps running as the control
 
 The wick v2 lab (`scripts/lab/`, pre-registration `reports/wick_v2_prereg.md`) tested 130 variations of this
 strategy under realistic Coinbase costs:
@@ -32,29 +35,40 @@ strategy under realistic Coinbase costs:
 - 1 bp funding.
 - Whole contracts.
 
-The best candidate is **R2-08**, two changes to v1:
+The best was **R2-08**, two changes to v1:
 - The AI learns from the realistic-cost net instead of a flat 2 bp fee, and keeps a bid only when its
   prediction beats the **60th** percentile (not the median) of its training predictions.
 - The BTC beta behind the fair-value level is measured over **7 days** instead of 3.
 
-| Realistic costs | v1 | R2-08 |
-|---|---|---|
-| Validation Sharpe, Jan 2025 – Mar 2026 | 2.24 | 3.79 |
-| Holdout Sharpe, Apr – Nov 2026 (read once, after the shortlist was fixed) | 1.22 | 3.06 |
-| Perp-priced, spot-confirmed fills, Jul 2025 – Nov 2026 | 1.21 | 2.36 |
-| Net per trade, perp-priced | 9.6 bp | 20.8 bp |
+R2-08 wins head-to-head on every period and fee model. Paired t is the t-statistic of the daily
+differences; the last column is a block-bootstrap probability that R2-08's Sharpe is higher:
 
-R2-08 passed four of the five pre-registered bars. It failed one: its deflated Sharpe is 0.77 when every
-setup tried in this project counts (about 2,130), against the 0.95 needed. So v1 remains the strategy of
-record. R2-08 runs as a second paper book with its own state:
-- Models: `bot/v2/` (`python bot/train_v2.py "R2-08 C29+A11" bot/v2`).
+| Realistic costs, same days | v1 | R2-08 | Paired t | P(R2-08 better) |
+|---|---|---|---|---|
+| Selection, Jan 2025 – Mar 2026 | 2.24 | 3.79 | 3.3 | 1.00 |
+| Check period, Apr – Nov 2026 (read once) | 1.22 | 3.06 | 2.1 | 0.995 |
+| Perp-priced, spot-confirmed fills, Jul 2025 – Nov 2026 | 1.21 | 2.36 | 1.7 | 0.99 |
+| As the bot trades, Jan 2025 – Nov 2026 (advertised fees) | 1.97 (2.82) | 3.58 (3.97) | 3.9 (2.8) | 1.00 |
+| Net per trade, perp-priced | 9.6 bp | 20.8 bp | | |
+
+**Caveats:**
+- It was picked from 130 variants, and among the five finalists after seeing the check period, so expect
+  less than these numbers forward. The two are about 0.87 correlated, so if the gain is luck R2-08 should
+  behave much like v1.
+- It trades about 20% less often: 0.8 fills a day on perp prices, against 1.05 for v1.
+- It failed one pre-set bar. Its deflated Sharpe, which tests against zero skill counting every setup tried, is
+  0.77 against the 0.95 needed. v1 scores 0.06 on the same bar, so the bar can't justify keeping v1.
+
+**Files:**
+- Models: `bot/v2/`. Retrain with `python bot/train_v2.py "R2-08 C29+A11" bot/v2`.
 - Log: `paper_v2/`.
-- Live, it would be `python bot/run.py --mode live --model-dir bot/v2`, but only after the paper rule below.
+- `bot/run.py` runs R2-08 by default. v1 is `--model-dir bot`, logging to `paper/`.
 
-**Forward rule, fixed now:** switch to R2-08 only if, after at least 60 completed paper trades in each book,
-both of these hold:
-- R2-08's mean realistic-cost net per trade is positive.
-- It is above v1's.
+**Forward rules, fixed before any paper trade:**
+- Stop R2-08 if, after about 70 completed paper trades, its mean realistic-cost net per trade is below −12 bp.
+  That is two standard errors below the expected +21 bp; the trade-level standard deviation is about 140 bp.
+- Go back to v1 if, after at least 60 completed paper trades in each book, v1's realistic-cost net per trade is
+  higher than R2-08's.
 
 ## Files
 
@@ -63,14 +77,14 @@ both of these hold:
 | `edge/wick.py` | Order levels and AI features — the exact code the research used (parity-tested) |
 | `bot/engine.py` | Minute loop, paper broker, live broker (Coinbase Advanced SDK), risk limits |
 | `bot/market.py` | Public market data (no keys): spot candles, futures candles, order book |
-| `bot/train.py` | Retrains the v1 model on all history for the chosen universe |
-| `bot/train_v2.py` | Trains a lab variant's models with the lab's own code (e.g. the R2-08 candidate into `bot/v2/`) |
-| `bot/v2/` | The R2-08 candidate's five models and settings (threshold, 7-day beta), read with `--model-dir bot/v2` |
-| `bot/model_s*.txt`, `bot/model_meta.json` | The five trained models (averaged) and the threshold |
+| `bot/train.py` | Retrains the v1 (control) model on all history for the chosen universe |
+| `bot/train_v2.py` | Trains a lab variant's models with the lab's own code (R2-08 into `bot/v2/`) |
+| `bot/v2/` | R2-08, the strategy of record: five models and settings (threshold, 7-day beta); `bot/run.py`'s default |
+| `bot/model_s*.txt`, `bot/model_meta.json` | v1 (the control): five trained models (averaged) and the threshold |
 | `bot/paper_report.py` | Summarises a paper log (`paper/` or `paper_v2/`): trades, net bp with paper and realistic costs, P&L |
 | `bot/config.json` | Capital, size per trade, max positions, daily loss limit, paper fee model |
 | `bot/replay_test.py` | Runs the live engine over historical data and checks it trades exactly like the research |
-| `.github/workflows/paper.yml` | Forward paper test on live data, every 6 hours, no keys: v1 in `paper/`, R2-08 in `paper_v2/` |
+| `.github/workflows/paper.yml` | Forward paper test on live data, every 6 hours, no keys: R2-08 in `paper_v2/`, v1 in `paper/` |
 
 ## Venue and account (New York)
 
@@ -103,11 +117,11 @@ On an always-on machine (a $6/month cloud VM in us-east is ideal; a Mac that nev
 git clone https://github.com/milesmcqueen98-code/crypto-edge && cd crypto-edge
 python3 -m venv .venv && . .venv/bin/activate
 pip install pandas numpy lightgbm requests pyarrow coinbase-advanced-py
-python bot/run.py --minutes 60                      # paper, to check it runs on your machine
+python bot/run.py --minutes 60                      # paper (R2-08, logs to paper_v2/), to check it runs
 # live: create a CDP API key (trade permission, futures portfolio) at coinbase.com/developer-platform
 export COINBASE_API_KEY="organizations/.../apiKeys/..."
 export COINBASE_API_SECRET="-----BEGIN EC PRIVATE KEY-----..."
-I_UNDERSTAND_LIVE_TRADING=yes python bot/run.py --mode live --minutes 100000000
+I_UNDERSTAND_LIVE_TRADING=yes python bot/run.py --mode live --minutes 100000000   # R2-08; logs to live_v2/
 ```
 
 Kill switch: create a file named `STOP` in the repo folder — the bot stops placing entry bids
@@ -136,5 +150,5 @@ Kill switch: create a file named `STOP` in the repo folder — the bot stops pla
 * Fills in the research are simulated: an order counts as filled only if the market traded
   *through* its price by at least one tick in that minute. Queue position and latency inside the
   minute are not modelled beyond that.
-* The model is fixed at its training date; retrain quarterly (`python bot/train.py <coins>` after
-  refreshing `data/minute`).
+* The model is fixed at its training date; retrain quarterly after refreshing `data/minute`
+  (`python bot/train_v2.py "R2-08 C29+A11" bot/v2`; v1: `python bot/train.py <coins>`).

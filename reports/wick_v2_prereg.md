@@ -169,4 +169,33 @@ scripts/lab/futures_check.py with core.futures_trades:
     paper trades in each book, both of these hold:
     - R2-08's mean realistic-cost net per trade is positive.
     - It is above v1's.
+- 2026-11-06 ~12:05 ET, decision revised after Miles asked why R2-08 should not replace v1. Reasoning:
+  - Bar 4, the deflated Sharpe, tests a strategy against zero skill. v1 never had to pass it, and it scores
+    0.06 with all trials counted (0.30 with lab trials only), far below R2-08's 0.77 (0.975). Using that bar to
+    keep v1 over R2-08 was inconsistent.
+  - The question that matters is the head-to-head. On realistic costs, daily differences, same days, R2-08 vs v1:
+
+    | Window | Paired t | P(R2-08 Sharpe higher) |
+    |---|---|---|
+    | Selection period | 3.27 | 1.00 |
+    | Check period | 2.11 | 0.995 |
+    | Perp-priced, spot-confirmed, Jul 2025 – Nov 2026 | 1.68 | 0.993 |
+    | Perp-priced, check period | 1.96 | 0.997 |
+    | As the bot trades | 3.89 | 1.00 |
+
+    The bootstrap uses 10-day blocks. Under the advertised fees the as-the-bot-trades paired t is 2.76; under
+    base fees it is 2.68.
+  - Caveat: R2-08 was picked among five finalists after the check period was seen. Adjusting the check-period
+    t of 2.11 for five picks gives about p = 0.09 on its own. Every finalist beat v1 in the check period, and so
+    did C29, the single change at R2-08's core (2.57 vs 1.22).
+  - The two strategies are about 0.87 correlated, so if the gain is luck R2-08 should behave much like v1. The
+    downside of switching is small.
+  - **New decision:** R2-08 is the strategy of record (bot/v2, the default in bot/run.py). v1 keeps paper trading
+    as the control.
+  - **New forward rules, fixed before any paper trade:**
+    - Stop R2-08 if, after about 70 completed paper trades, its mean realistic-cost net per trade is below
+      −12 bp. That is the expected +21 bp (perp-priced) minus two standard errors; the trade standard deviation
+      is about 139 bp.
+    - Go back to v1 if, after at least 60 completed paper trades in each book, v1's realistic-cost net per trade
+      is higher than R2-08's.
 
