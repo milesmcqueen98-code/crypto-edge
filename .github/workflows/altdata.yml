@@ -1,0 +1,35 @@
+name: fetch-altdata
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "probe or fetch"
+        default: "probe"
+      parts:
+        description: "space-separated: small funding klines metrics [COIN ...for metrics]"
+        default: "small funding klines"
+
+permissions:
+  contents: write
+
+jobs:
+  alt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas pyarrow requests yfinance
+      - run: python scripts/fetch_altdata.py ${{ inputs.mode }} ${{ inputs.parts }}
+      - name: Commit
+        if: inputs.mode == 'fetch'
+        run: |
+          git config user.name "crypto-edge-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/alt
+          git diff --cached --quiet && exit 0
+          git commit -m "Alternative data: ${{ inputs.parts }} ($(date -u +%Y-%m-%d))"
+          for i in 1 2 3 4 5; do git pull --rebase origin main && git push && break; sleep 7; done
