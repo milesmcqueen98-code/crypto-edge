@@ -1,0 +1,28 @@
+name: fetch-perps
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  perps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ccxt pandas
+      - run: python scripts/fetch_perps.py
+      - name: Commit perp prices
+        run: |
+          git config user.name "crypto-edge-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/perps
+          git diff --cached --quiet && exit 0
+          git commit -m "Perp price history $(date -u +%Y-%m-%d)"
+          git pull --rebase origin main
+          git push
