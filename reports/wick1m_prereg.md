@@ -121,3 +121,33 @@ Verdict against the bar: Sharpe ≥ 2.0 passes (2.89), drawdown passes, θ = 0.2
 fails: 16.3% vs 25%. **Not "works" by the registered bar.** The 2022–23 fresh era (spot only, 13 coins): 7.5% a year,
 Sharpe 1.38 (current rules −8.2%). Dollar profit stops growing near $1M: in the check period $163K at $1M, $187K at
 $2M, $191K at $5M. Returns are 23–26% a year at $100K–$500K. Correlation with C3: 0.06.
+
+**Independent review and corrected results (after the check period was opened; logged as a second, corrective run).**
+A separate agent reviewed the simulator. It found no look-ahead in the measurements, but several things that
+flattered the result, all fixed in scripts/wick1m/sim.py version 2:
+- deeper ladder bids kept resting after the parent took profit (lever B says they rest only while the parent is open);
+  they are now cancelled at the parent's first take-profit trade or after 60 minutes;
+- the wide book's spot ticks were 10x too fine (float32 prices); ticks now come from the price grid, which also drops
+  BONK, SHIB, JASMY and GRT on the registered 3 bp tick rule (the wide universe is 31 coins);
+- tranches of one parent counted the same sellers (and take-profit buyers) twice; they now share one pool per venue,
+  and a take-profit can only sell on the venue where the position was bought;
+- the cash cap was applied at the parent's time for later fills; it now applies at each fill's own time, with cash
+  released when a take-profit trades;
+- the size cap used Bitstamp volume, which lever A excludes; Bitstamp fees now use its own (small) volume tier;
+- drawdown is now marked to market minute by minute, not on daily closes.
+The selection grid re-run on version 2 picks the same rule (20 bp cap, ladder, market exit, all signals): 21.7% a
+year, Sharpe 2.53 at $1M, θ = 0.5.
+
+| $1M, θ = 0.5 | Selection | Check | 2022–23 fresh era |
+|---|---|---|---|
+| 17 coins: return / Sharpe | 21.7% / 2.53 | 10.0% / 1.82 | 6.6% / 1.21 |
+| Marked-to-market max drawdown | −14.4% (Oct 10 2025) | −4.1% | −4.5% |
+| Sharpe 90% interval (weekly-block bootstrap) | 1.1 – 3.9 | 0.0 – 3.1 | — |
+| Share of P&L from the best 3 days | 31% | 60% | 31% |
+| + Bitstamp (check) | — | 10.0% / 1.83 | — |
+| Wide universe + Bitstamp (check) | 24.4% / 2.84 | 9.2% / 1.53 | — |
+
+**Corrected verdict: the bar is not met at $1M** (check-period Sharpe 1.82 < 2, return 10% < 25%). The rule does turn
+the current −18% a year at $1M into a profit, and it earns 18–23% a year with Sharpe 2.7–3.2 at $250K–$500K in the
+check period. Sensitivities (check, 17 coins): VIP-page fee tiers 10.5% / 1.97; dropping deeper fills in the parent's
+minute 8.5% / 1.73; θ = 0.25: 8.3% / 1.46.
