@@ -134,8 +134,7 @@ def run(variants, tag):
     state = {}
     for n_ls, (lsk, (ls_d, items)) in enumerate(specs.items()):
         t1 = time.time()
-        ls = core.LevelSet(data, ls_d["coins"], L=ls_d["L"], k=ls_d["k"], wsig=ls_d["wsig"], wbeta=ls_d["wbeta"],
-                           ref=ls_d["ref"], side=ls_d["side"])
+        ls = core.LevelSet(data, **ls_d)
         X = ls.features()
         lab_cache = {}
         for ik, (ex_d, ai_d) in items.items():
@@ -146,7 +145,7 @@ def run(variants, tag):
         del ls, X, lab_cache
         gc.collect()
     # ---- portfolios
-    rows_v, rows_h, dr, db = [], [], {}, {}
+    rows_v, rows_h, dr, db, da = [], [], {}, {}, {}
     for v in variants:
         parts = [trade_cache[(key(ls), key((ex, ai)))] for ls, ex, ai in expand(v)]
         tr = pd.concat([p for p in parts if len(p)], ignore_index=True) if any(len(p) for p in parts) else parts[0]
@@ -155,6 +154,8 @@ def run(variants, tag):
         rows_v.append(val)
         rows_h.append(hold)
         dr[v["name"]], db[v["name"]] = daily["real"], daily["base"]
+        if "adv" in daily:
+            da[v["name"]] = daily["adv"]
         print(f"  {v['name']:<44s} val real Sharpe {val['val_real_sharpe']:5.2f}  base {val['val_base_sharpe']:5.2f}  "
               f"trades {val['val_trades']:4d}  net {val['val_net_real_bp']:6.1f} bp", flush=True)
     V = pd.DataFrame(rows_v)
@@ -163,6 +164,8 @@ def run(variants, tag):
     Hh.to_csv(os.path.join(OUT, f"results_hold_{tag}.csv"), index=False)
     pd.DataFrame(dr).to_parquet(os.path.join(OUT, f"daily_real_{tag}.parquet"))
     pd.DataFrame(db).to_parquet(os.path.join(OUT, f"daily_base_{tag}.parquet"))
+    if da:
+        pd.DataFrame(da).to_parquet(os.path.join(OUT, f"daily_adv_{tag}.parquet"))
     print(f"done: {len(variants)} variants in {time.time() - t0:.0f}s", flush=True)
 
 
@@ -170,7 +173,7 @@ if __name__ == "__main__":
     import variants as VV
     which = sys.argv[1] if len(sys.argv) > 1 else "round1"
     flt = sys.argv[2] if len(sys.argv) > 2 else None
-    vs = VV.VARIANTS if which == "round1" else VV.ROUND2
+    vs = {"round1": VV.VARIANTS, "round1b": VV.ROUND1B}.get(which) or VV.make_round2()
     if flt:
         vs = [v for v in vs if flt in v["name"]]
     run(vs, which if not flt else f"{which}_{flt.replace(' ', '_')}")

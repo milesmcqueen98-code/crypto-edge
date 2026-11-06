@@ -65,6 +65,14 @@ class Data:
         b1 = np.diff(self.lp["BTC"], prepend=np.nan)
         rv = pd.Series(b1).rolling(1440, min_periods=600).std()
         self.btc_rv_ratio = shift((rv / rv.rolling(43200, min_periods=10080).median()).to_numpy(), 1)
+        self._quiet = {}
+
+    def quiet_mask(self, win):
+        if win not in self._quiet:
+            et = self.idx.tz_localize("UTC").tz_convert("America/New_York")
+            mins = np.asarray(et.hour * 60 + et.minute)
+            self._quiet[win] = (mins >= win[0]) & (mins < win[1])
+        return self._quiet[win]
 
 
 def factor(data, ref):
@@ -77,10 +85,21 @@ def factor(data, ref):
     raise ValueError(ref)
 
 
+def hod_factor(e, idx, days=30):
+    """Hour-of-day volatility factor of a residual series through minute t: trailing mean of e^2 in this UTC
+    hour over `days` days relative to the trailing mean over all hours, square-rooted, clipped to [0.5, 2]."""
+    e2 = pd.Series(e * e)
+    allm = e2.rolling(days * 1440, min_periods=7 * 1440).mean()
+    byh = e2.groupby(np.asarray(idx.hour)).transform(lambda z: z.rolling(days * 60, min_periods=7 * 60).mean())
+    return np.clip(np.sqrt(byh / allm).to_numpy(), 0.5, 2.0)
+
+
 class LevelSet:
     """Order levels, sigma, beta and spot candidate fill minutes for one (L, k, windows, reference, side)."""
 
-    def __init__(self, data, coins, L=60, k=4.0, wsig=4320, wbeta=4320, ref="btc", side=1):
+    def __init__(self, data, coins, L=60, k=4.0, wsig=4320, wbeta=4320, ref="btc", side=1, minc=None, hod=False):
+        """minc: no bid while one contract is worth less than this many dollars (per-contract fees too large);
+        hod: scale sigma by the coin's hour-of-day volatility factor (trailing 30 days)."""
         self.data, self.coins, self.L, self.k, self.side, self.ref = data, list(coins), L, k, side, ref
         self.lvl, self.sig, self.beta, self.cands = {}, {}, {}, {}
         D = data.D
@@ -91,17 +110,24 @@ class LevelSet:
                 e = x - shift(x, L)
                 sig_now = rstd(e, wsig)
                 b_lag = np.zeros_like(x)
+                if hod:
+                    sig_now = sig_now * hod_factor(e, data.idx)
                 lvl = np.exp(shift(x, L) - side * k * shift(sig_now, 1))
             else:
                 f = factor(data, rr)
                 b = rbeta(np.diff(x, prepend=np.nan), np.diff(f, prepend=np.nan), wbeta)
                 e = (x - shift(x, L)) - b * (f - shift(f, L))
                 sig_now = rstd(e, wsig)
+                if hod:
+                    sig_now = sig_now * hod_factor(e, data.idx)
                 b_lag = shift(b, 1)
                 lvl = np.exp(shift(x, L) + b_lag * (shift(f, 1) - shift(f, L)) - side * k * shift(sig_now, 1))
             t = ws.SPOT_TICK.get(c)
             if t:
                 lvl = np.floor(lvl / t + 1e-9) * t if side == 1 else np.ceil(lvl / t - 1e-9) * t
+            if minc:
+                with np.errstate(invalid="ignore"):
+                    lvl = np.where(ws.PERP[c][1] * shift(D[c]["cf"], 1) >= minc, lvl, np.nan)
             tick = np.nan_to_num(ws.spot_tick(c) / D[c]["cf"], nan=1.0)
             with np.errstate(invalid="ignore"):
                 if side == 1:
@@ -126,6 +152,8 @@ class LevelSet:
             rows = []
             for c in self.coins:
                 cand = self.cands[c]
+                if len(cand) == 0:
+                    continue
                 f = pn[c].loc[d.idx[cand]][wick.FEATS].copy()
                 f["bid_depth_bp"] = (self.k * self.sig[c][cand] * 1e4).astype(np.float32)
                 f["beta"] = self.beta[c][cand].astype(np.float32)
@@ -214,9 +242,11 @@ def _leg_step(side, hh, lo, tp, tick_u):
 
 
 @numba.njit(cache=True)
-def single_x(cand, O, Hh, Lo, Cf, lvl, tp1d, tp2d, w1, dyn, stop_t, stop_d, tick, hmax, side):
+def single_x(cand, O, Hh, Lo, Cf, lvl, tp1d, tp2d, w1, dyn, stop_t, stop_d, tick, hmax, side, pw=0, phs=0.0):
     """Outcome of one trade entered at lvl[t] for each candidate t. Returns exit px of both legs, their
-    types (1 tp, 2 early stop, 3 time) and the last exit index."""
+    types (1 tp, 2 early stop, 3 time/market, 4 passive time exit) and the last exit index. With pw > 0 the time
+    exit first rests a limit at the hold-cap minute's price shifted half a spread our way (phs, a fraction)
+    for pw minutes (filled on a one-tick trade-through), then sells at market."""
     n = len(cand)
     x1 = np.full(n, np.nan)
     x2 = np.full(n, np.nan)
@@ -231,7 +261,24 @@ def single_x(cand, O, Hh, Lo, Cf, lvl, tp1d, tp2d, w1, dyn, stop_t, stop_d, tick
         tpa = e * np.exp(side * tp1d[t]) if not np.isnan(tp1d[t]) else (np.inf if side == 1 else 0.0)
         tpb = e * np.exp(side * tp2d[t]) if (two and not np.isnan(tp2d[t])) else tpa
         o1, o2 = True, two
-        for u in range(t + 1, min(T, t + hmax + 1)):
+        passive, pp, u_dead = False, 0.0, 0
+        for u in range(t + 1, min(T, t + hmax + 1 + pw)):
+            if passive:
+                if not np.isnan(Hh[u]) and _leg_step(side, Hh[u], Lo[u], pp, tick[u]):
+                    if o1:
+                        x1[j], t1[j], o1 = pp, 4, False
+                    if o2:
+                        x2[j], t2[j], o2 = pp, 4, False
+                    xl[j] = u
+                    break
+                if u >= u_dead and not np.isnan(Cf[u]):
+                    if o1:
+                        x1[j], t1[j], o1 = Cf[u], 3, False
+                    if o2:
+                        x2[j], t2[j], o2 = Cf[u], 3, False
+                    xl[j] = u
+                    break
+                continue
             if not np.isnan(Hh[u]):
                 a, b = tpa, tpb
                 if not np.isnan(dyn[u]):
@@ -253,6 +300,9 @@ def single_x(cand, O, Hh, Lo, Cf, lvl, tp1d, tp2d, w1, dyn, stop_t, stop_d, tick
                     xl[j] = u
                     break
             if u - t >= hmax and not np.isnan(Cf[u]):
+                if pw > 0:
+                    passive, pp, u_dead = True, Cf[u] * (1.0 + side * phs), u + pw
+                    continue
                 if o1:
                     x1[j], t1[j], o1 = Cf[u], 3, False
                 if o2:
@@ -265,7 +315,7 @@ def single_x(cand, O, Hh, Lo, Cf, lvl, tp1d, tp2d, w1, dyn, stop_t, stop_d, tick
 
 
 @numba.njit(cache=True)
-def book_x(O, Hh, Lo, Cf, lvl, tp1d, tp2d, w1, dyn, stop_t, stop_d, tick, hmax, side):
+def book_x(O, Hh, Lo, Cf, lvl, tp1d, tp2d, w1, dyn, stop_t, stop_d, tick, hmax, side, pw=0, phs=0.0):
     """Sequential book for one coin: one position at a time, same exit logic as single_x."""
     T = len(O)
     cap = T // 4 + 16
@@ -294,7 +344,24 @@ def book_x(O, Hh, Lo, Cf, lvl, tp1d, tp2d, w1, dyn, stop_t, stop_d, tick, hmax, 
         o1, o2 = True, two
         r1, r2, k1, k2 = np.nan, np.nan, 0, 0
         last = -1
+        passive, pp, u_dead = False, 0.0, 0
         for u in range(t + 1, T):
+            if passive:
+                if not np.isnan(Hh[u]) and _leg_step(side, Hh[u], Lo[u], pp, tick[u]):
+                    if o1:
+                        r1, k1, o1 = pp, 4, False
+                    if o2:
+                        r2, k2, o2 = pp, 4, False
+                    last = u
+                    break
+                if u >= u_dead and not np.isnan(Cf[u]):
+                    if o1:
+                        r1, k1, o1 = Cf[u], 3, False
+                    if o2:
+                        r2, k2, o2 = Cf[u], 3, False
+                    last = u
+                    break
+                continue
             if not np.isnan(Hh[u]):
                 a, bb = tpa, tpb
                 if not np.isnan(dyn[u]):
@@ -316,6 +383,9 @@ def book_x(O, Hh, Lo, Cf, lvl, tp1d, tp2d, w1, dyn, stop_t, stop_d, tick, hmax, 
                     last = u
                     break
             if u - t >= hmax and not np.isnan(Cf[u]):
+                if pw > 0:
+                    passive, pp, u_dead = True, Cf[u] * (1.0 + side * phs), u + pw
+                    continue
                 if o1:
                     r1, k1, o1 = Cf[u], 3, False
                 if o2:
@@ -333,9 +403,13 @@ def book_x(O, Hh, Lo, Cf, lvl, tp1d, tp2d, w1, dyn, stop_t, stop_d, tick, hmax, 
 
 
 class Exit:
-    def __init__(self, theta=0.6, H=60, theta2=None, w1=1.0, dyn_z=None, stop_t=0, stop_k=None):
+    def __init__(self, theta=0.6, H=60, theta2=None, w1=1.0, dyn_z=None, stop_t=0, stop_k=None, pw=0):
         self.theta, self.H, self.theta2, self.w1 = theta, H, theta2, w1
-        self.dyn_z, self.stop_t, self.stop_k = dyn_z, stop_t, stop_k
+        self.dyn_z, self.stop_t, self.stop_k, self.pw = dyn_z, stop_t, stop_k, int(pw)
+
+    def phs(self, c):
+        """Half the measured perp spread as a fraction (the passive time exit rests this far from the last price)."""
+        return HS.get(c, 2.0) / 1e4 if self.pw > 0 else 0.0
 
     def arrays(self, ls, c):
         sig, k = ls.sig[c], ls.k
@@ -349,17 +423,28 @@ class Exit:
         return tp1, tp2, dyn, stop_d
 
 
+ADV_TAKER_BP = 3.0                                         # advertised US perp schedule: 0% maker, 0.03% taker
+QUIET = None                                               # (lo, hi) ET minutes: no new bids (as the bot does)
+
+
 def costs_bp(c, px, ty, model):
-    """Exit-leg cost in bp for exit types (1 maker tp, else taker) under a cost model; px in spot units."""
+    """Exit-leg cost in bp for exit types (1 tp and 4 passive exit are maker, else taker) under a cost model
+    ("real": $0.20/contract + 1.5x half-spread on taker exits; "adv": advertised 0%/0.03% + 1.5x half-spread on
+    taker exits; "base": 2 bp + one perp tick on taker exits); px in spot units."""
+    if model == "adv":
+        hs = HS_MULT * HS.get(c, ws.PERP[c][2] / px * 1e4)
+        return np.where((ty == 1) | (ty == 4), 0.0, ADV_TAKER_BP + hs)
     if model == "real":
         fee = FEE_USD / (ws.PERP[c][1] * px) * 1e4
         hs = HS_MULT * HS.get(c, ws.PERP[c][2] / px * 1e4)
-        return fee + np.where(ty == 1, 0.0, hs)
+        return fee + np.where((ty == 1) | (ty == 4), 0.0, hs)
     tick_bp = ws.PERP[c][2] / px * 1e4
-    return 2.0 + np.where(ty == 1, 0.0, tick_bp)
+    return 2.0 + np.where((ty == 1) | (ty == 4), 0.0, tick_bp)
 
 
 def entry_cost_bp(c, px, model):
+    if model == "adv":
+        return FUND_BP + 0.0 * px
     if model == "real":
         return FEE_USD / (ws.PERP[c][1] * px) * 1e4 + FUND_BP
     return 2.0 + 0.0 * px
@@ -381,7 +466,7 @@ def labels(ls, ex):
         cand = ls.cands[c]
         tp1, tp2, dyn, stop_d = ex.arrays(ls, c)
         x1, x2, t1, t2, xl = single_x(cand, D["open"], D["high"], D["low"], D["cf"], ls.lvl[c], tp1, tp2, ex.w1, dyn,
-                                      ex.stop_t, stop_d, ls.tick(c), ex.H, ls.side)
+                                      ex.stop_t, stop_d, ls.tick(c), ex.H, ls.side, ex.pw, ex.phs(c))
         e = ls.lvl[c][cand]
         g, nr = net_bp(c, ls.side, e, x1, x2, t1, t2, ex.w1, "real")
         _, nb = net_bp(c, ls.side, e, x1, x2, t1, t2, ex.w1, "base")
@@ -474,6 +559,8 @@ def simulate(ls, ex, keep=None, pred=None, start=TEST0):
         D = d.D[c]
         lvl = ls.lvl[c].copy()
         lvl[:i0] = np.nan
+        if QUIET is not None:
+            lvl[d.quiet_mask(QUIET)] = np.nan
         rows = X.index[X.coin == c]
         cand = X.pos[rows].to_numpy()
         if keep is not None:
@@ -482,14 +569,15 @@ def simulate(ls, ex, keep=None, pred=None, start=TEST0):
             lvl[off] = np.nan
         tp1, tp2, dyn, stop_d = ex.arrays(ls, c)
         ei, xi, ep, x1, x2, t1, t2 = book_x(D["open"], D["high"], D["low"], D["cf"], lvl, tp1, tp2, ex.w1, dyn,
-                                            ex.stop_t, stop_d, ls.tick(c), ex.H, ls.side)
+                                            ex.stop_t, stop_d, ls.tick(c), ex.H, ls.side, ex.pw, ex.phs(c))
         if len(ei) == 0:
             continue
         g, nr = net_bp(c, ls.side, ep, x1, x2, t1, t2, ex.w1, "real")
         _, nb = net_bp(c, ls.side, ep, x1, x2, t1, t2, ex.w1, "base")
+        _, na = net_bp(c, ls.side, ep, x1, x2, t1, t2, ex.w1, "adv")
         pmap = pd.Series(pred[rows].to_numpy(), index=cand) if pred is not None else None
         tr = pd.DataFrame({"ts": d.idx[ei], "exit_ts": d.idx[xi], "coin": c, "side": ls.side, "ei": ei, "xi": xi,
-                           "px": ep, "gross": g, "net_real": nr, "net_base": nb, "sig": ls.sig[c][ei],
+                           "px": ep, "gross": g, "net_real": nr, "net_base": nb, "net_adv": na, "sig": ls.sig[c][ei],
                            "beta": ls.beta[c][ei], "tp": (t1 == 1)})
         tr["pred"] = pmap.reindex(ei).to_numpy() if pmap is not None else np.nan
         trs.append(tr)
@@ -531,6 +619,8 @@ def futures_trades(ls, ex, keep=None, pred=None, thr=None, confirm=True, strict=
         raw = ls.lvl[c] * basis
         lvl = wick.round_down(raw, tick_usd) if ls.side == 1 else wick.round_up(raw, tick_usd)
         lvl[:i0] = np.nan
+        if QUIET is not None:
+            lvl[d.quiet_mask(QUIET)] = np.nan
         rows = X.index[X.coin == c]
         cand = X.pos[rows].to_numpy()
         if keep is not None:
@@ -551,18 +641,19 @@ def futures_trades(ls, ex, keep=None, pred=None, thr=None, confirm=True, strict=
         tp1, tp2, dyn, stop_d = ex.arrays(ls, c)
         dyn = dyn * basis
         ei, xi, ep, x1, x2, t1, t2 = book_x(F["open"], F["high"], F["low"], exit_px, lvl, tp1, tp2, ex.w1, dyn,
-                                            ex.stop_t, stop_d, tick, ex.H, ls.side)
+                                            ex.stop_t, stop_d, tick, ex.H, ls.side, ex.pw, ex.phs(c))
         if len(ei) == 0:
             continue
         rnd = wick.round_down if ls.side == 1 else wick.round_up
-        x1 = np.where(t1 == 1, rnd(x1, tick_usd), x1)
-        x2 = np.where(t2 == 1, rnd(x2, tick_usd), x2)
+        x1 = np.where((t1 == 1) | (t1 == 4), rnd(x1, tick_usd), x1)
+        x2 = np.where((t2 == 1) | (t2 == 4), rnd(x2, tick_usd), x2)
         b0 = basis[ei]
         e_s, x1_s, x2_s = ep / b0, x1 / b0, x2 / b0
         g, nr = net_bp(c, ls.side, e_s, x1_s, x2_s, t1, t2, ex.w1, "real")
         _, nb = net_bp(c, ls.side, e_s, x1_s, x2_s, t1, t2, ex.w1, "base")
+        _, na = net_bp(c, ls.side, e_s, x1_s, x2_s, t1, t2, ex.w1, "adv")
         tr = pd.DataFrame({"ts": d.idx[ei], "exit_ts": d.idx[xi], "coin": c, "side": ls.side, "ei": ei, "xi": xi,
-                           "px": e_s, "gross": g, "net_real": nr, "net_base": nb, "sig": ls.sig[c][ei],
+                           "px": e_s, "gross": g, "net_real": nr, "net_base": nb, "net_adv": na, "sig": ls.sig[c][ei],
                            "beta": ls.beta[c][ei], "tp": (t1 == 1)})
         if pred is not None:
             pmap = pd.Series(pred[rows].to_numpy(), index=cand)
@@ -593,7 +684,7 @@ def portfolio(tr, cap=6, target=TARGET, gross_cap=GROSS_CAP, size=None, priority
     """Daily returns (fraction of $10k) under both cost models + trade stats."""
     if tr.empty:
         z = pd.Series(0.0, index=DAYS)
-        return {"real": z, "base": z}, tr
+        return {"real": z, "base": z, "adv": z}, tr
     tr = tr.copy()
     m = np.ones(len(tr))
     if size == "pred":
@@ -648,7 +739,7 @@ def portfolio(tr, cap=6, target=TARGET, gross_cap=GROSS_CAP, size=None, priority
     k = tr.loc[keep].copy()
     k["notional"] = notional[keep]
     out = {}
-    for model in ("real", "base"):
+    for model in [m for m in ("real", "base", "adv") if f"net_{m}" in k]:
         net = k[f"net_{model}"].to_numpy()
         if hedged:
             net = net + hedge(k, data, model)
@@ -671,7 +762,7 @@ def stats(d, lo=None, hi=None):
 def summarize(name, family, daily, k):
     """Validation metrics (selection) and holdout metrics (written separately)."""
     val, hold = {"variant": name, "family": family}, {"variant": name, "family": family}
-    for model in ("real", "base"):
+    for model in [m for m in ("real", "base", "adv") if m in daily]:
         for lab, (lo, hi), dst in [("val", VAL, val), ("hold", HOLD, hold)]:
             s = stats(daily[model], lo, hi)
             for kk, v in s.items():

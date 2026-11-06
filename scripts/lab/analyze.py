@@ -91,7 +91,7 @@ def walk_forward_selection(R, base="V000 base (v1)"):
 
 
 def main():
-    tags = [t for t in ("round1", "round2") if os.path.exists(os.path.join(OUT, f"results_val_{t}.csv"))]
+    tags = [t for t in ("round1", "round1b", "round2") if os.path.exists(os.path.join(OUT, f"results_val_{t}.csv"))]
     V, R, B = load(tags)
     base = "V000 base (v1)"
     elig = V[V.val_trades >= 150].copy()

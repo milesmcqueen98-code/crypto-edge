@@ -142,4 +142,21 @@ scripts/lab/futures_check.py with core.futures_trades:
   at least 3x our contracts traded in the minute).
 
 ## Deviation log
-(none yet)
+- 2026-11-06 ~10:45 ET, before any round-1 result was read:
+  - **Round 1b added: five more single changes**, run after round 1 and treated as round-1 variants (also in
+    the round-2 rule and in N for the deflated Sharpe):
+    - B20/B21, passive time exits: rest a limit half a spread above the last price for 5 or 15 minutes, then
+      sell at market. Reason: the realistic model charges 1.5x the half-spread on every market exit, and
+      this is the cost lever the bot controls.
+    - E06, drop the four contracts that cost over 3 bp per side in fees at Dec-2024 prices (ETH, LTC, BCH, ZEC).
+    - E07, no bid while one contract is worth less than $667.
+    - A24, sigma scaled by an hour-of-day volatility factor (the "24-hour effect").
+  - **Reported, not used for selection:** a third cost model, "adv" (the advertised US perp schedule):
+    - 0% maker and 0.03% taker.
+    - 1.5x half-spread on market exits.
+    - 1 bp funding.
+    - Reason: public sources disagree on whether Coinbase US perps charge a percentage or a per-contract fee.
+      The realistic model ($0.20 per contract) is kept for selection as the conservative choice.
+  - **Final numbers for the shortlist are also run "as the bot trades":**
+    - No new bids 16:55-18:05 ET.
+    - Reason: the lab, like v1, ignores that window.

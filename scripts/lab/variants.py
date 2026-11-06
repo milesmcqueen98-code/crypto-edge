@@ -127,3 +127,103 @@ VARIANTS += [
     v("F06 weekends only (diagnostic)", "F", filt="weekend"), v("F07 weekdays only (diagnostic)", "F", filt="weekday"),
     v("F08 60-minute + 15-minute k=5 books", "F", books=[{}, {"ls": dict(L=15, k=5.0)}]),
 ]
+
+
+# ---- round 2: combinations of the best round-1 changes (rule pre-registered in reports/wick_v2_prereg.md)
+DIAGNOSTIC = ("D12", "F06", "F07")
+PRED_DEPENDENT = {("port", "size"): ("pred", "pred2", "pred_sig"), ("port", "priority"): ("pred",)}
+_MISSING = object()
+
+
+def changes(var):
+    """A variant's changes relative to BASE: {(section, key): value} plus books."""
+    ch = {}
+    for sec in ("ls", "exit", "ai", "port"):
+        for k_, val in var[sec].items():
+            if BASE[sec].get(k_, _MISSING) != val:
+                ch[(sec, k_)] = val
+    if var.get("books"):
+        ch[("books", None)] = var["books"]
+    return ch
+
+
+def merge(vs):
+    """Merge several variants' changes; None if two of them set the same thing differently."""
+    out = {}
+    for var in vs:
+        for k_, val in changes(var).items():
+            if k_ in out and out[k_] != val:
+                return None
+            out[k_] = val
+    if out.get(("ai", "off")):
+        for (sec, k_), bad in PRED_DEPENDENT.items():
+            if out.get((sec, k_)) in bad:
+                return None
+    return out
+
+
+def build(name, ch):
+    upd = {"ls": {}, "exit": {}, "ai": {}, "port": {}}
+    books = None
+    for (sec, k_), val in ch.items():
+        if sec == "books":
+            books = val
+        else:
+            upd[sec][k_] = val
+    return v(name, "R2", ls=upd["ls"], exit=upd["exit"], ai=upd["ai"], port=upd["port"], books=books)
+
+
+def make_round2(V=None, max_n=20, min_gain=0.05):
+    import itertools
+    import os
+    import pandas as pd
+    if V is None:
+        ps = [os.path.join(core.ROOT, "reports", "lab", f"results_val_{t}.csv") for t in ("round1", "round1b")]
+        if not os.path.exists(ps[0]):
+            return []
+        V = pd.concat([pd.read_csv(p) for p in ps if os.path.exists(p)], ignore_index=True)
+    byname = {x["name"]: x for x in VARIANTS + ROUND1B}
+    b0 = V.loc[V.variant == "V000 base (v1)", "val_real_sharpe"].iloc[0]
+    E = V[(V.val_trades >= 150) & (V.val_real_sharpe >= b0 + min_gain) & (V.family != "base")
+          & ~V.variant.str[:3].isin(DIAGNOSTIC)].sort_values("val_real_sharpe", ascending=False)
+    fam = {}
+    for r in E.itertuples():
+        fam.setdefault(r.family, [])
+        if len(fam[r.family]) < 2:
+            fam[r.family].append((r.variant, r.val_real_sharpe))
+    leads = sorted(((f, xs[0]) for f, xs in fam.items()), key=lambda t: -t[1][1])
+    code = lambda n: n.split()[0]  # noqa: E731
+    combos = []
+    lead_names = [x[1][0] for x in leads]
+    if len(lead_names) >= 2:
+        combos.append(lead_names)
+    combos += [list(p) for p in itertools.combinations(lead_names, 2)]
+    if len(lead_names) >= 3:
+        combos.append(lead_names[:3])
+    for f, xs in fam.items():
+        if len(xs) > 1 and len(lead_names) >= 2:
+            combos.append([xs[1][0] if n == xs[0][0] else n for n in lead_names])
+    out, seen = [], set()
+    for names in combos:
+        key_ = tuple(sorted(names))
+        if key_ in seen:
+            continue
+        seen.add(key_)
+        ch = merge([byname[n] for n in names])
+        if ch is None:
+            continue
+        out.append(build(f"R2-{len(out) + 1:02d} " + "+".join(code(n) for n in names), ch))
+        if len(out) >= max_n:
+            break
+    return out
+
+
+# ---- round 1b: five more single changes, defined 2026-11-06 ~10:45 ET, before any round-1 result was read
+LOW_FEE13 = tuple(c for c in C17 if c not in ("ETH", "LTC", "BCH", "ZEC"))     # contract fee > 3 bp/side at Dec-2024 prices
+ROUND1B = [
+    v("B20 passive time exit (5 min, then market)", "B", exit=dict(pw=5)),
+    v("B21 passive time exit (15 min, then market)", "B", exit=dict(pw=15)),
+    v("E06 drop the 4 dearest contracts per $ (ETH, LTC, BCH, ZEC)", "E", ls=dict(coins=LOW_FEE13)),
+    v("E07 no bid while a contract is under $667 (fee > 3 bp/side)", "E", ls=dict(minc=667.0)),
+    v("A24 sigma scaled by hour-of-day volatility", "A", ls=dict(hod=True)),
+]

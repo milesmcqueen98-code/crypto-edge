@@ -37,7 +37,7 @@ def main():
     t0 = time.time()
     sl = json.load(open(os.path.join(OUT, "shortlist.json")))
     names = list(dict.fromkeys(sl["variants"] + sl.get("ens10", []) + [BASE] + sys.argv[1:]))
-    allv = {v["name"]: v for v in VV.VARIANTS + getattr(VV, "ROUND2", [])}
+    allv = {v["name"]: v for v in VV.VARIANTS + VV.ROUND1B + VV.make_round2()}
     variants = [allv[n] for n in names]
     coins_all = sorted({c for v in variants for b in RUN.expand(v) for c in b[0]["coins"]})
     data = core.Data(coins_all)
@@ -51,8 +51,7 @@ def main():
     starts = {}
     for lsk, (ls_d, items) in specs.items():
         t1 = time.time()
-        ls = core.LevelSet(data, ls_d["coins"], L=ls_d["L"], k=ls_d["k"], wsig=ls_d["wsig"], wbeta=ls_d["wbeta"],
-                           ref=ls_d["ref"], side=ls_d["side"])
+        ls = core.LevelSet(data, **ls_d)
         X = ls.features()
         lab_cache = {}
         for ik, (ex_d, ai_d) in items.items():
