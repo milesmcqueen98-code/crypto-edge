@@ -1,0 +1,94 @@
+name: maker-sim
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "probe (data checks only) or run (all pre-registered configs)"
+        default: "run"
+      days:
+        description: "dev, holdout, or comma-separated YYYY-MM-01 dates"
+        default: "dev"
+      coins:
+        default: "BTC,ETH,SOL,XRP,DOGE"
+
+permissions:
+  contents: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      days: ${{ steps.p.outputs.days }}
+    steps:
+      - id: p
+        env:
+          DAYS: ${{ inputs.days }}
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import json, os
+          def months(a, b):
+              y, m = a
+              out = []
+              while (y, m) <= b:
+                  out.append(f"{y}-{m:02d}-01")
+                  m += 1
+                  if m == 13:
+                      y, m = y + 1, 1
+              return out
+          sel = os.environ["DAYS"].strip()
+          if sel == "dev":
+              d = months((2024, 1), (2025, 6))
+          elif sel == "holdout":
+              d = months((2025, 7), (2026, 11))
+          else:
+              d = [x.strip() for x in sel.split(",") if x.strip()]
+          print("days=" + json.dumps(d))
+          EOF
+
+  sim:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      max-parallel: 9
+      matrix:
+        day: ${{ fromJSON(needs.plan.outputs.days) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy pandas pyarrow numba requests
+      - run: python scripts/maker_selftest.py
+      - run: python scripts/maker_day.py ${{ inputs.mode }} ${{ matrix.day }} ${{ inputs.coins }}
+        env:
+          MAKER_TMP: ${{ runner.temp }}/ticks
+      - if: inputs.mode == 'run'
+        uses: actions/upload-artifact@v4
+        with:
+          name: maker-${{ matrix.day }}
+          path: reports/maker/raw/${{ matrix.day }}*
+          retention-days: 3
+
+  commit:
+    needs: sim
+    if: always() && inputs.mode == 'run'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: maker-*
+          path: reports/maker/raw
+          merge-multiple: true
+      - name: Commit derived results
+        run: |
+          ls -la reports/maker/raw
+          git config user.name "crypto-edge-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add reports/maker/raw
+          git diff --cached --quiet && exit 0
+          git commit -m "Maker sim results (${{ inputs.days }})"
+          for i in 1 2 3 4 5; do git pull --rebase origin main && git push && break; sleep 7; done

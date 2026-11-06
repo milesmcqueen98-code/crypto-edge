@@ -1,2 +1,3 @@
 __pycache__/
 reports/preds_cache.parquet
+.tick_tmp/
