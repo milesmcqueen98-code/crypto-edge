@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Daily total-return closes (yfinance, auto-adjusted) for the multi-asset trend sleeve. Writes data/etf/<TICKER>.csv.
+"""Daily total-return closes (yfinance, auto-adjusted) for the multi-asset trend sleeve. Writes data/etf/<TICKER>.csv
+(SPY and QQQ come from fetch_spy.py, from 1993).
 
 Proxies for contracts listed on Coinbase Derivatives (US500, Tech100, China index, gold, silver, crude oil, natural gas,
 copper, platinum) plus a CME extension (Treasuries, dollar, euro, yen). See reports/multiasset_prereg.md.
@@ -10,7 +11,7 @@ import time
 import yfinance as yf
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TICKERS = ["SPY", "QQQ", "FXI", "GLD", "SLV", "USO", "UNG", "CPER", "PPLT", "TLT", "IEF", "UUP", "FXE", "FXY"]
+TICKERS = ["FXI", "GLD", "SLV", "USO", "UNG", "CPER", "PPLT", "TLT", "IEF", "UUP", "FXE", "FXY"]
 
 os.makedirs(os.path.join(ROOT, "data", "etf"), exist_ok=True)
 for t in TICKERS:
