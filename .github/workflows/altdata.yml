@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pandas pyarrow requests yfinance
+      - run: pip install pandas pyarrow requests yfinance lxml html5lib
       - run: python scripts/fetch_altdata.py ${{ inputs.mode }} ${{ inputs.parts }}
       - name: Commit
         if: inputs.mode == 'fetch'

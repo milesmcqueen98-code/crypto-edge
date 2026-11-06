@@ -258,6 +258,15 @@ def fetch(parts):
             d = yf.download(t, start="2015-01-01", auto_adjust=False, progress=False)
             d.columns = [c[0] if isinstance(c, tuple) else c for c in d.columns]
             save(d.reset_index().rename(columns={"Date": "date"}), f"yf_{nm}.parquet")
+    if "farside" in parts:
+        for page, nm in (("btc", "etf_flows_btc"), ("eth", "etf_flows_eth")):
+            r = get(f"https://farside.co.uk/{page}/")
+            if r is None or r.status_code != 200:
+                continue
+            tabs = pd.read_html(io.StringIO(r.text))
+            tab = max(tabs, key=len)
+            tab.columns = [" ".join(str(x) for x in c) if isinstance(c, tuple) else str(c) for c in tab.columns]
+            save(tab.astype(str), f"{nm}.parquet")
     if "funding" in parts:
         for c in COINS:
             save(fetch_binance_funding(c), f"binance/funding_{c}.parquet")
