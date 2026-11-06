@@ -13,7 +13,7 @@ import sim  # noqa: E402
 
 KAPPAS = [None, 0.0010, 0.0005, 0.00025] + ([0.0020, 0.0040] if os.environ.get("KAPPA_EXT") == "1" else [])
 LADDERS = [False, True]
-EXITS = ["E0", "E1", "E2"]
+EXITS = ["E0"]                     # v2 (after review): participation exits lost under the cash cap; dropped
 LISTS = ["bot", "all"]
 
 
@@ -24,6 +24,8 @@ def run_period(P, cfg, lo, hi, theta, C, gross=1.0):
     st = sim.period_stats(daily, C, lo, hi)
     st.update(trades=int((Q.fill > 0).sum()), avg_fill=float(Q.fill[Q.fill > 0].mean()) if (Q.fill > 0).any() else 0.0,
               maker_bp=info["maker_bp"], taker_bp=info["taker_bp"])
+    for k_ in ("top3_share", "top10_share", "ret_ex_top3", "sharpe_ex_top3", "sharpe_p05", "sharpe_p95", "p_sharpe_lt2"):
+        st.pop(k_, None)
     return st
 
 

@@ -26,12 +26,12 @@ def window(P, lo, hi):
     return P[(P.ts >= lo) & (P.ts < pd.Timestamp(hi) + pd.Timedelta(days=1))]
 
 
-def run(P, cfg, lo, hi, theta, C):
+def run(P, cfg, lo, hi, theta, C, mtm=True, **kw):
     days = (pd.Timestamp(hi) - pd.Timestamp(lo)).days + 1
-    Q, daily, info = sim.evaluate(window(P, lo, hi), theta=theta, C=C, days=days, gross_cap=1.0, **cfg)
-    st = sim.period_stats(daily, C, lo, hi)
+    Q, daily, info = sim.evaluate(window(P, lo, hi), theta=theta, C=C, days=days, gross_cap=1.0, mtm=mtm, **cfg, **kw)
+    st = sim.period_stats(daily, C, lo, hi, equity=info.get("equity"))
     st.update(fills=int((Q.fill > 0).sum()), maker_bp=info["maker_bp"], taker_bp=info["taker_bp"],
-              v30_musd=info["v30"] / 1e6)
+              v30_musd=info["v30"] / 1e6, fill_usd=float(Q.fill.sum()))
     return st, daily
 
 
@@ -45,16 +45,22 @@ def main():
             print("missing", p)
             continue
         P = pd.read_pickle(p)
-        for cname, cfg in (("current rules", BASE), ("$1M rule", RULE)):
+        rule_sets = (("$1M rule", RULE),) if tag == "wide" else (("current rules", BASE), ("$1M rule", RULE))
+        for cname, cfg in rule_sets:                       # the bot's 6-slot rule exists only for the 17 coins
             for pname, (lo, hi) in (("selection", sim.SEL), ("check", sim.CHK)):
                 for th in (0.5, 0.25):
                     st, d = run(P, cfg, lo, hi, th, 1e6)
                     rows.append(dict(book=bname, rules=cname, period=pname, theta=th, **st))
                     if cname == "$1M rule" and th == 0.5:
                         dailies[(bname, pname)] = d
+        for sname, kw in (("deeper fills in the parent's minute dropped", dict(drop_same_minute=True)),
+                          ("VIP-page fee tiers", dict(tiers=sim.VIP_TIERS))):
+            for pname, (lo, hi) in (("selection", sim.SEL), ("check", sim.CHK)):
+                st, _ = run(P, RULE, lo, hi, 0.5, 1e6, mtm=False, **kw)
+                rows.append(dict(book=bname, rules=f"$1M rule, {sname}", period=pname, theta=0.5, **st))
         for C in CAPS:
             for pname, (lo, hi) in (("selection", sim.SEL), ("check", sim.CHK)):
-                st, _ = run(P, RULE, lo, hi, 0.5, C)
+                st, _ = run(P, RULE, lo, hi, 0.5, C, mtm=False)
                 curve.append(dict(book=bname, capital=C, period=pname, **st))
     R = pd.DataFrame(rows)
     K = pd.DataFrame(curve)
@@ -73,7 +79,9 @@ def main():
     j = pd.concat([r, c3], axis=1).dropna()
     corr = float(j.corr().iloc[0, 1])
     pd.set_option("display.width", 250)
-    show = R.pivot_table(index=["book", "rules", "theta"], columns="period", values=["ret_yr", "sharpe", "maxdd", "dollars_yr"])
+    show = R.pivot_table(index=["book", "rules", "theta"], columns="period",
+                         values=["ret_yr", "sharpe", "maxdd_mtm", "dollars_yr", "sharpe_p05", "sharpe_p95", "top3_share",
+                                 "ret_ex_top3"])
     print(show.round(3).to_string())
     print("\ncapacity curve ($1M rule, theta 0.5):")
     print(K.pivot_table(index=["book", "capital"], columns="period", values=["ret_yr", "sharpe", "dollars_yr"]).round(3).to_string())
