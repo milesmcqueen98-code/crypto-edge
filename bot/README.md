@@ -9,6 +9,20 @@ the bid is worth keeping live, from 23 market features known at that moment. Aft
 take-profit sell at 60% of the dislocation (also post-only), and if that has not filled after 60
 minutes it exits at market.
 
+## What to expect (simulated, out of sample, after an independent audit)
+
+| Version | Sharpe | Return/yr on $10k | Worst drawdown |
+|---|---|---|---|
+| Spot-priced, Jan 2025 – Nov 2026, base costs (2 bp/side) | 2.95 (t 4.0) | 57% | −12% |
+| Same, high costs ($0.20/contract/side + measured perp spreads) | 2.25 (t 3.1) | 43% | −14% |
+| Perp-priced, Dec 2025 – Nov 2026 (17 perps) | 8.8 | — | −4% |
+| Perp-priced, only fills where spot also reached the bid | 1.6 | — | — |
+
+The perp-priced figure is mostly wicks that printed only on the new perps' thin order books (often around the
+5–6 pm ET maintenance hour). Candles can't show whether a $2,500 resting bid would really be filled in those, so plan
+on Sharpe ~2–3; the paper test logs the dollars of bids ahead of ours and the volume traded in each fill minute so the
+answer comes from live data. Full write-up: `reports/crypto-edge-findings.md`; audit: `audit/`.
+
 ## Files
 
 | File | Purpose |
@@ -74,6 +88,10 @@ Kill switch: create a file named `STOP` in the repo folder — the bot stops pla
   ratio, because bad days usually recovered later the same day.
 * Every position has a hard 60-minute time exit; there is no stop-loss, by design (stops at 1x the
   dislocation turned the backtest negative).
+* `quiet_et` [1015, 1085] — no new bids 4:55–6:05 pm New York time (Coinbase Derivatives' maintenance hour and the
+  Friday halt, when the perps barely trade and reopening prints are erratic).
+* `max_basis_jump` 0.03 — skip a bid when the perp/spot price ratio jumps more than 3% from its recent median
+  (a broken or stale book).
 
 ## Known gaps
 

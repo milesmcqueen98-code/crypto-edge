@@ -3,6 +3,8 @@
   "notional_frac": 0.25,
   "max_positions": 6,
   "daily_loss_limit": 0.08,
+  "quiet_et": [1015, 1085],
+  "max_basis_jump": 0.03,
   "fee_bp_maker": 2.0,
   "fee_bp_taker": 2.0
 }

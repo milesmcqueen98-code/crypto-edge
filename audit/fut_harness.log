@@ -1,0 +1,128 @@
+panel rows: 49081 (39s)
+spot candidates 17844, models trained (42s)
+  base (reproduces wick_futures) (47s)
+  clean basis (last fut trade / same-minute spot) (50s)
+  fresh basis (fut traded at t-1, else no bid) (53s)
+  entry minute fut volume >= 1x order (55s)
+  entry + TP minute fut volume >= 1x order (58s)
+  entry + TP minute fut volume >= 3x order (61s)
+  spot also reached the spot level in the fill minute (64s)
+  fees $0.20/contract/side (66s)
+  time-exit price: spot x last basis when no fut trade (69s)
+  market exits pay 2x measured half-spread (72s)
+  1-minute extra latency (level, basis, AI all 1 min older) (74s)
+  combined: clean basis + vol>=1x entry/TP + $0.20/contract (77s)
+                                                  variant  strategy   venue                      window  cap  trades  net_bp   hit  sharpe  ann_ret  maxdd
+                           base (reproduces wick_futures) rule only futures       all17 from 2025-12-13 none    2042  23.178 0.663   5.232    1.317 -0.099
+                           base (reproduces wick_futures) rule only futures       all17 from 2025-12-13    6    1877  23.684 0.662   5.532    1.237 -0.075
+                           base (reproduces wick_futures) rule only futures ETH/SOL/XRP from 2025-08-16 none     799  11.574 0.647   2.332    0.189 -0.063
+                           base (reproduces wick_futures) rule only futures ETH/SOL/XRP from 2025-08-16    6     799  11.574 0.647   2.332    0.189 -0.063
+                           base (reproduces wick_futures) rule + AI futures       all17 from 2025-12-13 none    1189  51.422 0.764   9.122    1.701 -0.048
+                           base (reproduces wick_futures) rule + AI futures       all17 from 2025-12-13    6    1109  51.002 0.759   8.818    1.574 -0.048
+                           base (reproduces wick_futures) rule + AI futures ETH/SOL/XRP from 2025-08-16 none     338  46.094 0.778   5.105    0.318 -0.020
+                           base (reproduces wick_futures) rule + AI futures ETH/SOL/XRP from 2025-08-16    6     338  46.094 0.778   5.105    0.318 -0.020
+          clean basis (last fut trade / same-minute spot) rule only futures       all17 from 2025-12-13 none    1908  27.196 0.675   5.809    1.444 -0.099
+          clean basis (last fut trade / same-minute spot) rule only futures       all17 from 2025-12-13    6    1743  27.812 0.676   6.382    1.349 -0.074
+          clean basis (last fut trade / same-minute spot) rule only futures ETH/SOL/XRP from 2025-08-16 none     785  11.903 0.651   2.375    0.191 -0.064
+          clean basis (last fut trade / same-minute spot) rule only futures ETH/SOL/XRP from 2025-08-16    6     785  11.903 0.651   2.375    0.191 -0.064
+          clean basis (last fut trade / same-minute spot) rule + AI futures       all17 from 2025-12-13 none    1103  58.767 0.791   9.674    1.803 -0.048
+          clean basis (last fut trade / same-minute spot) rule + AI futures       all17 from 2025-12-13    6    1016  57.376 0.790   9.208    1.622 -0.048
+          clean basis (last fut trade / same-minute spot) rule + AI futures ETH/SOL/XRP from 2025-08-16 none     332  46.680 0.783   5.102    0.316 -0.020
+          clean basis (last fut trade / same-minute spot) rule + AI futures ETH/SOL/XRP from 2025-08-16    6     332  46.680 0.783   5.102    0.316 -0.020
+             fresh basis (fut traded at t-1, else no bid) rule only futures       all17 from 2025-12-13 none    1390  21.296 0.663   4.126    0.824 -0.100
+             fresh basis (fut traded at t-1, else no bid) rule only futures       all17 from 2025-12-13    6    1274  19.428 0.656   3.884    0.689 -0.093
+             fresh basis (fut traded at t-1, else no bid) rule only futures ETH/SOL/XRP from 2025-08-16 none     740  10.564 0.645   2.039    0.160 -0.066
+             fresh basis (fut traded at t-1, else no bid) rule only futures ETH/SOL/XRP from 2025-08-16    6     740  10.564 0.645   2.039    0.160 -0.066
+             fresh basis (fut traded at t-1, else no bid) rule + AI futures       all17 from 2025-12-13 none     733  52.431 0.779   6.998    1.069 -0.049
+             fresh basis (fut traded at t-1, else no bid) rule + AI futures       all17 from 2025-12-13    6     671  49.151 0.770   6.313    0.918 -0.050
+             fresh basis (fut traded at t-1, else no bid) rule + AI futures ETH/SOL/XRP from 2025-08-16 none     299  46.600 0.789   4.724    0.284 -0.020
+             fresh basis (fut traded at t-1, else no bid) rule + AI futures ETH/SOL/XRP from 2025-08-16    6     299  46.600 0.789   4.724    0.284 -0.020
+                      entry minute fut volume >= 1x order rule only futures       all17 from 2025-12-13 none    2003  23.944 0.666   5.352    1.334 -0.099
+                      entry minute fut volume >= 1x order rule only futures       all17 from 2025-12-13    6    1845  24.531 0.665   5.597    1.259 -0.081
+                      entry minute fut volume >= 1x order rule only futures ETH/SOL/XRP from 2025-08-16 none     799  11.574 0.647   2.332    0.189 -0.063
+                      entry minute fut volume >= 1x order rule only futures ETH/SOL/XRP from 2025-08-16    6     799  11.574 0.647   2.332    0.189 -0.063
+                      entry minute fut volume >= 1x order rule + AI futures       all17 from 2025-12-13 none    1171  51.410 0.764   9.009    1.675 -0.048
+                      entry minute fut volume >= 1x order rule + AI futures       all17 from 2025-12-13    6    1094  51.159 0.762   8.743    1.557 -0.048
+                      entry minute fut volume >= 1x order rule + AI futures ETH/SOL/XRP from 2025-08-16 none     338  46.095 0.778   5.105    0.318 -0.020
+                      entry minute fut volume >= 1x order rule + AI futures ETH/SOL/XRP from 2025-08-16    6     338  46.095 0.778   5.105    0.318 -0.020
+                 entry + TP minute fut volume >= 1x order rule only futures       all17 from 2025-12-13 none    1998  22.561 0.661   5.063    1.254 -0.099
+                 entry + TP minute fut volume >= 1x order rule only futures       all17 from 2025-12-13    6    1835  22.692 0.658   5.213    1.158 -0.075
+                 entry + TP minute fut volume >= 1x order rule only futures ETH/SOL/XRP from 2025-08-16 none     796  11.369 0.647   2.285    0.185 -0.063
+                 entry + TP minute fut volume >= 1x order rule only futures ETH/SOL/XRP from 2025-08-16    6     796  11.369 0.647   2.285    0.185 -0.063
+                 entry + TP minute fut volume >= 1x order rule + AI futures       all17 from 2025-12-13 none    1169  49.314 0.756   8.790    1.604 -0.048
+                 entry + TP minute fut volume >= 1x order rule + AI futures       all17 from 2025-12-13    6    1090  48.630 0.752   8.501    1.475 -0.048
+                 entry + TP minute fut volume >= 1x order rule + AI futures ETH/SOL/XRP from 2025-08-16 none     337  45.717 0.777   5.059    0.315 -0.020
+                 entry + TP minute fut volume >= 1x order rule + AI futures ETH/SOL/XRP from 2025-08-16    6     337  45.717 0.777   5.059    0.315 -0.020
+                 entry + TP minute fut volume >= 3x order rule only futures       all17 from 2025-12-13 none    1879  23.973 0.662   5.328    1.253 -0.100
+                 entry + TP minute fut volume >= 3x order rule only futures       all17 from 2025-12-13    6    1734  23.495 0.659   5.423    1.133 -0.076
+                 entry + TP minute fut volume >= 3x order rule only futures ETH/SOL/XRP from 2025-08-16 none     783  10.961 0.645   2.173    0.175 -0.063
+                 entry + TP minute fut volume >= 3x order rule only futures ETH/SOL/XRP from 2025-08-16    6     783  10.961 0.645   2.173    0.175 -0.063
+                 entry + TP minute fut volume >= 3x order rule + AI futures       all17 from 2025-12-13 none    1110  51.030 0.755   9.116    1.576 -0.049
+                 entry + TP minute fut volume >= 3x order rule + AI futures       all17 from 2025-12-13    6    1035  49.810 0.750   8.737    1.434 -0.049
+                 entry + TP minute fut volume >= 3x order rule + AI futures ETH/SOL/XRP from 2025-08-16 none     335  45.140 0.773   4.997    0.309 -0.020
+                 entry + TP minute fut volume >= 3x order rule + AI futures ETH/SOL/XRP from 2025-08-16    6     335  45.140 0.773   4.997    0.309 -0.020
+      spot also reached the spot level in the fill minute rule only futures       all17 from 2025-12-13 none    1176  -3.839 0.571  -0.651   -0.126 -0.171
+      spot also reached the spot level in the fill minute rule only futures       all17 from 2025-12-13    6    1044  -7.479 0.559  -1.382   -0.217 -0.214
+      spot also reached the spot level in the fill minute rule only futures ETH/SOL/XRP from 2025-08-16 none     618  -1.163 0.597  -0.210   -0.015 -0.088
+      spot also reached the spot level in the fill minute rule only futures ETH/SOL/XRP from 2025-08-16    6     618  -1.163 0.597  -0.210   -0.015 -0.088
+      spot also reached the spot level in the fill minute rule + AI futures       all17 from 2025-12-13 none     517  20.088 0.660   2.238    0.289 -0.074
+      spot also reached the spot level in the fill minute rule + AI futures       all17 from 2025-12-13    6     452  14.792 0.637   1.585    0.186 -0.075
+      spot also reached the spot level in the fill minute rule + AI futures ETH/SOL/XRP from 2025-08-16 none     212  29.232 0.708   2.603    0.127 -0.022
+      spot also reached the spot level in the fill minute rule + AI futures ETH/SOL/XRP from 2025-08-16    6     212  29.232 0.708   2.603    0.127 -0.022
+                                 fees $0.20/contract/side rule only futures       all17 from 2025-12-13 none    2042  17.393 0.646   3.930    0.988 -0.100
+                                 fees $0.20/contract/side rule only futures       all17 from 2025-12-13    6    1877  17.844 0.646   4.186    0.932 -0.076
+                                 fees $0.20/contract/side rule only futures ETH/SOL/XRP from 2025-08-16 none     799   5.160 0.632   1.032    0.084 -0.086
+                                 fees $0.20/contract/side rule only futures ETH/SOL/XRP from 2025-08-16    6     799   5.160 0.632   1.032    0.084 -0.086
+                                 fees $0.20/contract/side rule + AI futures       all17 from 2025-12-13 none    1189  46.489 0.751   8.496    1.538 -0.048
+                                 fees $0.20/contract/side rule + AI futures       all17 from 2025-12-13    6    1109  46.063 0.748   8.174    1.421 -0.048
+                                 fees $0.20/contract/side rule + AI futures ETH/SOL/XRP from 2025-08-16 none     338  41.841 0.766   4.771    0.289 -0.022
+                                 fees $0.20/contract/side rule + AI futures ETH/SOL/XRP from 2025-08-16    6     338  41.841 0.766   4.771    0.289 -0.022
+     time-exit price: spot x last basis when no fut trade rule only futures       all17 from 2025-12-13 none    2042  25.057 0.670   5.691    1.423 -0.099
+     time-exit price: spot x last basis when no fut trade rule only futures       all17 from 2025-12-13    6    1877  25.484 0.670   5.979    1.331 -0.075
+     time-exit price: spot x last basis when no fut trade rule only futures ETH/SOL/XRP from 2025-08-16 none     799  11.784 0.648   2.376    0.192 -0.063
+     time-exit price: spot x last basis when no fut trade rule only futures ETH/SOL/XRP from 2025-08-16    6     799  11.784 0.648   2.376    0.192 -0.063
+     time-exit price: spot x last basis when no fut trade rule + AI futures       all17 from 2025-12-13 none    1189  53.442 0.775   9.479    1.768 -0.048
+     time-exit price: spot x last basis when no fut trade rule + AI futures       all17 from 2025-12-13    6    1109  52.931 0.771   9.138    1.633 -0.048
+     time-exit price: spot x last basis when no fut trade rule + AI futures ETH/SOL/XRP from 2025-08-16 none     338  46.335 0.778   5.133    0.320 -0.020
+     time-exit price: spot x last basis when no fut trade rule + AI futures ETH/SOL/XRP from 2025-08-16    6     338  46.335 0.778   5.133    0.320 -0.020
+                 market exits pay 2x measured half-spread rule only futures       all17 from 2025-12-13 none    2042  21.602 0.655   4.841    1.227 -0.100
+                 market exits pay 2x measured half-spread rule only futures       all17 from 2025-12-13    6    1877  22.116 0.655   5.134    1.155 -0.075
+                 market exits pay 2x measured half-spread rule only futures ETH/SOL/XRP from 2025-08-16 none     799  10.774 0.643   2.162    0.176 -0.064
+                 market exits pay 2x measured half-spread rule only futures ETH/SOL/XRP from 2025-08-16    6     799  10.774 0.643   2.162    0.176 -0.064
+                 market exits pay 2x measured half-spread rule + AI futures       all17 from 2025-12-13 none    1189  50.109 0.756   8.883    1.658 -0.048
+                 market exits pay 2x measured half-spread rule + AI futures       all17 from 2025-12-13    6    1109  49.673 0.752   8.575    1.533 -0.048
+                 market exits pay 2x measured half-spread rule + AI futures ETH/SOL/XRP from 2025-08-16 none     338  45.598 0.775   5.054    0.315 -0.020
+                 market exits pay 2x measured half-spread rule + AI futures ETH/SOL/XRP from 2025-08-16    6     338  45.598 0.775   5.054    0.315 -0.020
+1-minute extra latency (level, basis, AI all 1 min older) rule only futures       all17 from 2025-12-13 none    2180  20.779 0.649   4.482    1.260 -0.125
+1-minute extra latency (level, basis, AI all 1 min older) rule only futures       all17 from 2025-12-13    6    1995  23.272 0.664   5.508    1.292 -0.085
+1-minute extra latency (level, basis, AI all 1 min older) rule only futures ETH/SOL/XRP from 2025-08-16 none     948   8.498 0.645   1.960    0.164 -0.048
+1-minute extra latency (level, basis, AI all 1 min older) rule only futures ETH/SOL/XRP from 2025-08-16    6     948   8.498 0.645   1.960    0.164 -0.048
+1-minute extra latency (level, basis, AI all 1 min older) rule + AI futures       all17 from 2025-12-13 none    1334  44.532 0.728   7.996    1.653 -0.058
+1-minute extra latency (level, basis, AI all 1 min older) rule + AI futures       all17 from 2025-12-13    6    1233  45.732 0.735   7.790    1.569 -0.058
+1-minute extra latency (level, basis, AI all 1 min older) rule + AI futures ETH/SOL/XRP from 2025-08-16 none     422  34.430 0.739   4.812    0.297 -0.026
+1-minute extra latency (level, basis, AI all 1 min older) rule + AI futures ETH/SOL/XRP from 2025-08-16    6     422  34.430 0.739   4.812    0.297 -0.026
+combined: clean basis + vol>=1x entry/TP + $0.20/contract rule only futures       all17 from 2025-12-13 none    1865  21.012 0.660   4.471    1.090 -0.100
+combined: clean basis + vol>=1x entry/TP + $0.20/contract rule only futures       all17 from 2025-12-13    6    1706  21.457 0.664   4.812    1.018 -0.075
+combined: clean basis + vol>=1x entry/TP + $0.20/contract rule only futures ETH/SOL/XRP from 2025-08-16 none     782   5.316 0.637   1.051    0.085 -0.080
+combined: clean basis + vol>=1x entry/TP + $0.20/contract rule only futures ETH/SOL/XRP from 2025-08-16    6     782   5.316 0.637   1.051    0.085 -0.080
+combined: clean basis + vol>=1x entry/TP + $0.20/contract rule + AI futures       all17 from 2025-12-13 none    1082  52.217 0.776   8.802    1.572 -0.049
+combined: clean basis + vol>=1x entry/TP + $0.20/contract rule + AI futures       all17 from 2025-12-13    6     994  51.494 0.777   8.459    1.424 -0.049
+combined: clean basis + vol>=1x entry/TP + $0.20/contract rule + AI futures ETH/SOL/XRP from 2025-08-16 none     331  41.991 0.770   4.723    0.284 -0.022
+combined: clean basis + vol>=1x entry/TP + $0.20/contract rule + AI futures ETH/SOL/XRP from 2025-08-16    6     331  41.991 0.770   4.723    0.284 -0.022
+                          spot, same windows (reproduces) rule only    spot       all17 from 2025-12-13 none    1938   5.941 0.612   1.181    0.320 -0.190
+                          spot, same windows (reproduces) rule only    spot       all17 from 2025-12-13    6    1691   1.993 0.600   0.421    0.094 -0.141
+                          spot, same windows (reproduces) rule only    spot ETH/SOL/XRP from 2025-08-16 none     731   1.571 0.617   0.320    0.023 -0.090
+                          spot, same windows (reproduces) rule only    spot ETH/SOL/XRP from 2025-08-16    6     731   1.571 0.617   0.320    0.023 -0.090
+                          spot, same windows (reproduces) rule + AI    spot       all17 from 2025-12-13 none     773  31.400 0.699   3.765    0.675 -0.043
+                          spot, same windows (reproduces) rule + AI    spot       all17 from 2025-12-13    6     650  23.406 0.674   2.618    0.423 -0.046
+                          spot, same windows (reproduces) rule + AI    spot ETH/SOL/XRP from 2025-08-16 none     249  38.909 0.743   3.730    0.198 -0.019
+                          spot, same windows (reproduces) rule + AI    spot ETH/SOL/XRP from 2025-08-16    6     249  38.909 0.743   3.730    0.198 -0.019
+                             spot, 1-minute extra latency rule only    spot       all17 from 2025-12-13 none    2250   2.960 0.595   0.620    0.185 -0.228
+                             spot, 1-minute extra latency rule only    spot       all17 from 2025-12-13    6    1955   1.510 0.590   0.331    0.082 -0.183
+                             spot, 1-minute extra latency rule only    spot ETH/SOL/XRP from 2025-08-16 none     920  -0.525 0.608  -0.116   -0.010 -0.102
+                             spot, 1-minute extra latency rule only    spot ETH/SOL/XRP from 2025-08-16    6     920  -0.525 0.608  -0.116   -0.010 -0.102
+                             spot, 1-minute extra latency rule + AI    spot       all17 from 2025-12-13 none    1012  17.284 0.655   2.311    0.487 -0.156
+                             spot, 1-minute extra latency rule + AI    spot       all17 from 2025-12-13    6     859  11.243 0.650   1.333    0.269 -0.169
+                             spot, 1-minute extra latency rule + AI    spot ETH/SOL/XRP from 2025-08-16 none     333  17.130 0.664   1.846    0.116 -0.074
+                             spot, 1-minute extra latency rule + AI    spot ETH/SOL/XRP from 2025-08-16    6     333  17.130 0.664   1.846    0.116 -0.074
+done in 79s

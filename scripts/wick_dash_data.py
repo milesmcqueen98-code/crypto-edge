@@ -14,10 +14,10 @@ DAYS = pd.date_range("2025-01-01", "2026-11-05", freq="D")
 
 
 def capped(tr, cap):
-    tr = tr.sort_values("ts").reset_index(drop=True)
+    tr = tr.sort_values(["ts", "coin"], kind="mergesort").reset_index(drop=True)
     keep, open_ = [], []
     for r in tr.itertuples():
-        open_ = [e for e in open_ if e > r.ts]
+        open_ = [e for e in open_ if e >= r.ts]              # still open during its exit minute
         if len(open_) < cap:
             keep.append(r.Index)
             open_.append(r.exit_ts)
@@ -41,7 +41,8 @@ def row(name, role, tr, notional=0.25):
 def main():
     B = pd.read_parquet(os.path.join(ROOT, "reports", "wick_breadth_trades.parquet"))
     Fz = pd.read_parquet(os.path.join(ROOT, "reports", "wick_final_trades.parquet"))   # 17 coins, 5-seed average
-    Fz = Fz.assign(universe="wide 17", strategy=Fz.strategy.replace({"rule + AI, 5-seed average": "rule + AI"}))
+    Fz = Fz.assign(universe="wide 17", strategy=Fz.strategy.replace({"rule + AI, 5-seed average": "rule + AI",
+                                                                     "rule + AI, 5-seed average, conservative costs": "rule + AI, conservative costs"}))
     B = pd.concat([B[B.universe == "core 6"], Fz], ignore_index=True)
     uni = "wide 17"
     rows, curves = [], {}
@@ -56,7 +57,9 @@ def main():
             ("Resting bids + AI, 6 coins", "AI adds", "core 6", "rule + AI", None),
             ("Resting bids, no AI, all coins", "Rule alone", uni, "rule only", None),
             ("Resting bids + AI, all coins", "No position limit", uni, "rule + AI", None),
-            ("Resting bids + AI, all coins, max 6 open", "Paper trading now", uni, "rule + AI", 6)]:
+            ("Resting bids + AI, all coins, max 6 open", "Paper trading now", uni, "rule + AI", 6),
+            ("Same, with high costs ($0.20 a contract, measured spreads)", "Paper trading now, high-cost case", uni,
+             "rule + AI, conservative costs", 6)]:
         tr = B[(B.universe == u) & (B.strategy == strat)]
         tr = capped(tr, cap) if cap else tr
         r, d = row(name, role, tr)
@@ -136,6 +139,13 @@ def main():
                    np.where(P.window.str.startswith("all"), "all", "eth_sol_xrp"))
         P["window"] = np.where(P.window.str.startswith("all"), "17 perps, Dec 13 2025 – Nov 5 2026", "ETH, SOL, XRP perps, Aug 16 2025 – Nov 5 2026")
         P = P[~((P.venue == "spot") & (P.fills == "strict"))]          # strict fills only change the futures rows
+        A = pd.read_csv(os.path.join(ROOT, "audit", "fut_variants.csv"))   # independent check (audit/)
+        A = A[(A.variant == "spot also reached the spot level in the fill minute") & (A.strategy == "rule + AI") &
+              (A.cap.astype(str) == "6")].copy()
+        A["id"] = np.where(A.window.str.startswith("all"), "ai_futures_spotconfirmed_all", "ai_futures_spotconfirmed_eth_sol_xrp")
+        A["version"] = "With AI, futures prices, only fills where spot also reached the level"
+        A["window"] = np.where(A.window.str.startswith("all"), "17 perps, Dec 13 2025 – Nov 5 2026", "ETH, SOL, XRP perps, Aug 16 2025 – Nov 5 2026")
+        P = pd.concat([P, A], ignore_index=True)
         P[["id", "version", "window", "trades", "per_day", "net_bp", "sharpe", "t", "ann_ret", "maxdd", "worst_day"]].to_csv(
             os.path.join(OUT, "wick_futures_portfolio.csv"), index=False)
     print(H.round(2).to_string(index=False))

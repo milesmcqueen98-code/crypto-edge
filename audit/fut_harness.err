@@ -1,0 +1,34 @@
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/crypto-edge/edge/wick.py:110: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),

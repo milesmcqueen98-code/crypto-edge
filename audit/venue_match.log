@@ -1,0 +1,2 @@
+rule only: matched fills 805: spot 5.8 bp, futures -3.8 bp, diff -9.6 +- 2.3 bp (se); futures-only-book fills 1237 at 40.8 bp; spot-only-book fills 1133 at 6.1 bp
+rule + AI: matched fills 384: spot 32.5 bp, futures 19.3 bp, diff -13.2 +- 4.5 bp (se); futures-only-book fills 805 at 66.7 bp; spot-only-book fills 389 at 30.3 bp

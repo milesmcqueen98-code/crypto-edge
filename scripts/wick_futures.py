@@ -52,8 +52,8 @@ def candidates(o, lo, lvl, tick_frac):
 def spot_candidates(D, lv, coins):
     out = {}
     for c in coins:
-        tick = np.nan_to_num(ws.PERP[c][2] / D[c]["cf"], nan=1.0)
-        cand = candidates(D[c]["open"], D[c]["low"], lv[c][0], tick)
+        tick = np.nan_to_num(ws.spot_tick(c) / D[c]["cf"], nan=1.0)
+        cand = candidates(D[c]["open"], D[c]["low"], ws.spot_level(c, lv[c][0]), tick)
         out[c] = cand[cand > 1500]
     return out
 
@@ -66,8 +66,8 @@ def spot_training_set(D, pn, idx, coins, lv=None, cands=None):
     rows = []
     for c in coins:
         o, hh, lo, cf = (D[c][k] for k in ("open", "high", "low", "cf"))
-        lvl, sig = lv[c]
-        tick = np.nan_to_num(ws.PERP[c][2] / cf, nan=1.0)
+        lvl, sig = ws.spot_level(c, lv[c][0]), lv[c][1]
+        tick = np.nan_to_num(ws.spot_tick(c) / cf, nan=1.0)
         cand = cands[c]
         xp, ty = wa.single_trades(cand, o, hh, lo, cf, lvl, wick.THETA * wick.K * sig, tick, wick.H)
         wa.FEES, wa.TT = FEES, 1
@@ -116,10 +116,10 @@ def fee_fut(c, px_fut, size_fut, maker):
 
 def portfolio(tr, start, cap=None, notional=0.25):
     if cap:
-        tr = tr.sort_values("ts").reset_index(drop=True)
+        tr = tr.sort_values(["ts", "coin"], kind="mergesort").reset_index(drop=True)
         keep, open_ = [], []
         for r in tr.itertuples():
-            open_ = [e for e in open_ if e > r.ts]
+            open_ = [e for e in open_ if e >= r.ts]          # still open during its exit minute
             if len(open_) < cap:
                 keep.append(r.Index)
                 open_.append(r.exit_ts)
@@ -183,7 +183,7 @@ def main():
         tpd = wick.THETA * wick.K * sig
         hs = hs_meas.get(c, np.nan)
         tick_f = np.nan_to_num((3 if STRICT else 1) * tick_f_usd / F["cf"], nan=1.0)
-        tick_s = np.nan_to_num(ws.PERP[c][2] / D[c]["cf"], nan=1.0)
+        tick_s = np.nan_to_num(ws.spot_tick(c) / D[c]["cf"], nan=1.0)
         keep_f, keep_s = ai_keep(c, fut_c[c]), ai_keep(c, spot_c[c])
         # time exits: the last futures trade can be stale on thin perps; use the lower of it and the spot price
         # carried over at the basis of that last trade (a long position sells at the worse of the two)
@@ -208,7 +208,7 @@ def main():
             trf = pd.DataFrame({"ts": idx[ei], "exit_ts": idx[xi], "coin": c, "strategy": name, "venue": "futures",
                                 "type": ty, "gross_bp": gross, "net_bp": net})
             # spot execution of the same rule over the same window
-            lv = LV[c][0].copy()
+            lv = ws.spot_level(c, LV[c][0]).copy()
             lv[:i0] = np.nan
             if name == "rule + AI":
                 off = np.zeros(len(idx), dtype=bool)

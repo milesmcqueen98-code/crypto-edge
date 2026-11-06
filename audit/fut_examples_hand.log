@@ -1,0 +1,12 @@
+ETH 2026-01-23 23:01:00  spot_reached=False  sim: ep=2959 xp=2955 type=3 exit=2026-01-24 00:01:00 net=-19.8
+   by hand: spot level 2917.81 (sigma 31 bp, depth 125 bp), basis 1.01413, fut bid 2959, fut open 2997, low 2949 -> filled=True; exit 2026-01-24 00:01:00 at 2955 type 3; gross -13.5 net -19.8
+LINK 2026-06-10 21:51:00  spot_reached=False  sim: ep=7.424 xp=7.487 type=1 exit=2026-06-10 21:52:00 net=80.5
+   by hand: spot level 7.41919 (sigma 35 bp, depth 142 bp), basis 1.00067, fut bid 7.424, fut open 7.5, low 7.4 -> filled=True; exit 2026-06-10 21:52:00 at 7.487 type 1; gross 84.5 net 80.5
+XLM 2026-10-14 13:59:00  spot_reached=False  sim: ep=0.18291 xp=0.1835 type=3 exit=2026-10-14 14:59:00 net=25.3
+   by hand: spot level 0.18275 (sigma 40 bp, depth 159 bp), basis 1.00092, fut bid 0.18291, fut open 0.1842, low 0.18245 -> filled=True; exit 2026-10-14 14:59:00 at 0.1835 type 3; gross 32.2 net 25.3
+DOGE 2026-03-16 21:47:00  spot_reached=False  sim: ep=0.10034 xp=0.10158 type=1 exit=2026-03-16 21:48:00 net=118.8
+   by hand: spot level 0.10021 (sigma 51 bp, depth 206 bp), basis 1.00137, fut bid 0.10034, fut open 0.10231, low 0.09928 -> filled=True; exit 2026-03-16 21:48:00 at 0.10158 type 1; gross 122.8 net 118.8
+SOL 2026-06-02 14:27:00  spot_reached=True  sim: ep=76.65 xp=77.11 type=1 exit=2026-06-02 14:28:00 net=55.8
+   by hand: spot level 76.6773 (sigma 25 bp, depth 100 bp), basis 0.99974, fut bid 76.65, fut open 77.41, low 76.63 -> filled=True; exit 2026-06-02 14:28:00 at 77.11 type 1; gross 59.8 net 55.8
+LTC 2026-03-29 22:45:00  spot_reached=True  sim: ep=52.59 xp=52.93 type=1 exit=2026-03-29 22:55:00 net=60.4
+   by hand: spot level 52.4909 (sigma 28 bp, depth 110 bp), basis 1.00208, fut bid 52.59, fut open 52.83, low 52.28 -> filled=True; exit 2026-03-29 22:55:00 at 52.93 type 1; gross 64.4 net 60.4

@@ -1,0 +1,8 @@
+uncapped: {'days': 674, 'sharpe': np.float64(3.669), 'ann': np.float64(0.97), 'maxdd': np.float64(-0.148), 'zero_day_share': np.float64(0.458)} max concurrent (counting the exit minute): 17
+cap 6 as coded: 1692 {'days': 674, 'sharpe': np.float64(3.22), 'ann': np.float64(0.676), 'maxdd': np.float64(-0.127), 'zero_day_share': np.float64(0.458)} max concurrent incl. exit minute: 8
+cap 6, strict (exit minute still occupies the slot): 1692 {'days': 674, 'sharpe': np.float64(3.083), 'ann': np.float64(0.657), 'maxdd': np.float64(-0.121), 'zero_day_share': np.float64(0.458)} max concurrent: 6
+cap 6 Sharpe over 20 random tie orders: 2.982 .. 3.274
+entry minutes with >=3 coins filling at once: 143 (695 trades of 2077)
+best 10 days = 44.2% of uncapped P&L: [('2026-02-06', 0.159), ('2025-10-10', 0.116), ('2025-11-04', 0.083), ('2026-06-05', 0.073), ('2025-03-11', 0.07)]
+cap 6 Sharpe over random tie orders: mean 3.119, median 3.097; headline as coded 3.220
+strict cap 6 (exit minute occupies slot), random tie orders: mean 3.050, range 2.875..3.190

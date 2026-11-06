@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.join(ROOT, "scripts"))
 from edge import wick  # noqa: E402
 import wick_breadth as wb  # noqa: E402
 import wick_futures as wf  # noqa: E402
+import wick_robust as wr  # noqa: E402
 import wick_sim as ws  # noqa: E402
 
 SEEDS = [7, 11, 23, 42, 101]
@@ -74,36 +75,47 @@ def main():
             th[qs[c] == q] = np.median(np.mean([preds[s]["_train"][q] for s in SEEDS], axis=0))
         avg[c] = (p, th)
 
-    def simulate(keep_fn, exit_ticks=1.0):
+    hs_meas = wf.half_spread_bp()
+
+    def simulate(keep_fn, exit_ticks=1.0, costs="base"):
         trs = []
         i_test = idx.get_indexer([pd.Timestamp(ws.TEST_START)])[0]
         for c in coins:
             o, hh, lo, cfc = (D[c][k] for k in ("open", "high", "low", "cf"))
-            lvl, sig = LV[c][0].copy(), LV[c][1]
+            lvl, sig = ws.spot_level(c, LV[c][0]).copy(), LV[c][1]
             lvl[:i_test] = np.nan
             if keep_fn is not None:
                 k = keep_fn(c)
                 lvl[test_rows[c][~k]] = np.nan
-            tick = np.nan_to_num(ws.PERP[c][2] / cfc, nan=1.0)
+            tick = np.nan_to_num(ws.spot_tick(c) / cfc, nan=1.0)
             ei, xi, ep, xp, ty = ws.run_book(o, hh, lo, cfc, lvl, wick.THETA * wick.K * sig, np.full(len(idx), np.nan), 1,
                                              tick, wick.H, 0)
             gross = np.log(xp / ep) * 1e4
-            hs = exit_ticks * ws.PERP[c][2] / ep * 1e4
-            net = gross - 2.0 - np.where(ty == 1, 2.0, 2.0 + hs)
+            if costs == "conservative":     # measured perp half-spread on market exits + $0.20 per contract per side
+                hs = np.full(len(ep), hs_meas.get(c, 1.0 * ws.PERP[c][2] / np.nanmean(ep) * 1e4))
+                fee = lambda px: wr.FEE_CONTRACT_USD / (ws.PERP[c][1] * px) * 1e4  # noqa: E731
+                net = gross - fee(ep) - fee(xp) - np.where(ty == 1, 0.0, hs)
+            else:
+                hs = exit_ticks * ws.PERP[c][2] / ep * 1e4
+                net = gross - 2.0 - np.where(ty == 1, 2.0, 2.0 + hs)
             trs.append(pd.DataFrame({"ts": idx[ei], "exit_ts": idx[xi], "coin": c, "net_bp": net, "gross_bp": gross, "type": ty}))
         return pd.concat(trs, ignore_index=True)
 
     rows, keep_trades = [], []
     runs = [("rule only", None, 1.0)] + [(f"rule + AI, seed {s}", (lambda c, s=s: preds[s][c][0] > preds[s][c][1]), 1.0) for s in SEEDS]
-    runs += [("rule + AI, 5-seed average", lambda c: avg[c][0] > avg[c][1], 1.0),
-             ("rule + AI, 5-seed average, exits pay 3 ticks", lambda c: avg[c][0] > avg[c][1], 3.0)]
-    for name, fn, xt in runs:
-        tr = simulate(fn, xt)
+    runs = [(n, f, x, "base") for n, f, x in runs]
+    runs += [("rule + AI, 5-seed average", lambda c: avg[c][0] > avg[c][1], 1.0, "base"),
+             ("rule + AI, 5-seed average, exits pay 3 ticks", lambda c: avg[c][0] > avg[c][1], 3.0, "base"),
+             ("rule only, conservative costs", None, 1.0, "conservative"),
+             ("rule + AI, 5-seed average, conservative costs", lambda c: avg[c][0] > avg[c][1], 1.0, "conservative")]
+    for name, fn, xt, costs in runs:
+        tr = simulate(fn, xt, costs)
         for cap in (None, 6):
             s, d = wf.portfolio(tr, pd.Timestamp(ws.TEST_START), cap)
             yrs = {f"sharpe_{y}": d[d.index.year == y].mean() / d[d.index.year == y].std() * np.sqrt(365) for y in (2025, 2026)}
             rows.append(dict(strategy=name, cap=cap or "none", **s, **yrs))
-        if name in ("rule only", "rule + AI, 5-seed average"):
+        if name in ("rule only", "rule + AI, 5-seed average", "rule + AI, 5-seed average, conservative costs",
+                    "rule only, conservative costs"):
             keep_trades.append(tr.assign(strategy=name))
         print(f"  {name} ({time.time() - t0:.0f}s)", flush=True)
     R = pd.DataFrame(rows)

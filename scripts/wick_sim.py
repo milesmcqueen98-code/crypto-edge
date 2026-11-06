@@ -38,6 +38,21 @@ TICK_BP = {"BTC": 0.66, "ETH": 0.45, "SOL": 0.6, "XRP": 0.5, "DOGE": 1.0, "LTC":
 # half-spread paid on a market order, bp (Coinbase futures book; replaced by measured values when available)
 HALF_SPREAD_BP = {"BTC": 0.7, "ETH": 1.0, "SOL": 1.2, "XRP": 1.2, "DOGE": 2.0, "LTC": 3.0, "AVAX": 2.0, "LINK": 2.0}
 W = 4320                      # 3-day trailing window for beta and sigma
+# spot ticks coarser than the perp tick (in spot units); only PEPE-USD (1e-8 = ~26 bp) per the audit
+SPOT_TICK = {"PEPE": 1e-8}
+
+
+def spot_tick(c):
+    """Tick used for spot-simulated fills: the coarser of the spot and the perp tick."""
+    return max(PERP[c][2], SPOT_TICK.get(c, 0.0))
+
+
+def spot_level(c, lvl):
+    """A spot-simulated bid sits on the spot tick grid."""
+    t = SPOT_TICK.get(c)
+    return np.floor(lvl / t + 1e-9) * t if t else lvl
+
+
 PERP = {  # Coinbase Derivatives perp-style futures: (product, contract size in coin, tick in USD)
     "BTC": ("BIP-20DEC30-CDE", 0.01, 5.0), "ETH": ("ETP-20DEC30-CDE", 0.1, 0.5), "SOL": ("SLP-20DEC30-CDE", 5, 0.01),
     "XRP": ("XPP-20DEC30-CDE", 500, 0.0001), "DOGE": ("DOP-20DEC30-CDE", 5000, 0.00001),

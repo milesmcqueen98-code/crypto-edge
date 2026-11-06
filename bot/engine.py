@@ -180,6 +180,7 @@ class Engine:
         self.state = self._load_state()
         self.broker = PaperBroker(self.state, self.specs) if self.mode == "paper" else LiveBroker(self.state, self.specs)
         self.spot = {}
+        self.basis_hist = {}
 
     # ---------- state
     def _load_state(self):
@@ -268,6 +269,14 @@ class Engine:
                 bid, ask = (bids[0][0] if bids else np.nan), (asks[0][0] if asks else np.nan)
                 if np.isfinite(bid) and np.isfinite(ask) and np.isfinite(last[c]):
                     basis = ((bid + ask) / 2) / last[c]
+                    hist = self.basis_hist.setdefault(c, [])
+                    med = float(np.median(hist)) if len(hist) >= 5 else basis
+                    hist.append(basis)
+                    del hist[:-60]
+                    if abs(basis / med - 1) > self.cfg.get("max_basis_jump", 0.03):   # stale or broken book: skip
+                        self.log("skip", coin=c, reason="basis jump", basis=round(basis, 6), median=round(med, 6))
+                        bid = np.nan
+                if np.isfinite(bid) and np.isfinite(ask) and np.isfinite(last[c]):
                     px = float(wick.round_down(row.level * basis, sp.tick))
                     if px >= bid:                    # market already below the level: no order this minute
                         px = np.nan
@@ -351,8 +360,17 @@ class Engine:
         if self.state.get("day") != d:
             self.state["day"], self.state["day_start_equity"] = d, self.state["equity"]
 
+    def _quiet_hour(self, t):
+        """No new bids in the thin hour around the 5pm ET maintenance window (and the weekly halt)."""
+        et = pd.Timestamp(t).tz_localize("UTC").tz_convert("America/New_York")
+        mins = et.hour * 60 + et.minute
+        lo, hi = self.cfg.get("quiet_et", [16 * 60 + 55, 18 * 60 + 5])
+        return lo <= mins < hi
+
     def _halted(self, t):
         if os.path.exists(os.path.join(ROOT, "STOP")):
+            return True
+        if self._quiet_hour(t):
             return True
         dd = self.state["equity"] / max(1e-9, self.state["day_start_equity"] or self.state["equity"]) - 1
         if dd <= -self.cfg.get("daily_loss_limit", 0.05):
