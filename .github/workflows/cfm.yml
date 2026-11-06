@@ -1,0 +1,96 @@
+name: fetch-cfm
+
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        default: "2025-06-01"
+      book_minutes:
+        default: "45"
+
+permissions:
+  contents: write
+
+jobs:
+  products:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests pandas pyarrow
+      - run: python scripts/fetch_cfm.py products
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cfm-products
+          path: reports/cfm_products.*
+
+  candles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        coin: [BTC, ETH, SOL, XRP, DOGE, LTC, AVAX, LINK, ADA]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests pandas pyarrow
+      - run: python scripts/fetch_cfm.py candles ${{ matrix.coin }} ${{ inputs.start }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cfm-${{ matrix.coin }}
+          path: data/cfm/${{ matrix.coin }}.parquet
+          if-no-files-found: ignore
+
+  book:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests pandas pyarrow
+      - run: python scripts/fetch_cfm.py book ${{ inputs.book_minutes }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cfm-book
+          path: reports/cfm_book_*
+
+  commit:
+    needs: [products, candles, book]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cfm-products
+          path: reports
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cfm-book
+          path: reports
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cfm-[A-Z]*
+          path: data/cfm
+          merge-multiple: true
+      - name: Commit futures data
+        run: |
+          rm -f data/cfm/cfm_products.* data/cfm/cfm_book_* 2>/dev/null || true
+          ls -la reports data/cfm || true
+          git config user.name "crypto-edge-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add reports data/cfm 2>/dev/null || true
+          git diff --cached --quiet && exit 0
+          git commit -m "Coinbase US futures data: products, minute candles, order-book samples"
+          git pull --rebase origin main
+          git push
