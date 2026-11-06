@@ -69,6 +69,36 @@ def paginate(fetch, since_ms, step_ms, max_pages=400):
     return out
 
 
+def fetch_history(ex, sym, window_days=300):
+    """Full daily history, walking BACKWARD from today in windows until the coin's listing date.
+    (Walking forward from 2016 breaks on coins listed later: their first windows come back empty.)"""
+    rows, now = {}, pd.Timestamp.now(tz="UTC").normalize()
+    since = now - pd.Timedelta(days=window_days)
+    earliest = None
+    while since > START - pd.Timedelta(days=window_days):
+        batch = None
+        for attempt in range(3):
+            try:
+                batch = ex.fetch_ohlcv(sym, "1d", since=int(since.timestamp() * 1000), limit=window_days)
+                break
+            except ccxt.BadSymbol:
+                return []
+            except ccxt.BaseError as e:
+                if attempt == 2:
+                    log(f"    {ex.id} {sym}: {type(e).__name__}: {str(e)[:120]}")
+                time.sleep(2 + 3 * attempt)
+        if not batch:
+            break
+        for r in batch:
+            rows[r[0]] = r
+        first = min(r[0] for r in batch)
+        if earliest is not None and first >= earliest:   # venue ignores old 'since' (e.g. Kraken's 720 cap)
+            break
+        earliest = first
+        since -= pd.Timedelta(days=window_days)
+    return [rows[k] for k in sorted(rows)]
+
+
 def usd_bases(ex):
     bases = {}
     for m in ex.markets.values():
@@ -84,6 +114,9 @@ def update_prices():
     os.makedirs(PRICES, exist_ok=True)
     cb = ccxt.coinbaseexchange({"enableRateLimit": True, "timeout": 30_000})
     cb.load_markets()
+    probe = fetch_history(cb, "BTC/USD")
+    log(f"probe coinbase BTC/USD: {len(probe)} days" +
+        (f", {pd.to_datetime(probe[0][0], unit='ms').date()} -> {pd.to_datetime(probe[-1][0], unit='ms').date()}" if probe else ""))
     venues = [("coinbase", cb, usd_bases(cb))]
     try:
         kr = ccxt.kraken({"enableRateLimit": True, "timeout": 30_000})
@@ -102,10 +135,13 @@ def update_prices():
             if old is not None and old["venue"].iloc[-1] != vname:
                 done.add(base)          # already sourced from a higher-priority venue
                 continue
-            since = START if old is None else old["date"].max() - pd.Timedelta(days=3)
             sym = bases[base]
-            rows = paginate(lambda s: ex.fetch_ohlcv(sym, "1d", since=s, limit=300),
-                            int(since.timestamp() * 1000), DAY_MS)
+            if old is None:
+                rows = fetch_history(ex, sym)
+            else:
+                since = pd.Timestamp(old["date"].max(), tz="UTC") - pd.Timedelta(days=3)
+                rows = paginate(lambda s: ex.fetch_ohlcv(sym, "1d", since=s, limit=300),
+                                int(since.timestamp() * 1000), DAY_MS)
             if not rows:
                 continue
             new = pd.DataFrame(rows, columns=["ts", "open", "high", "low", "close", "volume"])
@@ -172,6 +208,21 @@ def update_funding(bases, budget_min=40, max_coins=80):
 def main():
     t0 = time.time()
     what = sys.argv[1] if len(sys.argv) > 1 else "all"
+    if what == "probe":   # quick connectivity check for each venue
+        for ex_id, sym in [("coinbaseexchange", "BTC/USD"), ("coinbaseexchange", "SOL/USD"),
+                           ("kraken", "BTC/USD"), ("hyperliquid", "BTC/USDC:USDC")]:
+            try:
+                ex = getattr(ccxt, ex_id)({"enableRateLimit": True, "timeout": 30_000})
+                ex.load_markets()
+                if ex_id == "hyperliquid":
+                    r = ex.fetch_funding_rate_history(sym, since=int(time.time() * 1000) - 5 * DAY_MS, limit=500)
+                    log(f"PROBE {ex_id} {sym}: {len(r)} funding rows")
+                else:
+                    r = fetch_history(ex, sym)
+                    log(f"PROBE {ex_id} {sym}: {len(r)} days from {pd.to_datetime(r[0][0], unit='ms').date() if r else None}")
+            except Exception as e:
+                log(f"PROBE {ex_id} {sym}: {type(e).__name__}: {str(e)[:200]}")
+        return
     if what in ("prices", "all"):
         stats = update_prices()
         log(f"prices updated for {len(stats)} coins")
