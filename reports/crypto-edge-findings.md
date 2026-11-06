@@ -95,8 +95,8 @@ Results: reports/wick1m/.
 | $2M | 4.9% / 0.6 | 15.8% / 2.2 |
 
 - In the check period, dollar profit is flat at about $100K a year from $1M up.
-- Check-period volumes on Coinbase were roughly half of the selection period's, so trades were smaller. Profit per
-  dollar traded was the same (about 42–43 bp).
+- The check period was thinner. Trades averaged $24K vs $33K, there were 3.1 fills a day vs 4.2, and profit per
+  dollar filled was 37 bp vs 42 bp.
 
 **What didn't help:**
 - **More coins and Bitstamp:** 31 coins plus Bitstamp gave 9.2% (Sharpe 1.53) in the check period, though 24.4% (2.84)
