@@ -5,6 +5,9 @@ The fake exchange keeps real balances and holds:
 - It rejects post-only orders that would cross, and orders the cash can't cover.
 - It fills resting orders from the candles (one-tick trade-through, half the volume beyond the price).
 - It injects faults: 5% of cancels go unconfirmed and 15% of market sells fill only half.
+- Entry bids are good-til-date; the fake exchange expires them and demands at least 400 s (the bot must adapt).
+- The server "dies" for 20 minutes in the middle of the crash (--death): every bid must have expired by itself, and a
+  fresh process must pick up the state, book what filled meanwhile and run the overdue exits.
 
 Checks:
 - nothing crashes;
@@ -12,7 +15,7 @@ Checks:
 - once every rung has closed, the coin balances are back to zero;
 - the bot's equity equals the exchange's USD balance (every fill booked exactly once).
 
-Usage: python bot/spot/live_sim_test.py "2025-10-10 20:00" "2025-10-11 02:00"
+Usage: python bot/spot/live_sim_test.py "2025-10-10 20:00" "2025-10-11 02:00" "--death=2025-10-10 21:10"
 """
 import os
 import random
@@ -54,20 +57,27 @@ class FakeExchange:
     TERMINAL = E.LiveBroker.TERMINAL
     increment = staticmethod(E.LiveBroker.increment)
 
-    def __init__(self, mkt, clock, usd, capture=0.5, p_cancel_fail=0.05, p_partial=0.15, seed=7):
+    def __init__(self, mkt, clock, usd, capture=0.5, p_cancel_fail=0.05, p_partial=0.15, seed=7, min_gtd_s=400):
         self.mkt, self.clock, self.usd, self.coin, self.orders = mkt, clock, usd, {}, {}
         self.capture, self.pcf, self.pp = capture, p_cancel_fail, p_partial
         self.fm, self.ft = 6e-4, 12.5e-4
         self.rng = random.Random(seed)
-        self.n = dict(cancel_unconfirmed=0, partial_sell=0, post_only_reject=0, funds_reject=0, fills=0)
+        self.min_gtd = pd.Timedelta(seconds=min_gtd_s)
+        self.n = dict(cancel_unconfirmed=0, partial_sell=0, post_only_reject=0, funds_reject=0, fills=0, expired=0,
+                      duration_reject=0)
 
     # ---- matching
     def _advance(self):
-        now = self.clock().floor("min")
+        now = self.clock()
         for o in self.orders.values():
-            while o["status"] == "OPEN" and o["next"] < now:
+            while o["status"] == "OPEN" and o["next"] < now.floor("min"):
+                if o["expires"] is not None and o["next"] >= o["expires"]:
+                    break
                 self._fill_minute(o, o["next"])
                 o["next"] += pd.Timedelta(minutes=1)
+            if o["status"] == "OPEN" and o["expires"] is not None and now >= o["expires"]:
+                o["status"] = "EXPIRED"
+                self.n["expired"] += 1
 
     def _fill_minute(self, o, m):
         c, d = o["coin"], self.mkt.D[o["coin"]]
@@ -111,8 +121,11 @@ class FakeExchange:
                                            if o["status"] == "OPEN" and o["side"] == "SELL" and o["coin"] == c)
 
     # ---- the LiveBroker interface
-    def place(self, spec, side, px, size, post_only=True):
+    def place(self, spec, side, px, size, post_only=True, end_time=None):
         self._advance()
+        if end_time is not None and pd.Timestamp(end_time) - self.clock() < self.min_gtd:
+            self.n["duration_reject"] += 1
+            return None, '{"error": "INVALID_END_TIME", "preview_failure_reason": "DURATION_TOO_SMALL"}'
         c = spec.product.split("-")[0]
         last = self.mkt.last(c)
         if post_only and ((side == "BUY" and px >= last) or (side == "SELL" and px <= last)):
@@ -124,7 +137,8 @@ class FakeExchange:
             return None, '{"error": "INSUFFICIENT_FUND"}'
         oid = uuid.uuid4().hex
         self.orders[oid] = dict(coin=c, side=side, px=px, size=size, filled=0.0, value=0.0, fees=0.0, status="OPEN",
-                                next=self.clock().floor("min"), client_order_id=f"{E.ORDER_TAG}-{oid[:8]}")
+                                next=self.clock().floor("min"), client_order_id=f"{E.ORDER_TAG}-{oid[:8]}",
+                                expires=None if end_time is None else pd.Timestamp(end_time))
         return oid, None
 
     def status(self, oid):
@@ -191,7 +205,7 @@ class FakeExchange:
         return dict(tier="fake VIP 1", maker_bp=6.0, taker_bp=12.5, volume_30d=None)
 
 
-def main(start, end):
+def main(start, end, death=None, death_min=20):
     clock = {"t": pd.Timestamp(start)}
     now = lambda: clock["t"] + pd.Timedelta(seconds=6)  # noqa: E731
     mkt = LiveReplayMarket(start, end, now)
@@ -205,7 +219,26 @@ def main(start, end):
     t0 = time.time()
     eng.start()
     steps = pd.date_range(start, pd.Timestamp(end) + pd.Timedelta(minutes=3 * H), freq="min", inclusive="left")
+    dead_until, death_ok = None, None
     for t in steps:
+        if death is not None and t == pd.Timestamp(death):
+            dead_until = t + pd.Timedelta(minutes=death_min)
+            open_buys = sum(1 for o in ex.orders.values() if o["status"] == "OPEN" and o["side"] == "BUY")
+            print(f"server dies at {t} with {open_buys} resting bids and {len(eng.ladders())} ladders")
+        if dead_until is not None:
+            if t < dead_until:
+                continue                                   # no process running: the exchange keeps going
+            clock["t"] = t
+            ex._advance()
+            left = [o for o in ex.orders.values() if o["status"] == "OPEN" and o["side"] == "BUY"]
+            death_ok = not left
+            print(f"back at {t}: {len(left)} bids still resting on the exchange (should be 0); "
+                  f"{sum(1 for o in ex.orders.values() if o['status'] == 'OPEN')} take-profits resting")
+            eng = E.Engine(mode="live", cfg=cfg, state_dir=sd, market=mkt, broker=ex, clock=now, echo=False)
+            if t >= pd.Timestamp(end):
+                eng.tradable = []
+            eng.start()                                    # a fresh process: reconcile, book fills, overdue exits
+            dead_until = None
         if t == pd.Timestamp(end):
             eng.tradable = []
         clock["t"] = t
@@ -236,6 +269,10 @@ def main(start, end):
     if abs(diff) > 0.01:
         ok = False
         print("FAIL: the bot's books and the exchange disagree")
+    if death is not None and not death_ok:
+        ok = False
+        print("FAIL: bids outlived the dead server")
+    print(f"good-til-date duration the bot settled on: {eng.ttl} s (fake exchange minimum 400 s)")
     errs = ev[ev.kind == "error"]
     if len(errs):
         print("errors logged (expected only from injected faults):")
@@ -244,4 +281,6 @@ def main(start, end):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    a = [x for x in sys.argv[1:] if not x.startswith("--")]
+    d = next((x.split("=", 1)[1] for x in sys.argv[1:] if x.startswith("--death=")), None)
+    main(a[0], a[1], death=d)

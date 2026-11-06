@@ -94,6 +94,7 @@ def run_engine(mkt, start, end, cfg, capture, tag):
 
 
 def engine_rungs(ev):
+    ev = ev.reindex(columns=sorted(set(ev.columns) | {"coin", "ladder", "rung", "px", "exit", "ref_px"}))
     ent = ev[ev.kind == "fill_entry"][["ts", "coin", "ladder", "rung", "px"]].rename(columns={"ts": "entry", "px": "entry_px"})
     ent = ent.groupby(["ladder", "rung"], as_index=False).agg(coin=("coin", "first"), entry=("entry", "min"),
                                                               entry_px=("entry_px", "first"))

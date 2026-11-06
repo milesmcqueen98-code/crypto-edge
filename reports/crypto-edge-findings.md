@@ -195,6 +195,20 @@ Run it at $250–500K and put the rest in C3.
     not 20%.
   - Don't go to $500K until volumes recover.
   - First paper minutes: 11–12 coins armed at once, holding $140K of the $250K in resting bids.
+- **Safety added before live money (Nov 6, evening):**
+  - Entry bids are good-til-date orders lasting about 5 minutes, renewed while the bot runs. A dead server leaves no
+    bids behind.
+  - An outside heartbeat (healthchecks.io) alerts the phone when the server goes silent.
+  - `wickctl` is a one-command control script, and `configure` sets up keys and capital interactively.
+  - Tested with a 20-minute server death in the middle of the Oct 10 2025 crash. No bids survived, and the restarted
+    bot booked every fill and exit; books matched the fake exchange to $0.0002.
+  - Fixed on the way: rounding sale sizes down left sub-minimum dust that kept a coin's position "open" for an hour.
+    The first paper hours (22:30 to about 01:00 UTC Nov 7) ran with that bug, so treat them as a warm-up. Parity after
+    the fix: 128 of 128 on the crash hours.
+- **Pilot capital: $10K (Miles, Nov 6).**
+  - It trades about $140K a month, which puts it in Coinbase's Advanced 2 tier after a ~2-week fee ramp (about $80).
+  - Expect about 0.25% net per dollar bought.
+  - Paper and the pilot run side by side; the pilot tests the machinery, and is compared with paper before fees.
 - **Still first:** written compliance clearance from Sculptor, covering holding periods and blanket pre-clearance.
 
 ## Medallion round (Nov 6): every strategy family in *The Man Who Solved the Market*, crypto versions — none adopted

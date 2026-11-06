@@ -45,9 +45,9 @@ Known differences from the research simulation:
 - Cash held by resting bids counts against the cash cap. Coinbase holds the cash for every resting buy. The research
   ignored this, and the paper run measures how often it binds (`cash_short` events).
 
-## Set it up, in order
+## Set it up, in order (about 1.5 hours)
 
-### 0. Compliance (first: it can end the project)
+### 0. Compliance first (it can end the project)
 Get written clearance from Sculptor compliance before any live order. Ask four things:
 - Are spot digital assets covered by the personal trading policy?
 - Is there a minimum holding period? A 30- or 60-day hold rules this out, because the bot holds for at most about 2
@@ -56,94 +56,129 @@ Get written clearance from Sculptor compliance before any live order. Ask four t
   several times a day.
 - What reporting do they want? Coinbase exports a full transaction CSV.
 
-### 1. Coinbase portfolio and cash
-1. In Coinbase Advanced, create a new portfolio named `wickbot` (Portfolios → New portfolio). Keep the BTC/ETH trend
-   holdings in the default portfolio. The bot's portfolio should hold only its own cash.
-2. Move the pilot cash ($25,000) into `wickbot` as **USD**. The bot counts only USD as cash. USD and USDC share order
-   books on Coinbase, but whether USDC can fund your -USD orders depends on the account, so start with USD.
+### 1. Coinbase: a separate portfolio holding only the bot's cash
+1. In Coinbase Advanced, open the portfolio menu and create a portfolio named `wickbot`.
+2. Move the pilot cash into it as **USD**: $10,000. Transfer it between portfolios, or deposit first by wire or ACH.
+   - The bot counts only USD as cash. It keeps $500 aside for fees and rounding.
+3. Leave the BTC/ETH trend holdings in the default portfolio.
 
-### 2. Server (an always-on Linux VM)
-1. Create an Ubuntu 24.04 VM in a US east region: DigitalOcean NYC, AWS us-east-1, or Vultr New Jersey.
-   - Size: 2 GB of memory is enough (about $12 a month, e.g. AWS Lightsail us-east-1 with its included static IP).
-     The minute loop uses about 0.5 GB and under a second of CPU per minute; avoid 1 GB plans.
-   - Reserve a static IP. Log in with an SSH key only, and allow only SSH in the firewall.
-2. Copy `deploy/setup_vm.sh` to the server and run it as root:
-   `curl -O https://raw.githubusercontent.com/milesmcqueen98-code/crypto-edge/main/bot/spot/deploy/setup_vm.sh && sudo bash setup_vm.sh`
-   - It installs Python, the bot, the systemd service and a 5-minute watchdog, and prints the server's IP.
+### 2. Alerts (5 minutes)
+1. **healthchecks.io** (free): Add Check, named `wickbot`, period **1 minute**, grace **5 minutes**. Copy its ping URL
+   (`https://hc-ping.com/...`).
+   - The bot pings it every minute. If the pings stop, it alerts you even though the server is dead.
+2. **ntfy** phone app: subscribe to a long random topic, for example `wickbot-7f3k9q2m`.
+   - In healthchecks.io → Integrations, add ntfy with that topic, and keep email on.
+   - The server's own watchdog posts halts, errors and a daily line to the same topic.
 
-### 3. API key (Coinbase Developer Platform)
-1. Go to portal.cdp.coinbase.com → API Keys → **Secret API Keys** → Create API key. Name it `wickbot`.
+### 3. Server: AWS Lightsail, about $12 a month
+1. Go to lightsail.aws.amazon.com and choose Create instance:
+   - region **Virginia (us-east-1)**;
+   - Linux/Unix → OS only → **Ubuntu 24.04 LTS**;
+   - the **$12 plan (2 GB)**, dual-stack;
+   - name `wickbot`.
+2. In the instance's Networking tab:
+   - **Create static IP** and attach it to the instance. This IP goes in the API key's allowlist.
+   - In the firewall, delete the HTTP (80) rule and keep SSH (22).
+3. Click **Connect using SSH** (a terminal in the browser) and run:
+   ```bash
+   curl -fsSLO https://raw.githubusercontent.com/milesmcqueen98-code/crypto-edge/main/bot/spot/deploy/setup_vm.sh
+   sudo bash setup_vm.sh
+   ```
+   - It takes about 5 minutes. It installs the bot, the `wickctl` command, the service and the watchdog, then prints the
+     server's IP, which should be the static IP.
+4. `wickctl paper-test 10` runs 10 minutes on live public data, with no keys and no orders.
+   - Expect `backfill`, `adv` and `arm` lines, and no `error` lines.
+
+### 4. API key (Coinbase Developer Platform)
+1. Sign in at portal.cdp.coinbase.com with your Coinbase login. Go to API Keys → **Secret API Keys** → Create API key,
+   and name it `wickbot`.
 2. Under API restrictions:
-   - Portfolio: `wickbot`.
-   - Permissions: **View and Trade only. Never Transfer.** A key with Transfer can move your coins out.
-   - IP allowlist: the server's IP from step 2.
-3. Under Advanced settings, set the signature algorithm to **ECDSA**. This is required: the Advanced Trade SDK does not
-   accept Ed25519.
-4. Copy the key name (`organizations/.../apiKeys/...`) and the private key into `/etc/wickbot.env` on the server.
-   Follow the format in `deploy/wickbot.env.example`.
-5. Optional: put an ntfy.sh topic in `NTFY_TOPIC` and subscribe to it in the ntfy phone app. That gives you alerts.
+   - Portfolio: **wickbot**.
+   - Permissions: **View and Trade. Never Transfer.** A key with Transfer can move your coins out.
+   - IP allowlist: the static IP.
+3. Under Advanced settings, set the signature algorithm to **ECDSA**. This is required; the Coinbase SDK can't use
+   Ed25519 keys.
+4. Create the key. Keep the window open for the next step, and save the key name and private key in your password
+   manager.
 
-### 4. Preflight (checks everything, places nothing)
+### 5. Configure, check, start
 ```bash
-sudo -u wick bash -lc 'cd ~/crypto-edge && set -a && . /etc/wickbot.env && set +a && .venv/bin/python bot/spot/run.py preflight'
+sudo wickctl configure    # key name, private key (paste with its BEGIN/END lines), capital, alerts, live = yes
+wickctl preflight         # places nothing; must end with PASSED
+wickctl start             # runs now and after every reboot; the first 3-5 minutes are a data backfill
+wickctl log               # follow the events (Ctrl-C stops watching; the bot keeps running)
 ```
-It checks:
-- The key can trade and **cannot** transfer.
-- The portfolio's USD.
-- Your fee tier.
-- Which of the 17 coins your New York account can trade. Coinbase lists coins for New York separately. Each coin is
-  tested with a preview order that is never placed.
+- `configure` asks for:
+  - the key name and the private key (paste it with its BEGIN/END lines);
+  - the capital (10000);
+  - the heartbeat URL and the ntfy topic;
+  - the live switch (yes).
+  It shows a summary and saves only when you confirm.
+- `preflight` checks:
+  - the key can trade and **cannot** transfer;
+  - the portfolio's USD;
+  - your fee tier;
+  - which of the 17 coins your New York account can trade, using preview orders that are never placed;
+  - Coinbase's minimum lifetime for expiring bids.
 
-Put the coins it rejects in `coins_disabled` in `bot/spot/config.live.json`. The bot still uses their prices for the
-AI's features. Set `capital` to the pilot amount (25000).
+  It writes the blocked coins and the bid lifetime into `bot/spot/config.live.json`. The bot still uses the blocked
+  coins' prices for the AI's features.
+- On every start the bot does three things:
+  - reconciles: cancels its own orders it lost track of, and compares coin balances with its positions;
+  - books fills that happened while it was down;
+  - runs any exits that fell due.
 
-### 5. Start
-```bash
-sudo systemctl enable --now wickbot wickbot-watchdog.timer
-sudo -u wick tail -f ~/crypto-edge/live_spot/events.jsonl           # backfill takes ~3-5 min, then "arm" events
-sudo -u wick bash -lc 'cd ~/crypto-edge && .venv/bin/python bot/spot/run.py status'
-```
-On every start the bot:
-- reconciles: cancels any of its own orders it lost track of, and compares coin balances with its open rungs;
-- books fills that happened while it was down, then runs any exits that fell due.
+### Safety built in
+- **Entry bids expire on their own.** They are good-til-date orders lasting about 5 minutes, and the bot renews them
+  while it runs. If the server dies, every bid is gone within minutes.
+  - Take-profits (sell orders) stay.
+  - At most, the open positions are left; sell those in the Coinbase app, or wait for the server to come back.
+- If the server goes quiet for 5 minutes, the healthchecks.io heartbeat alerts your phone.
+- Tested: a 20-minute server death in the middle of the Oct 10, 2025 crash left no bids behind. The restarted bot booked
+  everything correctly (`live_sim_test.py --death`).
 
-## Go live in stages (rules fixed now, before any results)
+## Go live in stages (rules fixed before any results)
 
 | Stage | Capital | Length | Pass to move on |
 |---|---|---|---|
-| A. Paper on GitHub Actions (running) | $250K paper | ≥ 3 weeks and ≥ 60 rungs | No unexplained errors. Every rung closes by its rule. 1–6 rung fills a day. Mean net per $ above 0 (expected ≈ +40 bp; 0 is about 2 standard errors below). |
-| B. Live pilot | $25K | ≥ 3 weeks and ≥ 50 rungs | Live fills on ≥ 70% of the paper bot's fills (same coin and minute). Fees as reported. Mean live net within 25 bp of paper on matched rungs. No balance warnings. |
-| C. Live | $250K | 6–8 weeks | Capture share (filled $ / $ traded beyond our price, from `run.py report`) ≥ 0.25. Mean net above 0 after 150 rungs. |
-| D. Live (optional) | $500K | — | Same rules, and only once alt volumes are back near the research level. Don't go above $500K: dollar profit stops growing near $1M. |
+| A. Paper on GitHub Actions (running since Nov 6) | $250K paper | ≥ 3 weeks and ≥ 60 rungs | No unexplained errors. Every rung closes by its rule. 1–6 rung fills a day. Mean net per $ above 0. |
+| B. Live pilot | $10K | ≥ 3 weeks and ≥ 50 rungs | Live fills on ≥ 70% of the paper bot's fills (same coin and minute). Mean live result before fees within 25 bp of paper. No balance warnings. |
+| C. Live | $250K | 6–8 weeks | Capture share ≥ 0.25 (`wickctl report`). Mean net above 0 after 150 rungs. |
+| D. Live (optional) | $500K | — | Same rules, and only once alt volumes are back near the research level. |
 
-- **Standing stop rule at any stage:** stop and review if, after 150 rungs, the mean net per $ bought is below 0.
-- **Pilot fees will be higher.** A $25K book trades about $0.3–0.4M a month, which is below VIP 1 (VIP 1 starts at $500K
-  of 30-day volume). Expect about 10 bp less net per rung in the pilot.
-- **The first week at $250K is a fee ramp.** Starting at $0 of 30-day volume, the bot passes the Intro and Advanced tiers
-  in about a week. The cost is a few hundred dollars.
-- Check your real tier: the preflight prints it, and so does the `fee_tier` event in the log on each start.
+- Paper and the pilot run side by side. At $10K, the pilot is a test of the machinery, not of the profits.
+- **Standing stop rule:** stop and review if, after 150 rungs, the mean net per $ bought is below 0.
+- **Pilot fees are higher.** A $10K book trades about $140K a month.
+  - The first ~2 weeks sit in Coinbase's Intro and Advanced 1 tiers, where fees eat the edge. That costs roughly $80
+    in total.
+  - After that it reaches Advanced 2 (0.125% maker / 0.25% taker). Expect about 0.25% net per dollar bought, against
+    about 0.40% at VIP 1.
+  - Compare the pilot with paper before fees. The preflight and each start's `fee_tier` log line show your real tier.
+- At $250K the book reaches VIP 1 ($500K of 30-day volume) in about a week.
 
 ## Kill switches
-- `python bot/spot/run.py stop`: no new bids from the next minute. Open rungs still exit by their rules.
-  `resume` removes it.
+- `wickctl pause`: no new bids from the next minute. Open positions still exit by their rules. `wickctl resume` undoes
+  it.
 - **Daily loss limit 8%** (realized): no new bids until 00:00 UTC. The research's worst day was −2.8%.
-- **Drawdown stop 25%**, marked to market from the peak: no new bids until you run `run.py reset-halt`. The research's
-  worst was −17.7%.
-- Everything off: `sudo systemctl stop wickbot`, then `python bot/spot/run.py cancel-all`. That cancels every bot
-  order; `--flatten` also sells every open rung at market. It refuses to run while the service is up, because the
-  running bot would bid again.
-- After 5 straight failed minutes, the bot cancels its resting bids. Every 15 minutes it also cancels any of its own
-  orders missing from its state, and warns if coin balances differ from its open rungs.
-- Last resort: revoke the key in the CDP portal. Then cancel or sell by hand in the Coinbase app, in the `wickbot`
-  portfolio.
+- **Drawdown stop 25%**, marked to market from the peak: no new bids until `wickctl reset-halt`. The research's worst
+  was −17.7%.
+- `wickctl flatten`: stops the bot, cancels every bot order and sells every open position at market.
+  - `wickctl cancel-all` does the same but keeps the positions.
+  - `wickctl stop` only stops the process. Bids expire on their own; take-profits stay.
+- The bot also protects itself:
+  - after 5 straight failed minutes, it cancels its resting bids;
+  - every 15 minutes, it cancels any of its own orders missing from its state, and warns if coin balances differ from
+    its positions.
+- Last resort: revoke the key in the CDP portal, then sell by hand in the Coinbase app (`wickbot` portfolio).
 
-## Daily and weekly routine
-- Phone alerts (watchdog):
-  - the bot stopped completing minutes;
+## Day to day
+- Your phone gets:
+  - a daily equity line;
   - any halt, error, warning or rejected order;
-  - a daily equity line.
-- Weekly: `run.py report --state-dir live_spot` next to `run.py report` (paper). Compare fills, net per rung and capture
-  share.
+  - the heartbeat alert if the server goes silent.
+- Weekly, run `wickctl report`, and look at the paper book's report next to it (`git pull` and `python bot/spot/run.py
+  report` on your computer). Compare fills, net per rung and capture share.
+- Code updates: `wickctl update`.
 - Taxes: every rung is a short-term trade, so there are thousands of lots a year. Coinbase reports sales on Form 1099-DA.
   Use its tax export or crypto tax software, and ask a CPA how the wash-sale rule treats crypto for you.
 

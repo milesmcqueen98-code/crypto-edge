@@ -16,5 +16,6 @@
   "coins_disabled": [],
   "log_book": true,
   "max_consecutive_errors": 5,
-  "reconcile_tol_usd": 25
+  "reconcile_tol_usd": 25,
+  "bid_ttl_s": 300
 }

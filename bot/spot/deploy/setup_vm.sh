@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# One-time setup of an always-on Ubuntu 24.04 server (e.g. a ~$12/month 2 GB Lightsail / DigitalOcean / Hetzner VM in a US
-# east region) for the live spot bot. Run as root:  bash setup_vm.sh
-# Afterwards: fill in /etc/wickbot.env, run the preflight, then start the service (bot/spot/README.md, steps 5-7).
+# One-time setup of an always-on Ubuntu 24.04 server (a ~$12/month 2 GB AWS Lightsail instance in us-east-1, or similar)
+# for the live spot bot. Run:  sudo bash setup_vm.sh
+# Then: sudo wickctl configure, wickctl paper-test, wickctl preflight, wickctl start (bot/spot/README.md).
 set -euo pipefail
 
 apt-get update -y
@@ -17,13 +17,15 @@ sudo -u wick bash -lc '
   cd crypto-edge && python3 -m venv .venv && . .venv/bin/activate &&
   pip install --upgrade pip && pip install pandas numpy lightgbm requests pyarrow coinbase-advanced-py &&
   mkdir -p live_spot &&
-  [ -f bot/spot/config.live.json ] || cp bot/spot/config.json bot/spot/config.live.json'
+  [ -f bot/spot/config.live.json ] || python3 -c "import json; c = json.load(open(\"bot/spot/config.json\")); c[\"capital\"] = 0; json.dump(c, open(\"bot/spot/config.live.json\", \"w\"), indent=2)"'
 
+# secrets file: filled in by `sudo wickctl configure`; live trading stays off until you say yes there
 if [ ! -f /etc/wickbot.env ]; then
-  cp /home/wick/crypto-edge/bot/spot/deploy/wickbot.env.example /etc/wickbot.env
+  printf '# Filled in by: sudo wickctl configure\nI_UNDERSTAND_LIVE_TRADING=no\n' > /etc/wickbot.env
 fi
 chown root:wick /etc/wickbot.env && chmod 640 /etc/wickbot.env
 
+install -m 755 /home/wick/crypto-edge/bot/spot/deploy/wickctl /usr/local/bin/wickctl
 cp /home/wick/crypto-edge/bot/spot/deploy/wickbot.service /etc/systemd/system/wickbot.service
 cat > /etc/systemd/system/wickbot-watchdog.service <<'EOF'
 [Unit]
@@ -45,11 +47,9 @@ OnUnitActiveSec=5min
 WantedBy=timers.target
 EOF
 systemctl daemon-reload
-systemctl enable wickbot-watchdog.timer
 
 echo
-echo "Server ready. Its public IP (put it in the API key's IP allowlist):"
+echo "Server ready. This server's public IP (it goes in the API key's IP allowlist):"
 curl -s https://api.ipify.org || true
 echo
-echo "Next: edit /etc/wickbot.env (keys), edit /home/wick/crypto-edge/bot/spot/config.live.json (capital,"
-echo "coins_disabled), run the preflight, then: systemctl enable --now wickbot wickbot-watchdog.timer"
+echo "Next: sudo wickctl configure   (then: wickctl paper-test, wickctl preflight, wickctl start)"

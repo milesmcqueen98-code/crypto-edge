@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# wickctl: control the live spot bot. Installed to /usr/local/bin by setup_vm.sh; run it as your normal (sudo) user.
+set -uo pipefail
+D=/home/wick/crypto-edge
+CFG=bot/spot/config.live.json
+
+py() {   # run bot/spot/run.py as the wick user, with the keys loaded
+  sudo -u wick bash -c "cd $D && set -a && . /etc/wickbot.env && set +a && .venv/bin/python bot/spot/run.py $* --config $CFG"
+}
+
+case "${1:-help}" in
+  configure)  sudo python3 $D/bot/spot/deploy/configure.py ;;
+  paper-test) # proves the install works on live public data, no keys, no orders
+              sudo -u wick bash -c "cd $D && rm -rf /tmp/wick_papertest && .venv/bin/python bot/spot/run.py paper \
+                --minutes ${2:-10} --state-dir /tmp/wick_papertest --config $CFG" | grep -E '"kind": "(backfill|adv|arm|heartbeat|error)"' ;;
+  preflight)  py preflight ;;
+  start)      sudo systemctl enable --now wickbot wickbot-watchdog.timer && sleep 3 && systemctl --no-pager --lines=0 status wickbot
+              echo "Started. The first 3-5 minutes are a data backfill; then: wickctl log" ;;
+  log)        sudo tail -n "${2:-20}" -f $D/live_spot/events.jsonl ;;
+  status)     echo "service: $(systemctl is-active wickbot)"; py status ;;
+  report)     py report --state-dir live_spot ;;
+  pause)      py stop ;;
+  resume)     py resume ;;
+  flatten)    sudo systemctl stop wickbot && py cancel-all --flatten ;;
+  cancel-all) sudo systemctl stop wickbot && py cancel-all ;;
+  reset-halt) py reset-halt ;;
+  restart)    sudo systemctl restart wickbot ;;
+  stop)       sudo systemctl stop wickbot; echo "Service stopped. Resting bids expire on their own within minutes;" \
+                "take-profits stay. To also sell everything: wickctl flatten" ;;
+  update)     sudo systemctl stop wickbot; sudo -u wick git -C $D pull --ff-only && \
+                sudo install -m 755 $D/bot/spot/deploy/wickctl /usr/local/bin/wickctl; sudo systemctl start wickbot ;;
+  *) cat <<'EOF'
+wickctl configure        enter the API key, capital, alerts and the live switch
+wickctl paper-test [N]   run N minutes on live data with no keys and no orders (checks the install)
+wickctl preflight        check the key, balances, fee tier and which coins you can trade (places nothing)
+wickctl start            start the bot (and keep it running across reboots)
+wickctl log [N]          follow the bot's event log
+wickctl status           equity, open positions, resting orders, halts
+wickctl report           fills, P&L, net per dollar, capture share
+wickctl pause | resume   stop / allow new bids (open positions still exit on schedule)
+wickctl stop             stop the bot process
+wickctl flatten          stop the bot, cancel every bot order and sell every open position at market
+wickctl cancel-all       stop the bot and cancel every bot order (positions stay)
+wickctl reset-halt       clear the 25% drawdown stop after you've looked at why it fired
+wickctl update           pull the latest code and restart
+EOF
+  ;;
+esac

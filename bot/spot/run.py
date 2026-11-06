@@ -45,6 +45,8 @@ if a.cmd in ("paper", "live"):
     from bot.spot.engine import Engine
     if a.cmd == "live":
         need_keys()
+        if not float(cfg.get("capital") or 0) > 0:
+            sys.exit("No capital set for live trading. Run: sudo wickctl configure")
         if os.environ.get("I_UNDERSTAND_LIVE_TRADING") != "yes":
             sys.exit("Live mode places real orders. Set I_UNDERSTAND_LIVE_TRADING=yes after reading bot/spot/README.md.")
     mins = a.minutes if a.minutes is not None else (345 if a.cmd == "paper" else 1e9)
@@ -52,11 +54,11 @@ if a.cmd in ("paper", "live"):
 
 elif a.cmd == "preflight":
     need_keys()
-    import numpy as np
+    import pandas as pd
     from bot import market
-    from bot.spot.engine import LiveBroker, LiveMarket, fmt, floor_to
+    from bot.spot.engine import LiveBroker, Spec, fmt, floor_to
     meta = json.load(open(os.path.join(ROOT, "bot", "v2", "model_meta.json")))
-    br, mk = LiveBroker(), LiveMarket()
+    br = LiveBroker()
     ok = True
     try:
         perm = br._d(br.c.get_api_key_permissions())
@@ -86,7 +88,7 @@ elif a.cmd == "preflight":
         print("fee tier:", br.fee_tier())
     except Exception as err:
         print("could not read the fee tier:", repr(err)[:300])
-    tradable, blocked = [], {}
+    tradable, blocked, unknown, specs = [], {}, {}, {}
     for c in meta["coins"]:
         pid = f"{c}-USD"
         try:
@@ -107,15 +109,41 @@ elif a.cmd == "preflight":
                 blocked[c] = {"preview": errs}
             else:
                 tradable.append(c)
+                specs[c] = (Spec(pid, tick, lot), lim, size)
         except Exception as err:
-            blocked[c] = {"error": repr(err)[:200]}
+            unknown[c] = repr(err)[:200]
     print(f"\ntradable for this account ({len(tradable)} of {len(meta['coins'])}):", tradable)
-    if blocked:
-        print("not tradable:")
-        for c, why in blocked.items():
-            print(f"  {c}: {why}")
-        print('\nput these in "coins_disabled" in your live config:', json.dumps(sorted(blocked)))
-    print("\npreflight", "PASSED" if ok and tradable else "FAILED")
+    for c, why in blocked.items():
+        print(f"  not tradable: {c}: {why}")
+    for c, why in unknown.items():
+        print(f"  could not check (network?): {c}: {why}  -> run the preflight again")
+    # how long Coinbase lets a good-til-date bid live at minimum (the bot's bids expire on their own)
+    ttl = None
+    if tradable:
+        sp, lim, size = specs["ETH"] if "ETH" in specs else specs[tradable[0]]
+        now = pd.Timestamp.now(tz="UTC").tz_localize(None)
+        for d in (120, 300, 600, 900, 1800, 3600):
+            try:
+                errs = br.preview_gtd(sp, lim, size, now + pd.Timedelta(seconds=d))
+            except Exception as err:
+                print("could not preview a good-til-date bid:", repr(err)[:200])
+                break
+            if not errs:
+                ttl = max(300, d)
+                break
+            if not any("DURATION_TOO_SMALL" in str(e).upper() for e in errs):
+                print("good-til-date bid preview errors:", errs)
+                break
+        print(f"good-til-date bids: {f'{ttl} s' if ttl else 'NOT AVAILABLE - the bot would rest good-til-cancelled bids'}")
+    if os.path.abspath(a.config) != os.path.abspath(os.path.join(HERE, "config.json")):
+        cfg["coins_disabled"] = sorted(blocked)
+        if ttl:
+            cfg["bid_ttl_s"] = ttl
+        json.dump(cfg, open(a.config, "w"), indent=2)
+        print(f"wrote coins_disabled {sorted(blocked)} and bid_ttl_s {cfg.get('bid_ttl_s')} to {a.config}")
+    else:
+        print('put these in "coins_disabled" in your live config:', json.dumps(sorted(blocked)))
+    print("\npreflight", "PASSED" if ok and tradable and not unknown else "FAILED")
 
 elif a.cmd == "status":
     import pandas as pd
