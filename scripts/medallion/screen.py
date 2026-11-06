@@ -19,7 +19,8 @@ def main():
         for h in (1, 7):
             fwd = close.shift(-h) / close - 1
             for s in Z.columns:
-                d = ic_nw(Z[s], fwd, *DEV, lags=h)
+                fwd_dev = fwd.where(fwd.index <= pd.Timestamp(DEV[1]) - pd.Timedelta(days=h))
+                d = ic_nw(Z[s], fwd_dev, *DEV, lags=h)
                 row = dict(coin=coin, signal=s, family=s[:2], h=h, ic_dev=d["ic"], t_dev=d["t"], n_dev=d["n"],
                            first=str(raw[s].first_valid_index().date()) if raw[s].notna().any() else "")
                 if HOLDOUT_OPEN:

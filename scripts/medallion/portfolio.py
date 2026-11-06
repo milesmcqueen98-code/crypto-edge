@@ -15,7 +15,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-from common import DEV, HOLD, N_BOOKS, N_PRIOR, OUT, book, save, sharpe
+from common import DEV, HOLD, N_BOOKS, N_PRIOR, OUT, book, require_holdout, save, sharpe
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import c3_improve as c3i  # noqa: E402
@@ -43,6 +43,7 @@ def combine(series, dev=DEV):
 
 
 def main():
+    require_holdout()
     tabs, R = load_books()
     c3, _ = ma.c3_returns("b")
     rows = []
@@ -53,7 +54,9 @@ def main():
                          sharpe_early=sharpe(x, *EARLY)))
     corr = pd.DataFrame(rows)
     tabs = tabs.merge(corr, on="book", how="left")
-    passing = list(tabs.loc[tabs.passes.astype(bool), "book"])
+    # The one-day short-vol proxy (F9) is reported but never enters the portfolio; its tradable stand-in is the
+    # strict ladder (F9L), which must pass on its own (rule logged before the hold-out was opened).
+    passing = [b for b in tabs.loc[tabs.passes.astype(bool), "book"] if not b.startswith("F9_")]
     base = dict(sharpe_dev=sharpe(c3, *DEV), sharpe_hold=sharpe(c3, *HOLD), sharpe_early=sharpe(c3, *EARLY))
     res = dict(passing=passing, c3=base)
     if passing:

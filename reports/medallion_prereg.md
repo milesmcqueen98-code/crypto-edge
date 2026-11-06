@@ -125,5 +125,30 @@ The specification above left these details open; they are fixed here. Developmen
 14. Coin Metrics' community API withholds FeeTotUSD, NVTAdj and TxTfrValAdjUSD. BTC fees and NVT come from
     blockchain.com instead (transaction-fees-usd; market cap / estimated-transaction-volume-usd, both 7-day means),
     lagged one day. ETH has no free source for them, so its fee and NVT signals are dropped (4 fewer tests).
-15. Data coverage as delivered: Binance funding and perp klines start 2020-01 (not 2019-09); DVOL 2021-03-24;
+15. ETH's hash-rate signal is dropped: ETH stopped proof-of-work in Sept 2022 (2 fewer tests).
+16. Data coverage as delivered: Binance funding and perp klines start 2020-01 (not 2019-09); DVOL 2021-03-24;
     Farside ETF pages show only recent weeks (19–21 rows), so ETF flows are not tested at all.
+
+**Independent code review (2026-11-06, separate agent, development data only, hold-out never opened).** No
+look-ahead: every book re-run on inputs cut at 2022-06-30 matches the full run bit for bit up to that date, and no
+data source's date label carries next-day information. Fixed before opening the hold-out:
+- F7: on days when every coin prints the same funding, floating-point noise was scaled into a full-size directional
+  bet (3 dev days). Identical cross-sections are now no signal, and residue after neutralizing is not traded.
+- Development Sharpe is measured from each book's first trading day where that is after 2020-01-01 (the registered
+  "from first data where later"); F10 had been charged 14 months of structural zeros (F10 LightGBM 0.75 → 0.90).
+- Funding P&L: a position held over day d now pays the prints in (00:00 d, 00:00 d+1]; it was booked 8 hours early.
+- Funding level (signals and F7 carry) is the day's total of prints, not the mean per print, so 2h/4h-interval days
+  compare correctly (unchanged z-scores for 8-hourly BTC and ETH).
+- Screen: development forward returns may not reach past 2023-12-31. Robustness and portfolio scripts now refuse to
+  run without the hold-out flag; the 2x-cost check keeps F5a's entry threshold at 1x costs.
+- Left as is (negligible, shared code or no effect this round): T-bill interpolation by position in edge/book.py
+  (≤ 2e-6 a day); flat 20% margin drag; Newey-West lags = horizon understate 7-day t-stats for persistent signals
+  (no 7-day signal reached |t| = 3 in development); ETH costs 6.5 bp as registered vs 11.2 bp in the wick lab's table.
+
+**Added before opening the hold-out: strict short-vol test (F9L, BTC and ETH; trial count 19).** The review confirmed
+that the registered F9 proxy (sell one day of variance at yesterday's DVOL) overstates what can be traded: it has no
+mark-to-market loss when implied vol jumps, no delta-hedging cost and no margin drag. F9L is a ladder of 30-day short
+variance swaps, one sold each day at (DVOL − 1)², marked daily to DVOL, minus delta-hedging cost (per-side cost × 2 ×
+notional × |daily return|) and the 20% margin T-bill drag, scaled to 20% development vol. Rule: F9 is still judged
+as registered and reported, but only F9L can enter the portfolio, and only if F9L itself passes (development ≥ 1.0,
+hold-out ≥ 0.5). Development Sharpe before this rule was fixed: F9L BTC ≈ 1.6, ETH ≈ 0.6 (review and own check).

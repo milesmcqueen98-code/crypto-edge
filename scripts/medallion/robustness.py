@@ -20,9 +20,9 @@ import multiasset as ma  # noqa: E402
 
 
 def rerun(name, mult):
+    """Same book with every per-side cost x mult in the engines; entry thresholds (F5a) keep the 1x costs."""
     orig = C.cost_per_side
     scaled = lambda c: mult * orig(c)  # noqa: E731
-    B.cost_per_side = scaled
     C_run_daily, C_run_hourly = C.run_daily, C.run_hourly
     B.run_daily = lambda W, close, funding=None, cost=None: C_run_daily(W, close, funding,
                                                                          {c: scaled(c) for c in W.columns})
@@ -30,40 +30,11 @@ def rerun(name, mult):
                                                                           {c: scaled(c) for c in P.columns})
     fam = name.split("_")[0]
     fn = {"F2": B.f2_books, "F3": B.f3_books, "F5a": B.f5_books, "F5b": B.f5_books, "F5c": B.f5_books,
-          "F5d": B.f5_books, "F7": lambda: B.f7_books()[0], "F9": B.f9_books, "F6": lambda: B.f6_book()[0]}[fam]
+          "F5d": B.f5_books, "F7": lambda: B.f7_books()[0], "F9": B.f9_books, "F6": lambda: B.f6_book()[0],
+          "F9L": lambda: B.f9l_books(cost_mult=mult, haircut=1.0 * mult)}[fam]
     out = fn()[name]
-    B.cost_per_side, B.run_daily, B.run_hourly = orig, C_run_daily, C_run_hourly
+    B.run_daily, B.run_hourly = C_run_daily, C_run_hourly
     return out
-
-
-def f9_ladder(coin, haircut=1.0, tenor=30):
-    """Stricter short-vol proxy: a ladder of 30-day short variance swaps, one sold each day at (DVOL - haircut)^2,
-    marked to market daily at the current DVOL (adds the vega losses of implied-vol spikes that the one-day proxy
-    leaves out). Same constant scale rule (20% development vol)."""
-    close = C.daily_close([coin])[coin]
-    dv = B.dvol(coin).reindex(close.index)
-    r2 = (np.log(close).diff() ** 2).to_numpy()
-    K = (((dv - haircut) / 100.0) ** 2).to_numpy()          # annualized variance strike sold each day
-    T = len(close)
-    pnl = np.full(T, np.nan)
-    n = 1.0 / tenor                                          # each swap: 1/tenor of the book
-    for t in range(tenor + 1, T):
-        if np.isnan(K[t]) or np.isnan(K[t - 1]) or np.isnan(r2[t]):
-            continue
-        tot = 0.0
-        for s in range(t - tenor, t):                        # swaps alive over day t (sold at the close of s)
-            if np.isnan(K[s]):
-                continue
-            accrual = K[s] / 365.0 - r2[t]
-            left_before = s + tenor - (t - 1)                # days left at the close of t-1
-            left_after = left_before - 1
-            mtm_before = left_before * (K[s] - K[t - 1]) / 365.0 if s < t - 1 else 0.0
-            mtm_after = left_after * (K[s] - K[t]) / 365.0
-            tot += n * (accrual + mtm_after - mtm_before)
-        pnl[t] = tot
-    x = pd.Series(pnl, index=close.index).dropna()
-    k = 0.20 / (x.loc[C.DEV[0]:C.DEV[1]].std() * np.sqrt(365))
-    return k * x
 
 
 def knn_variants(coin="BTC"):
@@ -87,6 +58,7 @@ def cde_volume_usd():
 
 
 def main():
+    C.require_holdout()
     vol = cde_volume_usd()
     rows = []
     for name in sys.argv[1:]:

@@ -161,7 +161,7 @@ def raw_signals(coin):
         S["F1_fg_chg7"] = fg - fg.shift(7)
     fr = binance_funding_raw(coin)
     if fr is not None:
-        fl = fr.groupby(fr.index.floor("D")).mean().reindex(idx)
+        fl = fr.groupby(fr.index.floor("D")).sum().reindex(idx)          # daily total of the day's prints
         S["F1_fund"] = fl
         S["F1_fund_chg7"] = fl - fl.shift(7)
     m = binance_metrics(coin)

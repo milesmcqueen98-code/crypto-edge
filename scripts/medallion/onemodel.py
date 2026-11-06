@@ -12,7 +12,7 @@ from lightgbm import LGBMRegressor
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
 
-from common import DEV, HOLDOUT_OPEN, TARGET, daily_close, run_daily, save, stats, vol_unit
+from common import DEV, HOLDOUT_OPEN, TARGET, active_from, daily_close, run_daily, save, stats, vol_unit
 from features import z_signals
 
 warnings.filterwarnings("ignore")
@@ -70,7 +70,7 @@ def main():
         for coin in ("BTC", "ETH"):
             d = pd.concat([pr[coin], (full[coin].shift(-1) / full[coin] - 1)], axis=1).loc[DEV[0]:DEV[1]].dropna()
             e[f"ic_dev_{coin}"] = float(d.corr(method="spearman").iloc[0, 1])
-        rows.append(stats(name, x, e))
+        rows.append(stats(name, x, e, active_from=active_from(turn, x)))
     df = pd.DataFrame(rows)
     save(df, "books_F10.csv")
     R = pd.DataFrame(R)

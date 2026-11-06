@@ -12,8 +12,9 @@ from itertools import combinations
 import numpy as np
 import pandas as pd
 
-from common import (COINS, DEV, DEV_H, HOLD, HOLDOUT_OPEN, HOURLY, TARGET, binance_funding_raw, cost_per_side,
-                    daily_close, funding_daily, hourly_close, run_daily, run_hourly, save, stats, vol_unit)
+from common import (COINS, DEV, DEV_H, HOLD, HOLDOUT_OPEN, HOURLY, MARGIN_SHARE, TARGET, active_from,
+                    binance_funding_raw, book, cost_per_side, daily_close, funding_daily, hourly_close, run_daily,
+                    run_hourly, save, stats, vol_unit)
 from features import binance_metrics, dvol
 
 warnings.filterwarnings("ignore")
@@ -217,7 +218,9 @@ def f6_book():
 # ------------------------------------------------------------------------------------------------ F7 factor book
 def xs_z(df, univ):
     x = df.where(univ)
-    z = x.sub(x.mean(axis=1), axis=0).div(x.std(axis=1), axis=0).clip(-3, 3)
+    sd = x.std(axis=1)
+    sd = sd.where(sd > 1e-6 * x.abs().mean(axis=1) + 1e-15)      # identical values (e.g. default funding): no signal
+    z = x.sub(x.mean(axis=1), axis=0).div(sd, axis=0).clip(-3, 3)
     return z.where(univ).fillna(0.0).where(univ)
 
 
@@ -231,7 +234,7 @@ def neutral_weights(score, beta, univ):
         X = np.column_stack([np.ones(u.sum()), beta.loc[t].to_numpy()[u]])
         w = s - X @ np.linalg.lstsq(X, s, rcond=None)[0]
         g = np.abs(w).sum()
-        if g > 0:
+        if g > 1e-8 * np.abs(s).sum() and g > 1e-12:              # skip rounding residue
             W.loc[t, score.columns[u]] = w / g
     return W
 
@@ -255,8 +258,8 @@ def f7_inputs():
     fund = {}
     for c in COINS:
         f = binance_funding_raw(c)
-        if f is not None:
-            fund[c] = f.groupby(f.index.floor("D")).mean()
+        if f is not None:                       # daily total of the day's prints (comparable across 8h/4h/2h intervals)
+            fund[c] = f.groupby(f.index.floor("D")).sum()
     fund = pd.DataFrame(fund).reindex(close.index)[[c for c in COINS if c in fund]]
     fund = fund.reindex(columns=close.columns)
     oi = {}
@@ -306,8 +309,44 @@ def f9_books():
     return out
 
 
+def f9l_books(haircut=1.0, tenor=30, cost_mult=1.0):
+    """Strict short-vol book (added after the code review, before the hold-out): a ladder of 30-day short variance
+    swaps, one sold each day at (DVOL - haircut)^2, marked daily to the current DVOL (vega losses when implied vol
+    jumps), plus delta-hedging cost (per-side cost x 2 x notional x |return|) and the 20% margin T-bill drag.
+    Constant scale giving 20% development vol."""
+    out = {}
+    for coin in ("BTC", "ETH"):
+        close = daily_close([coin])[coin]
+        dv = dvol(coin).reindex(close.index)
+        r = np.log(close).diff()
+        r2 = (r ** 2).to_numpy()
+        K = (((dv - haircut) / 100.0) ** 2).to_numpy()
+        T = len(close)
+        pnl = np.full(T, np.nan)
+        for t in range(tenor + 1, T):
+            if np.isnan(K[t]) or np.isnan(K[t - 1]) or np.isnan(r2[t]):
+                continue
+            tot = 0.0
+            for s_ in range(t - tenor, t):                    # swaps alive over day t (sold at the close of s_)
+                if np.isnan(K[s_]):
+                    continue
+                left_before = s_ + tenor - (t - 1)
+                mtm_before = left_before * (K[s_] - K[t - 1]) / 365.0 if s_ < t - 1 else 0.0
+                mtm_after = (left_before - 1) * (K[s_] - K[t]) / 365.0
+                tot += (K[s_] / 365.0 - r2[t] + mtm_after - mtm_before) / tenor
+            pnl[t] = tot
+        u = pd.Series(pnl, index=close.index)
+        hedge = cost_mult * cost_per_side(coin) * 2.0 * r.abs()         # per unit of variance notional
+        net_u = (u - hedge).dropna()
+        k = 0.20 / (net_u.loc[DEV[0]:DEV[1]].std() * np.sqrt(365))
+        rf = book.rf_daily(net_u.index)
+        x = k * net_u - MARGIN_SHARE * rf
+        out[f"F9L_short_vol_ladder_{coin}"] = (x, (k * 2.0 * r.abs()).reindex(x.index))
+    return out
+
+
 def main():
-    which = sys.argv[1:] or ["F2", "F3", "F5", "F6", "F7", "F9"]
+    which = sys.argv[1:] or ["F2", "F3", "F5", "F6", "F7", "F9", "F9L"]
     res, extra = {}, {}
     if "F2" in which:
         res.update(f2_books())
@@ -327,12 +366,14 @@ def main():
         print(ic_tab)
     if "F9" in which:
         res.update(f9_books())
+    if "F9L" in which:
+        res.update(f9l_books())
     rows = []
     for name, (x, turn) in res.items():
         dev = DEV_H if name.startswith("F5") else DEV
         e = dict(turnover_per_year=float(turn.loc[dev[0]:dev[1]].mean() * 365))
         e.update(extra.get(name, {}))
-        rows.append(stats(name, x, e, dev=dev))
+        rows.append(stats(name, x, e, dev=dev, active_from=active_from(turn, x)))
     df = pd.DataFrame(rows)
     tag = "_".join(which)
     save(df, f"books_{tag}.csv")

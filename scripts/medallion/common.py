@@ -30,7 +30,7 @@ HOURLY = ["BTC", "ETH", "SOL", "XRP", "DOGE", "ADA", "AVAX", "LINK", "LTC"]
 MARGIN_SHARE = 0.20
 TARGET = 0.25
 N_PRIOR = 484
-N_BOOKS = 17
+N_BOOKS = 19                                  # 17 registered + 2 strict short-vol ladders (F9L)
 HOLDOUT_OPEN = os.environ.get("MEDALLION_HOLDOUT") == "1"     # hold-out results are computed only when set
 
 
@@ -65,8 +65,8 @@ def funding_daily(coins, index):
     for c in coins:
         s = pd.Series(np.nan, index=index)
         f = binance_funding_raw(c)
-        if f is not None:
-            s = f.groupby(f.index.floor("D")).sum().reindex(index)
+        if f is not None:                       # a position held over day d pays the prints in (00:00 d, 00:00 d+1]
+            s = f.groupby((f.index - pd.Timedelta(hours=1)).floor("D")).sum().reindex(index)
         if c in hl:
             s = s.fillna(hl[c].reindex(index))
         out[c] = s.fillna(0.08 / 365)
@@ -137,12 +137,16 @@ def sharpe(x, start=None, end=None):
     return book.sharpe(x, start, end)
 
 
-def stats(name, x, extra=None, dev=DEV):
+def stats(name, x, extra=None, dev=DEV, active_from=None):
+    """Development window starts at the later of its first day and the book's first trading day (the pre-registered
+    'from first data where later')."""
     x = x.dropna()
     if not HOLDOUT_OPEN:
         x = x.loc[:dev[1]]
+    if active_from is not None and pd.Timestamp(active_from) > pd.Timestamp(dev[0]):
+        dev = (str(pd.Timestamp(active_from).date()), dev[1])
     row = dict(book=name, sharpe_dev=sharpe(x, *dev), sharpe_hold=sharpe(x, *HOLD) if HOLDOUT_OPEN else np.nan,
-               start=str(x.index.min().date()) if len(x) else "")
+               start=str(x.index.min().date()) if len(x) else "", dev_from=dev[0])
     for lab, (s, e) in (("dev", dev), ("hold", HOLD)):
         xx = x.loc[s:e]
         if len(xx) > 60:
@@ -207,6 +211,16 @@ def vol_unit(close, target=TARGET):
     """Position per coin that targets `target` annualized vol (Carver blend, floored at 10% vol)."""
     r = close.pct_change(fill_method=None)
     return target / book.carver_vol(r)
+
+
+def require_holdout():
+    if not HOLDOUT_OPEN:
+        sys.exit("this step reads the hold-out; run with MEDALLION_HOLDOUT=1")
+
+
+def active_from(turnover, x):
+    t = turnover[turnover > 0]
+    return t.index[0] if len(t) else x.first_valid_index()
 
 
 def save(df, name):
