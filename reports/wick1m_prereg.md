@@ -106,3 +106,18 @@ reports/wick1m/grid_main_1000k_g1.csv (the 300%-gross first pass: grid_main_1000
   H2 2024). The $1M book trades spot, so the lab's coarser perp ticks no longer apply.
 - Phase 2 runs on GitHub Actions (scripts/wick1m/trades_wide.py, .github/workflows/wick1m.yml), because it needs
   about 10 GB of memory.
+
+**Check period opened once (2026-11-06, after commit 4b0d8d2).** Results: reports/wick1m/report.csv, curve.csv,
+monthly.csv. At $1M, θ = 0.5, check period Apr – Nov 2026:
+
+| Book | Return/yr | Sharpe | Max DD | $/yr | θ = 0.25 |
+|---|---|---|---|---|---|
+| Current rules, 17 coins | −18.1% | −2.32 | −11.0% | −$181K | −19.2% |
+| $1M rule, 17 coins | 12.4% | 2.28 | −0.7% | $124K | 10.6% |
+| + Bitstamp | 13.9% | 2.46 | −0.7% | $139K | 12.0% |
+| + wider universe (35 coins) + Bitstamp | 16.3% | 2.89 | −0.7% | $163K | 14.3% |
+
+Verdict against the bar: Sharpe ≥ 2.0 passes (2.89), drawdown passes, θ = 0.25 stays profitable, but the return
+fails: 16.3% vs 25%. **Not "works" by the registered bar.** The 2022–23 fresh era (spot only, 13 coins): 7.5% a year,
+Sharpe 1.38 (current rules −8.2%). Dollar profit stops growing near $1M: in the check period $163K at $1M, $187K at
+$2M, $191K at $5M. Returns are 23–26% a year at $100K–$500K. Correlation with C3: 0.06.
