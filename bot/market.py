@@ -67,6 +67,14 @@ def futures_candles(product_id, start, end):
     return df[(df.index >= pd.Timestamp(start)) & (df.index < pd.Timestamp(end))]
 
 
+def book(product_id, limit=50):
+    """Bids and asks as lists of (price, size in contracts), best first."""
+    js = _get(f"{ADV}/product_book", {"product_id": product_id, "limit": limit})
+    pb = js.get("pricebook", {})
+    return ([(float(b["price"]), float(b["size"])) for b in pb.get("bids", [])],
+            [(float(a["price"]), float(a["size"])) for a in pb.get("asks", [])])
+
+
 def book_top(product_id):
     js = _get(f"{ADV}/product_book", {"product_id": product_id, "limit": 5})
     pb = js.get("pricebook", {})

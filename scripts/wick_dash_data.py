@@ -38,9 +38,12 @@ def row(name, role, tr, notional=0.25):
                 sharpe_2026=sh(d[d.index.year == 2026])), d
 
 
-def main(final_tag="wide 17"):
+def main():
     B = pd.read_parquet(os.path.join(ROOT, "reports", "wick_breadth_trades.parquet"))
-    uni = final_tag if final_tag in set(B.universe) else "wide 16"
+    Fz = pd.read_parquet(os.path.join(ROOT, "reports", "wick_final_trades.parquet"))   # 17 coins, 5-seed average
+    Fz = Fz.assign(universe="wide 17", strategy=Fz.strategy.replace({"rule + AI, 5-seed average": "rule + AI"}))
+    B = pd.concat([B[B.universe == "core 6"], Fz], ignore_index=True)
+    uni = "wide 17"
     rows, curves = [], {}
     E = pd.read_csv(os.path.join(ROOT, "reports", "event_grid.csv"))
     best_taker = E.sort_values("design_sharpe", ascending=False).iloc[0]
@@ -52,7 +55,7 @@ def main(final_tag="wide 17"):
             ("Resting bids, no AI, 6 coins", "Rule alone", "core 6", "rule only", None),
             ("Resting bids + AI, 6 coins", "AI adds", "core 6", "rule + AI", None),
             ("Resting bids, no AI, all coins", "Rule alone", uni, "rule only", None),
-            ("Resting bids + AI, all coins", "Best case, no position limit", uni, "rule + AI", None),
+            ("Resting bids + AI, all coins", "No position limit", uni, "rule + AI", None),
             ("Resting bids + AI, all coins, max 6 open", "Paper trading now", uni, "rule + AI", 6)]:
         tr = B[(B.universe == u) & (B.strategy == strat)]
         tr = capped(tr, cap) if cap else tr
@@ -82,7 +85,7 @@ def main(final_tag="wide 17"):
     # signals
     I = pd.read_csv(os.path.join(ROOT, "reports", "wick_ai_importance.csv"), index_col=0)
     Q = pd.read_csv(os.path.join(ROOT, "reports", "wick_ai_quintiles.csv"))
-    plain = {"dist_1d_high_bp": "How far the coin is below its 24-hour high", "bid_depth_bp": "How deep the bid is (volatility)",
+    plain = {"dist_1d_high_bp": "Coin's move from its 24-hour high", "bid_depth_bp": "How deep the bid is (volatility)",
              "z_res60": "Size of the 60-minute drop vs BTC", "btc_z60": "BTC's own 60-minute move",
              "beta": "How strongly the coin follows BTC", "btc_ret240_bp": "BTC's 4-hour move",
              "coin_id": "Which coin", "btc_ret1d_bp": "BTC's 24-hour move", "coin_ret7d_bp": "Coin's 7-day move",
@@ -94,12 +97,14 @@ def main(final_tag="wide 17"):
              "weekend": "Weekend", "volume_ratio_15m": "Coin volume spike", "z_1min": "Last minute's move"}
     sig = []
     for f, r in I.iterrows():
+        if f == "coin_id":
+            continue
         q = Q[Q.feature == f]
         g = lambda p, k: q[(q.period == p) & (q.quintile == k)].net_bp  # noqa: E731
-        sig.append(dict(signal=plain.get(f, f), feature=f, importance_bp=r.mean_abs_shap_bp,
+        sig.append(dict(signal=plain.get(f, f), importance_bp=r.mean_abs_shap_bp,
                         test_low=float(g("test", 1).iloc[0]) if len(g("test", 1)) else np.nan,
                         test_high=float(g("test", 5).iloc[0]) if len(g("test", 5)) else np.nan))
-    pd.DataFrame(sig).head(12).to_csv(os.path.join(OUT, "wick_signals.csv"), index=False)
+    pd.DataFrame(sig).head(10).to_csv(os.path.join(OUT, "wick_signals.csv"), index=False)
     # hold time (markouts after a fill, k=5, pooled over coins), design vs test
     M = pd.read_csv(os.path.join(ROOT, "reports", "wick_markouts.csv"))
     M = M[M.k == 5]
@@ -109,12 +114,28 @@ def main(final_tag="wide 17"):
     hold.to_csv(os.path.join(OUT, "wick_hold.csv"), index=False)
     # futures validation, if present
     p = os.path.join(ROOT, "reports", "wick_futures.csv")
+    ps = os.path.join(ROOT, "reports", "wick_futures_strict.csv")
     if os.path.exists(p):
         F = pd.read_csv(p)
-        F = F[F.strategy == "rule + AI"][["coin", "start", "fut_trades", "fut_net_bp", "spot_trades", "spot_net_bp", "fut_minutes_traded"]]
+        F = F[(F.strategy == "rule + AI") & (F.coin != "PORTFOLIO")][["coin", "start", "fut_trades", "fut_net_bp", "spot_trades", "spot_net_bp"]]
+        if os.path.exists(ps):
+            S2 = pd.read_csv(ps)
+            S2 = S2[(S2.strategy == "rule + AI") & (S2.coin != "PORTFOLIO")][["coin", "fut_trades", "fut_net_bp"]]
+            F = F.merge(S2.rename(columns={"fut_trades": "strict_trades", "fut_net_bp": "strict_net_bp"}), on="coin", how="left")
         F.to_csv(os.path.join(OUT, "wick_futures.csv"), index=False)
+        P = pd.read_csv(os.path.join(ROOT, "reports", "wick_futures_portfolio.csv"))
+        P["fills"] = "base"
+        if os.path.exists(ps.replace("wick_futures_strict", "wick_futures_portfolio_strict")):
+            P2 = pd.read_csv(ps.replace("wick_futures_strict", "wick_futures_portfolio_strict"))
+            P2["fills"] = "strict"
+            P = pd.concat([P, P2])
+        P = P[P.cap.astype(str) == "6"]
+        P["version"] = P.strategy.map({"rule only": "No AI", "rule + AI": "With AI"}) + ", " + P.venue + " prices, " + \
+            P.fills.map({"base": "fill needs 1 tick", "strict": "fill needs 3 ticks + volume"})
+        P[["version", "window", "trades", "per_day", "net_bp", "sharpe", "t", "ann_ret", "maxdd", "worst_day"]].to_csv(
+            os.path.join(OUT, "wick_futures_portfolio.csv"), index=False)
     print(H.round(2).to_string(index=False))
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:2])
+    main()

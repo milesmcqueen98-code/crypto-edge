@@ -29,6 +29,9 @@ import wick_sim as ws  # noqa: E402
 
 COINS = [c for c in sys.argv[1].split(",")] if len(sys.argv) > 1 else ["ETH", "SOL", "XRP", "DOGE", "LTC", "LINK"]
 FEES = os.environ.get("FEES", "pct2")
+# STRICT=1: a futures fill also needs a 3-tick trade-through and at least 3x our order size traded in that minute
+STRICT = os.environ.get("STRICT", "0") == "1"
+ORDER_USD = 2500.0
 
 
 def half_spread_bp():
@@ -94,7 +97,8 @@ def load_futures(c, idx):
     df = pd.read_parquet(p).drop_duplicates("ts").set_index("ts").sort_index()
     df = df[df.volume > 0].reindex(idx)
     return {k: df[k].to_numpy(np.float64) for k in ("open", "high", "low", "close")} | {
-        "cf": df["close"].ffill(limit=30).to_numpy(np.float64), "first": df["close"].first_valid_index()}
+        "cf": df["close"].ffill(limit=30).to_numpy(np.float64), "first": df["close"].first_valid_index(),
+        "vol": df["volume"].fillna(0.0).to_numpy(np.float64)}
 
 
 def fut_specs():
@@ -145,7 +149,11 @@ def main():
         fut[c] = F
         basis = wick.shift(F["cf"] / D[c]["cf"], 1)
         lvl_fut[c] = wick.round_down(LV[c][0] * basis, FS[c][2])
-        tick_f = np.nan_to_num(FS[c][2] / F["cf"], nan=1.0)
+        tick_f = np.nan_to_num((3 if STRICT else 1) * FS[c][2] / F["cf"], nan=1.0)
+        if STRICT:                                   # not enough traded for our whole order -> treat as no fill
+            need = np.ceil(ORDER_USD / (FS[c][1] * lvl_fut[c]))
+            with np.errstate(invalid="ignore"):
+                lvl_fut[c] = np.where(F["vol"] >= 3 * need, lvl_fut[c], np.nan)
         fut_c[c] = candidates(F["open"], F["low"], lvl_fut[c], tick_f)
     keep_rows = {c: np.union1d(spot_c[c], fut_c.get(c, np.array([], dtype=np.int64))) for c in COINS}
     pn = wick.panel(cf, vol, COINS, idx, keep_rows=keep_rows)
@@ -174,9 +182,14 @@ def main():
         sig = LV[c][1]
         tpd = wick.THETA * wick.K * sig
         hs = hs_meas.get(c, np.nan)
-        tick_f = np.nan_to_num(tick_f_usd / F["cf"], nan=1.0)
+        tick_f = np.nan_to_num((3 if STRICT else 1) * tick_f_usd / F["cf"], nan=1.0)
         tick_s = np.nan_to_num(ws.PERP[c][2] / D[c]["cf"], nan=1.0)
         keep_f, keep_s = ai_keep(c, fut_c[c]), ai_keep(c, spot_c[c])
+        # time exits: the last futures trade can be stale on thin perps; use the lower of it and the spot price
+        # carried over at the basis of that last trade (a long position sells at the worse of the two)
+        traded = np.isfinite(F["close"])
+        b_last = pd.Series(np.where(traded, F["close"] / D[c]["cf"], np.nan)).ffill().to_numpy()
+        exit_px = np.fmin(F["cf"], D[c]["cf"] * b_last)
         for name in ("rule only", "rule + AI"):
             # futures execution
             lv = lvl_fut[c].copy()
@@ -185,7 +198,7 @@ def main():
                 off = np.zeros(len(idx), dtype=bool)
                 off[fut_c[c]] = True
                 lv[off & ~keep_f] = np.nan
-            ei, xi, ep, xp, ty = ws.run_book(F["open"], F["high"], F["low"], F["cf"], lv, tpd, np.full(len(idx), np.nan),
+            ei, xi, ep, xp, ty = ws.run_book(F["open"], F["high"], F["low"], exit_px, lv, tpd, np.full(len(idx), np.nan),
                                              1, tick_f, wick.H, 0)
             xp = np.where(ty == 1, wick.round_down(xp, tick_f_usd), xp)
             gross = np.log(xp / ep) * 1e4
@@ -217,7 +230,8 @@ def main():
         print(f"  {c} done ({time.time() - t0:.0f}s)", flush=True)
     R = pd.DataFrame(rows)
     T = pd.concat(all_tr, ignore_index=True)
-    T.to_parquet(os.path.join(ROOT, "reports", "wick_futures_trades.parquet"), index=False)
+    tag = "_strict" if STRICT else ""
+    T.to_parquet(os.path.join(ROOT, "reports", f"wick_futures_trades{tag}.parquet"), index=False)
     pd.set_option("display.width", 250)
     print(R.round(2).to_string(index=False))
     # portfolio over the window where every included perp has data (latest listing start), and the longer
@@ -237,8 +251,8 @@ def main():
                     s_, _ = portfolio(tr, st, cap)
                     port.append(dict(window=label, strategy=name, venue=venue, cap=cap or "none", **s_))
     P = pd.DataFrame(port)
-    P.to_csv(os.path.join(ROOT, "reports", "wick_futures_portfolio.csv"), index=False)
-    R.to_csv(os.path.join(ROOT, "reports", "wick_futures.csv"), index=False)
+    P.to_csv(os.path.join(ROOT, "reports", f"wick_futures_portfolio{tag}.csv"), index=False)
+    R.to_csv(os.path.join(ROOT, "reports", f"wick_futures{tag}.csv"), index=False)
     print(P.round(3).to_string(index=False))
     print(f"done in {time.time() - t0:.0f}s")
 

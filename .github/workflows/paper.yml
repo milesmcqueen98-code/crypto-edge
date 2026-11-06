@@ -1,0 +1,39 @@
+name: paper-trade
+
+# Forward paper test of the AI-filtered resting-bid dip buyer on live Coinbase data (no keys, no money).
+# Each job runs ~5h45m; the schedule restarts it every 6 hours. State carries over through paper/state.json.
+on:
+  schedule:
+    - cron: "3 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      minutes:
+        default: "345"
+
+concurrency:
+  group: paper-trade
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  paper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas numpy lightgbm requests pyarrow
+      - run: python bot/run.py --mode paper --minutes ${{ inputs.minutes || '345' }}
+      - name: Commit paper log
+        if: always()
+        run: |
+          git config user.name "crypto-edge-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add paper
+          git diff --cached --quiet && exit 0
+          git commit -m "Paper trading log $(date -u +%Y-%m-%dT%H:%MZ)"
+          for i in 1 2 3 4 5; do git pull --rebase origin main && git push && break; sleep $((i*5)); done

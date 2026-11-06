@@ -17,7 +17,8 @@ minutes it exits at market.
 | `bot/engine.py` | Minute loop, paper broker, live broker (Coinbase Advanced SDK), risk limits |
 | `bot/market.py` | Public market data (no keys): spot candles, futures candles, order book |
 | `bot/train.py` | Retrains the model on all history for the chosen universe |
-| `bot/model.txt`, `bot/model_meta.json` | The trained model and its threshold |
+| `bot/model_s*.txt`, `bot/model_meta.json` | The five trained models (averaged) and the threshold |
+| `bot/paper_report.py` | Summarises the paper log: trades, net bp, P&L |
 | `bot/config.json` | Capital, size per trade, max positions, daily loss limit, paper fee model |
 | `bot/replay_test.py` | Runs the live engine over historical data and checks it trades exactly like the research |
 | `.github/workflows/paper.yml` | Forward paper test on live data, every 6 hours, no keys, results in `paper/` |
@@ -27,7 +28,7 @@ minutes it exits at market.
 * **Coinbase Financial Markets (Coinbase Advanced → Futures)**: CFTC-regulated perp-style futures,
   available in all 50 states including New York. Up to 10x leverage; this bot uses ~1.5x at most.
 * Contracts (6 Nov 2026 prices): nano SOL 5 SOL ≈ $450, nano XRP 500 XRP ≈ $600, nano ETH 0.1 ETH ≈ $225,
-  LINK 50 ≈ $545, DOGE 5,000 ≈ $360, LTC 5 ≈ $265, plus BCH, SUI, XLM, HBAR, NEAR, AAVE, HYPE, ENA, PEPE, ONDO.
+  LINK 50 ≈ $545, DOGE 5,000 ≈ $360, LTC 5 ≈ $265, plus BCH, SUI, XLM, HBAR, NEAR, AAVE, HYPE, ENA, PEPE, ONDO, ZEC.
 * Fees: Coinbase advertises perp fees "from 0.02%". The exchange-fee filing shows $0.10 per contract per side
   for retail, before Coinbase's own charges, so small contracts (ETH, LTC) can cost more than 2 bp. The research
   assumed 2 bp per side for makers **and** takers plus one futures tick of spread on every market order, and

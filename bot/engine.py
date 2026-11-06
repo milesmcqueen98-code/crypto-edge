@@ -170,7 +170,8 @@ class Engine:
     def __post_init__(self):
         meta = json.load(open(os.path.join(ROOT, "bot", "model_meta.json")))
         self.meta = meta
-        self.model = lgb.Booster(model_file=os.path.join(ROOT, "bot", "model.txt"))
+        files = meta.get("models", ["model.txt"])
+        self.models = [lgb.Booster(model_file=os.path.join(ROOT, "bot", f)) for f in files]
         self.coins = meta["coins"]
         self.codes = {c: i for i, c in enumerate(sorted(self.coins))}
         self.thr = meta["threshold"]
@@ -235,6 +236,7 @@ class Engine:
                 fut[c] = b
                 fill = self.broker.settle(c, b, prev)
                 if fill:
+                    fill["minute_contracts"] = b.get("volume")
                     self._on_fill(c, fill, prev)
         idx, cf, vol, last = self.arrays(t)
         pn = wick.panel(cf, vol, self.coins, idx, coin_codes=self.codes)
@@ -247,7 +249,8 @@ class Engine:
                 if c in self.state["positions"]:
                     continue
             ok = all(np.isfinite(row[k]) for k in ("level", "sig", "z_res60", "bid_depth_bp"))
-            pred = float(self.model.predict(row[wick.FEATS].to_numpy(np.float64)[None, :])[0]) if ok else np.nan
+            x = row[wick.FEATS].to_numpy(np.float64)[None, :]
+            pred = float(np.mean([m.predict(x)[0] for m in self.models])) if ok else np.nan
             if ok and pred > self.thr:
                 cands.append((pred, c, row))
             elif c in self.state["orders"]:
@@ -259,13 +262,17 @@ class Engine:
         for rank, (pred, c, row) in enumerate(cands):
             sp = self.specs[c]
             px = np.nan
+            ahead = np.nan
             if rank < slots:
-                bid, ask = market.book_top(sp.product)
+                bids, asks = market.book(sp.product)
+                bid, ask = (bids[0][0] if bids else np.nan), (asks[0][0] if asks else np.nan)
                 if np.isfinite(bid) and np.isfinite(ask) and np.isfinite(last[c]):
                     basis = ((bid + ask) / 2) / last[c]
                     px = float(wick.round_down(row.level * basis, sp.tick))
                     if px >= bid:                    # market already below the level: no order this minute
                         px = np.nan
+                    else:                            # resting bids at or above ours: selling needed before we fill
+                        ahead = sum(p * q * sp.size for p, q in bids if p >= px)
             if not np.isfinite(px):
                 if c in self.state["orders"]:
                     self.broker.cancel(c)
@@ -280,7 +287,8 @@ class Engine:
                 self.broker.cancel(c)
             oid = self.broker.place(c, "BUY", px, contracts, "entry")
             self.log("bid", coin=c, px=px, contracts=contracts, pred=round(pred, 1), thr=round(self.thr, 1),
-                     sigma_bp=round(float(row.sig) * 1e4, 1), depth_bp=round(float(row.bid_depth_bp), 1), oid=oid)
+                     sigma_bp=round(float(row.sig) * 1e4, 1), depth_bp=round(float(row.bid_depth_bp), 1),
+                     best_bid=bid, best_ask=ask, usd_bids_ahead=round(ahead, 0), oid=oid)
             self.state.setdefault("pending_sig", {})[c] = float(row.sig)
         if t.minute % 30 == 0:
             self.log("heartbeat", equity=round(self.state["equity"], 2), positions=list(self.state["positions"]),
@@ -302,7 +310,8 @@ class Engine:
                                               # order goes out at the start of the following minute
                                               exit_due=(minute + pd.Timedelta(minutes=wick.H + 1)).isoformat(), tp_px=tp,
                                               fees=fee)
-            self.log("fill_entry", coin=c, px=fill["px"], contracts=fill["contracts"], tp=tp, fee=round(fee, 4))
+            self.log("fill_entry", coin=c, px=fill["px"], contracts=fill["contracts"], tp=tp, fee=round(fee, 4),
+                     minute_contracts_traded=fill.get("minute_contracts"))
             self.broker.place(c, "SELL", tp, fill["contracts"], "tp")
         else:
             pos = self.state["positions"].pop(c, None)
@@ -310,7 +319,7 @@ class Engine:
                 return
             pnl = (fill["px"] - pos["entry_px"]) * sp.size * fill["contracts"] - pos["fees"] - fee
             self.state["equity"] += pnl
-            self.log("fill_exit", coin=c, kind=fill["kind"], px=fill["px"], entry_px=pos["entry_px"],
+            self.log("fill_exit", coin=c, exit=fill["kind"], px=fill["px"], entry_px=pos["entry_px"],
                      contracts=fill["contracts"], pnl=round(pnl, 2),
                      net_bp=round(pnl / (pos["entry_px"] * sp.size * fill["contracts"]) * 1e4, 1),
                      equity=round(self.state["equity"], 2))
@@ -324,7 +333,7 @@ class Engine:
                 pos["fees"] *= pos["contracts"] / (pos["contracts"] + partial)
                 pnl = (pos["tp_px"] - pos["entry_px"]) * sp.size * partial
                 self.state["equity"] += pnl
-                self.log("fill_exit", coin=c, kind="tp_partial", px=pos["tp_px"], entry_px=pos["entry_px"],
+                self.log("fill_exit", coin=c, exit="tp_partial", px=pos["tp_px"], entry_px=pos["entry_px"],
                          contracts=partial, pnl=round(pnl, 2), equity=round(self.state["equity"], 2))
                 if pos["contracts"] <= 0:
                     self.state["positions"].pop(c, None)
