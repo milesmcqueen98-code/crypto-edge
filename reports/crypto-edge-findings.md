@@ -143,6 +143,9 @@ Run it at $250–500K and put the rest in C3.
 - **Parity:** on stored data, the engine matches an independent implementation of the same rules rung for rung.
   - Oct 10 2025 crash hours: 128 of 128 rungs identical (68 parents): entry minute and price, exit minute, type and
     price.
+  - Oct 10–12 2025: 156 of 156 (88 parents). Jun 1–3 2026 (calm): 33 of 33 (21 parents).
+  - The simulator would also have taken 33 deeper fills inside the parent's minute on Oct 10–12, and none in June.
+    The bot misses these by design.
 - **Live code paths:** tested against a fake exchange with real holds and injected faults (5% of cancels unconfirmed,
   15% of market sells half-filled), over the Oct 10 2025 crash hours.
   - Result: no orphaned orders, no leftover coins, and the bot's books equal the exchange's to $0.00001 after 540

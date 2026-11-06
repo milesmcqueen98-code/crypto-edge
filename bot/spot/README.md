@@ -10,8 +10,9 @@ thirds across the three rungs. This is the rule chosen in the $1M round (`report
 `reports/crypto-edge-findings.md`, section "Wick catcher at $1M").
 
 Files: `engine.py` (minute loop, paper broker, live broker), `run.py` (commands), `config.json` (settings),
-`replay_test.py` (parity test against an independent implementation), `deploy/` (server setup, systemd unit,
-watchdog), `.github/workflows/paper-spot.yml` (paper run on GitHub Actions, logs to `paper_spot/`).
+`replay_test.py` (parity test against an independent implementation), `live_sim_test.py` (live code paths against a
+fake exchange), `deploy/` (server setup, systemd unit, watchdog), `.github/workflows/paper-spot.yml` (paper run on
+GitHub Actions, logs to `paper_spot/`).
 
 ## What to expect
 
@@ -163,6 +164,9 @@ Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
   - It injects faults: 5% of cancels go unconfirmed and 15% of market sells fill only half.
   - It checks that no orders are orphaned, that coin balances return to zero, and that the bot's equity equals the
     exchange's USD balance.
-- Results are in the findings doc.
+- Results (Nov 6):
+  - Parity: rung for rung identical on Oct 10–12 2025 (156 of 156) and Jun 1–3 2026 (33 of 33).
+  - Live paths: books equal the fake exchange's to $0.0002 after 540 crash minutes with injected faults, with no
+    orphaned orders and no leftover coins.
 - Neither test reaches the real Coinbase API. The preflight and the $25K pilot are where real API surprises would
   show up.
