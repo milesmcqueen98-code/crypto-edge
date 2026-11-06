@@ -1,0 +1,24 @@
+name: paper-smoke
+
+# Short check that the bot runs against live Coinbase data from a cloud runner. Commits nothing.
+on:
+  workflow_dispatch:
+    inputs:
+      minutes:
+        default: "8"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas numpy lightgbm requests pyarrow
+      - run: python bot/run.py --mode paper --minutes ${{ inputs.minutes }} --state-dir /tmp/smoke
+      - if: always()
+        run: |
+          echo "---- events"; cat /tmp/smoke/events.jsonl || true
+          echo "---- state"; cat /tmp/smoke/state.json || true
