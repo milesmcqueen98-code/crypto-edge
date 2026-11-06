@@ -92,4 +92,29 @@ Each signal is a rolling z-score (365-day window, 90-day minimum) of the raw qua
 
 ## Deviation log
 
-(none yet)
+**Implementation notes (2026-11-06, committed with scripts/medallion/ before any statistic on data/alt was computed).**
+The specification above left these details open; they are fixed here. Development-period runs of F2, F3, F5 and F6
+(Coinbase prices only) were made while debugging the code; nothing in the specification was changed after them.
+1. Funding paid in every new book: Binance USD-M (sum of the day's prints) where available, else Hyperliquid
+   (data/funding), else 8% a year. (Earlier rounds used Hyperliquid or 8%; C3 itself is unchanged.)
+2. Taker ratio: daily log(taker buy / taker sell quote volume) from Binance 1h perp klines (longer history than the
+   5-minute metrics files). Top-trader ratios: daily mean of hourly values. Open interest: last value of the day, in
+   coins.
+3. Coinbase premium: daily mean of hourly (Coinbase close / Binance spot USDT close − 1).
+4. CME basis: yfinance continuous front-month close vs the Coinbase close at the matching Chicago time (the hour is
+   chosen by the smallest variance of daily basis changes, a measurement check that uses no forward returns);
+   annualized with days to the last Friday of the month, floored at 7.
+5. On-chain growth: 7-day mean, then 30-day log change, lagged one day. NVT: NVTAdj, else market cap / adjusted
+   transfer value. Macro: change from the previous US close on the US date; missing on days without a US close.
+6. F2: hmmlearn GaussianHMM (diagonal, 200 iterations, seed 0) on 100 × log returns; positions of one unit.
+7. F3: features standardized with the mean and std of all rows up to the current day; 25% vol target, cap 2x.
+8. F5: development 2017-07-01 – 2023-12-31 for all four books; weight 1 / (coins trading). (c) BTC and ETH, ±0.5
+   each. (d) uses the sign of the last settled Binance print: short the hour into settlement and long the hour
+   after when funding is positive, the reverse when negative.
+9. F6: the alphabetically first coin is the dependent variable; positions close at month end; each pair sized to 10%
+   annualized spread vol; gross capped at 4.
+10. F7: universe = coins with a Coinbase price 30 days back, a 90-day beta to BTC and Binance funding; weights
+    neutral to [1, beta] by projection, gross 1; open-interest signal 0 for coins without metrics.
+11. F9: constant scale giving 20% development vol; sold implied vol = DVOL − 1 point.
+12. F10: one pooled BTC+ETH model; missing features 0 for ridge, native for LightGBM; 12.5% vol target per coin.
+13. Hold-out lock: hold-out numbers are computed only when MEDALLION_HOLDOUT=1.
