@@ -39,6 +39,7 @@ def main():
         "Low-vol top 10 + trend": pf.run_rule({d: lowvol.loc[d] for d in rb}, risk_on),
         "AI model top 10 + trend": pf.run_rule({d: P.loc[d] for d in rb}, risk_on),
         "AI model top 10 (no filter)": pf.run_rule({d: P.loc[d] for d in rb}),
+        "AI model top 3 + trend (aggressive)": pf.run_rule({d: P.loc[d] for d in rb}, risk_on, k=3, buffer=5),
     }
     res, curves = {}, {}
     for name, tg in S.items():
@@ -65,6 +66,9 @@ def main():
     with open(os.path.join(ROOT, "reports", "results.json"), "w") as fh:
         json.dump(out, fh, indent=1, default=float)
 
+    print("\nMonthly profile (best / worst / share of months >= +100% / >= +20%):")
+    for k, r in res.items():
+        print(f"  {k:38s} {r['best_month']:+.0%} / {r['worst_month']:+.0%} / {r['pct_months_doubled']:.1%} / {r['pct_months_up20']:.0%}")
     lines = [f"# Research results ({out['period'][0]} to {out['period'][1]})", "",
              f"Universe: point-in-time top {features.TOP_N} USD-tradable coins by 30-day volume "
              f"({out['coins_in_data']} coins in data). Costs: {pf.COST:.2%} per side.", "",
