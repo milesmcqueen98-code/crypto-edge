@@ -1,4 +1,4 @@
-# Edge hunt, wave 1: 44 mechanism-first ideas
+# Edge hunt, wave 1: 45 mechanism-first ideas
 
 The test for every idea: **who is forced (or eager) to trade, and why does a small liquidity provider or fast follower
 get paid?** Research memos: reports/hunt/research/R1–R4. Data probes: reports/hunt/probe.json and probe2.json.
@@ -59,7 +59,8 @@ Status key: **W2** = built in wave 2 · **alt** = next in line · **merged** = t
 | 17 | CP: Coinbase-vs-Binance premium spikes | US flow vs offshore flow. | Binance live data blocked | 3 | blocked |
 | 18 | IX: 24/7 index and commodity perps vs the reopen of the underlying | Weekend retail flow in US500/Tech100/gold perps with no hedge until Globex reopens. | Perp candles to fetch; ~50 weekends | 4 | alt |
 | 19 | PX: PAXG spot vs PAXG perp vs gold futures on Coinbase | Three Coinbase instruments on one asset. | Small | 3 | alt |
-| 20 | ST: stablecoin-pair oscillation (USDT-USD etc.) at low fees | Tether mint/redeem flow. | Two-sided quoting dead | 2 | dead unless fees ≈ 0 (R2/R3) |
+| 20 | ST: stablecoin-pair oscillation (USDT-USD etc.) at low fees | Tether mint/redeem flow. | Two-sided quoting dead | 2 | dead (two-sided quoting) |
+| 45 | **XQ: secondary-book wicks (BTC/ETH/USDT-quoted pairs)** | Makers pull secondary books first in cascades; sellers sweep near-empty books; slow triangular arbitrage pays the bidder (R4). | Candles and prints for every pair / Coinbase | 6 | W2c (H10) |
 
 ### C. Events: listings, delistings, unlocks, airdrops
 | # | Idea | Who is forced or eager; why we're paid | Data / live inputs | Prior | Status |

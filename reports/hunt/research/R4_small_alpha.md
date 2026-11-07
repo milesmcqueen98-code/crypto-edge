@@ -1,0 +1,98 @@
+# R4: Small-capacity alpha that fits Coinbase spot and US perps (Nov 2026)
+
+Scope: web research only, no backtests. Labels: **(R)** is repo evidence (findings doc, `reports/cfm_*.csv` snapshot); **(U)** is unverified (no primary source fetched).
+Gaps: the shared web-search cap (200 calls) was hit mid-task. Kaiko's Oct-2025 crash report was blocked (the permission request timed out). Coinbase's help-center margin page returned a client error, so what happens at the 4 pm ET margin transition is unverified.
+
+Facts that shape every idea (verified):
+- **CDE funding** (CFTC filing for nano BTC perp, Jun 2025): premium = 1-hour TWAP of (futures mark − spot mark)/spot/24, sampled every 3 minutes. Funding = 0.75·premium + 0.25·previous hour's funding. It is computed hourly, settles at the mid-day and end-of-day margin runs, and **no cap is specified**.
+  - So a perp premium held at *p* bp costs longs about *p* bp per day (10 bp ≈ 36%/yr).
+  - Funding history can be **rebuilt from 1-minute perp and spot candles**. The repo says Coinbase funding history "isn't available"; this removes that gap.
+- **Order limits:** orders more than 5% from fair value are rejected, and a 10% move from the hourly reference price triggers a short halt. Perp wicks deeper than about 5% therefore can't print on CDE; the price halts and reopens instead.
+- **Margin windows:** weekday intraday leverage runs 8am–4pm ET (API docs). The API lists INTRADAY / OVERNIGHT / WEEKEND / TRANSITION windows. The help center says margin "may increase" overnight and on weekends, and that positions are liquidated when the buffer hits 0%.
+- **Liquidity (R snapshot, Nov 6):**
+  - Perp $ volume per day: BTC $663M, ETH $130M, ZEC $126M, XRP $57M, NEAR $38M, SOL $35M, HYPE $13M, SUI $11M; the other alt perps $0.05–10M.
+  - Monthlies: BTC $119M, ETH $26M, XRP $18.5M; alt monthlies $0.1–2.4M.
+  - Median spread, alt perp vs spot: 5.5–12 bp vs 1–5 bp.
+  - CFTC filing #2026-67 (effective Oct 26, 2026) drops the expiry dates from the six non-crypto "perp style" contracts. Funding is unchanged.
+
+## (a) Candidate ideas
+
+| # | Idea | Forced / eager party | Why a small trader gets paid | Evidence (effect; source) | Free backtest data (depth) | Tradable on Coinbase? | Capacity at $100K | Overlap with incumbent | Red flags |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | **Margin-window deleveraging** (3:30–4:15 pm ET weekdays; Friday before weekend margin) | Retail who opted into intraday leverage must meet overnight/weekend margin, or get auto-liquidated | Scheduled, US-only flow on thin perps; offshore funds can't see it; too small for big desks | Mechanism verified (API docs). Effect size: none published **(U)** | `data/cfm` 1-min perp (BTC/ETH Jul-2025+, alts Dec-2025+) vs `data/minute` spot; placebo: weekends, US holidays | Yes, perps (spot hedge optional) | OK across 10+ perps | Medium (scheduled resting orders) | ~230–330 weekday events; net retail side unknown; rule can change |
+| 2 | **Halt / maintenance-reopen dislocations** (5–6 pm ET daily, Friday halt, 10% limit halts) | Market orders and liquidations queued into a book that is just rebuilding | Market makers return slowly; few competitors on nano contracts | (R) 13% of AI perp trades and 19% of P&L fell in 5–6 pm ET; perp lows a median 172 bp below spot-implied | `data/cfm` 1-min; fills need trade-level data (forward-log the WebSocket) | Yes, perps | $5–25K per event | High (the incumbent blacks out this hour) | Fill realism unproven; stale prints; could be a data artefact |
+| 3 | **Perp–spot basis book** (hold long spot + short perp at zero delta; buy back perp on discount wicks, sell more on premium spikes) | Liquidations and retail market orders hitting thin CDE books | Thin perp books (top of book $1–30K) dislocate vs a deep spot book; the base book also earns funding | He-Manela-Ross: mean abs deviation 60–90%/yr, arb Sharpe 1.8 at retail costs (BTC), shrinking ~11%/yr. (R) perp-priced replay Sharpe 5–9 vs 1.6–2.6 spot-confirmed | `data/cfm` + `data/minute`; funding rebuilt from the formula above | Yes (spot inventory replaces short-selling) | OK; ceiling est. $0.3–1M | Medium (same events, neutral) | Perp fee 2–9 bp/side; spot 6–12.5 bp; ADL/auto-liquidation of the short leg **(U)** |
+| 4 | **Retail-leverage premium spikes** (fade the CDE premium after up-moves) | US retail chasing upside at 10x on a captive onshore venue | Scarce arb capital on a US-only exchange; uncapped funding pays the short side about premium bp/day | BIS WP1087: carry >10%/yr on average, up to 60%, driven by small trend-chasing investors; high carry predicts crashes. HMRW: past returns explain >50% of the gap | Rebuilt CDE funding; log the live `funding_rate` from the product endpoint | Yes (short perp + long spot) | OK; alt open interest binds | Low | Slow carry already died on offshore funding; spot fees heavy; test only the CDE-vs-offshore premium gap |
+| 5 | **New-perp launch window** (first 2–4 weeks) | Early retail flow; market-maker competition not yet formed | Deviations shrink as arbs arrive, so they should be widest at launch (inference) | (R) perp-only wicks concentrated in new perps; Binance 2023 note: spot drifts down after a perp listing (qualitative) | `data/cfm` from each launch (Dec-12-2025 batch, ZEC Feb-2026, HYPE Jun-2026) | Yes | $10–50K per event | Medium | N≈20; next listings unknown |
+| 6 | **Perp–monthly calendar and last-Friday settlement** (16:00 London, same hour as CME BRR) | Roll and settlement flows in CDE monthlies | Both legs on one venue and one margin pool; few arbs in nano monthlies | **(U)** no published CDE study | Live monthly candles via Coinbase API; history of expired contracts **(U)** | Yes | BTC/ETH only | Low | 12 events/yr; settlement-window manipulation; expired data may be gone |
+| 7 | **Cross-quote secondary-book wicks** (SOL-BTC, ETH-BTC, USDT pairs) hedged in the USD book | Cascade sellers in thin secondary books; makers pull those books first | Triangular parity breaks briefly; small bids fill; exit in the deep USD book | Oct-10-2025: Coinbase BTC-USD vs BTC-USDT gap up to ~5%; Kraken ~9% above Coinbase (secondary memo **(U)**) | Coinbase 1-min candles for every product (full history) | Spot yes; NY access to USDT pairs **(U)** | $5–20K per event | High (adds capacity) | Two taker legs to hedge; tiny volume |
+| 8 | **Taker-imbalance / cascade-state overlay** for the AI filter | Aggressive takers (liquidations, stops) | Reversal grows with taker-flow intensity, not with depth consumed | arXiv 2608.21888 (reversal follows aggressive taker flow); arXiv 2607.27070 (taker-ratio variance compresses before all 6 cascades, Fisher p≈5e-6, too weak per event); JFDA (Lim): post-cascade depth stays at 66–79% of pre-event for 23 days | Coinbase trades (repo 4.3M; WebSocket log); data.binance.vision aggTrades and metrics (research only) | Overlay | n/a | High | More overfitting surface |
+| 9 | **Benchmark-fix windows** (ETF NAV / CME BRR 15–16 London; 16:00 ET variants) | ETF authorized participants, DAT treasuries and basis desks executing over fixed windows | Predictable TWAP pressure, then reversal (like the FX 4 pm fix) | **(U)** not verified this session; (R) Coinbase premium (ETH, 7-day) t +2.3–2.5 in hold-out but failed the bar | `data/minute` 1-min 2024+; Farside ETF flows (partial) | Yes | Large | Low | Big desks already trade fixes |
+| 10 | **Token-unlock pre-hedge short** | Unlock recipients and their market makers pre-hedge 1–2 weeks ahead; teams sell | Known date; supply arrives regardless of price | Keyrock (16k+ unlocks, 40 tokens): ~90% negative; team unlocks ≈ −25%; pressure starts ~30 days before, stabilises ~14 days after | DefiLlama unlocks (free) + Coinbase daily candles | Short via the 19 alt perps | OK | None | Public since Dec-2024, so crowded; negative funding pre-unlock; daily horizon (repo prior: dead) |
+| 11 | **Kalshi crypto contracts via Coinbase** (favorite-longshot bias; maker side; perp hedge) | Retail buying cheap longshots | Longshots are overpriced; makers get paid; markets too small for funds | Bürgi-Deng-Whelan (46k contracts): takers −31.5%, makers −9.6% after fees; maker buys ≥50c +2.6%; ≤10c lose >60%; crypto has the steepest bias (slope 0.058); bias weakening (2025: 0.021 vs 0.048) | Kalshi public market-data API (depth **(U)**) | Coinbase lists Kalshi contracts in 50 states (Jan-2026); crypto contracts and API on Coinbase **(U)** | $10–50K **(U)** | Opposite sign: short tails, so it loses on the incumbent's best days | Fees; tail risk; the paper excluded hourly crypto |
+| 12 | **24/7 gold/silver weekend pricing** (GOL/SLR/PAU while COMEX is shut) | Crypto-native retail trading metals on weekends | No institutional hedge over the weekend; the Monday open anchors price | **(U)**; weekday volume gold $117M, silver $51M (R) | Coinbase candles for GOL/SLR/PAU + PAXG-USD spot | Yes | $20–50K **(U)** | None | Weekend books may be empty; monthly roll |
+| 13 | **Korean listing chase** (Upbit KRW listing of a coin already on Coinbase) | Korean retail FOMO | Coinbase reprices seconds later | Anecdotes +50–120% (IN, DRIFT); buying at Upbit day-1 close in 2025 returned −69.5% (59 listings) | Upbit notices **(U)** + Coinbase 1-min | Spot, long only | $5–20K per event | None | A millisecond bot race; the fade can't be shorted on spot |
+| 14 | **Binance/Hyperliquid → Coinbase lead** as a cancel signal for resting bids | n/a (information) | Avoids stale-quote pick-offs | Lim (Research Square): Binance leads HL in 69% of 580 hourly windows, information share ≥55–85%; anticipating wallets earn +0.45–0.78 bp gross. SSRN 4867599: Binance orders move Coinbase, not the reverse | data.binance.vision (research) | Overlay | n/a | High | Binance.com blocks US IPs **(U)**; sub-bp as a standalone |
+| 15 | **Continuous 1–15 min reversal / quarter-hour clock** (control) | Aggressive takers | Not paid at retail cost | arXiv 2608.21888: gross 0.46–1.3 bp/trade, nothing clears a 5 bp maker cost; decaying (significant pairs fell from 90% to 60%, Feb–Aug 2026). Kim & Hansen: quarter-hour bursts (+32% volume) give 56.6% hit rate but 0.51 bp gross vs a 5 bp fee | `data/minute` | Uneconomic | n/a | High | Dead (matches repo) |
+
+## (b) Notable sources
+
+1. [He, Manela, Ross & von Wachter, *Fundamentals of Perpetual Futures*](https://arxiv.org/html/2212.06888v5): perp–spot gaps average 60–90%/yr in absolute terms, comove across coins, track past returns (R² >50%), and shrink ~11%/yr. The arb Sharpe is 1.8 at retail costs.
+2. [BIS WP 1087, *Crypto carry*](https://bis.org/publ/work1087.htm): carry averages >10%/yr (up to 60%), driven by small investors seeking "leveraged upside exposure" and by scarce arb capital. High carry predicts crashes.
+3. [CFTC filing, Coinbase nano BTC perp spec](https://www.cftc.gov/sites/default/files/filings/ptc/25/06/ptc06262524818.pdf): the hourly funding formula (premium/24, α=0.75), the 5% fair-value order limit and the 10% hourly price limits.
+4. [CFTC filing #2026-67](https://www.cftc.gov/filings/orgrules/rules10192634774.pdf): non-crypto CDE contracts lose their expiry dates from Oct 26, 2026; funding unchanged.
+5. [Coinbase Advanced futures guide](https://docs.cdp.coinbase.com/coinbase-app/advanced-trade-apis/guides/futures) and [intraday margin setting](https://docs.cdp.coinbase.com/api-reference/advanced-trade-api/rest-api/futures/set-intraday-margin-settings.md): intraday leverage 8am–4pm ET on weekdays; the margin-window endpoint lists OVERNIGHT/WEEKEND/TRANSITION windows.
+6. [Coinbase liquidation buffer](https://help.coinbase.com/en/coinbase/trading-and-funding/derivatives/futures-liquidation-buffer): margin may rise overnight and on weekends; positions are auto-liquidated at a 0% buffer.
+7. [Short-horizon mean reversion, matched cross-market (arXiv 2608.21888)](https://arxiv.org/pdf/2608.21888): the reversal is real but 0.5–1.3 bp gross, fails maker costs, concentrates after aggressive taker flow, and is fading in 2026.
+8. [Where does the criticality live? (arXiv 2607.27070)](https://arxiv.org/pdf/2607.27070): across 7 cascades, only taker-flow variance compression recurs. It is a population-level precursor, not a per-event alarm.
+9. [Lim, two-regime liquidity recovery (JFDA 2026)](https://journals.lincoln.ac.nz/index.php/JFDA/article/view/1395): after Oct-10, Hyperliquid spreads recovered but depth stayed at 66–79%, so liquidity remained scarce for weeks.
+10. [HLP vault analysis (CoinGecko)](https://www.coingecko.com/learn/hyperliquid-hlp-vault-analysis): about $40M (≈10% of the vault) earned on the Oct-10 weekend and $15M on Jan-31-2026, together 41% of all-time profit. Cascade liquidity is where the money is, lumpily (it supports the incumbent's mechanism).
+11. [Oct-10 memo (tianpan)](https://tianpan.co/investment-memo/2025/10/16/the-1011-crypto-storm) and [insights4vc](https://insights4vc.substack.com/p/inside-the-19b-flash-crash): book depth fell 98% in 40 minutes; Coinbase USD/USDT books diverged up to 5%; alts −33% in 25 minutes. Secondary sources.
+12. [Bürgi, Deng & Whelan, *Makers and Takers* (Kalshi)](https://www.karlwhelan.com/Papers/Kalshi.pdf): takers lose; makers on favorites earn a little; the crypto bias is the strongest and is fading.
+13. [The Block: Coinbase prediction markets in all 50 states](https://www.theblock.co/post/387416/coinbase-prediction-markets-go-live-in-all-50-us-states-via-kalshi): Kalshi-powered, $1 minimum; crypto contracts and API not confirmed.
+14. [Finance Magnates: Polymarket dynamic fees](https://www.financemagnates.com/cryptocurrency/polymarket-introduces-dynamic-fees-to-curb-latency-arbitrage-in-short-term-crypto-markets/) and [bot post-mortem](https://dev.to/lkto1m/february-2026-changed-polymarket-forever-heres-what-happened-to-my-bots-numbers-2fi5): a taker fee of ≈3.15% at 50c plus removal of the 500 ms delay killed latency arb; maker-side bots survived.
+15. [Keyrock, 16,000 token unlocks](https://keyrock.com/from-locked-to-liquidity-what-16000-token-unlocks-teach-us/): ~90% of unlocks are price-negative; team unlocks are worst; pre-hedging starts 1–4 weeks out.
+16. [CEX listing study (389 tokens, 2024)](https://digitalmoneybox.com/news/research/study-of-cex-listing-effects-a-big-pump-followed-by-a-bigger-dump) and [Blockmedia: Upbit 2025 listings](https://www.blockmedia.co.kr/research-english/1064579): listings pump then dump (Coinbase listings −28% on average; Upbit day-1 close −69.5%).
+17. [Lim, wallet-level cross-venue flow (Research Square)](https://www.researchsquare.com/article/rs-10147582) and [order flow and price formation (mlquants/SSRN 4867599)](https://mlquants.substack.com/p/order-flow-impact-and-price-formation): Binance leads, but the tradable lead is under 1 bp.
+18. [Zhivkov et al. 2026 (IJFS)](https://www.mdpi.com/2227-7072/14/5/103/htm): cross-venue funding spreads have a 7.5 bp median, 18.7% of observations exceed 20 bp, and spreads widen about 2 hours after the 00/08/16 UTC settlements. Needs two venues, so not tradable here.
+19. [CryptoSlate on Kim & Hansen (arXiv 2607.09426)](https://cryptoslate.com/the-invisible-opening-bell-inside-cryptos-endless-trading-day/): bursts at :00/:15/:30/:45 are real but worth 0.5 bp.
+
+## (c) Top 3, and what is already arbitraged
+
+**1. Margin-window deleveraging on CDE perps (#1, with #2 as its sibling).**
+- Why it ranks first:
+  - It is the purest "who is forced" mechanism unique to the allowed venue. Offshore perps have no 4 pm ET margin step, so no global fund models it.
+  - The flow is small, scheduled and US-retail by construction.
+  - It is cheap to test today: 1-minute perp and spot data are already in `data/cfm` and `data/minute`.
+- Pre-registered test:
+  - Signed perp return and perp–spot premium over 15:00–16:15 ET on weekdays vs the same clock on weekends and holidays (placebo).
+  - Friday 15:00–17:00 ET vs Monday–Thursday.
+  - Post-16:00 reversal over 30–120 minutes.
+  - Pass if the premium/return shift reaches |t| ≥ 3 pooled across ≥10 perps and is ≥ 2× the round-trip cost (perp 4–18 bp).
+- Execution is the incumbent's: post-only bids or asks placed only in the window.
+- Risk: the effect may be nil if few users enable intraday leverage. Check `open_interest` changes across 16:00 ET first; a step change there is direct proof of forced deleveraging.
+
+**2. Perp–spot basis book on thin CDE alt perps (#3, absorbing #4 and #5).**
+- Why it ranks second:
+  - It keeps the incumbent's proven event set (forced selling) and makes it market neutral.
+  - It adds premium-spike sales, which the incumbent can't do because spot can't be shorted. The standing spot inventory provides the short.
+  - The academic evidence is strong and directly about this gap (HMRW, BIS). The repo's own audit found that 61% of perp-priced fills (84% of that P&L) came from perp-only wicks.
+- New enabler: funding can be rebuilt from candles, so the cost of the base book is backtestable.
+- Main risks: fill realism (#2's problem), the 5% fair-value band capping wick depth, and spot fees on rebalancing. Forward-log Coinbase WebSocket trades on the perps before believing any perp-priced Sharpe.
+
+**3. Cross-quote secondary-book wicks (#7).**
+- Why it ranks third:
+  - It is the cheapest capacity extension for a strategy capped at $250–500K.
+  - It reuses the same signal and code, with free full-history candles for every Coinbase product.
+  - The mechanism is clean: makers abandon secondary books first in cascades.
+- Test this first: confirm that NY accounts can trade the USDT pairs.
+- Runner-up: Kalshi longshot bias (#11). It has decent evidence and is negatively correlated with the incumbent's tail, but whether it can be traded through Coinbase is unconfirmed.
+
+**Already arbitraged away or uneconomic for this setup:**
+- Polymarket 15-minute latency arb: fees and the rule change killed it in Jan–Feb 2026.
+- Continuous minute/15-minute reversal and quarter-hour clock effects: 0.5–1.3 bp gross, decaying.
+- Cross-venue lead-lag at 100 ms–1 s: under 1 bp, and millisecond firms own it.
+- Slow funding carry / cash-and-carry on majors: deviations shrink ~11%/yr, and the repo found it trailed T-bills.
+- Buying new listings or chasing Upbit pumps: −70% at day-1 close, and announcement sniping is a millisecond race.
+- Token-unlock shorting: probably crowded since Keyrock published, though the 19 alt perps make a cheap test.
+- Stop-run "liquidation heatmap" hunting: no quantified evidence found; it is already inside the incumbent's wick set.

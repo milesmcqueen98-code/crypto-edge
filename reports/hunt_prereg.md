@@ -194,3 +194,8 @@ Sent to builders H1, H2, H3, H7 and H8.
 **2026-11-07 04:00 UTC: wave 2b adds H9 (MC), from research memo R3, before any wave-2 result existed.**
 - The mechanism: the 4:00 pm ET step from intraday to overnight margin on Coinbase US perps.
 - Spec: reports/hunt/h9mc/SPEC.md. It is committed before its build starts, under the same gates, with ≤ 24 trials.
+
+**2026-11-07 04:05 UTC: wave 2c adds H10 (XQ), from research memo R4, before any wave-2 result existed.**
+- The mechanism: secondary-book wicks in Coinbase's BTC-, ETH- and USDT-quoted books, where market makers pull quotes
+  first in cascades.
+- Spec: reports/hunt/h10xq/SPEC.md. Same gates, ≤ 24 trials.
