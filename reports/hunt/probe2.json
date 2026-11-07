@@ -1,0 +1,899 @@
+{
+ "depth_BIP-20DEC30-CDE": {
+  "2026-10": 1000,
+  "2026-07": 1000,
+  "2026-04": 1000,
+  "2026-01": 1000,
+  "2025-12": 1000,
+  "2025-11": 1000,
+  "2025-10": 1000,
+  "2025-09": 1000,
+  "2025-08": 1000,
+  "2025-07": 0,
+  "secs": 2.1
+ },
+ "depth_ETP-20DEC30-CDE": {
+  "2026-10": 1000,
+  "2026-07": 1000,
+  "2026-04": 1000,
+  "2026-01": 1000,
+  "2025-12": 1000,
+  "2025-11": 1000,
+  "2025-10": 1000,
+  "2025-09": 1000,
+  "2025-08": 1000,
+  "2025-07": 0,
+  "secs": 2.07
+ },
+ "depth_SLP-20DEC30-CDE": {
+  "2026-10": 1000,
+  "2026-07": 1000,
+  "2026-04": 1000,
+  "2026-01": 1000,
+  "2025-12": 1000,
+  "2025-11": 1000,
+  "2025-10": 1000,
+  "2025-09": 1000,
+  "2025-08": 0,
+  "2025-07": 0,
+  "secs": 1.67
+ },
+ "depth_DOP-20DEC30-CDE": {
+  "2026-10": 1000,
+  "2026-07": 512,
+  "2026-04": 495,
+  "2026-01": 377,
+  "2025-12": 109,
+  "2025-11": 0,
+  "2025-10": 0,
+  "2025-09": 0,
+  "2025-08": 0,
+  "2025-07": 0,
+  "secs": 1.1
+ },
+ "depth_SUP-20DEC30-CDE": {
+  "2026-10": 1000,
+  "2026-07": 705,
+  "2026-04": 458,
+  "2026-01": 356,
+  "2025-12": 201,
+  "2025-11": 0,
+  "2025-10": 0,
+  "2025-09": 0,
+  "2025-08": 0,
+  "2025-07": 0,
+  "secs": 1.1
+ },
+ "side_ETP": {
+  "n": 1000,
+  "upticks_downticks_by_side": {
+   "BUY": [
+    30,
+    162
+   ],
+   "SELL": [
+    202,
+    84
+   ]
+  },
+  "secs": 0.14
+ },
+ "side_spot_ETH": {
+  "n": 281,
+  "upticks_downticks_by_side": {
+   "BUY": [
+    7,
+    46
+   ],
+   "SELL": [
+    117,
+    28
+   ]
+  },
+  "secs": 0.13
+ },
+ "tardis_cbd_meta": {
+  "availableSince": "2026-10-14T00:00:00.000Z",
+  "n_symbols": 121,
+  "symbols": [
+   [
+    "PERPETUALS",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "derivative_ticker"
+    ]
+   ],
+   [
+    "FUTURES",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "derivative_ticker"
+    ]
+   ],
+   [
+    "ADP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "AIP-19DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "AVE-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "AVP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "BCP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "BIP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "BNB-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "CHN-19DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "DEF-19DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "DOP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "ENA-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "ETP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "HEP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "HYP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "LCP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "LNP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "NER-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "OND-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "PAU-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "PEP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "POP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "SHP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "SLP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "SUP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "TEK-19DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "US5-19DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "XLP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "XPP-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "ZEC-20DEC30-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "ADA-24DEC26-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "ADA-27NOV26-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "ADA-29JAN27-CDE",
+    "2026-10-23T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "AVA-24DEC26-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "AVA-27NOV26-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "AVA-29JAN27-CDE",
+    "2026-10-23T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "BCH-24DEC26-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "BCH-27NOV26-CDE",
+    "2026-10-14T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ],
+   [
+    "BCH-29JAN27-CDE",
+    "2026-10-23T00:00:00.000Z",
+    [
+     "trades",
+     "incremental_book_L2",
+     "quotes",
+     "book_snapshot_5",
+     "book_snapshot_25",
+     "derivative_ticker",
+     "book_ticker"
+    ]
+   ]
+  ],
+  "secs": 0.27
+ },
+ "tardis_cbd_trades": {
+  "status": 400,
+  "head": "",
+  "secs": 0.43
+ },
+ "tardis_cbd_book": {
+  "status": 400,
+  "head": "",
+  "secs": 0.27
+ },
+ "tardis_cbd_snap": {
+  "status": 400,
+  "head": "",
+  "secs": 0.27
+ },
+ "tardis_cb_book_snap": {
+  "status": 200,
+  "head": "exchange,symbol,timestamp,local_timestamp,asks[0].price,asks[0].amount,bids[0].price,bids[0].amount,asks[1].price,asks[1].amount,bids[1].price,bids[1].amount,asks[2].price,asks[2].amount,bids[2].price,bids[2].amount,asks[3].price,asks[3].amount,bids[3].price,bids[3].amount,asks[4].price,asks[4].amount,bids[4].price,bids[4].amount,asks[5].price,asks[5].amount,bids[5].price,bids[5].amount,asks[6].price,asks[6].amount,bids[6].price,bids[6].amount,asks[7].price,asks[7].amount,bids[7].price,bids[7].amount,asks[8].price,asks[8].amount,bids[8].price,bids[8].amount,asks[9].price,asks[9].amount,bids[9].price,bids[9].amount,asks[10].price,asks[10].amount,bids[10].price,bids[10].amount,asks[11].price,asks[11].amount,bids[11].price,bids[11].amount,asks[12].price,asks[12].amount,bids[12].price,bids[12].amount,asks[13].price,asks[13].amount,bids[13].price,bids[13].amount,asks[14].price,asks[14].amount,bids[14].price,bids[14].amount,asks[15].price,asks[15].amount,bids[15].price,bids[15].amount,asks[1",
+  "secs": 0.59
+ },
+ "tardis_hl_ticker": {
+  "status": 200,
+  "head": "exchange,symbol,timestamp,local_timestamp,funding_timestamp,funding_rate,predicted_funding_rate,open_interest,last_price,index_price,mark_price\nhyperliquid,BTC,1769904021963134,1769904021963134,,0.0000125,,25471.14682,,78743,78735\nhyperliquid,BTC,1769904022131248,1769904022131248,,0.0000125,,25471.21082,,78743,78735\nhyperliquid,BTC,1769904045331718,1769904045331718,,0.0000125,,25471.42106,,78692,78684\nhyperliquid,BTC,1769904046434447,1769904046434447,,0.0000125,,25471.42502,,78694,78684\nhyperliquid,BTC,1769904048420659,1769904048420659,,0.0000125,,25471.42594,,78694,78684\nhyperliquid,BTC,1769904049453753,1769904049453753,,0.0000125,,25473.65096,,78691,78684\nhyperliquid,BTC,1769904050432636,1769904050432636,,0.0000125,,25473.65124,,78691,78684\nhyperliquid,BTC,1769904052554193,1769904052554193,,0.0000125,,25473.65098,,78691,78685\nhyperliquid,BTC,1769904053617869,1769904053617869,,0.0000125,,25474.48556,,78691,78685\nhyperliquid,BTC,1769904054645357,1769904054645357,,0.0000125,,25475.19932",
+  "secs": 0.28
+ },
+ "binance_bookdepth_sample": {
+  "status": 200,
+  "bytes": 449177,
+  "head": "timestamp,percentage,depth,notional\n2025-10-10 00:00:07,-5,8243.01200000,979983314.20560000\n2025-10-10 00:00:07,-4,7493.88600000,892953256.86660000\n2025-10-10 00:00:07,-3,6524.77600000,779250634.13590000\n2025-10-10 00:00:07,-2,3859.67000000,463589665.96710000\n2025-10-10 00:00:07,-1,1496.75000000,181266014.37410000\n2025-10-10 00:00:07,1,1964.84500000,239906922.61690000\n2025-10-10 00:00:07,2,3554.44500000,435823459.69320000\n2025-10-10 00:00:07,3,4266.72400000,524550400.16390000\n2025-10-10 00:00:07,4,5266.48200000,650517189.05990000\n2025-10-10 00:00:07,5,6182.92500000,766746432.07100000\n2025-10-10 00:00:49,-5,8352.14800000,993202552.20810000\n2025-10-10 00:00:49,-4,7603.92200000,906276353.94910000\n2025-10-10 00:00:49,-3,6632.77400000,792334411.15110000\n2025-10-10 00:00:49,-2,3959.22700000,4756",
+  "secs": 0.86
+ },
+ "binance_bookdepth_start": {
+  "2023-01-01": 200,
+  "2023-06-01": 200,
+  "2024-01-01": 200,
+  "secs": 0.78
+ },
+ "coinbase_delisted_candles": {
+  "n_delisted_usd": 91,
+  "sample": [
+   "WCFG-USD",
+   "RAI-USD",
+   "IOTX-USD",
+   "DAR-USD",
+   "UNFI-USD",
+   "LRC-USD",
+   "FX-USD",
+   "MTL-USD",
+   "GYEN-USD",
+   "DESO-USD",
+   "UPI-USD",
+   "REP-USD",
+   "ENJ-USD",
+   "NU-USD",
+   "OMNI-USD"
+  ],
+  "WCFG-USD": {
+   "status": 200,
+   "n": 350
+  },
+  "RAI-USD": {
+   "status": 200,
+   "n": 350
+  },
+  "IOTX-USD": {
+   "status": 200,
+   "n": 350
+  },
+  "DAR-USD": {
+   "status": 200,
+   "n": 350
+  },
+  "secs": 0.33
+ },
+ "coinbase_new_at": {
+  "n_usd": 409,
+  "n_with_new_at": 409,
+  "earliest": [
+   [
+    "BTC-USD",
+    "2023-01-01T00:00:00Z",
+    "online",
+    "623114261.43"
+   ],
+   [
+    "ETH-USD",
+    "2023-01-01T00:00:00Z",
+    "online",
+    "286236875.26"
+   ],
+   [
+    "ZEC-USD",
+    "2023-01-01T00:00:00Z",
+    "online",
+    "148710447.48"
+   ],
+   [
+    "USDT-USD",
+    "2023-01-01T00:00:00Z",
+    "online",
+    "58700662.71"
+   ],
+   [
+    "SOL-USD",
+    "2023-01-01T00:00:00Z",
+    "online",
+    "58656781.53"
+   ]
+  ],
+  "latest": [
+   [
+    "NEX-USD",
+    "2026-05-20T13:10:03.408Z",
+    "online",
+    "4325.77"
+   ],
+   [
+    "CTR-USD",
+    "2026-05-26T11:40:00.056Z",
+    "online",
+    "43276.12"
+   ],
+   [
+    "DRV-USD",
+    "2026-05-26T15:56:03.383Z",
+    "online",
+    "886832.74"
+   ],
+   [
+    "META-USD",
+    "2026-05-26T15:56:03.383Z",
+    "online",
+    "6315.79"
+   ],
+   [
+    "O-USD",
+    "2026-06-16T16:08:00.009Z",
+    "online",
+    "64336.57"
+   ],
+   [
+    "RE-USD",
+    "2026-06-17T16:09:00.018Z",
+    "online",
+    "50516.11"
+   ],
+   [
+    "ARX-USD",
+    "2026-06-22T11:37:04.508Z",
+    "online",
+    "54762.67"
+   ],
+   [
+    "GEOD-USD",
+    "2026-06-22T15:53:00.010Z",
+    "online",
+    "6400982.6"
+   ],
+   [
+    "CAP-USD",
+    "2026-06-25T15:54:00.021Z",
+    "online",
+    "749139.19"
+   ],
+   [
+    "GROVE-USD",
+    "2026-07-06T15:18:00.033Z",
+    "online",
+    "877007.78"
+   ],
+   [
+    "GRVT-USD",
+    "2026-07-29T15:57:00.022Z",
+    "online",
+    "40063.21"
+   ],
+   [
+    "ALIGN-USD",
+    "2026-08-19T19:09:00.007Z",
+    "online",
+    "1653504.9"
+   ],
+   [
+    "BASECAT-USD",
+    "2026-08-24T15:59:00.007Z",
+    "online",
+    "321599.51"
+   ],
+   [
+    "DRB-USD",
+    "2026-08-24T15:59:00.007Z",
+    "online",
+    "98596.29"
+   ],
+   [
+    "GRASS-USD",
+    "2026-08-26T15:56:00.011Z",
+    "online",
+    "236516.91"
+   ],
+   [
+    "CP-USD",
+    "2026-09-01T20:39:00.010Z",
+    "online",
+    "61459.61"
+   ],
+   [
+    "BLUECHIP-USD",
+    "2026-09-16T15:57:00.011Z",
+    "online",
+    "179079.39"
+   ],
+   [
+    "CT-USD",
+    "2026-09-29T18:37:00.010Z",
+    "online",
+    "369273.87"
+   ],
+   [
+    "PONS-USD",
+    "2026-10-07T15:56:00.008Z",
+    "online",
+    "747556.06"
+   ],
+   [
+    "WHUF-USD",
+    "2026-10-07T17:36:00.007Z",
+    "online",
+    "163339.19"
+   ],
+   [
+    "DATA-USD",
+    "2026-10-08T15:07:00.006Z",
+    "online",
+    "145394.45"
+   ],
+   [
+    "AXIS-USD",
+    "2026-10-20T16:11:00.005Z",
+    "online",
+    "80025.63"
+   ],
+   [
+    "RITUAL-USD",
+    "2026-10-26T14:09:00.032Z",
+    "online",
+    "51426.29"
+   ],
+   [
+    "STABLE-USD",
+    "2026-10-27T15:54:00.006Z",
+    "online",
+    "85254.35"
+   ],
+   [
+    "CARD-USD",
+    "2026-11-06T17:02:00.007Z",
+    "online",
+    "128579.14"
+   ]
+  ],
+  "secs": 0.12
+ },
+ "llama_cdn": {
+  "https://defillama-datasets.llama.fi/emissions/arbitrum": {
+   "status": 200,
+   "ct": "application/json",
+   "body": "{\"documentedData\":{\"data\":[{\"label\":\"Airdrop\",\"data\":[{\"timestamp\":1679529600,\"unlocked\":0,\"rawEmission\":0,\"burned\":0},{\"timestamp\":1679616000,\"unlocked\":1162000000,\"rawEmission\":1162000000,\"burned\":0},{\"timestamp\":1679702400,\"unlocked\":1162000000,\"rawEmission\":1162000000,\"burned\":0},{\"timestamp\":16"
+  },
+  "https://defillama-datasets.llama.fi/emissionsBreakdown": {
+   "status": 200,
+   "ct": "application/json",
+   "body": "{\"arkham\":{\"name\":\"Arkham\",\"defillamaId\":\"3269\",\"linked\":[],\"category\":\"Services\",\"chain\":\"\",\"emission24h\":0,\"emission7d\":0,\"emission30d\":0,\"emissions1y\":0,\"emissionsAllTime\":0,\"emissionsAverage1y\":0,\"emissionsMonthlyAverage1y\":null},\"acala\":{\"name\":\"Acala\",\"defillamaId\":\"2787\",\"linked\":[],\"category"
+  },
+  "https://api.llama.fi/emissionsBreakdown": {
+   "status": 402,
+   "ct": "text/plain",
+   "body": "Upgrade to the paid API plan at https://defillama.com/subscription"
+  },
+  "secs": 0.51
+ },
+ "cryptocompare_minute": {
+  "status": 401,
+  "body": "{\"Data\":{},\"Err\":{\"type\":2,\"message\":\"API key required, please refer to the documentation at https://developers.coindesk.com/\",\"http_status_code\":401,\"frontend\":{\"type\":2,\"message\":\"API key required, please refer to the documentation at https://developers.coindesk.com/\"}}}",
+  "secs": 0.03
+ }
+}
