@@ -50,3 +50,52 @@
 {"ts": "2026-11-07T00:00:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 162663, "free": 87337, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"reprice": 71, "arm": 2, "disarm": 1}}
 {"ts": "2026-11-07T00:05:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-42", "px": 51.719, "usd": 4856, "pred": 30.8, "sigma_bp": 40.3, "usd_bids_ahead": null}
 {"ts": "2026-11-07T00:30:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 157804, "free": 92196, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"reprice": 411, "disarm": 2, "arm": 1}}
+{"ts": "2026-11-07T00:44:00", "kind": "backfill", "minutes": 15840, "coins": 18}
+{"ts": "2026-11-07T01:00:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 157804, "free": 92196, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"reprice": 171}}
+{"ts": "2026-11-07T01:30:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 157804, "free": 92196, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"reprice": 407}}
+{"ts": "2026-11-07T02:00:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 157804, "free": 92196, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"reprice": 394}}
+{"ts": "2026-11-07T02:30:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 136958, "free": 113042, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "ZEC"], "open": [], "counts": {"reprice": 399, "disarm": 1}}
+{"ts": "2026-11-07T02:36:00", "kind": "arm", "coin": "DOGE", "ladder": "DOGE-43", "px": 0.07157000000000001, "usd": 5117, "pred": 31.0, "sigma_bp": 35.6, "usd_bids_ahead": null}
+{"ts": "2026-11-07T02:42:00", "kind": "arm", "coin": "DOGE", "ladder": "DOGE-44", "px": 0.07156000000000001, "usd": 5117, "pred": 31.0, "sigma_bp": 35.6, "usd_bids_ahead": null}
+{"ts": "2026-11-07T02:47:00", "kind": "arm", "coin": "XLM", "ladder": "XLM-45", "px": 0.151119, "usd": 6933, "pred": 38.1, "sigma_bp": 47.1, "usd_bids_ahead": null}
+{"ts": "2026-11-07T02:48:00", "kind": "arm", "coin": "HBAR", "ladder": "HBAR-46", "px": 0.06643, "usd": 5225, "pred": 31.5, "sigma_bp": 50.3, "usd_bids_ahead": null}
+{"ts": "2026-11-07T02:50:00", "kind": "arm", "coin": "XLM", "ladder": "XLM-47", "px": 0.15119, "usd": 6933, "pred": 38.0, "sigma_bp": 47.1, "usd_bids_ahead": null}
+{"ts": "2026-11-07T02:50:00", "kind": "arm", "coin": "HBAR", "ladder": "HBAR-48", "px": 0.06642, "usd": 5225, "pred": 31.5, "sigma_bp": 50.3, "usd_bids_ahead": null}
+{"ts": "2026-11-07T02:58:00", "kind": "arm", "coin": "SUI", "ladder": "SUI-49", "px": 0.8544, "usd": 11344, "pred": 37.8, "sigma_bp": 52.4, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:00:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 124793, "free": 125207, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HYPE", "LINK", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "ZEC"], "open": [], "counts": {"reprice": 336, "disarm": 9, "arm": 7}}
+{"ts": "2026-11-07T03:02:00", "kind": "arm", "coin": "HBAR", "ladder": "HBAR-50", "px": 0.06636, "usd": 5225, "pred": 37.4, "sigma_bp": 50.5, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:03:00", "kind": "arm", "coin": "XLM", "ladder": "XLM-51", "px": 0.151061, "usd": 6933, "pred": 38.6, "sigma_bp": 47.3, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:07:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-52", "px": 51.565, "usd": 4856, "pred": 30.4, "sigma_bp": 39.3, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:10:00", "kind": "arm", "coin": "LINK", "ladder": "LINK-53", "px": 10.679, "usd": 6146, "pred": 32.1, "sigma_bp": 43.0, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:10:00", "kind": "arm", "coin": "HBAR", "ladder": "HBAR-54", "px": 0.06644, "usd": 5225, "pred": 31.4, "sigma_bp": 50.5, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:10:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-55", "px": 51.601, "usd": 4856, "pred": 30.4, "sigma_bp": 39.3, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:19:00", "kind": "arm", "coin": "AAVE", "ladder": "AAVE-56", "px": 126.9, "usd": 2822, "pred": 36.5, "sigma_bp": 70.1, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:19:00", "kind": "arm", "coin": "SOL", "ladder": "SOL-57", "px": 89.09, "usd": 20833, "pred": 32.0, "sigma_bp": 35.9, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:19:00", "kind": "arm", "coin": "HBAR", "ladder": "HBAR-58", "px": 0.06608, "usd": 5225, "pred": 31.5, "sigma_bp": 50.4, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:20:00", "kind": "arm", "coin": "LINK", "ladder": "LINK-59", "px": 10.642, "usd": 6146, "pred": 31.8, "sigma_bp": 43.1, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:22:00", "kind": "arm", "coin": "ONDO", "ladder": "ONDO-60", "px": 0.36275, "usd": 4879, "pred": 33.0, "sigma_bp": 55.8, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:23:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-61", "px": 1290.96, "usd": 20833, "pred": 32.6, "sigma_bp": 112.5, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:30:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 124902, "free": 125098, "armed": ["AAVE", "BCH", "ENA", "HBAR", "HYPE", "LINK", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "ZEC"], "open": [], "counts": {"reprice": 298, "arm": 12, "disarm": 12}}
+{"ts": "2026-11-07T03:35:00", "kind": "arm", "coin": "XLM", "ladder": "XLM-62", "px": 0.149808, "usd": 6933, "pred": 38.4, "sigma_bp": 47.8, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:36:00", "kind": "arm", "coin": "ONDO", "ladder": "ONDO-63", "px": 0.36092, "usd": 4879, "pred": 38.9, "sigma_bp": 55.8, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:37:00", "kind": "arm", "coin": "DOGE", "ladder": "DOGE-64", "px": 0.07109, "usd": 5117, "pred": 31.7, "sigma_bp": 35.9, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:42:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-65", "px": 1281.92, "usd": 20833, "pred": 32.1, "sigma_bp": 112.8, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:45:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-66", "px": 1281.96, "usd": 20833, "pred": 32.4, "sigma_bp": 112.9, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:46:00", "kind": "arm", "coin": "DOGE", "ladder": "DOGE-67", "px": 0.07105, "usd": 5117, "pred": 31.2, "sigma_bp": 36.0, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:50:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-68", "px": 1283.93, "usd": 20833, "pred": 31.8, "sigma_bp": 113.0, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:51:00", "kind": "arm", "coin": "DOGE", "ladder": "DOGE-69", "px": 0.07107000000000001, "usd": 5117, "pred": 31.1, "sigma_bp": 36.0, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:53:00", "kind": "arm", "coin": "XRP", "ladder": "XRP-70", "px": 1.1412, "usd": 20833, "pred": 42.5, "sigma_bp": 43.3, "usd_bids_ahead": null}
+{"ts": "2026-11-07T03:55:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-71", "px": 51.274, "usd": 4856, "pred": 30.8, "sigma_bp": 39.2, "usd_bids_ahead": null}
+{"ts": "2026-11-07T04:00:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 162663, "free": 87337, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"reprice": 363, "disarm": 6, "arm": 10}}
+{"ts": "2026-11-07T04:04:00", "kind": "arm", "coin": "XRP", "ladder": "XRP-72", "px": 1.1420000000000001, "usd": 20833, "pred": 42.6, "sigma_bp": 43.3, "usd_bids_ahead": null}
+{"ts": "2026-11-07T04:09:00", "kind": "arm", "coin": "XRP", "ladder": "XRP-73", "px": 1.1441000000000001, "usd": 20833, "pred": 37.5, "sigma_bp": 43.3, "usd_bids_ahead": null}
+{"ts": "2026-11-07T04:16:00", "kind": "arm", "coin": "XRP", "ladder": "XRP-74", "px": 1.1351, "usd": 20833, "pred": 38.0, "sigma_bp": 43.4, "usd_bids_ahead": null}
+{"ts": "2026-11-07T04:30:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 162663, "free": 87337, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"reprice": 415, "disarm": 3, "arm": 3}}
+{"ts": "2026-11-07T05:00:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 162663, "free": 87337, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"reprice": 446}}
+{"ts": "2026-11-07T05:09:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-75", "px": 51.502, "usd": 4856, "pred": 30.8, "sigma_bp": 39.0, "usd_bids_ahead": null}
+{"ts": "2026-11-07T05:16:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-76", "px": 1272.66, "usd": 20833, "pred": 31.1, "sigma_bp": 113.9, "usd_bids_ahead": null}
+{"ts": "2026-11-07T05:30:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 157804, "free": 92196, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"reprice": 415, "disarm": 3, "arm": 2}}
+{"ts": "2026-11-07T06:00:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 157804, "free": 92196, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"reprice": 388}}
+{"ts": "2026-11-07T06:07:00", "kind": "arm", "coin": "PEPE", "ladder": "PEPE-77", "px": 4.79e-06, "usd": 3912, "pred": 46.3, "sigma_bp": 95.0, "usd_bids_ahead": null}
+{"ts": "2026-11-07T06:09:00", "kind": "arm", "coin": "PEPE", "ladder": "PEPE-78", "px": 4.79e-06, "usd": 3912, "pred": 46.3, "sigma_bp": 95.1, "usd_bids_ahead": null}
+{"ts": "2026-11-07T06:30:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 157804, "free": 92196, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"reprice": 402, "disarm": 2, "arm": 2}}
