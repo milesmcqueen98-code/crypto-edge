@@ -5,6 +5,7 @@ ledger with gates.log_trial(gates.dev_book(sleeve $30K at 2x)). Never opens a HO
 usage: python scripts/hunt/h13ps/dev.py base    9 trials: Mode I H in {5,30,120}; Mode II Delta in {2,60} x H
        python scripts/hunt/h13ps/dev.py ai      1 trial: walk-forward LightGBM filter on the best of the nine
        python scripts/hunt/h13ps/dev.py diag    DEV-only diagnostics (no trial): moves, leak, phases, spreads
+       python scripts/hunt/h13ps/dev.py freeze  apply the selection rule; write reports/hunt/h13ps/frozen.json
 """
 import json
 import os
@@ -90,6 +91,40 @@ def main():
         append([r])
     elif what == "diag":
         diag(M, S)
+    elif what == "freeze":
+        freeze()
+
+
+def freeze():
+    """Selection rule (SPEC, fixed): the highest DEV alpha t (sleeve at 2x on the incumbent at $70K) among the trials
+    with at least 40 trades; ties go to the simpler variant (no AI before AI). Writes reports/hunt/h13ps/frozen.json."""
+    import subprocess
+    T = pd.read_csv(TRIALS)
+    ok = T[T.n_trades >= 40].copy()
+    if ok.empty:
+        raise SystemExit("no trial has >= 40 DEV trades")
+    ok["ai"] = ok.variant.str.endswith("_ai")
+    ok = ok.sort_values(["t_alpha70", "ai"], ascending=[False, True])
+    best = ok.iloc[0]
+    base = best.variant.replace("_ai", "")
+    v = next(g for g in grid() if g["variant"] == base)
+    head = subprocess.check_output(["git", "-C", sim.ROOT, "rev-parse", "HEAD"], text=True).strip()
+    ev_commit = subprocess.check_output(["git", "-C", sim.ROOT, "log", "-1", "--format=%H", "--",
+                                         "reports/hunt/h13ps/events.csv"], text=True).strip()
+    fz = dict(idea=sim.IDEA, variant=best.variant,
+              params=dict(mode=int(v["mode"]), H=int(v["H"]), delta=None if v["delta"] is None else int(v["delta"]),
+                          ai=bool(best.ai), theta=0.5, size_cap_usd=sim.SIZE_CAP, vol_frac=sim.VOL_FRAC,
+                          hs_mult=sim.HS_MULT, hs_min_bp=sim.HS_MIN_BP, hs_default_bp=sim.HS_DEFAULT_BP),
+              code_commit=head, events_commit=ev_commit,
+              selection_rule="highest DEV alpha t (sleeve $30K at 2x vs incumbent $70K, HAC 5 lags) among trials with "
+                             ">= 40 DEV trades; ties to the simpler variant",
+              dev={k: (None if pd.isna(best[k]) else (float(best[k]) if not isinstance(best[k], str) else best[k]))
+                   for k in ("n_trades", "t_alpha70", "t_alpha100", "sleeve_sharpe_2x", "dev_book_sharpe",
+                             "inc_sharpe", "mean_net_bp_2x", "median_net_bp_2x", "pnl_2x", "corr")},
+              trials=T[["variant", "n_trades", "t_alpha70", "sleeve_sharpe_2x", "dev_book_sharpe"]].to_dict("records"),
+              frozen_at=pd.Timestamp.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"))
+    sim.dumpj(fz, os.path.join(sim.OUT, "frozen.json"))
+    print(json.dumps(fz, indent=1, default=str))
 
 
 def diag(M, S):
