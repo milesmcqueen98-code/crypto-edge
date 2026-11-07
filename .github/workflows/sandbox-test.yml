@@ -1,0 +1,26 @@
+name: sandbox-test
+
+# The spot bot's live broker against Coinbase's Advanced Trade sandbox (static production-format responses, no auth, no
+# money): bot/spot/sandbox_test.py. Nothing is committed.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sandbox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            bot
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas numpy requests coinbase-advanced-py cryptography
+      - run: pip show coinbase-advanced-py | head -3
+      - name: Sandbox smoke test
+        run: python bot/spot/sandbox_test.py
