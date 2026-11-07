@@ -131,12 +131,20 @@ def load_prints(root=None):
     return d.drop(columns="t_us").sort_values(["coin", "t"]).reset_index(drop=True)
 
 
-def basis_frame(coin):
+def trading_mask(days):
+    days = pd.DatetimeIndex(days)
+    return (days.weekday < 5) & ~days.isin(US_HOLIDAYS)
+
+
+def basis_frame(coin, end=None):
     """Minute frame with perp and spot closes and H1's basis residual (SPEC: H1 definition):
     b = log(perp/spot) on minutes where both traded; bbar = trailing 24 h median of b known at t-1;
-    e = b - bbar; sig = trailing 3-day std of e known at t-1; F = spot close at t-1 * exp(bbar)."""
+    e = b - bbar; sig = trailing 3-day std of e known at t-1; F = spot close at t-1 * exp(bbar).
+    end: naive-UTC cut; inputs at or after it are dropped before anything is computed."""
     p = common.load_perp(coin)
     s = common.load_minute(coin)
+    if end is not None:
+        p, s = p[p.index < end], s[s.index < end]
     pc = px_coin(coin, p["close"].astype(float))
     j = pd.concat([pc.rename("pc"), s["close"].astype(float).rename("sc")], axis=1, join="inner").dropna()
     j = j[(j.pc > 0) & (j.sc > 0)]
