@@ -4,7 +4,7 @@
   python scripts/hunt/h8dp/fetch.py discover
       Coinbase Exchange /products: every stablecoin-like or wrapped pair (any status, incl. delisted), with the
       fx_stablecoin / high_bid_limit_percentage / quote_increment fields -> data/hunt/h8dp/products.json
-  python scripts/hunt/h8dp/fetch.py candles <PRODUCT> <start> <end> [tag]
+  python scripts/hunt/h8dp/fetch.py candles <PRODUCT,start,end> [<PRODUCT,start,end> ...]
       1-minute candles in fixed 300-minute windows (so no-trade gaps never stop the walk), after locating the first
       and last traded day inside [start, end) with daily candles -> data/hunt/h8dp/candles/<PRODUCT>[_tag].parquet
 Exchange API: https://api.exchange.coinbase.com ; ~8 requests/second per runner (public limit 10).
@@ -108,13 +108,14 @@ def daily(pid, start, end):
             return pd.DataFrame(columns=["ts", "low", "high", "open", "close", "volume"])
         for r in js or []:
             rows[r[0]] = r
-        s = s + pd.Timedelta(days=300)
+        s = s + pd.Timedelta(days=299)                          # step 299 with end = start + 299: no gap either way
     d = pd.DataFrame([rows[k] for k in sorted(rows)], columns=["ts", "low", "high", "open", "close", "volume"])
     d["ts"] = pd.to_datetime(d["ts"], unit="s")
     return d
 
 
 def candles(pid, start, end, tag=""):
+    tag = tag or pd.Timestamp(start).strftime("%Y%m%d")
     t0 = time.time()
     d = daily(pid, start, end)
     d = d[d.volume > 0]
@@ -131,7 +132,7 @@ def candles(pid, start, end, tag=""):
         js = get(f"/products/{pid}/candles", {"granularity": 60, "start": iso(s), "end": iso(t1)})
         for r in js or []:
             rows[r[0]] = r
-        s = s + pd.Timedelta(minutes=300)
+        s = s + pd.Timedelta(minutes=299)                       # end inclusive or exclusive: no minute is skipped
         if N_REQ[0] % 1000 == 0:
             print(f"{pid}: {N_REQ[0]} requests, {len(rows)} minutes, at {s}, {time.time() - t0:.0f}s", flush=True)
     df = pd.DataFrame([rows[k] for k in sorted(rows)], columns=["ts", "low", "high", "open", "close", "volume"])
@@ -146,8 +147,46 @@ def candles(pid, start, end, tag=""):
     print(f"{pid}: {len(df)} minutes {df.ts.min()} .. {df.ts.max()}, {N_REQ[0]} requests, {time.time() - t0:.0f}s")
 
 
+def trades_probe():
+    """Which trade source serves old and delisted stable-pair prints: Advanced market-trades (common.TradeFetcher)
+    vs the Exchange trade-id cursor. Prints counts only."""
+    sys.path.insert(0, os.path.join(ROOT, "scripts", "hunt"))
+    import common
+    tf = common.TradeFetcher()
+    res = {}
+    for pid, s, e in [("USDT-USD", "2022-05-12 01:00", "2022-05-12 01:10"), ("DAI-USD", "2023-03-11 06:00", "2023-03-11 06:10"),
+                      ("GUSD-USD", "2023-03-11 06:00", "2023-03-11 07:00"), ("PYUSD-USD", "2024-06-01 00:00", "2024-06-01 06:00"),
+                      ("USDS-USD", "2025-10-10 21:00", "2025-10-10 22:00"), ("CBETH-USD", "2022-11-09 00:00", "2022-11-09 00:30"),
+                      ("UST-USD", "2022-05-09 20:00", "2022-05-09 20:10"), ("USDT-USD", "2026-05-01 00:00", "2026-05-01 00:05")]:
+        t0 = time.time()
+        try:
+            d = tf.window(pid, s, e)
+            adv = dict(n=len(d), first=str(d.time.min()) if len(d) else None, last=str(d.time.max()) if len(d) else None,
+                       sides=d.side.value_counts().to_dict() if len(d) else {}, secs=round(time.time() - t0, 1))
+        except Exception as err:  # noqa: BLE001
+            adv = dict(error=repr(err)[:200])
+        t0 = time.time()
+        try:
+            newest = get(f"/products/{pid}/trades", {"limit": 1})
+            exch = dict(newest=newest[:1] if newest else newest, secs=round(time.time() - t0, 1))
+            if newest:
+                old = get(f"/products/{pid}/trades", {"limit": 5, "after": 1000})
+                exch["after_1000"] = old[:2] if old else old
+        except Exception as err:  # noqa: BLE001
+            exch = dict(error=repr(err)[:200])
+        res[f"{pid} {s}"] = dict(advanced=adv, exchange=exch)
+        print(pid, s, json.dumps(res[f"{pid} {s}"], default=str)[:600], flush=True)
+    os.makedirs(OUT, exist_ok=True)
+    with open(os.path.join(OUT, "trades_probe.json"), "w") as f:
+        json.dump(res, f, indent=1, default=str)
+
+
 if __name__ == "__main__":
     if sys.argv[1] == "discover":
         discover()
     elif sys.argv[1] == "candles":
-        candles(*sys.argv[2:6])
+        for spec in sys.argv[2:]:                               # PRODUCT:START:END ...
+            pid, s, e = spec.split(",")
+            candles(pid, s, e)
+    elif sys.argv[1] == "tprobe":
+        trades_probe()
