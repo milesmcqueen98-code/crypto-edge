@@ -27,7 +27,7 @@ on:
         description: "short label for the commit message and artifact"
         default: "run"
       sparse:
-        description: "space-separated sparse-checkout paths (empty = whole repo)"
+        description: "space-separated repo-relative files or folders to check out (empty = whole repo)"
         default: ""
 
 permissions:
@@ -43,7 +43,13 @@ jobs:
           sparse-checkout: .github
       - name: Checkout scope
         run: |
-          if [ -n "${{ inputs.sparse }}" ]; then git sparse-checkout set ${{ inputs.sparse }}; else git sparse-checkout disable; fi
+          SPARSE="${{ inputs.sparse }}"
+          if [ -n "$SPARSE" ]; then
+            pats="/.github/"; for p in $SPARSE; do pats="$pats /${p#/}"; done
+            git sparse-checkout set --no-cone $pats
+          else
+            git sparse-checkout disable
+          fi
           du -sh . 2>/dev/null | tail -1
       - uses: actions/setup-python@v5
         with:
