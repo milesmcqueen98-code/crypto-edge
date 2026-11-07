@@ -69,7 +69,7 @@ Exchange /products (any status), these were excluded:
 | **k3 d0–7 H30 + AI (pred > median)** | **114** | **0.65** | **1.21** | **2.23** |
 
 - **Incumbent alone (DEV):** Sharpe 2.35. No trial beats it at a = 0.7.
-- **Negative t on sparse k4/k6 cells:** mostly T-bill drag on an idle sleeve; those cells' P&L was positive.
+- **Negative t on sparse k4/k6 cells:** T-bill drag on an idle sleeve; their P&L was positive.
 - **Decay with days since listing** (DEV, k3 d0–30 H60, net bp after 2× costs):
 
 | Days since listing | 0 | 1 | 2–3 | 4–7 | 8–14 | 15–30 |
@@ -118,9 +118,7 @@ a = 0.7 was chosen on DEV (book Sharpe 2.23, against 2.09 at a = 0.5).
 - **Scale:** about $1.7K a year on $30K, about 34 trades a year. The sleeve is active on 107 of 1,404 days.
 
 ## Fill realism (DEV trade sample)
-**Coverage:**
-- In 535 of 682 levels, the prints' USD volume matched the candle's (within 10%).
-- The rest had incomplete prints, a data gap.
+**Coverage:** in 535 of 682 levels the prints' USD volume matched the candle's within 10%; the rest are a data gap.
 
 **Confirmation:**
 - With complete prints, **96.8%** of candle fills are confirmed by a print at least one tick through the level.
@@ -142,9 +140,8 @@ a = 0.7 was chosen on DEV (book Sharpe 2.23, against 2.09 at a = 0.5).
 - At the frozen variant's fills: median 9.9 bp, mean 22 bp.
 - So the SPEC's 10 bp at 2× is only median-level.
 
-**Depth:**
-- A median $3.9K of seller sweep per fill minute, which moved price a median 158 bp (about $32 per bp).
-- The median tick is 0.67 bp.
+**Depth:** a median $3.9K of seller sweep per fill minute moved price 158 bp (about $32 per bp). Median tick
+0.67 bp.
 
 ## Other checks
 - **Net bp by day (frozen):**
@@ -173,8 +170,8 @@ a = 0.7 was chosen on DEV (book Sharpe 2.23, against 2.09 at a = 0.5).
 - **Exclusion lists:** four migrations (G, MANTLE, ZETACHAIN, AXL) and a carve-out for CHIP (a governance token named
   "USD.AI") were added to the fixed lists. They came from reading names and first trading days only, before any
   price.
-- **Shared code:** after my trade runs, the coordinator fixed common.TradeFetcher (ISO8601 parsing, a delisted
-  fallback). My runs used their own Exchange fallback for delisted products, so nothing changed.
+- **Shared code:** the coordinator's later TradeFetcher fix (ISO8601, delisted fallback) changed nothing here; my
+  runs had their own Exchange fallback.
 - **G4:** provisional, per the coordinator.
 - **After HOLD:** no change.
 
