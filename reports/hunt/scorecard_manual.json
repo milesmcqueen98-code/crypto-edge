@@ -1,21 +1,83 @@
 {
  "_rules": "Hand-scored parts of the pre-registered scorecard (reports/hunt_prereg.md). rob_neigh (5): 5 if the frozen variant's DEV alpha is positive and its one-step neighbours share the sign, 2-3 if mixed, 0 if the frozen result is negative. realism (15): trade-verified fills 6, live-speed latency 3, volume-capped capacity 3, costs checked against published fees 3 (perp all-in fee is unverified: 2 of 3 at most). mechanism (10): named forced or eager counterparty 4, evidence it persists 3, capacity-limited so big funds pass 3. implement (10): inputs live in the US 4, Coinbase API order types 3, low operational complexity 3. capacity (5): whole allocation deployed at theta 0.25 = 5, partly 1-3. Scored by the coordinator from each builder's REPORT and gates.json.",
- "h2fr": {"rob_neigh": 0, "realism": 10, "mechanism": 4, "implement": 10, "capacity": 5,
-  "why": "Neighbours: frozen DEV alpha t -0.95, every trial negative. Realism: prints for all 63 post-launch trades, but most scored trades are spot-priced before the perps listed (fills 3); taker at the first print after the signal (latency 3); taker size vs volume (2); perp fee unverified (2). Mechanism: liquidated longs are a named forced seller (4), but the rebound is 5-27 bp gross, below costs (persistence 0), and BTC/ETH/SOL/XRP are big-fund markets (0). Implementable with live Coinbase data and perp market orders (10). Capacity: majors, fully deployed (5)."},
- "h3lm": {"rob_neigh": 0, "realism": 10, "mechanism": 5, "implement": 9, "capacity": 0,
-  "why": "Stopped at the pre-registered mechanism screen: density bids did no better than depth-matched random bids (paired t 0.15 to -0.40); HOLD never read, no sleeve built (capacity 0). Realism: candle fills with a one-tick trade-through and theta cap (fills 2), hourly resting bids (3), capacity capped (3), perp fee unverified (2). Mechanism: leveraged liquidations are named (4); the cluster estimate adds nothing (0); majors (1). Implement: live Coinbase volume-at-price (4), post-only bids (3), moderate complexity (2)."},
- "h4nl": {"rob_neigh": 2, "realism": 8, "mechanism": 9, "implement": 9, "capacity": 1,
-  "why": "Neighbours mixed: k3 days 0-7 variants positive (alpha t 0.6-1.1), k4/k6 and days 0-30 mostly negative. Realism: candle fills with a 25% print sample that showed candle capacity overstated about 3x (fills 2), resting bids at t-1 (3), theta-capped but overstated (1), spot VIP 1 fees with a 5 bp half-spread (2). Mechanism: airdrop and early-holder dumps into empty books (4), sleeve positive every year but the edge sits on day 0 (2), tiny per-listing capacity big funds skip (3). Implement: live listing data and post-only bids (9). Capacity: peak cash $3.6K of $30K (1)."},
- "h5an": {"rob_neigh": 4, "realism": 9, "mechanism": 9, "implement": 7, "capacity": 2,
-  "why": "Neighbours: holds at 5-30 minute horizons and on spot-listing subsets at 2 s latency; at 10 s it shrinks to t 0.3, at 30 s it turns negative (4). Realism: every entry and exit priced on prints (6) but a worst-print bound flips the sign, so fills 4; 2 s latency is unproven for a public poller (1); our size is about 0.9x all aggressive buying in the next 10 s, impact not modelled (1); spot VIP 1 fees and measured spreads (3). Mechanism: Binance-driven eager buyers (4), drift present in DEV and HOLD but HOLD weak (2), small capacity (3). Implement: Binance CMS reachable with a plain client (3), market orders (3), a sub-2-second poller (1). Capacity: mean trade $3.9K, idle most days (2)."},
- "h6vd": {"rob_neigh": 0, "realism": 12, "mechanism": 3, "implement": 9, "capacity": 5,
-  "why": "All 15 trials negative. Realism: 25% print sample confirms 99.4% of fills and the loss (4), 1-minute latency only (2), theta-capped (3), spot VIP 1 (3). Mechanism: 'US-only sellers' is a weak counterparty story (2); Coinbase leads Bitstamp and its perps at 1 minute, so the gaps are a stale reference (0); big-fund arbitrage territory (1). Implement: Bitstamp and perp data live, post-only bids (9). Capacity: deploys fully; every dollar loses (5)."},
- "h7ul": {"rob_neigh": 5, "realism": 9, "mechanism": 8, "implement": 10, "capacity": 3,
-  "why": "Neighbours: all five one-step neighbours of the frozen variant positive (sleeve Sharpe 0.19-0.82) (5). Realism: 83% of the P&L is hypothetical shortability, spot-priced before each perp listed (fills 1), daily decisions (3), perp liquidity ample (3), $0.20 contract fee plus a 10%/yr carry charge (2). Mechanism: insiders and their hedgers sell into a scheduled cliff (4); DEV drift t -3.9 in the last week but no HOLD events (2); mid-caps, partly capacity-limited (2). Implement: DefiLlama's free CDN, perp shorts, daily cadence (10). Capacity: fully deployed when an event is live, idle otherwise (3)."},
- "h8dp": {"rob_neigh": 2, "realism": 13, "mechanism": 6, "implement": 10, "capacity": 1,
-  "why": "Neighbours: frozen alpha t +1.90 and the next variant +1.89; the other six trials -4.9 to -12.7 (2). Realism: prints cover 100% of candidate minutes (6), resting bids (3), theta-capped (3), stable-pair fees from a third-party source, unverified (1). Mechanism: panic redemptions are a named forced flow (4), but about three independent stress events in the history, and the DEV edge was cbETH in 2022-23, which reversed (1); stablecoin books are deep, big funds compete (1). Implement: live, post-only bids, simple (10). Capacity: ladder deployed 3.1% of the time (1)."},
- "h9mc": {"rob_neigh": 0, "realism": 13, "mechanism": 7, "implement": 10, "capacity": 2,
-  "why": "Every Step-2 trial has a negative DEV alpha t. Realism: every leg priced on prints (6), taker 4 s after 16:01 (3), size capped at 2% of window volume (3), perp fee unverified (1: ETH fee alone 13 bp a side at 2x). Mechanism: intraday-margin longs forced out at 4 pm ET (4), visible in prints (aggressive-sell t 4.6) but about 6x weaker since Oct 2025 (1), small (2). Implement: live, simple (10). Capacity: half the target notional (2)."},
- "h11mj": {"rob_neigh": 3, "realism": 10, "mechanism": 4, "implement": 10, "capacity": 4,
-  "why": "Neighbours: k7 H60 and H240 on all four coins positive, BTC+ETH and BTC-only negative, k5 negative; the frozen k9 sits at the grid's edge (3). Realism: prints confirm 66 of 68 post-launch fills, but 190 of 256 trades are spot-priced before launch (3); hourly resting bids (3); prints support a median 69% of candle size (2); perp fee unverified (2). Mechanism: forced selling on the majors (3), money concentrated in 2025 SOL/XRP and 2023 loses at 2x (1), majors are big-fund markets (0). Implement (10). Capacity: 80% of trades at the full $30K (4)."}
+ "h2fr": {
+  "rob_neigh": 0,
+  "realism": 10,
+  "mechanism": 4,
+  "implement": 10,
+  "capacity": 5,
+  "why": "Neighbours: frozen DEV alpha t -0.95, every trial negative. Realism: prints for all 63 post-launch trades, but most scored trades are spot-priced before the perps listed (fills 3); taker at the first print after the signal (latency 3); taker size vs volume (2); perp fee unverified (2). Mechanism: liquidated longs are a named forced seller (4), but the rebound is 5-27 bp gross, below costs (persistence 0), and BTC/ETH/SOL/XRP are big-fund markets (0). Implementable with live Coinbase data and perp market orders (10). Capacity: majors, fully deployed (5)."
+ },
+ "h3lm": {
+  "rob_neigh": 0,
+  "realism": 10,
+  "mechanism": 5,
+  "implement": 9,
+  "capacity": 0,
+  "why": "Stopped at the pre-registered mechanism screen: density bids did no better than depth-matched random bids (paired t 0.15 to -0.40); HOLD never read, no sleeve built (capacity 0). Realism: candle fills with a one-tick trade-through and theta cap (fills 2), hourly resting bids (3), capacity capped (3), perp fee unverified (2). Mechanism: leveraged liquidations are named (4); the cluster estimate adds nothing (0); majors (1). Implement: live Coinbase volume-at-price (4), post-only bids (3), moderate complexity (2)."
+ },
+ "h4nl": {
+  "rob_neigh": 2,
+  "realism": 8,
+  "mechanism": 9,
+  "implement": 9,
+  "capacity": 1,
+  "why": "Neighbours mixed: k3 days 0-7 variants positive (alpha t 0.6-1.1), k4/k6 and days 0-30 mostly negative. Realism: candle fills with a 25% print sample that showed candle capacity overstated about 3x (fills 2), resting bids at t-1 (3), theta-capped but overstated (1), spot VIP 1 fees with a 5 bp half-spread (2). Mechanism: airdrop and early-holder dumps into empty books (4), sleeve positive every year but the edge sits on day 0 (2), tiny per-listing capacity big funds skip (3). Implement: live listing data and post-only bids (9). Capacity: peak cash $3.6K of $30K (1)."
+ },
+ "h5an": {
+  "rob_neigh": 4,
+  "realism": 9,
+  "mechanism": 9,
+  "implement": 7,
+  "capacity": 2,
+  "why": "Neighbours: holds at 5-30 minute horizons and on spot-listing subsets at 2 s latency; at 10 s it shrinks to t 0.3, at 30 s it turns negative (4). Realism: every entry and exit priced on prints (6) but a worst-print bound flips the sign, so fills 4; 2 s latency is unproven for a public poller (1); our size is about 0.9x all aggressive buying in the next 10 s, impact not modelled (1); spot VIP 1 fees and measured spreads (3). Mechanism: Binance-driven eager buyers (4), drift present in DEV and HOLD but HOLD weak (2), small capacity (3). Implement: Binance CMS reachable with a plain client (3), market orders (3), a sub-2-second poller (1). Capacity: mean trade $3.9K, idle most days (2)."
+ },
+ "h6vd": {
+  "rob_neigh": 0,
+  "realism": 12,
+  "mechanism": 3,
+  "implement": 9,
+  "capacity": 5,
+  "why": "All 15 trials negative. Realism: 25% print sample confirms 99.4% of fills and the loss (4), 1-minute latency only (2), theta-capped (3), spot VIP 1 (3). Mechanism: 'US-only sellers' is a weak counterparty story (2); Coinbase leads Bitstamp and its perps at 1 minute, so the gaps are a stale reference (0); big-fund arbitrage territory (1). Implement: Bitstamp and perp data live, post-only bids (9). Capacity: deploys fully; every dollar loses (5)."
+ },
+ "h7ul": {
+  "rob_neigh": 5,
+  "realism": 9,
+  "mechanism": 8,
+  "implement": 10,
+  "capacity": 3,
+  "why": "Neighbours: all five one-step neighbours of the frozen variant positive (sleeve Sharpe 0.19-0.82) (5). Realism: 83% of the P&L is hypothetical shortability, spot-priced before each perp listed (fills 1), daily decisions (3), perp liquidity ample (3), $0.20 contract fee plus a 10%/yr carry charge (2). Mechanism: insiders and their hedgers sell into a scheduled cliff (4); DEV drift t -3.9 in the last week but no HOLD events (2); mid-caps, partly capacity-limited (2). Implement: DefiLlama's free CDN, perp shorts, daily cadence (10). Capacity: fully deployed when an event is live, idle otherwise (3)."
+ },
+ "h8dp": {
+  "rob_neigh": 2,
+  "realism": 13,
+  "mechanism": 6,
+  "implement": 10,
+  "capacity": 1,
+  "why": "Neighbours: frozen alpha t +1.90 and the next variant +1.89; the other six trials -4.9 to -12.7 (2). Realism: prints cover 100% of candidate minutes (6), resting bids (3), theta-capped (3), stable-pair fees from a third-party source, unverified (1). Mechanism: panic redemptions are a named forced flow (4), but about three independent stress events in the history, and the DEV edge was cbETH in 2022-23, which reversed (1); stablecoin books are deep, big funds compete (1). Implement: live, post-only bids, simple (10). Capacity: ladder deployed 3.1% of the time (1)."
+ },
+ "h9mc": {
+  "rob_neigh": 0,
+  "realism": 13,
+  "mechanism": 7,
+  "implement": 10,
+  "capacity": 2,
+  "why": "Every Step-2 trial has a negative DEV alpha t. Realism: every leg priced on prints (6), taker 4 s after 16:01 (3), size capped at 2% of window volume (3), perp fee unverified (1: ETH fee alone 13 bp a side at 2x). Mechanism: intraday-margin longs forced out at 4 pm ET (4), visible in prints (aggressive-sell t 4.6) but about 6x weaker since Oct 2025 (1), small (2). Implement: live, simple (10). Capacity: half the target notional (2)."
+ },
+ "h11mj": {
+  "rob_neigh": 3,
+  "realism": 10,
+  "mechanism": 4,
+  "implement": 10,
+  "capacity": 4,
+  "why": "Neighbours: k7 H60 and H240 on all four coins positive, BTC+ETH and BTC-only negative, k5 negative; the frozen k9 sits at the grid's edge (3). Realism: prints confirm 66 of 68 post-launch fills, but 190 of 256 trades are spot-priced before launch (3); hourly resting bids (3); prints support a median 69% of candle size (2); perp fee unverified (2). Mechanism: forced selling on the majors (3), money concentrated in 2025 SOL/XRP and 2023 loses at 2x (1), majors are big-fund markets (0). Implement (10). Capacity: 80% of trades at the full $30K (4)."
+ },
+ "h10xq": {
+  "rob_neigh": 0,
+  "realism": 8,
+  "mechanism": 5,
+  "implement": 8,
+  "capacity": 4,
+  "why": "All 13 trials lose heavily at 1x and 2x (0). Realism: scored on candles; a print sample shows candles optimistic (81.7% of fills confirm, through-volume a median 28% of the candle estimate), so fills 2; the fair value is up to a minute stale (latency 2); theta-capped but overstated (1); common.py spot costs (3). Mechanism: makers pulling secondary books in cascades is a named story (3), but fills are stale-quote pick-offs locking +1.7 bp against 35-70 bp of costs (0); small books (2). Implement: live data and post-only bids, but a cross-book hedge adds complexity (8). Capacity: 60% of fills at the full $5K (4)."
+ }
 }
