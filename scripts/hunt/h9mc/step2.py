@@ -144,9 +144,10 @@ class Coin:
         i = np.searchsorted(self.T, t_us, "left")
         return i
 
-    def market_px(self, t, horizon_min=120):
-        """First print >= t (+ the 2 s is added by the caller); else the open of the first candle starting at or after
-        the next minute (within horizon). Returns (price, time_us) or (nan, None)."""
+    def market_px(self, t, horizon_min=10 * 24 * 60):
+        """First print >= t (+ the 2 s is added by the caller) within 30 minutes; else the open of the first candle
+        starting at or after the next minute (no practical horizon: a position is never dropped for lack of an exit
+        print; it exits at the next trade). Returns (price, time_us) or (nan, None)."""
         t_us = pd.Timestamp(t).value // 1000
         i = self.first_print(t_us)
         if i < len(self.T) and self.T[i] - t_us < 30 * 60 * 1_000_000:
