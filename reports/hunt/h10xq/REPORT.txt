@@ -26,8 +26,7 @@ stale-quote pick-offs, not by forced sellers.
   $30K and 10 at $50K. The slots go to the books of the quote set ranked by trailing 30-day median USD volume,
   known at d−1. 71 pairs ever hold a slot: 38 USDT and 33 BTC/ETH-quoted.
 - **1-minute candles.** Exchange API on Actions, 170,686 requests with 0 errors, pairs plus missing USD legs.
-  BTC, ETH and other legs came from data/minute and data/minute_early. HOLD candles were downloaded before the
-  freeze and processed only after it.
+  Other legs came from data/minute(_early). HOLD candles were downloaded before the freeze, processed after it.
 - **Candidate fills.** 1,426,058 DEV fill minutes (k = 3: 809K; 4: 452K; 6: 164K).
 
 ## Trials (DEV, $30K sleeve, θ 0.5)
@@ -98,7 +97,7 @@ stale-quote pick-offs, not by forced sellers.
   - Take-profits confirm 88.9% of the time.
   - Hedge: on the same 610 hedged fills, the hedge at the first USD print ≥ 2 s after the fill locks 12.7 bp,
     vs 17.8 bp at the next minute's open. (These include the deepest fills, so they exceed the variant's average.)
-  - Measured median half-spreads in these stressed windows: USDT books 1.5 bp, BTC 2.2 bp, ETH 9.9 bp.
+  - Median half-spreads in these windows: USDT 1.5 bp, BTC 2.2 bp, ETH 9.9 bp.
 - **Implication.** Applying prints would only make the results worse.
 
 ## Other SPEC checks
@@ -110,12 +109,10 @@ stale-quote pick-offs, not by forced sellers.
 - **Concentration.**
   - The worst 3 days carry 5.5% of losses: 2022-01-21/22 and 2025-02-03.
   - 0.2% of days are positive.
-  - The top-3-days share of P&L is undefined, since P&L is negative.
-- **Mark-to-market.** No overnight directional exposure: the hedge flattens within a minute, and the inventory is
-  perp-hedged.
+  - Top-3-days share of P&L: undefined (P&L negative).
+- **Mark-to-market.** No overnight exposure (the hedge flattens within a minute; inventory perp-hedged).
 
 ## Weaknesses
-- **Gates rest on candles.** Prints cover a sample only.
 - **Historical ticks.** Today's quote_increment is used for all history, which is mildly optimistic.
 - **Pre-July 2025 hedge.** The perp hedge is priced on spot prices with the perp cost model (flagged, per SPEC).
 - **Fixed-capital returns** ignore ruin.
