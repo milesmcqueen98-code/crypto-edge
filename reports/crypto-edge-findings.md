@@ -163,6 +163,13 @@ few, mechanism-led candidates. Code: scripts/wick_v4/. Results: reports/wick_v4/
   - It ended the window +$0.9K against the incumbent's +$6.9K.
 - **BTC-synchronised bid** (re-price every 5 s with BTC's live price). Fill outcomes don't depend on BTC's same-minute
   move: correlation +0.06 / +0.02 / −0.01. Lowering the bid in BTC-led cascades would skip good fills.
+  - Post-hoc check at 1-second re-pricing (scripts/wick_v4/reprice_1s.py; 1,542 fills with trade data):
+    - It keeps 60–71% of fills for β 0.75–1.25.
+    - The kept fills improve to 63–68 bp gross, because they are bought lower.
+    - The lost fills were above average, at 57–62 bp.
+  - Net of VIP-1 fees it is 13–20% less P&L: −20% in selection, about flat in check.
+  - Added fills in minutes the minute bid missed can't be measured from this sample.
+  - It would also cost queue position and much more API traffic.
 - **31 coins.** Worse than 17 in the check period at every size, including $500K (2.19 vs 2.67).
 - **Fast take-profit** inside the fill minute: under 1 bp per fill.
 
