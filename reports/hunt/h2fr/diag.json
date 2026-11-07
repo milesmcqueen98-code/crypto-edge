@@ -1,0 +1,109 @@
+{
+ "venue_vs_period": {
+  "n": 53,
+  "perp_gross_bp": 9.1266,
+  "spot_gross_bp": 7.9598,
+  "perp_net2x_bp": -13.3871,
+  "spot_net2x_bp": -14.0081,
+  "by_era": {
+   "dev": {
+    "n": 40,
+    "perp_gross_bp": 5.5054,
+    "spot_gross_bp": 15.2614
+   },
+   "hold": {
+    "n": 13,
+    "perp_gross_bp": 20.2685,
+    "spot_gross_bp": -14.5066
+   }
+  }
+ },
+ "fvl_delayed_tp_trades": 1,
+ "entry_wait_over_5min": 2,
+ "entry_wait_over_5min_list": [
+  {
+   "coin": "SOL",
+   "mode": "perp",
+   "dec_ts": "2025-10-10 21:22:00"
+  },
+  {
+   "coin": "ETH",
+   "mode": "perp",
+   "dec_ts": "2026-10-24 15:17:00"
+  }
+ ],
+ "et_blocks": {
+  "00-08": {
+   "events": 146,
+   "trades": 13,
+   "net2x_bp": 64.9597,
+   "gross_bp": 94.2171
+  },
+  "08-12": {
+   "events": 179,
+   "trades": 50,
+   "net2x_bp": -0.7822,
+   "gross_bp": 21.5768
+  },
+  "12-15:30": {
+   "events": 105,
+   "trades": 22,
+   "net2x_bp": -54.2514,
+   "gross_bp": -26.7875
+  },
+  "15:30-16:30": {
+   "events": 20,
+   "trades": 0,
+   "net2x_bp": null,
+   "gross_bp": null
+  },
+  "16:30-17": {
+   "events": 22,
+   "trades": 5,
+   "net2x_bp": -13.6448,
+   "gross_bp": 12.2165
+  },
+  "17-18": {
+   "events": 61,
+   "trades": 11,
+   "net2x_bp": -51.2833,
+   "gross_bp": -30.1813
+  },
+  "18-24": {
+   "events": 207,
+   "trades": 29,
+   "net2x_bp": 47.176,
+   "gross_bp": 68.1653
+  }
+ },
+ "et_blocks_all_standalone_trades_net2x_bp": {
+  "00-08": {
+   "count": 76,
+   "mean": 19.65
+  },
+  "08-12": {
+   "count": 202,
+   "mean": -4.47
+  },
+  "12-15:30": {
+   "count": 114,
+   "mean": -14.98
+  },
+  "15:30-16:30": {
+   "count": 31,
+   "mean": -58.1
+  },
+  "16:30-17": {
+   "count": 25,
+   "mean": -16.66
+  },
+  "17-18": {
+   "count": 31,
+   "mean": -24.02
+  },
+  "18-24": {
+   "count": 153,
+   "mean": -11.23
+  }
+ }
+}
