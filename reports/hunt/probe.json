@@ -1,0 +1,702 @@
+{
+ "cb_adv_trades_perp_ETP_2026-02-05": {
+  "status": 200,
+  "n": 62,
+  "first": "2026-02-05T12:00:06.258961Z",
+  "last": "2026-02-05T12:04:25.293109Z",
+  "sample": [
+   {
+    "trade_id": "58914472109",
+    "product_id": "ETP-20DEC30-CDE",
+    "price": "2086",
+    "size": "1",
+    "time": "2026-02-05T12:04:25.293109Z",
+    "side": "SELL",
+    "bid": "",
+    "ask": "",
+    "exchange": "cde"
+   },
+   {
+    "trade_id": "58914131097",
+    "product_id": "ETP-20DEC30-CDE",
+    "price": "2087.5",
+    "size": "8",
+    "time": "2026-02-05T12:03:43.627601Z",
+    "side": "BUY",
+    "bid": "",
+    "ask": "",
+    "exchange": "cde"
+   }
+  ],
+  "keys": [
+   "trades",
+   "best_bid",
+   "best_ask"
+  ],
+  "secs": 0.27
+ },
+ "cb_adv_trades_perp_DOP_2026-02-05": {
+  "status": 200,
+  "n": 56,
+  "first": "2026-02-05T12:00:10.439345Z",
+  "last": "2026-02-05T12:57:56.147552Z",
+  "sample": [
+   {
+    "trade_id": "58949409073",
+    "product_id": "DOP-20DEC30-CDE",
+    "price": "0.09836",
+    "size": "2",
+    "time": "2026-02-05T12:57:56.147552Z",
+    "side": "BUY",
+    "bid": "",
+    "ask": "",
+    "exchange": "cde"
+   },
+   {
+    "trade_id": "58948746172",
+    "product_id": "DOP-20DEC30-CDE",
+    "price": "0.09834",
+    "size": "1",
+    "time": "2026-02-05T12:56:47.805479Z",
+    "side": "BUY",
+    "bid": "",
+    "ask": "",
+    "exchange": "cde"
+   }
+  ],
+  "keys": [
+   "trades",
+   "best_bid",
+   "best_ask"
+  ],
+  "secs": 0.15
+ },
+ "cb_adv_trades_perp_BIP_2025-10-10": {
+  "status": 200,
+  "n": 0,
+  "first": null,
+  "last": null,
+  "sample": [],
+  "keys": [
+   "trades",
+   "best_bid",
+   "best_ask"
+  ],
+  "secs": 0.13
+ },
+ "cb_adv_trades_spot_BTC_2025-10-10": {
+  "status": 200,
+  "n": 1000,
+  "first": "2025-10-10T21:15:45.419171Z",
+  "last": "2025-10-10T21:15:59.951673Z",
+  "sample": [
+   {
+    "trade_id": "884151879",
+    "product_id": "BTC-USD",
+    "price": "111182.74",
+    "size": "0.00177743",
+    "time": "2025-10-10T21:15:59.951673Z",
+    "side": "SELL",
+    "bid": "",
+    "ask": "",
+    "exchange": "coinbase"
+   },
+   {
+    "trade_id": "884151878",
+    "product_id": "BTC-USD",
+    "price": "111180",
+    "size": "0.005",
+    "time": "2025-10-10T21:15:59.908786Z",
+    "side": "BUY",
+    "bid": "",
+    "ask": "",
+    "exchange": "coinbase"
+   }
+  ],
+  "keys": [
+   "trades",
+   "best_bid",
+   "best_ask"
+  ],
+  "secs": 0.23
+ },
+ "cb_adv_candles_perp_DOP": {
+  "status": 200,
+  "n": 16,
+  "sample": [
+   {
+    "start": "1770296220",
+    "low": "0.09836",
+    "high": "0.09836",
+    "open": "0.09836",
+    "close": "0.09836",
+    "volume": "2"
+   }
+  ],
+  "secs": 0.12
+ },
+ "cb_exchange_products": {
+  "n_all": 846,
+  "n_usd": 496,
+  "status": {
+   "online": 405,
+   "delisted": 91
+  },
+  "stable_pairs": [
+   "USDT-USD",
+   "DAI-USD",
+   "EURC-USD",
+   "PYUSD-USD",
+   "GUSD-USD",
+   "USDS-USD"
+  ],
+  "sample_keys": [
+   "id",
+   "base_currency",
+   "quote_currency",
+   "quote_increment",
+   "base_increment",
+   "display_name",
+   "min_market_funds",
+   "margin_enabled",
+   "post_only",
+   "limit_only",
+   "cancel_only",
+   "status",
+   "status_message",
+   "trading_disabled",
+   "fx_stablecoin",
+   "max_slippage_percentage",
+   "auction_mode",
+   "high_bid_limit_percentage"
+  ],
+  "secs": 0.17
+ },
+ "cb_adv_spot_products": {
+  "status": 200,
+  "n": 929,
+  "keys": [
+   "product_id",
+   "price",
+   "price_percentage_change_24h",
+   "volume_24h",
+   "volume_percentage_change_24h",
+   "base_increment",
+   "quote_increment",
+   "quote_min_size",
+   "quote_max_size",
+   "base_min_size",
+   "base_max_size",
+   "base_name",
+   "quote_name",
+   "watched",
+   "is_disabled",
+   "new",
+   "status",
+   "cancel_only",
+   "limit_only",
+   "post_only",
+   "trading_disabled",
+   "auction_mode",
+   "product_type",
+   "quote_currency_id",
+   "base_currency_id",
+   "fcm_trading_session_details",
+   "mid_market_price",
+   "alias",
+   "alias_to",
+   "base_display_symbol",
+   "quote_display_symbol",
+   "view_only",
+   "price_increment",
+   "display_name",
+   "product_venue",
+   "approximate_quote_24h_volume",
+   "new_at",
+   "market_cap",
+   "base_cbrn",
+   "quote_cbrn",
+   "product_cbrn",
+   "icon_color",
+   "icon_url",
+   "display_name_overwrite",
+   "is_alpha_testing",
+   "about_description",
+   "best_bid_price",
+   "best_ask_price",
+   "high_24h",
+   "low_24h",
+   "hidden_from_discovery"
+  ],
+  "flagged_new": [
+   "CARD-USD",
+   "CARD-USDC",
+   "STABLE-USD",
+   "STABLE-USDC",
+   "RITUAL-USD",
+   "RITUAL-USDC"
+  ],
+  "secs": 0.17
+ },
+ "cb_exchange_old_candles_ETH": {
+  "status": 200,
+  "n": 241,
+  "secs": 0.34
+ },
+ "upbit_kr": {
+  "error": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)",
+  "secs": 0.13
+ },
+ "upbit_sg": {
+  "status": 200,
+  "total_pages": 46,
+  "n": 20,
+  "sample": [
+   [
+    "Scheduled Server Maintenance",
+    "2026-11-05T16:58:12+08:00"
+   ],
+   [
+    "Temporary Suspension of USDT(Tron Network) Deposits and Withdrawals (Completed)",
+    "2026-11-01T02:37:15+08:00"
+   ],
+   [
+    "Temporary Suspension of BTC, XRP, ETH, SOL Deposits and Withdrawals (Completed)",
+    "2026-11-01T02:35:04+08:00"
+   ],
+   [
+    "Temporary Suspension of SOL, USDG Deposits and Withdrawals (Completed)",
+    "2026-10-21T23:34:11+08:00"
+   ],
+   [
+    "Scheduled Server Maintenance (Completed)",
+    "2026-10-19T06:11:51+08:00"
+   ]
+  ],
+  "secs": 0.39
+ },
+ "binance_cms_new_listings_48": {
+  "status": 200,
+  "total": 2292,
+  "sample": [
+   [
+    "Binance Will List Predict (PREDICT) with Seed Tag Applied",
+    1793274532329
+   ],
+   [
+    "Binance Futures Will Launch Multiple TradFi USD\u24c8-Margined Perpetual Contracts (2026-10-29)",
+    1793263510993
+   ],
+   [
+    "Binance Will Add 5 bStocks Tokenized Securities as Collateral Asset - 2026-10-28",
+    1793158213531
+   ],
+   [
+    "Binance Exchange Adds Applovin Corp (APPB), Bending Spoons (BSPB), GE Vernova Inc (GEVB), GraniteShares 2x Short SK Hynix Daily ETF (SKDDB) and GraniteShares 2x Long SK Hynix Daily ETF (SKUUB) bStocks Trading Pairs on Binance Spot/Convert and Extends Zero Maker Fee Promotion - 2026-10-28",
+    1793156417379
+   ],
+   [
+    "Binance Futures Will Launch Multiple TradFi USD\u24c8-Margined Perpetual Contracts (2026-10-26)",
+    1792995301713
+   ]
+  ],
+  "secs": 0.18
+ },
+ "binance_cms_delist_161": {
+  "status": 200,
+  "total": 446,
+  "sample": [
+   [
+    "Notice of Removal of Spot Trading Pairs - 2026-10-30",
+    1793089800000
+   ],
+   [
+    "Notice of Removal of Margin Trading Pairs - 2026-10-30",
+    1793088009176
+   ],
+   [
+    "Binance Alpha Will Remove PTB, AA, OWL, DORA, ELIZAOS, MEMES, \u54ed\u54ed\u9a6c  (2026-10-23)",
+    1792747808273
+   ],
+   [
+    "Binance Futures Will Delist PTBUSDT and MITOUSDT USD\u24c8-M Perpetual Contracts (2026-10-23)",
+    1792575001882
+   ],
+   [
+    "Notice of Removal of Spot Trading Pairs - 2026-10-23",
+    1792485000000
+   ]
+  ],
+  "secs": 0.02
+ },
+ "binance_vision_um_daily_types": {
+  "status": 200,
+  "prefixes": [
+   "data/futures/um/daily/aggTrades/",
+   "data/futures/um/daily/bookDepth/",
+   "data/futures/um/daily/bookTicker/",
+   "data/futures/um/daily/indexPriceKlines/",
+   "data/futures/um/daily/klines/",
+   "data/futures/um/daily/markPriceKlines/",
+   "data/futures/um/daily/metrics/",
+   "data/futures/um/daily/premiumIndexKlines/",
+   "data/futures/um/daily/trades/"
+  ],
+  "n_prefixes": 9,
+  "keys": [],
+  "n_keys": 0,
+  "secs": 0.41
+ },
+ "binance_vision_liq": {
+  "daily": {
+   "status": 200,
+   "prefixes": [],
+   "n_prefixes": 0,
+   "keys": [],
+   "n_keys": 0
+  },
+  "monthly": {
+   "status": 200,
+   "prefixes": [],
+   "n_prefixes": 0,
+   "keys": [],
+   "n_keys": 0
+  },
+  "secs": 0.23
+ },
+ "binance_vision_spot_daily_types": {
+  "status": 200,
+  "prefixes": [
+   "data/spot/daily//",
+   "data/spot/daily/aggTrades/",
+   "data/spot/daily/klines/",
+   "data/spot/daily/trades/"
+  ],
+  "n_prefixes": 4,
+  "keys": [],
+  "n_keys": 0,
+  "secs": 0.14
+ },
+ "tardis_exchanges": {
+  "status": 200,
+  "n": 71,
+  "ids": [
+   "aster",
+   "aster-futures",
+   "bithumb",
+   "bitmex",
+   "deribit",
+   "binance-futures",
+   "binance-delivery",
+   "binance-european-options",
+   "binance",
+   "ftx",
+   "okex-futures",
+   "okex-options",
+   "okex-swap",
+   "okex",
+   "okex-spreads",
+   "huobi-dm",
+   "huobi-dm-swap",
+   "huobi-dm-linear-swap",
+   "huobi-dm-options",
+   "huobi",
+   "bitfinex-derivatives",
+   "bitfinex",
+   "coinbase",
+   "coinbase-derivatives",
+   "coinbase-international",
+   "cryptofacilities",
+   "kraken",
+   "bitstamp",
+   "bitvavo",
+   "gemini",
+   "poloniex",
+   "upbit",
+   "bybit",
+   "bybit-spot",
+   "bybit-options",
+   "bybit-spread",
+   "phemex",
+   "ascendex",
+   "kucoin",
+   "kucoin-futures",
+   "serum",
+   "mango",
+   "dydx",
+   "dydx-v4",
+   "delta",
+   "delta-india",
+   "ftx-us",
+   "binance-us",
+   "gate-io-futures",
+   "gate-io",
+   "okcoin",
+   "bitflyer",
+   "hitbtc",
+   "coinflex",
+   "crypto-com",
+   "binance-jersey",
+   "binance-dex",
+   "star-atlas",
+   "bitnomial",
+   "woo-x",
+   "blockchain-com",
+   "bitget",
+   "bitget-futures",
+   "hyperliquid",
+   "lighter",
+   "lighter-rh",
+   "bullish",
+   "polymarket",
+   "mexc",
+   "mexc-futures",
+   "whitebit"
+  ],
+  "secs": 0.1
+ },
+ "tardis_ex_binance_futures": {
+  "status": 200,
+  "availableSince": "2019-11-17T00:00:00.000Z",
+  "channels": [
+   "trade",
+   "depth",
+   "depthSnapshot",
+   "bookTicker",
+   "forceOrder",
+   "ticker",
+   "markPrice",
+   "premiumIndex",
+   "indexConstituents",
+   "openInterest",
+   "fundingInfo",
+   "fundingRate",
+   "insuranceBalance",
+   "aggTrade",
+   "compositeIndex",
+   "assetIndex",
+   "topLongShortAccountRatio",
+   "topLongShortPositionRatio",
+   "globalLongShortAccountRatio",
+   "takerlongshortRatio",
+   "!contractInfo",
+   "tradingSession",
+   "recentTrades"
+  ],
+  "datasets": [
+   "csv"
+  ],
+  "dataTypes": [
+   "trades",
+   "derivative_ticker",
+   "liquidations"
+  ],
+  "secs": 0.23
+ },
+ "tardis_ex_hyperliquid": {
+  "status": 200,
+  "availableSince": "2024-10-29T00:00:00.000Z",
+  "channels": [
+   "trades",
+   "l2Book",
+   "fastBook",
+   "bbo",
+   "activeAssetCtx",
+   "activeSpotAssetCtx"
+  ],
+  "datasets": [
+   "csv"
+  ],
+  "dataTypes": [
+   "trades",
+   "derivative_ticker"
+  ],
+  "secs": 0.28
+ },
+ "tardis_ex_coinbase": {
+  "status": 200,
+  "availableSince": "2019-03-30T00:00:00.000Z",
+  "channels": [
+   "match",
+   "l2update",
+   "snapshot",
+   "ticker",
+   "subscriptions",
+   "received",
+   "open",
+   "done",
+   "change",
+   "last_match",
+   "full_snapshot",
+   "rfq_matches"
+  ],
+  "datasets": [
+   "csv"
+  ],
+  "dataTypes": [
+   "trades"
+  ],
+  "secs": 0.27
+ },
+ "tardis_free_binance_liq": {
+  "status": 200,
+  "head": "exchange,symbol,timestamp,local_timestamp,id,side,price,amount\nbinance-futures,BTCUSDT,1759276814331000,1759276814335721,,buy,114494.1,0.014\nbinance-futures,BTCUSDT,1759276834356000,1759276834362010,,buy,114481.8,0.027\nbinance-futures,BTCUSDT,1759276866205000,1759276866211548,,buy,114504.9,0.002\nbinance-futures,BTCUSDT,1759276890187000,1759276890190679,,buy,114544.5,0.04\nbinance-futures,BTCUSDT,1759276892376000,1759276892383270,,buy,114573.7,0.006\nbinance-futures,BTCUSDT,1759276899422000,1759276899427049,,buy,114599.2,0.005\nbinance-futures,BTCUSDT,1759277118202000,1759277118208581,,buy,114635.4,0.013\nbinance-futures,BTCUSDT,1759277125315000,1759277125320193,,buy,114650,0.001\nbinance-futures,",
+  "secs": 0.6
+ },
+ "tardis_free_hl_liq": {
+  "status": 400,
+  "head": "",
+  "secs": 0.63
+ },
+ "tardis_free_hl_trades": {
+  "status": 200,
+  "head": "exchange,symbol,timestamp,local_timestamp,id,side,price,amount\nhyperliquid,BTC,1759276803279000,1759276804039652,1083212808877004,buy,114037,0.00017\nhyperliquid,BTC,1759276803279000,1759276804039652,160657161618369,buy,114037,0.0104\nhyperliquid,BTC,1759276803279000,1759276804039652,976549491611711,buy,114037,0.11043\nhyperliquid,BTC,1759276803279000,1759276804039652,945426592633361,buy,114037,0.00011\nhyperliquid,BTC,1759276803279000,1759276804039652,648380938283699,buy,114037,0.13036\nhyperliquid,BTC,1759276803279000,1759276804039652,399666714154697,buy,114038,0.01315\nhyperliquid,BTC,1759276803279000,1759276804039652,554159989715299,buy,114038,0.00011\nhyperliquid,BTC,1759276803279000,175927680",
+  "secs": 0.26
+ },
+ "tardis_free_cb_trades": {
+  "status": 200,
+  "head": "exchange,symbol,timestamp,local_timestamp,id,side,price,amount\ncoinbase,BTC-USD,1759276800917844,1759276800956411,879773977,buy,114067.71,0.02630016\ncoinbase,BTC-USD,1759276800917844,1759276800956428,879773978,buy,114067.71,0.007\ncoinbase,BTC-USD,1759276800917844,1759276800956444,879773979,buy,114067.73,0.01860298\ncoinbase,BTC-USD,1759276800921903,1759276800961192,879773980,buy,114067.82,0.02583799\ncoinbase,BTC-USD,1759276800921903,1759276800961208,879773981,buy,114067.85,0.00666048\ncoinbase,BTC-USD,1759276800961855,1759276801000541,879773982,buy,114067.85,0.01742474\ncoinbase,BTC-USD,1759276800962121,1759276801000873,879773983,buy,114067.85,0.03239149\ncoinbase,BTC-USD,1759276800962136,175927",
+  "secs": 0.64
+ },
+ "tardis_free_binance_liq_notfirst": {
+  "status": 401,
+  "head": "",
+  "secs": 14.23
+ },
+ "hl_candles_1m_depth": {
+  "2023-06-01 00:00": {
+   "status": 200,
+   "n": 0
+  },
+  "2025-01-01 00:00": {
+   "status": 200,
+   "n": 0
+  },
+  "2026-10-01 00:00": {
+   "status": 200,
+   "n": 0
+  },
+  "secs": 0.5
+ },
+ "hl_hlp_vault": {
+  "status": 200,
+  "name": "Hyperliquidity Provider (HLP)",
+  "relationship": {
+   "type": "parent",
+   "data": {
+    "childAddresses": [
+     "0x010461c14e146ac35fe42271bdc1134ee31c703a",
+     "0x2e3d94f0562703b25c83308a05046ddaf9a8dd14",
+     "0x2ed5c4484ea3ff8b57d5f2fb152a40d9f2b68308",
+     "0x31ca8395cf837de08b24da3f660e77761dfb974b",
+     "0x469f690213c467c39a23efacfd2816896009d7d8",
+     "0x5e177e5e39c0f4e421f5865a6d8beed8d921cb70",
+     "0xb0a55f13d22f66e6d495ac98113841b2326e9540"
+    ]
+   }
+  },
+  "secs": 0.22
+ },
+ "hl_hlp_children_fills_oct10": {
+  "children": [
+   "0x010461c14e146ac35fe42271bdc1134ee31c703a",
+   "0x2e3d94f0562703b25c83308a05046ddaf9a8dd14",
+   "0x2ed5c4484ea3ff8b57d5f2fb152a40d9f2b68308",
+   "0x31ca8395cf837de08b24da3f660e77761dfb974b",
+   "0x469f690213c467c39a23efacfd2816896009d7d8",
+   "0x5e177e5e39c0f4e421f5865a6d8beed8d921cb70",
+   "0xb0a55f13d22f66e6d495ac98113841b2326e9540"
+  ],
+  "fills": {
+   "0x010461c14e146ac35fe42271bdc1134ee31c703a": {
+    "status": 200,
+    "n": 0,
+    "n_liq": 0,
+    "sample": []
+   },
+   "0x2e3d94f0562703b25c83308a05046ddaf9a8dd14": {
+    "status": 200,
+    "n": 2000,
+    "n_liq": 3,
+    "sample": [
+     {
+      "coin": "DOGE",
+      "px": "0.1592",
+      "sz": "1975.0",
+      "side": "A",
+      "time": 1760132006888,
+      "startPosition": "32827846.0",
+      "dir": "Close Long",
+      "closedPnl": "142.375775",
+      "hash": "0x28efd81b7d9405952a69042d3a91ad0202f8000118972467ccb8836e3c97df7f",
+      "oid": 194033569429,
+      "crossed": false,
+      "fee": "0.03773",
+      "tid": 1071999120631355,
+      "feeToken": "USDC",
+      "twapId": null
+     }
+    ]
+   },
+   "0x2ed5c4484ea3ff8b57d5f2fb152a40d9f2b68308": {
+    "status": 200,
+    "n": 0,
+    "n_liq": 0,
+    "sample": []
+   },
+   "0x31ca8395cf837de08b24da3f660e77761dfb974b": {
+    "status": 200,
+    "n": 0,
+    "n_liq": 0,
+    "sample": []
+   }
+  },
+  "secs": 1.14
+ },
+ "hl_funding": {
+  "status": 200,
+  "n": 500,
+  "first": [
+   {
+    "coin": "BTC",
+    "fundingRate": "-0.0006133368",
+    "premium": "-0.0009133368",
+    "time": 1683849600048
+   }
+  ],
+  "secs": 0.12
+ },
+ "llama_emissions_list": {
+  "status": 200,
+  "type": "application/json",
+  "len": 373,
+  "sample": [
+   "injective-orderbook",
+   "credbull",
+   "bouncebit"
+  ],
+  "secs": 0.25
+ },
+ "llama_emissions_api": {
+  "status": 402,
+  "type": "text/plain",
+  "len": 66,
+  "sample": "Upgrade to the paid API plan at https://defillama.com/subscription",
+  "secs": 0.21
+ },
+ "llama_emission_arbitrum": {
+  "status": 402,
+  "type": "text/plain",
+  "len": 66,
+  "sample": "Upgrade to the paid API plan at https://defillama.com/subscription",
+  "secs": 0.02
+ },
+ "farside_btc": {
+  "status": 200,
+  "secs": 0.75
+ },
+ "coingecko_ping": {
+  "status": 200,
+  "secs": 0.18
+ }
+}
