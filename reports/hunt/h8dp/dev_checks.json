@@ -1,0 +1,166 @@
+{
+ "ust_stress": [
+  {
+   "ladder": "deep",
+   "exit": "tp",
+   "lots": 25,
+   "pnl_before_collapse": 391.20347430080767,
+   "pnl_collapse": -9669.67529973809,
+   "pnl_pct_of_sleeve": -30.928239418124274,
+   "collapse_exit_kinds": {
+    "delist": 1
+   }
+  },
+  {
+   "ladder": "shallow",
+   "exit": "tp",
+   "lots": 405,
+   "pnl_before_collapse": 1001.6834050866444,
+   "pnl_collapse": -5535.321970434612,
+   "pnl_pct_of_sleeve": -15.112128551159898,
+   "collapse_exit_kinds": {
+    "delist": 9
+   }
+  },
+  {
+   "ladder": "deep",
+   "exit": "tp7",
+   "lots": 25,
+   "pnl_before_collapse": 391.20347430080767,
+   "pnl_collapse": -8302.679405768844,
+   "pnl_pct_of_sleeve": -26.371586438226785,
+   "collapse_exit_kinds": {
+    "timeout": 1
+   }
+  },
+  {
+   "ladder": "shallow",
+   "exit": "tp7",
+   "lots": 405,
+   "pnl_before_collapse": 1001.6834050866444,
+   "pnl_collapse": -4805.502295637882,
+   "pnl_pct_of_sleeve": -12.679396301837459,
+   "collapse_exit_kinds": {
+    "timeout": 9
+   }
+  }
+ ],
+ "power_dev": [
+  {
+   "label": "usdt|shallow|tp",
+   "n_days": 1246,
+   "active_days": 170,
+   "sleeve_ret_yr": -0.05437239698873097,
+   "rf_yr": 0.03729682985553772,
+   "excess_yr": -0.09166922684426868,
+   "sd_daily": 0.0005161995689775898,
+   "t_iid": -17.174024873957688,
+   "excess_needed_yr_for_t3": 0.016013001177715865,
+   "sleeve_ret_needed_yr_for_t3": 0.05330983103325358,
+   "active_days_per_yr": 49.79935794542536,
+   "mean_active_day_ret": -0.0010918292771629136
+  },
+  {
+   "label": "usdt|shallow|tp7",
+   "n_days": 1246,
+   "active_days": 173,
+   "sleeve_ret_yr": -0.05616494277806254,
+   "rf_yr": 0.03729682985553772,
+   "excess_yr": -0.09346177263360028,
+   "sd_daily": 0.000523181151595041,
+   "t_iid": -17.27619434873928,
+   "excess_needed_yr_for_t3": 0.016229576505155593,
+   "sleeve_ret_needed_yr_for_t3": 0.053526406360693314,
+   "active_days_per_yr": 50.67817014446228,
+   "mean_active_day_ret": -0.0011082669839491
+  },
+  {
+   "label": "usdt|deep|tp",
+   "n_days": 1246,
+   "active_days": 22,
+   "sleeve_ret_yr": 0.012788395661804166,
+   "rf_yr": 0.03729682985553772,
+   "excess_yr": -0.024508434193733556,
+   "sd_daily": 0.0004612499104279845,
+   "t_iid": -5.138607277298806,
+   "excess_needed_yr_for_t3": 0.01430841055046543,
+   "sleeve_ret_needed_yr_for_t3": 0.05160524040600315,
+   "active_days_per_yr": 6.4446227929374,
+   "mean_active_day_ret": 0.0019843513069250297,
+   "active_days_per_yr_needed_for_t3": 36
+  },
+  {
+   "label": "usdt|deep|tp7",
+   "n_days": 1246,
+   "active_days": 22,
+   "sleeve_ret_yr": 0.012770540615957586,
+   "rf_yr": 0.03729682985553772,
+   "excess_yr": -0.02452628923958013,
+   "sd_daily": 0.0004612456864594396,
+   "t_iid": -5.142397981623637,
+   "excess_needed_yr_for_t3": 0.0143082795189471,
+   "sleeve_ret_needed_yr_for_t3": 0.05160510937448482,
+   "active_days_per_yr": 6.4446227929374,
+   "mean_active_day_ret": 0.001981580773036507,
+   "active_days_per_yr_needed_for_t3": 36
+  },
+  {
+   "label": "all|shallow|tp",
+   "n_days": 1246,
+   "active_days": 991,
+   "sleeve_ret_yr": -0.8068918537389219,
+   "rf_yr": 0.037296829855537714,
+   "excess_yr": -0.8441886835944596,
+   "sd_daily": 0.00544494478067998,
+   "t_iid": -14.993816899453845,
+   "excess_needed_yr_for_t3": 0.16890736146548707,
+   "sleeve_ret_needed_yr_for_t3": 0.2062041913210248,
+   "active_days_per_yr": 290.30096308186194,
+   "mean_active_day_ret": -0.0027795011259104455
+  },
+  {
+   "label": "all|shallow|tp7",
+   "n_days": 1246,
+   "active_days": 994,
+   "sleeve_ret_yr": -0.8084358603003513,
+   "rf_yr": 0.037296829855537714,
+   "excess_yr": -0.845732690155889,
+   "sd_daily": 0.005447214503966044,
+   "t_iid": -15.01498134269245,
+   "excess_needed_yr_for_t3": 0.16897777043875453,
+   "sleeve_ret_needed_yr_for_t3": 0.20627460029429223,
+   "active_days_per_yr": 291.17977528089887,
+   "mean_active_day_ret": -0.002776414878129704
+  },
+  {
+   "label": "all|deep|tp",
+   "n_days": 1246,
+   "active_days": 632,
+   "sleeve_ret_yr": 0.07492977248281119,
+   "rf_yr": 0.037296829855537714,
+   "excess_yr": 0.03763294262727348,
+   "sd_daily": 0.0028052322139717396,
+   "t_iid": 1.2973749779821613,
+   "excess_needed_yr_for_t3": 0.08702096910903487,
+   "sleeve_ret_needed_yr_for_t3": 0.12431779896457258,
+   "active_days_per_yr": 185.13643659711076,
+   "mean_active_day_ret": 0.0004047273127864693,
+   "active_days_per_yr_needed_for_t3": 412
+  },
+  {
+   "label": "all|deep|tp7",
+   "n_days": 1246,
+   "active_days": 627,
+   "sleeve_ret_yr": 0.07478155841406255,
+   "rf_yr": 0.037296829855537714,
+   "excess_yr": 0.03748472855852483,
+   "sd_daily": 0.0028057306804060516,
+   "t_iid": 1.292035795546926,
+   "excess_needed_yr_for_t3": 0.08703643201152332,
+   "sleeve_ret_needed_yr_for_t3": 0.12433326186706103,
+   "active_days_per_yr": 183.6717495987159,
+   "mean_active_day_ret": 0.0004071478525001505,
+   "active_days_per_yr_needed_for_t3": 411
+  }
+ ]
+}
