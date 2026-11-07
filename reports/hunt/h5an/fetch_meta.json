@@ -1,0 +1,40 @@
+{
+ "currencies": {
+  "status": 200,
+  "n": 516
+ },
+ "exchange_trades_probe": {
+  "RNDR-USD": {
+   "latest_status": 200,
+   "latest_n": 5,
+   "latest_time": "2025-06-26",
+   "mid_status": 200,
+   "mid_day": "2024-04-14",
+   "cb_after_header": true
+  },
+  "MATIC-USD": {
+   "latest_status": 200,
+   "latest_n": 5,
+   "latest_time": "2025-10-14",
+   "mid_status": 200,
+   "mid_day": "2022-02-26",
+   "cb_after_header": true
+  },
+  "GAL-USD": {
+   "latest_status": 200,
+   "latest_n": 5,
+   "latest_time": "2025-05-16",
+   "mid_status": 200,
+   "mid_day": "2023-01-08",
+   "cb_after_header": true
+  },
+  "LRC-USD": {
+   "latest_status": 200,
+   "latest_n": 5,
+   "latest_time": "2026-08-07",
+   "mid_status": 200,
+   "mid_day": "2021-12-12",
+   "cb_after_header": true
+  }
+ }
+}
