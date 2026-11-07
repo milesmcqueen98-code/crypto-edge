@@ -1,0 +1,142 @@
+# H10 (XQ): secondary-book wicks — resting bids in Coinbase's BTC-, ETH- and USDT-quoted books
+
+**Verdict: FAILS every gate.** All 13 DEV trials lose heavily at 2× and at 1× costs. The bids are filled by
+stale-quote pick-offs, not by forced sellers.
+
+## Mechanism and what the data say
+- **The SPEC's bid.** F·exp(−kσ_c), where F is the USD-implied cross at t−1 times the trailing 24 h median
+  residual, and σ_c is the trailing 3-day std of the 1-minute residual.
+- **What happens.** In the books that get the bid slots (ETH-BTC, SOL-BTC, BTC/ETH/SOL-USDT …), σ_c is only
+  3–10 bp, mostly noise from asynchronous closes. A 6σ bid therefore sits ~28 bp (median) below a fair value that
+  is up to a minute stale. It fills when the USD books have already moved and the cross book follows.
+- **What the fill locks in.** For the frozen variant, the residual locked in against the USD books at the hedge
+  averages +1.7 bp on DEV (median +1.0; +3.0 on HOLD). The round trip costs 70 bp at 2× (35 bp at 1×).
+  - Only 1.9% of fills lock more than the 2× cost.
+  - Fills ≥ 100 bp deep (547) lock 35 bp on average and still lose.
+- **The large true breaks are real but rare.** Minute lows vs F: WLUNA-USDT −82% (2022-05-12); HBAR-USDT −55%,
+  XRP-USDT −39%, DOT-USDT −36%, DOGE-USDT −33% (2025-10-10); XRP-USDT −13% (2025-02-03). They are a handful of
+  minutes against thousands of adverse fills.
+
+## Data
+- **Pair list.** Built from Exchange /products (846 products incl. delisted) and committed before any price was
+  read (pairs.csv). 191 secondary pairs have both USD legs: 116 USDT, 67 BTC and 8 ETH-quoted; 148 are delisted.
+- **Volumes on DEV (median USD/day).** BTC-USDT $19.0M, ETH-USDT $16.3M, ETH-BTC $6.1M, SOL-USDT $2.5M, GALA-USDT
+  $2.3M (delisted), SOL-BTC $1.1M, XRP-USDT $1.0M; every other pair < $0.6M (pair_volumes.csv).
+- **Universe.** The SPEC's cash rule (resting bids at full $5K, at most the sleeve's capital) allows 6 bids at
+  $30K and 10 at $50K. The slots go to the books of the quote set ranked by trailing 30-day median USD volume,
+  known at d−1. 71 pairs ever hold a slot: 38 USDT and 33 BTC/ETH-quoted.
+- **1-minute candles.** Exchange API on Actions, 170,686 requests with 0 errors, pairs plus missing USD legs.
+  Other legs came from data/minute(_early). HOLD candles were downloaded before the freeze, processed after it.
+- **Candidate fills.** 1,426,058 DEV fill minutes (k = 3: 809K; 4: 452K; 6: 164K).
+
+## Trials (DEV, $30K sleeve, θ 0.5)
+13 trials logged in the shared ledger. Alpha t is on the incumbent at $70K, the selection metric.
+
+| Variant | Trades | Sleeve Sharpe 2× | Alpha t |
+|---|---|---|---|
+| k3_a_USDT_H60 | 170,548 | −17.32 | −16.14 |
+| k4_a_USDT_H60 | 112,823 | −14.55 | −13.88 |
+| k6_a_USDT_H60 | 51,536 | −12.33 | −13.04 |
+| k3_b_USDT | 428,096 | −20.62 | −20.33 |
+| k4_b_USDT | 256,139 | −18.07 | −18.48 |
+| k6_b_USDT | 100,301 | −14.92 | −16.21 |
+| k3_a_BTCETH_H60 | 54,997 | −14.81 | −14.77 |
+| k4_a_BTCETH_H60 | 33,359 | −13.59 | −14.15 |
+| k6_a_BTCETH_H60 | 14,145 | −11.84 | −13.82 |
+| k3_b_BTCETH | 105,639 | −12.71 | −11.48 |
+| k4_b_BTCETH | 58,490 | −11.63 | −11.04 |
+| **k6_b_BTCETH (frozen)** | 21,759 | −10.43 | **−10.90** |
+| k6_b_BTCETH_casc | 4,261 | −9.29 | −12.36 |
+
+- **At 1× costs.** Sleeve Sharpes are −8.7 to −20.1, so the gross edge is negative, not just eaten by costs.
+- **Variants on the best.** H = 30 exists only for exit (a), so it was not run (budget unspent). The cascade
+  filter (BTC-USD 15-minute move < −2σ of the trailing 3-day std) is worse.
+- **USDT vs BTC/ETH-quoted.**
+  - Best USDT trial: alpha t −13.04, sleeve Sharpe −12.33.
+  - Best BTC/ETH trial: −10.90 and −10.43.
+  - Neither set is viable, so whether NY accounts can hold USDT is moot.
+
+## Frozen variant and gates
+- **Frozen variant.** k6_b_BTCETH: k = 6, immediate USD-book hedge, BTC/ETH-quoted books, θ 0.5, $5K bids,
+  ≤ 6 open.
+- **Freeze.** Freeze commit b4711ad; code commit f780d48. HOLD was read once (3dbbfa0).
+
+| Path B, a = 0.7 | 2× (gates) | 1× (info) |
+|---|---|---|
+| G1 full alpha t (needs ≥ 3) | −10.87 FAIL | −10.65 |
+| HOLD alpha t | −9.31 | −8.50 |
+| G2 HOLD book Sharpe gain (needs ≥ +0.25) | −7.67 FAIL | −3.70 |
+| G3 full book Sharpe gain (needs ≥ +0.5) | −11.49 FAIL | −9.65 |
+| G4 DSR, provisional (N = 3,150) | ≈ 0, FAIL | |
+| G5 book years | 2022 −263%, 2023 −80%, 2025 −161%, 2026 −48%: FAIL | all negative |
+
+- **Sharpes.**
+  - Sleeve: full −9.95, DEV −10.43, HOLD −12.42.
+  - Book vs incumbent: −9.03 vs 2.47 on all days; −4.03 vs 3.64 on HOLD.
+- **Path A** does not apply.
+- **Sleeve P&L at 2× on $30K.**
+  - 22,231 trades in all; 472 of them on HOLD. Trade P&L −$587K; inventory −$27K (BTC/ETH hedge funding and
+    fees).
+  - Years: 2022 −907%, 2023 −311%, 2025 −625%, 2026 −205%. These are fixed-capital sums; a real sleeve would be
+    wiped out within weeks.
+
+## Capacity
+- **Fills at $30K.** $81.2M at θ 0.5; average fill $3,651; 60% fill the full $5K.
+- **θ 0.25.** Fills are 86% of θ 0.5.
+- **$50K.** 27,090 trades, $95.0M filled.
+
+## Fill realism (prints)
+- **Sample.** Prints were fetched with the fixed TradeFetcher and the 1-second latency rule, for a seeded sample:
+  150 random plus the 40 deepest fills of each of 30 configurations, 4,917 windows.
+- **Coverage.** Shard 0 of 3 completed: 1,639 windows, 1,701 rows, 0 fetch failures. Shards 1–2 were cancelled
+  in the shared queue once the result was settled. checks.py recomputes everything with whatever shards exist.
+- **Candles are optimistic on every measure.**
+  - Confirmation: only 81.7% of candle fills confirm on prints (BTC 78.6%, ETH 73.1%, USDT 84.9%). The rest had
+    a print at the level within the first second, or no print a tick through after it.
+  - Size cap: through-volume on prints is a median 28% of the candle estimate.
+  - Take-profits confirm 88.9% of the time.
+  - Hedge: on the same 610 hedged fills, the hedge at the first USD print ≥ 2 s after the fill locks 12.7 bp,
+    vs 17.8 bp at the next minute's open. (These include the deepest fills, so they exceed the variant's average.)
+  - Median half-spreads in these windows: USDT 1.5 bp, BTC 2.2 bp, ETH 9.9 bp.
+- **Implication.** Applying prints would only make the results worse.
+
+## Other SPEC checks
+- **Overlap with the incumbent.**
+  - 33% of the sleeve's trade days are incumbent fill days, and 23% of its trades fall on the same day and coin.
+  - It loses on both: −$327K on incumbent fill days, −$260K on other days.
+- **Correlation with the incumbent.** −0.19 (beta −1.0). The sleeve loses most on cascade days, which are the
+  incumbent's best days.
+- **Concentration.**
+  - The worst 3 days carry 5.5% of losses: 2022-01-21/22 and 2025-02-03.
+  - 0.2% of days are positive.
+  - Top-3-days share of P&L: undefined (P&L negative).
+- **Mark-to-market.** No overnight exposure (the hedge flattens within a minute; inventory perp-hedged).
+
+## Weaknesses
+- **Historical ticks.** Today's quote_increment is used for all history, which is mildly optimistic.
+- **Pre-July 2025 hedge.** The perp hedge is priced on spot prices with the perp cost model (flagged, per SPEC).
+- **Fixed-capital returns** ignore ruin.
+
+## Deviations
+1. **Print verification sampled.** Prints were fetched for a sample (~0.1% of fills, 1,639 windows), not every
+   window. The 13 trials produce 1.41M fills, and the Actions queue (20 jobs shared by all builders) made full
+   verification infeasible. All scoring (trials, freeze, gates) uses candles for every fill with costs exactly as in
+   common.py, one consistent basis. The prints measure the bias (H10_USE_PRINTS=1 applies them, for information).
+2. **Shared-code fixes pulled before any print run** (coordinator):
+   - cfbe931: ISO8601 times; Exchange trade-id fallback for delisted pairs (Advanced returns 404).
+   - 06a9416: loss-free paging.
+
+   No print check used the old fetcher.
+3. **G4 is provisional.** It is recomputed centrally (prereg deviation 2026-11-07 06:00).
+4. **Engineering choices.**
+   - Daily slots go by trailing ADV rank.
+   - Fills under $100 are ignored.
+   - c̄ needs ≥ 30 joint minutes and σ_c ≥ 120.
+   - Leg closes are forward-filled ≤ 30 minutes.
+   - Take-profit volume is counted over the holding window (as in the incumbent's simulator).
+
+## Verdict
+FAIL on G1–G5. The pre-registered bid is priced off a USD fair value up to a minute stale, inside the noise band
+of liquid secondary books, and is adversely selected: 1–3 bp of real cross dislocation against 35–70 bp of
+costs. The multi-percent breaks (May 2022, Oct 10 2025) are too rare to matter. A sub-second fair value with
+cascade-only quoting would be a new idea needing its own pre-registration.
