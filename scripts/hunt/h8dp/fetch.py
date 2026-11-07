@@ -206,7 +206,25 @@ def exchange_all(pid):
     print(f"{pid}: {len(d)} trades {d.time.min()} .. {d.time.max()}, {N_REQ[0]} requests, {time.time() - t0:.0f}s")
 
 
+def advlist():
+    """Advanced Trade public product list: any cbBTC / cbETH / wrapped product ids (spot and futures)."""
+    r = S.get("https://api.coinbase.com/api/v3/brokerage/market/products", params={"limit": 5000}, timeout=60)
+    js = r.json().get("products", [])
+    hits = [p for p in js if any(k in (p.get("product_id", "") + p.get("base_display_symbol", "")).upper()
+                                 for k in ("CBBTC", "CBETH", "WBTC", "LSETH"))]
+    out = {"status": r.status_code, "n_products": len(js),
+           "hits": [{k: p.get(k) for k in ("product_id", "status", "product_type", "quote_currency_id",
+                                             "trading_disabled", "is_disabled", "new_at", "volume_24h")} for p in hits]}
+    os.makedirs(OUT, exist_ok=True)
+    with open(os.path.join(OUT, "advanced_wrapped.json"), "w") as f:
+        json.dump(out, f, indent=1, default=str)
+    print(json.dumps(out, default=str)[:3000])
+
+
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "advlist":
+        advlist()
+        sys.exit(0)
     if len(sys.argv) > 1 and sys.argv[1] == "xall":
         for pid in sys.argv[2:]:
             exchange_all(pid)

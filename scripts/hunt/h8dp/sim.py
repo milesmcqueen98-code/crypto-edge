@@ -11,8 +11,9 @@ after the fill. Whole sleeve capital in the ladder; idle cash earns 0 (Coinbase 
 
 Fill rules (pre-registration):
 - Entry (resting bid): size <= theta x through-volume, i.e. volume of prints at least one tick BELOW the bid
-  (data/hunt/h8dp/tagg, every candidate window fetched from trade prints). Rungs share sellers: in a minute, the fills
-  of all rungs at or above a level are capped by theta x the volume below that level (shallow rungs fill first).
+  (data/hunt/h8dp/tagg, every candidate window fetched from trade prints). Rungs share sellers as in
+  scripts/wick1m/sim.py: each rung <= theta x its own through-volume, and all rungs together <= theta x the
+  through-volume of the shallowest rung in that minute (shallow rungs fill first).
   Minutes outside fetched windows fall back to candles: the minute opened at or above the bid, then traded at least
   one tick through it; volume spread evenly over the candle's range.
 - Exit (resting ask at par - 5 bp, placed after the fill): size <= theta x volume of prints at least one tick ABOVE it
@@ -80,6 +81,9 @@ def prints_for(pid, end):
 
 
 def build(pid, end):
+    """Per-minute arrays for one pair (memory-lean: constant levels for the stablecoins are broadcast views, volumes
+    in float32). E[i, j]: coin volume available to fill the bid at depth DEPTHS[j] in minute i; X[i]: coin volume
+    available to the take-profit ask; prints where fetched, candles elsewhere."""
     key = (pid, end)
     if key in _CACHE:
         return _CACHE[key]
@@ -88,141 +92,189 @@ def build(pid, end):
     A, W, full = prints_for(pid, end)
     ts = C.index.values.astype("datetime64[ns]").astype(np.int64)
     n = len(ts)
-    o, h, l, c, v = (C[k].to_numpy(float) for k in ("open", "high", "low", "close", "volume"))
+    o, h, l = (C[k].to_numpy(float) for k in ("open", "high", "low"))
+    v = C["volume"].to_numpy(np.float32)
+    last_close = float(C["close"].iloc[-1]) if n else np.nan
+    del C
     tick = LV.TICK[pid]
-    lev = L[list(LV.DEPTHS)].to_numpy(float)
-    tp = L["tp"].to_numpy(float)
-    # coverage by fetched print windows
+    if pid in LV.STABLES or pid in ("UST-USD", "BUSD-USD"):
+        lev = np.broadcast_to(L[list(LV.DEPTHS)].iloc[0].to_numpy(float), (n, len(LV.DEPTHS)))
+        tp = np.broadcast_to(np.float64(L["tp"].iloc[0]), (n,))
+    else:
+        lev = L[list(LV.DEPTHS)].to_numpy(float)
+        tp = L["tp"].to_numpy(float)
+    del L
     if full:
         cov = np.ones(n, bool)
     else:
-        cov = np.zeros(n + 1, int)
+        cnt = np.zeros(n + 1, np.int32)
         ok = W[W.ids_missing >= 0]
-        s = np.searchsorted(ts, ok.start.values.astype("datetime64[ns]").astype(np.int64))
-        e = np.searchsorted(ts, ok.end.values.astype("datetime64[ns]").astype(np.int64))
-        np.add.at(cov, s, 1)
-        np.add.at(cov, e, -1)
-        cov = np.cumsum(cov)[:n] > 0
+        s_ = np.searchsorted(ts, ok.start.values.astype("datetime64[ns]").astype(np.int64))
+        e_ = np.searchsorted(ts, ok.end.values.astype("datetime64[ns]").astype(np.int64))
+        np.add.at(cnt, s_, 1)
+        np.add.at(cnt, e_, -1)
+        cov = np.cumsum(cnt)[:n] > 0
     rng = h - l
-    E = np.zeros((n, len(LV.DEPTHS)))
+    safe = np.where(rng > 0, rng, 1.0)
+    E = np.zeros((n, len(LV.DEPTHS)), np.float32)
     for j in range(len(LV.DEPTHS)):
         Lj = lev[:, j]
         okc = (o >= Lj - 0.5 * tick) & (l <= Lj - 0.5 * tick)
-        frac = np.where(rng > 0, np.clip((Lj - l) / np.where(rng > 0, rng, 1), 0, 1), 1.0)
-        E[:, j] = np.where(okc, v * frac, 0.0)
-    # take-profit ask (placed after the fill): candle minutes whose high trades a tick above it, volume above the ask
-    # spread evenly over the range (as the wick simulators' first_touch / above_usd; no open condition for exits)
-    okx = h >= tp + 0.5 * tick
-    fx = np.where(rng > 0, np.clip((h - tp) / np.where(rng > 0, rng, 1), 0, 1), 1.0)
-    X = np.where(okx, v * fx, 0.0)
-    n_cand_unc = int(((E[:, 0] > 0) & ~cov).sum())
+        frac = np.where(rng > 0, np.clip((Lj - l) / safe, 0, 1), 1.0)
+        E[:, j] = np.where(okc & ~cov, v * frac, 0.0)
+    okx = (h >= tp + 0.5 * tick) & ~cov
+    X = np.where(okx, v * np.where(rng > 0, np.clip((h - tp) / safe, 0, 1), 1.0), 0.0).astype(np.float32)
+    n_cand_unc = int(((l <= lev[:, 0] - 0.5 * tick) & ~cov).sum())
+    del h, l, v, rng, safe
     if len(A):
-        Ai = A.reindex(C.index)
-        vb = np.nan_to_num(Ai[[f"vb_{int(round(d * 1e4))}" for d in LV.DEPTHS]].to_numpy(float))
-        va = np.nan_to_num(Ai["va_tp"].to_numpy(float))
-        E = np.where(cov[:, None], vb, E)
-        X = np.where(cov, va, X)
-    E = np.nan_to_num(E)
-    X = np.nan_to_num(X)
-    P = dict(pid=pid, ts=ts, o=o, c=c, lev=lev, tp=tp, E=E, X=X, cov=cov, n_cand_uncovered=n_cand_unc,
-             fees=LV.fees(pid), last_ts=int(ts[-1]) if n else None, n_print_minutes=int(len(A)))
+        at = A.index.values.astype("datetime64[ns]").astype(np.int64)
+        pos = np.searchsorted(ts, at)
+        okp = (pos < n)
+        okp[okp] = ts[pos[okp]] == at[okp]
+        okp[okp] = cov[pos[okp]]
+        pos = pos[okp]
+        E[pos, :] = np.nan_to_num(A[[f"vb_{int(round(d * 1e4))}" for d in LV.DEPTHS]].to_numpy(float))[okp]
+        X[pos] = np.nan_to_num(A["va_tp"].to_numpy(float))[okp]
+    P = dict(pid=pid, ts=ts, o=o, lev=lev, tp=tp, E=E, X=X, cov_frac=float(cov.mean()) if n else 0.0,
+             n_cand_uncovered=n_cand_unc, fees=LV.fees(pid), last_close=last_close, n_print_minutes=int(len(A)))
     _CACHE[key] = P
     return P
 
 
 # ------------------------------------------------------------------------------------------------ simulation
-def sim_pair(P, depths, theta, timeout_days, mult, budget_at, delisted):
-    """One pair's ladder. budget_at(ts_ns) -> USD budget per rung. Returns lot records (one per lot exit)."""
-    ts, o, c, lev, tp, E, X = P["ts"], P["o"], P["c"], P["lev"], P["tp"], P["E"], P["X"]
-    maker, taker, hs = P["fees"]
+REC_COLS = ["pid", "slot", "episode", "t_fill", "t_exit", "qty", "px_in", "px_out_net", "pnl", "kind"]
+
+
+def simulate(Ps, depths, theta, timeout_days, mult, per_rung_at, capital):
+    """All pairs jointly, in time order, sharing one cash pool (never more than `capital` committed).
+    Ps: list of build() dicts with flags 'delisted' (liquidate at the pair's last minute) and 'final' (liquidate
+    at the end of the data). per_rung_at(t_ns) -> USD budget per rung per pair that day.
+    Returns (records, open lots at the end, deployment stats)."""
     cols = [LV.DEPTHS.index(d) for d in depths]
     k = len(cols)
     tmo = None if timeout_days is None else int(timeout_days * 1440 * NS_MIN)
-    lots = []                                       # [slot, fill_i, qty, px, deadline_ns, episode]
-    inv = [0.0] * k
-    ep_id = [-1] * k
+    big = np.iinfo(np.int64).max
+    T, PI, II = [], [], []
+    for pi, P in enumerate(Ps):
+        idx = np.nonzero((P["E"][:, cols[0]] > 0) | (P["X"] > 0))[0]
+        if P["delisted"] and len(P["ts"]) and (not len(idx) or idx[-1] != len(P["ts"]) - 1):
+            idx = np.r_[idx, len(P["ts"]) - 1]
+        T.append(P["ts"][idx])
+        PI.append(np.full(len(idx), pi, np.int16))
+        II.append(idx)
+    T, PI, II = np.concatenate(T), np.concatenate(PI), np.concatenate(II)
+    order = np.argsort(T, kind="stable")
+    lots = [[] for _ in Ps]                     # [slot, fill_i, qty, px, deadline_ns, episode]
+    inv = [[0.0] * k for _ in Ps]               # cost of open lots per rung
+    ep_id = [[-1] * k for _ in Ps]
     n_ep = [0]
+    used = [0.0]                                # cash committed across all pairs
     rec = []
-    act = np.nonzero((E[:, cols[0]] > 0) | (X > 0))[0]
+    dep = dict(usd_minutes=0.0, last_t=None)
 
-    def close_lot(lot, q, px_net, i_exit, kind):
-        cost = q * lot[3] * (1 + maker * mult)
-        rec.append((P["pid"], lot[0], lot[5], ts[lot[1]], ts[i_exit], q, lot[3], px_net, q * px_net - cost, kind))
-        return q * lot[3]
+    def close_lot(pi, lot, q, px_net, i_exit, kind):
+        P = Ps[pi]
+        maker = P["fees"][0]
+        cost = q * lot[3]
+        rec.append((P["pid"], lot[0], lot[5], P["ts"][lot[1]], P["ts"][i_exit], q, lot[3], px_net,
+                    q * px_net - cost * (1 + maker * mult), kind))
+        return cost
 
-    def mkt(i):
-        return o[i] * (1 - 1.5 * hs * mult) * (1 - taker * mult)
+    def mkt_px(P, i):
+        _, taker, hs = P["fees"]
+        return P["o"][i] * (1 - 1.5 * hs * mult) * (1 - taker * mult)
 
-    for i in act:
-        t = ts[i]
+    def liquidate(pi, i_px, kind, close=False):
+        P = Ps[pi]
+        _, taker, hs = P["fees"]
+        px = (P["last_close"] if close else P["o"][i_px]) * (1 - 1.5 * hs * mult) * (1 - taker * mult)
         freed = [0.0] * k
-        if lots:
-            # 1. timeouts: decision at the deadline, market sale at the first minute at or after it
-            if tmo is not None:
+        for lot in lots[pi]:
+            freed[lot[0]] += close_lot(pi, lot, lot[2], px, i_px, kind)
+        lots[pi] = []
+        return freed
+
+    E0 = [P["E"][:, cols[0]] for P in Ps]
+    for j in order:
+        pi, i = int(PI[j]), int(II[j])
+        P = Ps[pi]
+        if not lots[pi] and E0[pi][i] <= 0 and not (P["delisted"] and i == len(P["ts"]) - 1):
+            continue
+        t = int(P["ts"][i])
+        if dep["last_t"] is not None:
+            dep["usd_minutes"] += used[0] * (t - dep["last_t"]) / NS_MIN
+        dep["last_t"] = t
+        freed = [0.0] * k
+        L = lots[pi]
+        if L:
+            if tmo is not None and any(lot[4] <= t for lot in L):
                 keep = []
-                for lot in lots:
+                for lot in L:
                     if lot[4] <= t:
-                        ix = int(np.searchsorted(ts, lot[4]))
-                        freed[lot[0]] += close_lot(lot, lot[2], mkt(ix), ix, "timeout")
+                        ix = int(np.searchsorted(P["ts"], lot[4]))
+                        freed[lot[0]] += close_lot(pi, lot, lot[2], mkt_px(P, ix), ix, "timeout")
                     else:
                         keep.append(lot)
-                lots = keep
-            # 2. take-profit: resting ask at tp, FIFO across this pair's lots filled in earlier minutes
-            if X[i] > 0 and lots:
-                avail = theta * X[i]
-                px_net = tp[i] * (1 - maker * mult)
+                L = keep
+            if P["X"][i] > 0 and L:
+                avail = theta * float(P["X"][i])
+                px_net = float(P["tp"][i]) * (1 - P["fees"][0] * mult)
                 keep = []
-                for lot in lots:
+                for lot in L:
                     if avail > 0 and lot[1] < i:
                         q = min(lot[2], avail)
                         avail -= q
-                        freed[lot[0]] += close_lot(lot, q, px_net, i, "tp")
+                        freed[lot[0]] += close_lot(pi, lot, q, px_net, i, "tp")
                         lot[2] -= q
                         if lot[2] * lot[3] < 1e-6:
                             continue
                     keep.append(lot)
-                lots = keep
-        # 3. entries: shallow rungs first; cumulative seller cap
-        if E[i, cols[0]] > 0:
-            b = budget_at(t)
+                L = keep
+            lots[pi] = L
+        if E0[pi][i] > 0:
+            b = per_rung_at(t)
             cum = 0.0
-            for s, j in enumerate(cols):
-                avail = theta * E[i, j] - cum
-                if avail <= 0 or not np.isfinite(lev[i, j]):
+            pool = theta * float(E0[pi][i])          # sellers through the shallowest rung, shared by all rungs
+            for s_, j_ in enumerate(cols):          # (house rule, scripts/wick1m/sim.py: own cap and shared pool)
+                avail = min(theta * float(P["E"][i, j_]), pool - cum)
+                lvl = float(P["lev"][i, j_])
+                if avail <= 0 or not np.isfinite(lvl):
                     continue
-                rem = b - inv[s]
+                rem = min(b - inv[pi][s_], capital - used[0])
                 if rem < MIN_ORDER_USD:
                     continue
-                q = min(rem / lev[i, j], avail)
-                if q * lev[i, j] < MIN_ORDER_USD:
+                q = min(rem / lvl, avail)
+                if q * lvl < MIN_ORDER_USD:
                     continue
-                if inv[s] <= 1e-9:
-                    ep_id[s] = n_ep[0]
+                if inv[pi][s_] <= 1e-9:
+                    ep_id[pi][s_] = n_ep[0]
                     n_ep[0] += 1
-                lots.append([s, i, q, lev[i, j], t + tmo if tmo is not None else np.iinfo(np.int64).max, ep_id[s]])
-                inv[s] += q * lev[i, j]
+                lots[pi].append([s_, i, q, lvl, t + tmo if tmo is not None else big, ep_id[pi][s_]])
+                inv[pi][s_] += q * lvl
+                used[0] += q * lvl
                 cum += q
-        for s in range(k):
-            inv[s] = max(0.0, inv[s] - freed[s])
-    # timeouts that fall after the last active minute: market sale at the first minute at or after the deadline
-    if lots and tmo is not None:
-        keep = []
-        for lot in lots:
-            if lot[4] <= ts[-1]:
-                ix = int(np.searchsorted(ts, lot[4]))
-                close_lot(lot, lot[2], mkt(ix), ix, "timeout")
-            else:
-                keep.append(lot)
-        lots = keep
-    # end: delisted pairs and the end of the full run sell at the last close; a DEV run leaves open lots unbooked
-    if lots and (delisted or P.get("final", False)):
-        i = len(ts) - 1
-        px = c[i] * (1 - 1.5 * hs * mult) * (1 - taker * mult)
-        for lot in lots:
-            close_lot(lot, lot[2], px, i, "delist" if delisted else "end")
-        lots = []
-    open_lots = [(P["pid"], lot[0], lot[5], ts[lot[1]], lot[2], lot[3]) for lot in lots]
-    return rec, open_lots
+        if P["delisted"] and i == len(P["ts"]) - 1 and lots[pi]:
+            f2 = liquidate(pi, i, "delist", close=True)
+            freed = [a_ + b_ for a_, b_ in zip(freed, f2)]
+        for s_ in range(k):
+            inv[pi][s_] = max(0.0, inv[pi][s_] - freed[s_])
+        used[0] = max(0.0, used[0] - sum(freed))
+    # after the last event: timeouts that fall inside each pair's data, then the end of a full run
+    for pi, P in enumerate(Ps):
+        if lots[pi] and tmo is not None:
+            keep = []
+            for lot in lots[pi]:
+                if lot[4] <= P["ts"][-1]:
+                    ix = int(np.searchsorted(P["ts"], lot[4]))
+                    close_lot(pi, lot, lot[2], mkt_px(P, ix), ix, "timeout")
+                else:
+                    keep.append(lot)
+            lots[pi] = keep
+        if lots[pi] and P["final"]:
+            liquidate(pi, len(P["ts"]) - 1, "end", close=True)
+    opens = [(Ps[pi]["pid"], lot[0], lot[5], Ps[pi]["ts"][lot[1]], lot[2], lot[3]) for pi in range(len(Ps))
+             for lot in lots[pi]]
+    return rec, opens, dep
 
 
 def run(universe, ladder, exit_, theta=0.5, mult=2.0, capital=30e3, end=HOLD0):
@@ -235,25 +287,26 @@ def run(universe, ladder, exit_, theta=0.5, mult=2.0, capital=30e3, end=HOLD0):
     per_rung = (capital / (n_act * len(depths))).to_numpy()
     d0 = days[0].value
 
-    def budget_at(t):
+    def per_rung_at(t):
         return per_rung[(t - d0) // (1440 * NS_MIN)]
 
-    recs, opens, info = [], [], {}
+    Ps, info = [], {}
     for p in pids:
         P = build(p, end)
         if not len(P["ts"]):
             continue
         P["final"] = end >= END_ALL
-        delisted = sp[p][1] < (end - pd.Timedelta(days=1)).normalize()
-        r, ol = sim_pair(P, depths, theta, EXITS[exit_], mult, budget_at, delisted)
-        recs += r
-        opens += ol
-        info[p] = dict(n_print_minutes=P["n_print_minutes"], cand_minutes_without_prints=P["n_cand_uncovered"])
-    R = pd.DataFrame(recs, columns=["pid", "slot", "episode", "t_fill", "t_exit", "qty", "px_in", "px_out_net", "pnl",
-                                    "kind"])
+        P["delisted"] = sp[p][1] < (end - pd.Timedelta(days=1)).normalize()
+        Ps.append(P)
+        info[p] = dict(n_print_minutes=P["n_print_minutes"], cand_minutes_without_prints=P["n_cand_uncovered"],
+                       print_coverage_of_minutes=round(P["cov_frac"], 4))
+    rec, opens, dep = simulate(Ps, depths, 0.5 if theta is None else theta, EXITS[exit_], mult, per_rung_at, capital)
+    R = pd.DataFrame(rec, columns=REC_COLS)
     for col in ("t_fill", "t_exit"):
         R[col] = pd.to_datetime(R[col])
     daily = R.groupby(R.t_exit.dt.floor("D")).pnl.sum() / capital if len(R) else pd.Series(dtype=float)
+    info["avg_deployed_frac"] = dep["usd_minutes"] / capital / max(1.0, (dep["last_t"] or 0) / NS_MIN -
+                                                                    pd.Timestamp("2021-01-01").value / NS_MIN)
     return R, daily, opens, info
 
 
@@ -348,12 +401,12 @@ def mode_episodes():
 def mode_mech():
     """Mechanics check on UST-USD (not in any variant's universe): accounting identities only."""
     P = build("UST-USD", HOLD0)
-    P["final"] = True
-    R, ol = sim_pair(P, LADDERS["deep"], 0.5, 7, 2.0, lambda t: 10e3, True)
-    R = pd.DataFrame(R, columns=["pid", "slot", "episode", "t_fill", "t_exit", "qty", "px_in", "px_out_net", "pnl", "kind"])
-    print(R.groupby("kind").size().to_dict(), "open", len(ol), "max cost per slot",
-          R.assign(c=R.qty * R.px_in).groupby(["slot", "episode"]).c.sum().max().round(2))
-    print((R.t_exit >= R.t_fill).all())
+    P["final"], P["delisted"] = True, True
+    rec, ol, dep = simulate([P], LADDERS["deep"], 0.5, 7, 2.0, lambda t: 10e3, 30e3)
+    R = pd.DataFrame(rec, columns=REC_COLS)
+    print(R.groupby("kind").size().to_dict(), "open", len(ol), "max cost per slot-episode",
+          R.assign(c=R.qty * R.px_in).groupby(["slot", "episode"]).c.sum().max().round(2), "exit>=fill",
+          bool((R.t_exit >= R.t_fill).all()))
 
 
 def frozen_variant():
@@ -368,7 +421,6 @@ def mode_hold():
     for theta in (0.5, 0.25):
         for mult in (2.0, 1.0):
             for cap in (30e3, 50e3):
-                _CACHE.clear() if False else None
                 R, daily, opens, info = run(u, ld, ex, theta=theta, mult=mult, capital=cap, end=END_ALL)
                 key = f"s{int(cap / 1e3)}_{int(mult)}x" + ("" if theta == 0.5 else "_th025")
                 series[key] = pd.Series(daily, dtype=float).reindex(gates.ERA_DAYS).fillna(0.0)
