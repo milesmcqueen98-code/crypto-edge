@@ -38,7 +38,9 @@ def main():
         params["side"] = -1
     code = subprocess.run(["git", "-C", step2.common.ROOT, "rev-parse", "HEAD"], capture_output=True,
                           text=True).stdout.strip()
-    F = dict(idea="h9mc", variant=name, params=params, code_commit=code,
+    sim = subprocess.run(["git", "-C", step2.common.ROOT, "log", "-n1", "--format=%H", "--",
+                          "scripts/hunt/h9mc/step2.py"], capture_output=True, text=True).stdout.strip()
+    F = dict(idea="h9mc", variant=name, params=params, code_commit=code, step2_py_commit=sim,
              selection="highest DEV alpha t (sleeve $30K, 2x costs, on incumbent $70K) among DEV trials with >= 40 "
                        "trades; ties to the simpler variant",
              dev=dict(trades=int(best.trades), dev_alpha_t_inc70=float(best.dev_alpha_t_inc70),
