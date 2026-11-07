@@ -1,44 +1,44 @@
 C1: 1805 events with trades (1567 parents)
 
-Parent fills the bot takes: 1263. V-hat on these 2 minutes is 29% of the simulator's full capacity (dollar-weighted).
+Parent fills: 1567. V-hat on these 2 minutes is 31% of the simulator's full capacity (dollar-weighted).
 
 R = trades volume below the bid / simulator estimate, same minutes (dollar-weighted, 95% bootstrap interval):
-  selection: 916 parent fills
-  selection all trades   R 0.99 [0.95, 1.03]  median per event 0.99
-  selection taker sells  R 0.66 [0.63, 0.69]  median per event 0.63
-  selection from 2 s     R 0.99 [0.94, 1.03]  median per event 0.98
-  selection check: candles rebuilt from trades / Coinbase candles 1.00 [1.00, 1.01]
-  check: 347 parent fills
-  check     all trades   R 1.01 [0.96, 1.06]  median per event 0.99
-  check     taker sells  R 0.66 [0.62, 0.70]  median per event 0.61
-  check     from 2 s     R 1.01 [0.95, 1.06]  median per event 0.98
-  check     check: candles rebuilt from trades / Coinbase candles 0.99 [0.97, 1.00]
-  both: 1263 parent fills
-  both      all trades   R 1.00 [0.96, 1.03]  median per event 0.99
-  both      taker sells  R 0.66 [0.64, 0.69]  median per event 0.62
-  both      from 2 s     R 0.99 [0.96, 1.03]  median per event 0.98
+  selection: 1155 parent fills
+  selection all trades   R 1.01 [0.97, 1.04]  median per event 1.00
+  selection taker sells  R 0.68 [0.65, 0.70]  median per event 0.64
+  selection from 2 s     R 1.01 [0.97, 1.04]  median per event 0.99
+  selection check: candles rebuilt from trades / Coinbase candles 1.00 [1.00, 1.00]
+  check: 412 parent fills
+  check     all trades   R 1.02 [0.98, 1.06]  median per event 0.99
+  check     taker sells  R 0.65 [0.62, 0.68]  median per event 0.61
+  check     from 2 s     R 1.02 [0.98, 1.06]  median per event 0.99
+  check     check: candles rebuilt from trades / Coinbase candles 0.99 [0.98, 1.00]
+  both: 1567 parent fills
+  both      all trades   R 1.01 [0.98, 1.04]  median per event 1.00
+  both      taker sells  R 0.67 [0.65, 0.69]  median per event 0.63
+  both      from 2 s     R 1.01 [0.98, 1.04]  median per event 0.99
   both      check: candles rebuilt from trades / Coinbase candles 1.00 [1.00, 1.00]
 
 F(C) = sum min(want, 0.5 V) / sum min(want, 0.5 V-hat): the simulator's 4-sigma fill dollars that trades support
-  selection $250K: capacity-bound in the simulator 20%; V 0.956 [0.943, 0.969]; V_tk 0.924 [0.908, 0.938]; V_2s 0.951 [0.937, 0.964]
-                   supplementary, full capacity with trades on the covered minutes: 0.962 [0.950, 0.973]; capacity-bound in the simulator 16%
-  selection $500K: capacity-bound in the simulator 23%; V 0.956 [0.941, 0.970]; V_tk 0.920 [0.903, 0.935]; V_2s 0.953 [0.938, 0.967]
-                   supplementary, full capacity with trades on the covered minutes: 0.962 [0.948, 0.974]; capacity-bound in the simulator 18%
-  selection $1,000K: capacity-bound in the simulator 25%; V 0.959 [0.942, 0.974]; V_tk 0.916 [0.896, 0.935]; V_2s 0.957 [0.940, 0.972]
-                   supplementary, full capacity with trades on the covered minutes: 0.965 [0.949, 0.980]; capacity-bound in the simulator 19%
-  check     $250K: capacity-bound in the simulator 18%; V 0.946 [0.920, 0.970]; V_tk 0.910 [0.881, 0.938]; V_2s 0.946 [0.919, 0.969]
-                   supplementary, full capacity with trades on the covered minutes: 0.955 [0.932, 0.977]; capacity-bound in the simulator 14%
-  check     $500K: capacity-bound in the simulator 20%; V 0.944 [0.915, 0.967]; V_tk 0.890 [0.854, 0.924]; V_2s 0.943 [0.915, 0.968]
-                   supplementary, full capacity with trades on the covered minutes: 0.952 [0.924, 0.974]; capacity-bound in the simulator 16%
-  check     $1,000K: capacity-bound in the simulator 22%; V 0.935 [0.901, 0.966]; V_tk 0.866 [0.827, 0.908]; V_2s 0.935 [0.901, 0.965]
-                   supplementary, full capacity with trades on the covered minutes: 0.944 [0.913, 0.974]; capacity-bound in the simulator 18%
-  both      $250K: capacity-bound in the simulator 19%; V 0.954 [0.943, 0.965]; V_tk 0.921 [0.908, 0.933]; V_2s 0.950 [0.937, 0.961]
-                   supplementary, full capacity with trades on the covered minutes: 0.961 [0.951, 0.971]; capacity-bound in the simulator 15%
-  both      $500K: capacity-bound in the simulator 22%; V 0.954 [0.940, 0.965]; V_tk 0.913 [0.898, 0.928]; V_2s 0.951 [0.938, 0.963]
-                   supplementary, full capacity with trades on the covered minutes: 0.960 [0.948, 0.971]; capacity-bound in the simulator 18%
-  both      $1,000K: capacity-bound in the simulator 24%; V 0.954 [0.939, 0.968]; V_tk 0.906 [0.887, 0.924]; V_2s 0.952 [0.937, 0.966]
-                   supplementary, full capacity with trades on the covered minutes: 0.961 [0.947, 0.975]; capacity-bound in the simulator 19%
+  selection $250K: capacity-bound in the simulator 18%; V 0.960 [0.950, 0.971]; V_tk 0.930 [0.917, 0.943]; V_2s 0.956 [0.944, 0.967]
+                   supplementary, full capacity with trades on the covered minutes: 0.966 [0.956, 0.976]; capacity-bound in the simulator 14%
+  selection $500K: capacity-bound in the simulator 21%; V 0.961 [0.949, 0.973]; V_tk 0.926 [0.911, 0.939]; V_2s 0.959 [0.946, 0.970]
+                   supplementary, full capacity with trades on the covered minutes: 0.966 [0.954, 0.977]; capacity-bound in the simulator 17%
+  selection $1,000K: capacity-bound in the simulator 23%; V 0.964 [0.951, 0.978]; V_tk 0.924 [0.907, 0.941]; V_2s 0.962 [0.949, 0.976]
+                   supplementary, full capacity with trades on the covered minutes: 0.969 [0.956, 0.982]; capacity-bound in the simulator 18%
+  check     $250K: capacity-bound in the simulator 18%; V 0.951 [0.928, 0.972]; V_tk 0.915 [0.888, 0.940]; V_2s 0.950 [0.928, 0.971]
+                   supplementary, full capacity with trades on the covered minutes: 0.958 [0.937, 0.977]; capacity-bound in the simulator 15%
+  check     $500K: capacity-bound in the simulator 20%; V 0.950 [0.925, 0.972]; V_tk 0.902 [0.872, 0.931]; V_2s 0.950 [0.928, 0.972]
+                   supplementary, full capacity with trades on the covered minutes: 0.957 [0.934, 0.976]; capacity-bound in the simulator 16%
+  check     $1,000K: capacity-bound in the simulator 22%; V 0.945 [0.916, 0.970]; V_tk 0.886 [0.847, 0.920]; V_2s 0.945 [0.917, 0.970]
+                   supplementary, full capacity with trades on the covered minutes: 0.952 [0.926, 0.976]; capacity-bound in the simulator 18%
+  both      $250K: capacity-bound in the simulator 18%; V 0.958 [0.949, 0.968]; V_tk 0.927 [0.916, 0.938]; V_2s 0.955 [0.944, 0.965]
+                   supplementary, full capacity with trades on the covered minutes: 0.964 [0.955, 0.973]; capacity-bound in the simulator 14%
+  both      $500K: capacity-bound in the simulator 21%; V 0.959 [0.949, 0.969]; V_tk 0.921 [0.907, 0.934]; V_2s 0.957 [0.946, 0.967]
+                   supplementary, full capacity with trades on the covered minutes: 0.964 [0.954, 0.974]; capacity-bound in the simulator 17%
+  both      $1,000K: capacity-bound in the simulator 23%; V 0.960 [0.948, 0.972]; V_tk 0.916 [0.901, 0.931]; V_2s 0.959 [0.947, 0.971]
+                   supplementary, full capacity with trades on the covered minutes: 0.966 [0.954, 0.977]; capacity-bound in the simulator 18%
 
 Same-minute 6/8-sigma fills (they share the parent's capacity in the simulator):
   6 sigma: 179 fills, R 0.99 [0.92, 1.05], median 0.95
-  8 sigma: 59 fills, R 0.96 [0.85, 1.04], median 0.90
+  8 sigma: 59 fills, R 0.96 [0.86, 1.04], median 0.90
