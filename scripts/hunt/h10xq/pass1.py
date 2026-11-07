@@ -35,7 +35,12 @@ def main(tag, mode, N, TOP, spec=None):
     P = sim.load_prints()
     req, cnt, t0 = [], [], time.time()
     cache = {}
+    only = None
+    if spec in sim.QSETS:                          # all default configurations of one quote set
+        only, spec = spec, None
     for k, ex, q, H, casc in grid(spec):
+        if only and q != only:
+            continue
         if (mode, q, k, H) not in cache:
             cache.clear()
             cache[(mode, q, k, H)] = sim.load_events(mode, q, k, H)
