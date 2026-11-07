@@ -6,8 +6,10 @@ reports/hunt/BUILDER_GUIDE.md first.
 ## Why this idea now
 - **Mechanism:** the incumbent's, the only one this lab has seen survive out of sample. Forced and impatient sellers
   sweep thin books; a resting, AI-filtered bid supplies the missing liquidity and is paid by the snap-back.
-- **What is new:** the coins. The incumbent's 31 coins are those with a 2024 median daily Coinbase volume of at least
-  $3M and a spot tick of at most 3 bp. Below $3M the books are thinner and a fund cannot fit; a $30K sleeve can.
+- **What is new:** the coins. The incumbent trades 17 coins (13 in 2022–23). The lab's wider 31-coin set (those 17
+  plus 14 with a 2024 median daily Coinbase volume of at least $3M and a spot tick of at most 3 bp) was tested in wick
+  v4 and not adopted. H12 goes below that set's $3M floor, where books are thinner and a fund cannot fit; a $30K
+  sleeve can.
 - **The question Path B asks:** do long-tail wicks add alpha the incumbent does not already earn? Some fall on the same
   cascade days (beta to the incumbent); coin-specific wicks would be new.
 - **Prior:** 4 of 10 (ideas.md #12). Same mechanism, so a positive DEV result is likely; the open questions are
@@ -17,7 +19,7 @@ reports/hunt/BUILDER_GUIDE.md first.
 - Every Coinbase USD spot pair that traded in 2024, **including pairs delisted since**, that:
   - has a 2024 median daily Coinbase USD volume of at least $0.5M and below $3M (from daily candles);
   - has a spot tick of at most 3 bp of its H2-2024 price (`est_tick` in scripts/wick1m/trades_wide.py);
-  - is not already one of the incumbent's 31 coins (reports/wick1m/trades_wide.parquet);
+  - is not one of the wide set's 31 coins (reports/wick1m/trades_wide.parquet; the incumbent's 17 are among them);
   - is not a stablecoin, fiat-backed, wrapped or pegged asset (USDT, DAI, PYUSD, USDS, GUSD, EURC, cbBTC, cbETH, wBTC,
     PAXG, LSETH, etc.).
 - Write the list with its 2024 volume and tick to reports/hunt/h12lt/universe.csv and commit it before any simulation.
@@ -26,7 +28,7 @@ reports/hunt/BUILDER_GUIDE.md first.
 ## Data
 - Coinbase spot 1-minute candles, 2024-01-01 → 2026-11-05, for every universe coin. Use scripts/fetch_minute.py on
   Actions, sharded across parallel runs. Write to data/hunt/h12lt/minute/<COIN>.parquet on your branch.
-- The incumbent's 31 coins and BTC/ETH: data/minute (read-only, main clone).
+- The wide set's 31 coins and BTC/ETH: data/minute (read-only, main clone).
 - Early-era (2022–23) data is **not** fetched. The sleeve is zero on 2022–23, so its scored days are
   gates.ERA_DAYS from 2025-01-01 (2024 trains the model).
   - DEV = 2025-01-01 → 2026-05-31. HOLD = 2026-06-01 → 2026-11-05.
@@ -34,11 +36,12 @@ reports/hunt/BUILDER_GUIDE.md first.
 ## Signal (R2-08 unchanged)
 - Run "R2-08 C29+A11" exactly as scripts/wick1m/trades_wide.py does: levels, features, walk-forward LightGBM by
   quarter, 60th-percentile threshold, exits, the VIP1 cost label.
-- **Model pool:** the incumbent's 31 coins plus the universe, pooled, as the wide run pooled its 31.
+- **Model pool:** the wide set's 31 coins plus the universe, pooled, as the wide run pooled its 31.
   - If that does not fit in a 16 GB runner, pool the 17 base coins (core.COINS17) plus the universe and say so.
-- **Reference factor:** keep R2-08's reference exactly as for the incumbent. If it uses an equal-weight basket, the
-  basket stays the incumbent's coins, so adding coins does not change the reference.
-- **The sleeve trades universe coins only.** The incumbent's own trades are unchanged and not part of the sleeve.
+- **Reference factor:** keep R2-08's reference exactly as for the incumbent (BTC, 7-day beta). If any feature uses an
+  equal-weight basket, the basket stays the wide set's coins, so adding coins does not change it.
+- **The sleeve trades universe coins only.** The incumbent's own trades (17 coins) are unchanged and not part of the
+  sleeve.
 
 ## Execution and sizing (the incumbent's rules)
 - scripts/wick1m/sim.py precompute and evaluate on the sleeve's trade list, Coinbase spot only (perp capacity set to 0,
