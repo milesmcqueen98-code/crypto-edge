@@ -1,4 +1,4 @@
-# Edge hunt, wave 1: 47 mechanism-first ideas
+# Edge hunt, wave 1: 47 mechanism-first ideas (research memos R1–R4 folded in)
 
 The test for every idea: **who is forced (or eager) to trade, and why does a small liquidity provider or fast follower
 get paid?** Research memos: reports/hunt/research/R1–R4. Data probes: reports/hunt/probe.json and probe2.json.
