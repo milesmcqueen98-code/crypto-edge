@@ -1,0 +1,335 @@
+pid,base,name,status,tick,base_increment,new_at,adv_status,first_day,last_day,n_days,other_first,reason,usd_after_other,in_universe,delisted_now
+GFI-USD,GFI,Goldfinch,online,0.0001,0.01,2023-01-01T00:00:00Z,online,2022-01-11,2026-11-07,1762,,,False,True,False
+INV-USD,INV,Inverse Finance,online,0.01,0.0001,2023-01-01T00:00:00Z,online,2022-01-13,2026-11-07,1760,,,False,True,False
+LQTY-USD,LQTY,Liquity,online,0.0001,0.01,2023-01-01T00:00:00Z,online,2022-01-13,2026-11-07,1760,2022-01-13,,False,True,False
+NCT-USD,NCT,Polyswarm,online,1e-05,1.0,2023-01-01T00:00:00Z,online,2022-01-13,2026-11-07,1760,2022-01-13,,False,True,False
+PRO-USD,PRO,Propy,online,0.0001,0.01,2023-01-01T00:00:00Z,online,2022-01-13,2026-11-07,1760,,,False,True,False
+SHPING-USD,SHPING,Shping,online,1e-06,1.0,2023-01-01T00:00:00Z,online,2022-01-20,2026-11-07,1753,2022-01-20,,False,True,False
+STX-USD,STX,Stacks,online,0.0001,0.01,2023-01-01T00:00:00Z,online,2022-01-20,2026-11-07,1753,2022-01-20,,False,True,False
+CTX-USD,CTX,Cryptex Finance,online,0.0001,0.001,2023-01-01T00:00:00Z,online,2022-01-25,2026-11-07,1748,2022-01-25,,False,True,False
+DIA-USD,DIA,DIA,online,1e-05,0.01,2023-01-01T00:00:00Z,online,2022-01-25,2026-11-07,1748,2022-01-25,,False,True,False
+MPL-USD,MPL,Maple,delisted,0.01,0.001,,,2022-01-25,2025-04-30,1192,,,False,True,True
+PLU-USD,PLU,Pluton,online,1e-05,0.01,2023-01-01T00:00:00Z,online,2022-01-25,2026-11-07,1744,,,False,True,False
+UNFI-USD,UNFI,Unifi Protocol DAO,delisted,0.01,0.01,,,2022-01-25,2024-04-01,798,,,False,True,True
+FIDA-USD,FIDA,Bonfida,online,1e-06,0.01,2023-01-01T00:00:00Z,online,2022-02-01,2026-11-07,1741,2022-02-01,,False,True,False
+ORCA-USD,ORCA,Orca,online,0.0001,0.01,2023-01-01T00:00:00Z,online,2022-02-01,2026-11-07,1741,,,False,True,False
+AVT-USD,AVT,Aventus,online,1e-05,0.01,2023-01-01T00:00:00Z,online,2022-02-03,2026-11-07,1739,,,False,True,False
+QSP-USD,QSP,Quantstamp,delisted,1e-05,1.0,,,2022-02-03,2023-11-03,639,2022-02-03,,False,True,True
+RNDR-USD,RNDR,Render Token,delisted,0.0001,0.01,2023-01-01T00:00:00Z,delisted,2022-02-03,2025-06-26,1240,2022-02-03,,False,True,True
+UPI-USD,UPI,Pawtocol,delisted,1e-05,1.0,,,2022-02-08,2022-11-04,270,2022-02-08,,False,True,True
+ALICE-USD,ALICE,My Neighbor Alice,online,1e-05,0.001,2023-01-01T00:00:00Z,online,2022-02-24,2026-11-07,1718,,,False,True,False
+AERGO-USD,AERGO,Aergo,online,1e-06,0.1,2023-01-01T00:00:00Z,online,2022-03-08,2026-11-07,1706,,,False,True,False
+AIOZ-USD,AIOZ,Aioz Network,online,1e-05,0.1,2023-01-01T00:00:00Z,online,2022-03-08,2026-11-07,1706,2022-03-08,,False,True,False
+ERN-USD,ERN,Ethernity Chain,delisted,0.0001,0.001,,,2022-03-08,2025-08-22,1264,2022-03-08,,False,True,True
+HIGH-USD,HIGH,Highstreet,online,1e-05,0.01,2023-01-01T00:00:00Z,online,2022-03-08,2026-11-07,1706,,,False,True,False
+SNT-USD,SNT,Status,delisted,1e-05,0.1,,,2022-03-08,2024-02-23,718,,,False,True,True
+GLM-USD,GLM,Golem Network,online,0.0001,0.1,2023-01-01T00:00:00Z,online,2022-03-09,2026-11-07,1705,,,False,True,False
+SYN-USD,SYN,Synapse,delisted,0.001,0.01,,,2022-03-09,2025-06-26,1206,,,False,True,True
+APE-USD,APE,ApeCoin,online,1e-05,0.01,2023-01-01T00:00:00Z,online,2022-03-17,2026-11-07,1697,2022-03-17,,False,True,False
+CRPT-USD,CRPT,Crypterium,delisted,0.0001,0.1,,,2022-03-24,2023-11-03,590,,,False,True,True
+MINA-USD,MINA,Mina,online,0.0001,0.001,2023-01-01T00:00:00Z,online,2022-04-06,2026-11-07,1677,2022-04-06,,False,True,False
+ROSE-USD,ROSE,Oasis Network,online,1e-06,0.1,2023-01-01T00:00:00Z,online,2022-04-26,2026-11-07,1657,2022-04-26,,False,True,False
+GMT-USD,GMT,STEPN,online,1e-06,0.01,2023-01-01T00:00:00Z,online,2022-04-28,2026-11-07,1655,2022-04-28,,False,True,False
+GST-USD,GST,Green Satoshi Token,online,1e-06,0.01,2023-01-01T00:00:00Z,online,2022-04-28,2026-11-07,1655,,,False,True,False
+GAL-USD,GAL,Project Galaxy,delisted,0.001,0.001,,,2022-05-05,2025-05-16,1108,2022-05-05,,False,True,True
+FLOW-USD,FLOW,Flow,online,1e-05,0.001,2023-01-01T00:00:00Z,online,2022-05-19,2026-11-07,1634,2022-05-19,,False,True,False
+SAND-USD,SAND,The Sandbox,online,0.0001,0.01,2023-01-01T00:00:00Z,online,2022-05-26,2026-11-07,1627,2022-05-26,,False,True,False
+OP-USD,OP,Optimism,online,1e-05,0.01,2023-01-01T00:00:00Z,online,2022-06-01,2026-11-07,1621,2022-08-09,,False,True,False
+KSM-USD,KSM,Kusama,online,0.0001,0.0001,2023-01-01T00:00:00Z,online,2022-06-02,2026-11-07,1620,2022-06-02,,False,True,False
+BIT-USD,BIT,BitDAO,delisted,0.0001,0.01,,,2022-06-07,2025-01-06,945,2022-06-07,,False,True,True
+C98-USD,C98,Coin98,online,1e-06,0.01,2023-01-01T00:00:00Z,online,2022-06-07,2026-11-07,1615,2022-06-07,,False,True,False
+INDEX-USD,INDEX,Index Cooperative,online,0.0001,0.001,2023-01-01T00:00:00Z,online,2022-06-09,2026-11-07,1613,2022-06-09,,False,True,False
+FORT-USD,FORT,Forta,online,1e-06,0.01,2023-01-01T00:00:00Z,online,2022-06-15,2026-11-07,1607,2022-06-15,,False,True,False
+ATA-USD,ATA,Automata Network,delisted,0.0001,0.1,,,2022-06-16,2024-01-04,568,2022-06-16,,False,True,True
+DAR-USD,DAR,Mines of Dalarnia,delisted,0.001,0.01,,,2022-06-16,2025-05-16,1066,,,False,True,True
+FIS-USD,FIS,Stafi,delisted,1e-06,0.1,,,2022-06-16,2026-08-07,1514,2022-06-16,,False,True,True
+POND-USD,POND,Marlin,online,1e-07,1.0,2023-01-01T00:00:00Z,online,2022-06-16,2026-11-07,1606,2022-06-16,,False,True,False
+ALEPH-USD,ALEPH,Aleph.im v2,online,1e-05,0.1,2023-01-01T00:00:00Z,online,2022-06-22,2026-11-07,1600,,,False,True,False
+DYP-USD,DYP,DeFi Yield Protocol,delisted,1e-05,0.1,,,2022-06-22,2025-01-17,941,2022-06-22,,False,True,True
+ELA-USD,ELA,Elastos,online,0.001,0.01,2023-01-01T00:00:00Z,online,2022-06-22,2026-11-07,1600,2022-06-22,,False,True,False
+HOPR-USD,HOPR,Hopr Token,online,1e-06,0.1,2023-01-01T00:00:00Z,online,2022-06-22,2026-11-06,1599,2022-06-22,,False,True,False
+MATH-USD,MATH,MATH,online,0.0001,0.1,2023-01-01T00:00:00Z,online,2022-06-22,2026-11-07,1600,2022-06-22,,False,True,False
+PRQ-USD,PRQ,PARSIQ,delisted,0.0001,0.1,,,2022-06-22,2025-05-16,1060,2022-06-22,,False,True,True
+DEXT-USD,DEXT,DEXTools,online,1e-05,0.1,2023-01-01T00:00:00Z,online,2022-06-23,2026-11-07,1599,,,False,True,False
+DREP-USD,DREP,Drep,delisted,0.0001,0.01,,,2022-06-23,2024-01-04,561,2022-06-23,,False,True,True
+JUP-USD,JUP,Jupiter,delisted,1e-06,1.0,,,2022-06-23,2023-09-06,441,,,False,True,True
+MUSE-USD,MUSE,Muse Dao,delisted,0.001,0.001,,,2022-06-23,2025-11-26,1253,,,False,True,True
+TIME-USD,TIME,Chrono.tech,delisted,0.01,0.001,,,2022-06-23,2026-05-11,1419,2022-06-23,,False,True,True
+AST-USD,AST,AirSwap,online,1e-06,0.1,2023-01-01T00:00:00Z,online,2022-06-28,2026-11-07,1590,,,False,True,False
+MEDIA-USD,MEDIA,Media Network,delisted,0.01,0.001,,,2022-06-28,2025-04-15,1023,2022-06-28,,False,True,True
+METIS-USD,METIS,MetisDAO,online,0.0001,0.001,2023-01-01T00:00:00Z,online,2022-06-28,2026-11-07,1594,2022-06-28,,False,True,False
+MONA-USD,MONA,Monavale,delisted,0.01,0.0001,,,2022-06-28,2024-01-04,556,,,False,True,True
+XCN-USD,XCN,Onyxcoin,online,1e-06,0.1,2023-01-01T00:00:00Z,online,2022-06-28,2026-11-07,1594,2022-06-28,,False,True,False
+BOBA-USD,BOBA,Boba Network,online,0.0001,1e-06,2023-01-01T00:00:00Z,online,2022-06-30,2026-11-07,1592,2022-06-30,,False,True,False
+ABT-USD,ABT,Arcblock,online,0.0001,0.1,2023-01-01T00:00:00Z,online,2022-07-21,2026-11-07,1571,,,False,True,False
+GNO-USD,GNO,Gnosis,online,0.01,0.0001,2023-01-01T00:00:00Z,online,2022-07-21,2026-11-07,1571,2022-07-21,,False,True,False
+MTL-USD,MTL,Metal,delisted,0.001,0.01,,,2022-07-21,2024-06-14,695,,,False,True,True
+SWFTC-USD,SWFTC,SwftCoin,online,1e-06,1.0,2023-01-01T00:00:00Z,online,2022-07-21,2026-11-07,1571,,,False,True,False
+SYLO-USD,SYLO,Sylo,delisted,1e-06,1.0,,,2022-07-21,2024-01-04,533,2022-07-21,,False,True,True
+NEST-USD,NEST,Nest Protocol,delisted,1e-05,1.0,,,2022-07-26,2023-09-05,407,2022-07-26,,False,True,True
+RARE-USD,RARE,SuperRare,online,1e-06,0.1,2023-01-01T00:00:00Z,online,2022-08-02,2026-11-07,1559,,,False,True,False
+TONE-USD,TONE,TE-FOOD,delisted,1e-05,1.0,,,2022-08-02,2023-11-03,459,,,False,True,True
+LOKA-USD,LOKA,League of Kingdoms Arena,delisted,0.0001,0.01,,,2022-08-04,2025-12-10,1225,,,False,True,True
+STG-USD,STG,Stargate Finance V1,online,0.0001,0.1,2024-07-09T19:03:00.025Z,online,2022-08-04,2026-11-07,1074,2022-08-04,,False,True,False
+CELR-USD,CELR,Celer Network,online,1e-07,1.0,2023-01-01T00:00:00Z,online,2022-08-16,2026-11-07,1545,,,False,True,False
+OOKI-USD,OOKI,Ooki Protocol,delisted,1e-06,1.0,,,2022-08-30,2023-09-06,373,,,False,True,True
+MXC-USD,MXC,MXC,delisted,1e-05,0.1,,,2022-08-31,2023-11-03,430,,,False,True,True
+NEAR-USD,NEAR,Near Protocol,online,0.0001,0.001,2023-01-01T00:00:00Z,online,2022-09-01,2026-11-07,1529,2022-09-01,,False,True,False
+AURORA-USD,AURORA,Aurora,online,1e-06,0.01,2023-01-01T00:00:00Z,online,2022-09-06,2026-11-07,1524,,,False,True,False
+CVX-USD,CVX,Convex Finance,online,0.001,0.001,2023-01-01T00:00:00Z,online,2022-09-08,2026-11-07,1522,,,False,True,False
+OCEAN-USD,OCEAN,Ocean Protocol,online,0.0001,0.1,2023-01-01T00:00:00Z,online,2022-09-08,2026-11-07,1522,,,False,True,False
+INJ-USD,INJ,Injective Protocol,online,0.001,0.01,2023-01-01T00:00:00Z,online,2022-09-20,2026-11-07,1510,,,False,True,False
+PUNDIX-USD,PUNDIX,Pundi X,online,0.0001,0.01,2023-01-01T00:00:00Z,online,2022-09-20,2026-11-07,1510,,,False,True,False
+PNG-USD,PNG,Pangolin,online,1e-05,1.0,2023-01-01T00:00:00Z,online,2022-10-06,2026-11-07,1494,,,False,True,False
+00-USD,00,00 Token,online,1e-08,0.01,2023-01-01T00:00:00Z,online,2022-10-11,2026-11-07,1489,,,False,True,False
+HBAR-USD,HBAR,Hedera,online,1e-05,0.1,2023-01-01T00:00:00Z,online,2022-10-13,2026-11-07,1487,2022-10-13,,False,True,False
+ILV-USD,ILV,Illuvium,online,0.0001,0.0001,2023-01-01T00:00:00Z,online,2022-10-13,2026-11-07,1487,,,False,True,False
+APT-USD,APT,Aptos,online,0.0001,0.001,2023-01-01T00:00:00Z,online,2022-10-19,2026-11-07,1481,2022-10-26,,False,True,False
+MNDE-USD,MNDE,Marinade,online,1e-05,0.1,2023-01-01T00:00:00Z,online,2022-11-03,2026-11-07,1466,,,False,True,False
+HFT-USD,HFT,Hashflow,online,1e-05,0.01,2023-01-01T00:00:00Z,online,2022-11-07,2026-11-07,1462,2022-11-07,,False,True,False
+LDO-USD,LDO,Lido DAO,online,1e-05,0.01,2023-01-01T00:00:00Z,online,2022-11-17,2026-11-07,1452,,,False,True,False
+QI-USD,QI,Benqi,online,1e-06,1.0,2023-01-01T00:00:00Z,online,2022-11-23,2026-11-07,1446,,,False,True,False
+PYR-USD,PYR,Vulcan Forged,online,1e-05,0.01,2023-01-01T00:00:00Z,online,2022-11-29,2026-11-07,1440,,,False,True,False
+GHST-USD,GHST,Aavegotchi,online,0.0001,0.01,2023-01-01T00:00:00Z,online,2022-12-06,2026-11-07,1433,,,False,True,False
+LIT-USD,LIT,Litentry,delisted,0.0001,0.01,,,2022-12-06,2025-05-16,893,,,False,True,True
+EGLD-USD,EGLD,MultiversX,online,0.0001,0.001,2023-01-01T00:00:00Z,online,2022-12-07,2026-11-07,1432,,,False,True,False
+ANT-USD,ANT,Aragon,delisted,0.01,0.01,,,2022-12-08,2024-01-05,394,,,False,True,True
+MAGIC-USD,MAGIC,Magic,online,1e-05,0.01,2023-01-01T00:00:00Z,online,2022-12-08,2026-11-07,1431,,,False,True,False
+RPL-USD,RPL,Rocket Pool,online,0.0001,0.001,2023-01-01T00:00:00Z,online,2022-12-08,2026-11-07,1429,,,False,True,False
+KAVA-USD,KAVA,Kava,online,0.0001,0.01,2023-01-01T00:00:00Z,online,2023-01-19,2026-11-07,1389,,,False,True,False
+AUDIO-USD,AUDIO,Audius,online,1e-06,0.1,2023-01-01T00:00:00Z,online,2023-01-26,2026-11-07,1382,,,False,True,False
+VOXEL-USD,VOXEL,Voxies,online,1e-06,0.01,2023-01-01T00:00:00Z,online,2023-02-09,2026-11-07,1368,,,False,True,False
+BLUR-USD,BLUR,Blur,online,1e-06,0.1,2023-01-01T00:00:00Z,online,2023-02-14,2026-11-07,1363,,,False,True,False
+ACS-USD,ACS,Access Protocol,online,1e-07,1.0,2023-01-01T00:00:00Z,online,2023-02-15,2026-11-07,1362,,,False,True,False
+PRIME-USD,PRIME,Prime,online,1e-05,0.01,2023-01-01T00:00:00Z,online,2023-03-01,2026-11-07,1348,,,False,True,False
+ARB-USD,ARB,Arbitrum,online,1e-05,0.01,2023-03-22T16:05:00.095Z,online,2023-03-23,2026-11-07,1326,,,False,True,False
+FLR-USD,FLR,Flare,online,1e-06,1.0,2023-04-11T15:55:00.994Z,online,2023-04-14,2026-11-07,1304,,,False,True,False
+DIMO-USD,DIMO,Dimo,online,1e-05,0.1,2023-04-17T15:55:00.988Z,online,2023-04-18,2026-11-07,1300,,,False,True,False
+TVK-USD,TVK,The Virtua Kolect,delisted,1e-05,1.0,,,2023-04-18,2025-01-29,653,,,False,True,True
+SPA-USD,SPA,Sperax,online,1e-06,1.0,2023-05-02T16:08:00.089Z,online,2023-05-03,2026-11-07,1285,,,False,True,False
+MULTI-USD,MULTI,Multichain,delisted,0.001,0.001,,,2023-05-04,2023-09-06,126,,,False,True,True
+SUI-USD,SUI,Sui,online,0.0001,0.1,2023-05-17T15:54:00.704Z,online,2023-05-18,2026-11-07,1270,,,False,True,False
+OSMO-USD,OSMO,Osmosis,online,1e-06,0.01,2023-05-24T15:52:00.268Z,online,2023-05-25,2026-11-07,1263,,,False,True,False
+HNT-USD,HNT,Helium,online,0.0001,0.01,2023-07-11T16:04:00.718Z,online,2023-07-12,2026-11-07,1215,,,False,True,False
+SEI-USD,SEI,Sei,online,1e-05,0.1,2023-08-15T12:55:00.854Z,online,2023-08-15,2026-11-07,1181,,,False,True,False
+VET-USD,VET,VeChain,online,1e-06,1.0,2023-09-12T16:04:00.507Z,online,2023-09-13,2026-11-07,1152,,,False,True,False
+VTHO-USD,VTHO,VeThor,online,1e-08,1.0,2023-09-12T16:04:00.507Z,online,2023-09-13,2026-11-07,1152,,,False,True,False
+VARA-USD,VARA,Vara,online,1e-07,1.0,2023-09-20T16:03:00.527Z,online,2023-09-20,2026-11-07,1145,,,False,True,False
+BIGTIME-USD,BIGTIME,Big Time,online,1e-06,1.0,2023-10-11T15:56:00.666Z,online,2023-10-12,2026-11-07,1123,,,False,True,False
+TIA-USD,TIA,Celestia,online,0.0001,0.01,2023-11-01T16:04:00.283Z,online,2023-11-01,2026-11-07,1103,,,False,True,False
+JTO-USD,JTO,Jito,online,0.0001,0.1,2023-12-06T20:05:00.846Z,online,2023-12-07,2026-11-07,1067,,,False,True,False
+SEAM-USD,SEAM,Seamless,delisted,0.0001,0.1,,,2023-12-11,2026-05-18,890,,,False,True,True
+BONK-USD,BONK,Bonk,online,1e-08,1.0,2023-12-13T18:38:00.799Z,online,2023-12-14,2026-11-07,1060,,,False,True,False
+HONEY-USD,HONEY,Hivemapper,online,1e-06,0.1,2024-01-16T21:10:00.322Z,online,2024-01-17,2026-11-07,1023,,,False,True,False
+ONDO-USD,ONDO,Ondo Finance,online,1e-05,0.01,2024-01-22T17:08:00.320Z,online,2024-01-22,2026-11-07,1021,,,False,True,False
+ZETA-USD,ZETA,Zetachain,online,1e-06,0.1,2024-01-31T16:56:00.239Z,online,2024-02-01,2026-11-07,1011,,,False,True,False
+AERO-USD,AERO,Aerodrome Finance,online,1e-05,0.1,2024-02-05T20:13:00.310Z,online,2024-02-06,2026-11-07,1006,,,False,True,False
+VELO-USD,VELO,Velodrome Finance,delisted,1e-05,0.1,,,2024-02-06,2026-11-02,1001,,,False,True,True
+STRK-USD,STRK,Starknet,online,1e-05,0.01,2024-02-21T16:53:02.145Z,online,2024-02-21,2026-11-07,991,,,False,True,False
+MOBILE-USD,MOBILE,Helium Mobile,delisted,1e-06,1.0,,,2024-02-22,2025-06-26,491,,,False,True,True
+AKT-USD,AKT,Akash,online,0.0001,0.01,2024-03-18T15:55:00.938Z,online,2024-03-19,2026-11-07,964,,,False,True,False
+RONIN-USD,RONIN,Ronin,delisted,0.0001,0.01,,,2024-03-21,2026-03-30,740,,,False,True,True
+ARKM-USD,ARKM,Arkham,online,1e-05,0.01,2024-04-01T15:56:00.068Z,online,2024-04-02,2026-11-07,950,,,False,True,False
+TNSR-USD,TNSR,Tensor,online,1e-05,0.01,2024-04-08T16:01:00.477Z,online,2024-04-08,2026-11-07,944,,,False,True,False
+SHDW-USD,SHDW,Shadow,online,1e-05,0.01,2024-04-09T15:55:00.480Z,online,2024-04-10,2026-11-07,942,,,False,True,False
+OMNI-USD,OMNI,Omni Network,delisted,0.001,0.01,,,2024-04-17,2026-08-07,843,,,False,True,True
+KARRAT-USD,KARRAT,Karrat,online,1e-05,0.01,2024-04-22T16:03:01.127Z,online,2024-04-22,2026-11-07,930,,,False,True,False
+SAFE-USD,SAFE,Safe,online,1e-05,0.01,2024-04-23T16:03:01.547Z,online,2024-04-23,2026-11-07,929,,,False,True,False
+NEON-USD,NEON,Neon,online,1e-05,0.01,2024-04-29T15:54:00.760Z,online,2024-04-30,2026-11-07,922,,,False,True,False
+DRIFT-USD,DRIFT,Drift Protocol,online,1e-05,0.01,2024-05-17T15:54:03.424Z,online,2024-05-17,2026-11-07,905,,,False,True,False
+PIRATE-USD,PIRATE,Pirate Nation,delisted,1e-06,0.1,,,2024-06-13,2026-08-07,782,,,False,True,True
+ZRO-USD,ZRO,Layerzero,online,0.0001,0.01,2024-06-20T15:56:00.047Z,online,2024-06-20,2026-11-07,871,,,False,True,False
+CORECHAIN-USD,CORECHAIN,Core,online,1e-06,0.01,2024-06-20T16:02:00.005Z,online,2024-06-21,2026-11-07,870,,,False,True,False
+BLAST-USD,BLAST,Blast,delisted,1e-08,1.0,,,2024-06-26,2026-10-20,847,,,False,True,True
+A8-USD,A8,Ancient8,online,1e-06,0.01,2024-07-17T15:54:00.007Z,online,2024-07-17,2026-11-07,844,,,False,True,False
+LRDS-USD,LRDS,Blocklords,online,1e-06,0.01,2024-07-24T15:55:00.042Z,online,2024-07-24,2026-11-07,837,,,False,True,False
+SD-USD,SD,Stader,online,0.0001,0.01,2024-07-29T19:11:04.600Z,online,2024-07-30,2026-11-07,831,,,False,True,False
+ACX-USD,ACX,Across Protocol,delisted,0.0001,0.1,,,2024-08-21,2026-07-28,707,,,False,True,True
+ALEO-USD,ALEO,Aleo,online,1e-06,0.01,2024-09-18T16:34:00.007Z,online,2024-09-18,2026-11-07,781,,,False,True,False
+COW-USD,COW,Cow Protocol,online,0.0001,0.1,2024-09-23T16:25:00.022Z,online,2024-09-24,2026-11-07,775,,,False,True,False
+WELL-USD,WELL,Moonwell,online,1e-06,1.0,2024-09-23T16:14:00.051Z,online,2024-09-25,2026-11-07,774,,,False,True,False
+ZK-USD,ZK,zkSync,online,1e-06,0.1,2024-09-24T20:49:00.013Z,online,2024-09-25,2026-11-07,774,,,False,True,False
+EIGEN-USD,EIGEN,Eigenlayer,online,1e-05,0.01,2024-09-30T16:00:00.081Z,online,2024-10-01,2026-11-07,768,,,False,True,False
+IO-USD,IO,Io.Net,online,1e-05,0.01,2024-10-08T16:08:00.042Z,online,2024-10-09,2026-11-07,760,,,False,True,False
+DEGEN-USD,DEGEN,Degen,online,1e-06,1.0,2024-10-14T16:51:00.042Z,online,2024-10-15,2026-11-07,754,,,False,True,False
+SWELL-USD,SWELL,Swell,online,1e-07,1.0,2024-11-07T17:05:00.025Z,online,2024-11-07,2026-11-07,731,,,False,True,False
+PEPE-USD,PEPE,Pepe,online,1e-08,1.0,2024-11-13T14:35:00.034Z,online,2024-11-13,2026-11-07,725,,,False,True,False
+WIF-USD,WIF,Dogwifhat,online,1e-05,0.01,2024-11-13T19:37:00.035Z,online,2024-11-13,2026-11-07,725,,,False,True,False
+FLOKI-USD,FLOKI,Floki,online,1e-08,1.0,2024-11-20T17:04:03.427Z,online,2024-11-21,2026-11-07,717,,,False,True,False
+MOODENG-USD,MOODENG,Moo Deng,online,1e-06,0.01,2024-12-03T17:03:00.045Z,online,2024-12-04,2026-11-07,704,,,False,True,False
+MOG-USD,MOG,Mog Coin,online,1e-08,1.0,2024-12-04T17:02:00.040Z,online,2024-12-05,2026-11-07,703,,,False,True,False
+MOVE-USD,MOVE,Movement,delisted,0.0001,0.1,,,2024-12-09,2025-05-15,158,,,False,True,True
+ME-USD,ME,Magic Eden,online,1e-05,0.01,2024-12-10T20:40:01.148Z,online,2024-12-10,2026-11-07,698,,,False,True,False
+GIGA-USD,GIGA,Gigachad,online,1e-07,0.1,2024-12-10T17:03:00.051Z,online,2024-12-11,2026-11-07,697,,,False,True,False
+TURBO-USD,TURBO,Turbo,online,1e-07,1.0,2024-12-10T17:09:00.014Z,online,2024-12-11,2026-11-07,697,,,False,True,False
+PRCL-USD,PRCL,Parcl,online,1e-06,0.1,2024-12-16T17:17:00.034Z,online,2024-12-17,2026-11-07,691,,,False,True,False
+PNUT-USD,PNUT,Peanut The Squirrel,online,1e-05,0.01,2025-01-13T18:39:00.019Z,online,2025-01-14,2026-11-07,663,,,False,True,False
+TRUMP-USD,TRUMP,Official Trump,online,0.0001,0.001,2025-01-20T19:41:00.028Z,online,2025-01-21,2026-11-07,656,,,False,True,False
+TOSHI-USD,TOSHI,Toshi,online,1e-08,1.0,2025-01-22T21:09:02.268Z,online,2025-01-23,2026-11-07,654,,,False,True,False
+VVV-USD,VVV,Venice Token,online,0.0001,0.001,2025-01-27T23:29:03.404Z,online,2025-01-28,2026-11-07,649,,,False,True,False
+BERA-USD,BERA,Berachain,online,1e-05,0.01,2025-02-06T16:57:04.557Z,online,2025-02-06,2026-11-07,640,,,False,True,False
+ETHFI-USD,ETHFI,Ether.Fi,online,0.001,0.01,2025-02-05T17:01:00.023Z,online,2025-02-06,2026-11-07,640,,,False,True,False
+B3-USD,B3,B3 (Base),online,1e-07,1.0,2025-02-10T17:54:00.035Z,online,2025-02-10,2026-11-07,636,,,False,True,False
+IP-USD,IP,Story,delisted,1e-05,0.01,,,2025-02-13,2026-10-05,600,,,False,True,True
+PENGU-USD,PENGU,Pudgy Penguins,online,1e-06,1.0,2025-02-12T21:19:00.014Z,online,2025-02-13,2026-11-07,633,,,False,True,False
+POPCAT-USD,POPCAT,Popcat,online,1e-05,0.01,2025-02-12T21:19:00.014Z,online,2025-02-13,2026-11-07,633,,,False,True,False
+KAITO-USD,KAITO,Kaito,online,0.0001,0.01,2025-02-20T15:30:04.544Z,online,2025-02-20,2026-11-07,626,,,False,True,False
+PYTH-USD,PYTH,Pyth Network,online,1e-05,0.1,2025-02-19T21:33:00.028Z,online,2025-02-20,2026-11-07,626,,,False,True,False
+TAO-USD,TAO,Bittensor,online,0.01,0.0001,2025-02-19T16:57:00.011Z,online,2025-02-20,2026-11-07,626,,,False,True,False
+MORPHO-USD,MORPHO,Morpho,online,0.0001,0.01,2025-02-26T16:56:00.010Z,online,2025-02-27,2026-11-07,619,,,False,True,False
+REZ-USD,REZ,Renzo,online,1e-07,1.0,2025-03-05T16:57:00.010Z,online,2025-03-06,2026-11-07,612,,,False,True,False
+COOKIE-USD,COOKIE,Cookie Dao,online,1e-06,0.1,2025-03-10T15:53:00.013Z,online,2025-03-11,2026-11-07,607,,,False,True,False
+RED-USD,RED,Redstone,online,0.0001,0.01,2025-03-11T16:01:00.018Z,online,2025-03-12,2026-11-07,606,,,False,True,False
+ATH-USD,ATH,Aethir,online,1e-06,1.0,2025-03-12T17:57:03.380Z,online,2025-03-13,2026-11-07,605,,,False,True,False
+ALT-USD,ALT,Altlayer,online,1e-05,1.0,2025-03-26T18:17:01.157Z,online,2025-03-27,2026-11-07,591,,,False,True,False
+FAI-USD,FAI,Freysa Ai,online,1e-07,1.0,2025-03-26T18:17:01.157Z,online,2025-03-27,2026-11-07,591,,,False,True,False
+L3-USD,L3,Layer3,online,1e-05,0.1,2025-03-26T18:17:01.157Z,online,2025-03-27,2026-11-07,591,,,False,True,False
+PENDLE-USD,PENDLE,Pendle,online,0.0001,0.01,2025-03-26T18:17:01.157Z,online,2025-03-27,2026-11-07,591,,,False,True,False
+DOGINME-USD,DOGINME,Doginme,online,1e-08,1.0,2025-03-31T16:00:00.040Z,online,2025-04-01,2026-11-07,586,,,False,True,False
+KEYCAT-USD,KEYCAT,Keyboard Cat,online,1e-06,1.0,2025-03-31T16:00:00.040Z,online,2025-04-01,2026-11-07,586,,,False,True,False
+EDGE-USD,EDGE,Definitive,online,1e-05,0.1,2025-04-02T19:43:00.014Z,online,2025-04-02,2026-11-07,585,,,False,True,False
+PROMPT-USD,PROMPT,Prompt,online,1e-05,0.1,2025-04-10T17:43:03.389Z,online,2025-04-10,2026-11-07,577,,,False,True,False
+KERNEL-USD,KERNEL,Kernel,online,1e-06,0.01,2025-04-14T17:50:00.020Z,online,2025-04-14,2026-11-07,573,,,False,True,False
+RSR-USD,RSR,Reserve Rights,online,1e-06,1.0,2025-04-21T17:16:00.026Z,online,2025-04-22,2026-11-07,565,,,False,True,False
+CLANKER-USD,CLANKER,Tokenbot,online,0.01,0.0001,2025-04-22T16:25:00.031Z,online,2025-04-23,2026-11-07,564,,,False,True,False
+ZORA-USD,ZORA,Zora,online,1e-06,1.0,2025-04-24T18:22:00.006Z,online,2025-04-24,2026-11-07,563,,,False,True,False
+WLD-USD,WLD,Worldcoin,online,0.0001,0.01,2025-04-30T17:13:03.393Z,online,2025-04-30,2026-11-07,557,,,False,True,False
+SXT-USD,SXT,Space and Time,online,1e-06,0.1,2025-05-08T16:03:00.014Z,online,2025-05-08,2026-11-07,549,,,False,True,False
+LA-USD,LA,Lagrange,online,1e-05,0.1,2025-06-04T16:44:01.140Z,online,2025-06-04,2026-11-07,522,,,False,True,False
+ENA-USD,ENA,Ethena,online,1e-05,0.1,2025-06-04T16:08:00.017Z,online,2025-06-05,2026-11-07,521,,,False,True,False
+HOME-USD,HOME,HOME,online,1e-05,1.0,2025-06-10T16:53:01.134Z,online,2025-06-10,2026-11-07,516,,,False,True,False
+CAKE-USD,CAKE,Pancakeswap,online,0.001,0.01,2025-06-11T16:32:00.031Z,online,2025-06-12,2026-11-07,514,,,False,True,False
+FARTCOIN-USD,FARTCOIN,Fartcoin,online,1e-05,0.01,2025-06-11T16:36:00.017Z,online,2025-06-12,2026-11-07,514,,,False,True,False
+SQD-USD,SQD,Subsquid,online,1e-06,0.1,2025-06-11T16:32:00.031Z,online,2025-06-12,2026-11-07,514,,,False,True,False
+SPK-USD,SPK,Spark,online,1e-05,0.1,2025-06-17T17:55:00.020Z,online,2025-06-17,2026-11-07,509,,,False,True,False
+NEWT-USD,NEWT,Newton,online,0.0001,0.01,2025-06-24T16:52:01.135Z,online,2025-06-24,2026-11-07,502,,,False,True,False
+S-USD,S,Sonic,online,1e-05,0.1,2025-06-23T15:54:00.018Z,online,2025-06-24,2026-11-07,502,,,False,True,False
+W-USD,W,Wormhole,online,1e-06,0.01,2025-07-01T15:59:00.015Z,online,2025-07-02,2026-11-07,494,,,False,True,False
+PUMP-USD,PUMP,Pump.fun,online,1e-06,1.0,2025-07-15T00:36:00.023Z,online,2025-07-15,2026-11-07,481,,,False,True,False
+ERA-USD,ERA,Caldera,online,0.0001,0.01,2025-07-17T16:57:00.009Z,online,2025-07-17,2026-11-07,479,,,False,True,False
+MPLX-USD,MPLX,Metaplex,online,1e-05,0.1,2025-07-23T16:02:00.009Z,online,2025-07-24,2026-11-07,472,,,False,True,False
+TREE-USD,TREE,Treehouse,online,1e-05,0.01,2025-07-29T18:45:01.137Z,online,2025-07-29,2026-11-07,467,,,False,True,False
+BNKR-USD,BNKR,BankrCoin,online,1e-07,1.0,2025-07-29T19:16:02.251Z,online,2025-07-30,2026-11-07,466,,,False,True,False
+BIO-USD,BIO,Bio Protocol,online,1e-05,0.1,2025-07-30T16:32:00.026Z,online,2025-07-31,2026-11-07,465,,,False,True,False
+RSC-USD,RSC,ResearchCoin,online,1e-05,0.01,2025-07-30T16:32:00.026Z,online,2025-07-31,2026-11-07,465,,,False,True,False
+PROVE-USD,PROVE,Succinct,online,0.0001,0.01,2025-08-05T16:11:00.010Z,online,2025-08-05,2026-11-07,460,,,False,True,False
+TOWNS-USD,TOWNS,Towns Protocol,online,1e-07,0.1,2025-08-05T16:50:00.019Z,online,2025-08-05,2026-11-07,460,,,False,True,False
+EUL-USD,EUL,Euler,online,0.001,0.001,2025-08-05T16:05:00.023Z,online,2025-08-06,2026-11-07,459,,,False,True,False
+MAMO-USD,MAMO,Mamo,online,1e-06,0.1,2025-08-05T15:58:00.021Z,online,2025-08-06,2026-11-07,459,,,False,True,False
+COSMOSDYDX-USD,COSMOSDYDX,dYdX,online,0.0001,0.01,2025-08-06T16:00:00.033Z,online,2025-08-07,2026-11-07,458,,,False,True,False
+WCT-USD,WCT,Walletconnect Token,online,0.0001,0.1,2025-08-13T20:04:04.513Z,online,2025-08-14,2026-11-07,451,,,False,True,False
+SAPIEN-USD,SAPIEN,Sapien,online,1e-05,0.1,2025-08-20T18:38:00.029Z,online,2025-08-20,2026-11-07,445,,,False,True,False
+USELESS-USD,USELESS,Useless Coin,online,1e-05,0.1,2025-08-19T15:53:00.012Z,online,2025-08-20,2026-11-07,445,,,False,True,False
+WLFI-USD,WLFI,World Liberty Financial,online,1e-05,0.1,2025-09-01T13:12:02.261Z,online,2025-09-01,2026-11-07,433,,,False,True,False
+AWE-USD,AWE,Awe,online,1e-05,0.1,2025-09-03T16:01:00.016Z,online,2025-09-04,2026-11-07,430,,,False,True,False
+AVNT-USD,AVNT,Avantis,online,1e-05,0.1,2025-09-09T16:31:00.010Z,online,2025-09-09,2026-11-07,425,,,False,True,False
+FLOCK-USD,FLOCK,Flock,online,1e-06,0.1,2025-09-08T17:21:00.028Z,online,2025-09-09,2026-11-07,425,,,False,True,False
+SPX-USD,SPX,Spx6900,online,0.0001,0.01,2025-09-08T17:21:00.028Z,online,2025-09-09,2026-11-07,425,,,False,True,False
+DOLO-USD,DOLO,Dolomite,online,1e-05,0.1,2025-09-10T16:05:02.258Z,online,2025-09-11,2026-11-07,423,,,False,True,False
+KMNO-USD,KMNO,Kamino,online,1e-05,0.1,2025-09-10T16:05:02.258Z,online,2025-09-11,2026-11-07,423,,,False,True,False
+LAYER-USD,LAYER,Solayer,online,1e-05,0.01,2025-09-10T16:35:00.015Z,online,2025-09-11,2026-11-07,423,,,False,True,False
+ZKC-USD,ZKC,Boundless,online,0.0001,0.01,2025-09-15T17:36:00.024Z,online,2025-09-15,2026-11-07,419,,,False,True,False
+BARD-USD,BARD,Lombard,online,0.0001,0.01,2025-09-18T15:59:01.129Z,online,2025-09-18,2026-11-07,416,,,False,True,False
+TROLL-USD,TROLL,Troll,online,1e-05,0.1,2025-09-24T15:59:04.496Z,online,2025-09-25,2026-11-07,409,,,False,True,False
+XAN-USD,XAN,Anoma,online,1e-05,0.1,2025-09-29T18:39:00.010Z,online,2025-09-29,2026-11-07,405,,,False,True,False
+LINEA-USD,LINEA,Linea,online,1e-07,1.0,2025-10-08T17:09:00.020Z,online,2025-10-09,2026-11-07,395,,,False,True,False
+NOICE-USD,NOICE,Noice,online,1e-08,1.0,2025-10-08T17:09:00.020Z,online,2025-10-09,2026-11-07,395,,,False,True,False
+SYND-USD,SYND,Syndicate,online,1e-06,0.01,2025-10-08T17:09:00.020Z,online,2025-10-09,2026-11-07,395,,,False,True,False
+RECALL-USD,RECALL,Recall Network,online,1e-06,0.01,2025-10-15T17:57:00.020Z,online,2025-10-15,2026-11-07,389,,,False,True,False
+YB-USD,YB,Yield Basis,online,0.0001,0.01,2025-10-15T16:08:01.145Z,online,2025-10-15,2026-11-07,389,,,False,True,False
+2Z-USD,2Z,Doublezero,online,1e-05,0.01,2025-10-15T15:55:03.382Z,online,2025-10-16,2026-11-07,388,,,False,True,False
+BNB-USD,BNB,BNB,online,0.01,1e-05,2025-10-22T15:06:00.010Z,online,2025-10-22,2026-11-07,382,,,False,True,False
+KTA-USD,KTA,Keeta,online,0.0001,0.1,2025-10-21T16:03:00.023Z,online,2025-10-22,2026-11-07,382,,,False,True,False
+APR-USD,APR,aPriori,online,0.0001,0.1,2025-10-23T18:03:00.014Z,online,2025-10-23,2026-11-07,381,,,False,True,False
+MET-USD,MET,Meteora,online,0.0001,0.01,2025-10-23T18:03:00.014Z,online,2025-10-23,2026-11-07,381,,,False,True,False
+DBR-USD,DBR,Debridge,online,1e-05,1.0,2025-10-28T15:54:00.016Z,online,2025-10-29,2026-11-07,375,,,False,True,False
+KITE-USD,KITE,Kite,online,1e-05,0.1,2025-11-03T17:01:04.516Z,online,2025-11-03,2026-11-07,370,,,False,True,False
+TRUST-USD,TRUST,Intuition,online,1e-05,0.1,2025-11-05T17:06:03.385Z,online,2025-11-05,2026-11-07,368,,,False,True,False
+ALLO-USD,ALLO,Allora,online,0.0001,0.01,2025-11-11T18:40:00.016Z,online,2025-11-12,2026-11-07,361,,,False,True,False
+NOM-USD,NOM,Nomina,online,1e-07,1.0,2025-11-12T19:37:00.016Z,online,2025-11-13,2026-11-07,360,,,False,True,False
+SUP-USD,SUP,Superfluid,online,1e-06,0.1,2025-11-17T23:27:00.022Z,online,2025-11-18,2026-11-07,355,,,False,True,False
+TON-USD,TON,Toncoin,online,0.0001,0.01,2025-11-17T19:38:00.021Z,online,2025-11-18,2026-11-07,355,,,False,True,False
+ASTER-USD,ASTER,Aster,online,0.0001,0.01,2025-11-19T20:15:00.028Z,online,2025-11-20,2026-11-07,353,,,False,True,False
+BOBBOB-USD,BOBBOB,Bob,online,1e-05,1.0,2025-11-20T17:12:03.384Z,online,2025-11-21,2026-11-07,352,,,False,True,False
+MON-USD,MON,Monad,online,1e-06,1.0,2025-11-24T13:08:00.017Z,online,2025-11-24,2026-11-07,349,,,False,True,False
+FLUID-USD,FLUID,Fluid,online,0.001,0.01,2025-11-24T16:56:00.020Z,online,2025-11-25,2026-11-07,348,,,False,True,False
+IRYS-USD,IRYS,Irys,online,1e-05,1.0,2025-11-25T16:57:00.032Z,online,2025-11-25,2026-11-07,348,,,False,True,False
+WMTX-USD,WMTX,World Mobile Token,online,1e-06,0.1,2025-11-24T16:56:00.020Z,online,2025-11-25,2026-11-07,348,,,False,True,False
+RLS-USD,RLS,Rayls,online,1e-07,1.0,2025-12-01T16:53:02.265Z,online,2025-12-01,2026-11-07,342,,,False,True,False
+XPL-USD,XPL,Plasma,online,1e-05,0.1,2025-12-01T20:52:02.261Z,online,2025-12-02,2026-11-07,341,,,False,True,False
+JUPITER-USD,JUPITER,Jupiter,online,0.0001,0.1,2025-12-08T17:58:00.024Z,online,2025-12-09,2026-11-07,334,,,False,True,False
+WET-USD,WET,Humidifi,online,0.0001,0.1,2025-12-09T18:19:00.024Z,online,2025-12-09,2026-11-07,334,,,False,True,False
+HYPER-USD,HYPER,Hyperlane,online,0.0001,0.1,2025-12-09T16:57:00.017Z,online,2025-12-10,2026-11-07,333,,,False,True,False
+PLUME-USD,PLUME,Plume,online,1e-05,1.0,2025-12-08T17:58:00.024Z,online,2025-12-10,2026-11-07,333,,,False,True,False
+BEAM-USD,BEAM,Beam,online,1e-06,1.0,2025-12-15T16:58:00.027Z,online,2025-12-16,2026-11-07,327,,,False,True,False
+THQ-USD,THQ,Theoriq,online,1e-05,0.1,2025-12-16T17:22:00.016Z,online,2025-12-16,2026-11-07,327,,,False,True,False
+ZKP-USD,ZKP,Zkpass,online,1e-05,0.1,2025-12-19T18:06:00.019Z,online,2025-12-19,2026-11-07,324,,,False,True,False
+BREV-USD,BREV,Brevis,online,0.0001,0.1,2026-01-06T19:43:02.264Z,online,2026-01-06,2026-11-07,306,,,False,True,False
+RAY-USD,RAY,Raydium,online,0.0001,0.01,2026-01-13T21:09:00.015Z,online,2026-01-14,2026-11-07,298,,,False,True,False
+FUN1-USD,FUN1,Sport.Fun,online,1e-05,0.1,2026-01-15T20:06:00.011Z,online,2026-01-15,2026-11-07,297,,,False,True,False
+LIGHTER-USD,LIGHTER,Lighter,online,0.001,0.01,2025-12-30T17:09:00.026Z,online,2026-01-15,2026-11-07,297,,,False,True,False
+ELSA-USD,ELSA,Elsa,online,1e-05,0.1,2026-01-20T16:54:03.382Z,online,2026-01-20,2026-11-07,292,,,False,True,False
+SKR-USD,SKR,Seeker,online,1e-06,1.0,2026-01-21T14:33:00.011Z,online,2026-01-21,2026-11-07,291,,,False,True,False
+FIGHT-USD,FIGHT,Fight,online,1e-05,1.0,2026-01-22T14:42:04.503Z,online,2026-01-22,2026-11-07,290,,,False,True,False
+IMU-USD,IMU,Immunefi,online,1e-06,1.0,2026-01-22T14:21:03.375Z,online,2026-01-22,2026-11-07,290,,,False,True,False
+SENT-USD,SENT,Sentient,online,1e-05,1.0,2026-01-22T14:42:04.503Z,online,2026-01-22,2026-11-07,290,,,False,True,False
+BIRB-USD,BIRB,Moonbirds,online,1e-05,0.1,2026-01-28T14:08:00.059Z,online,2026-01-28,2026-11-07,284,,,False,True,False
+INX-USD,INX,Infinex,online,1e-06,1.0,2026-01-30T17:54:00.027Z,online,2026-01-30,2026-11-07,282,,,False,True,False
+ZAMA-USD,ZAMA,Zama,online,1e-05,1.0,2026-02-02T15:07:02.260Z,online,2026-02-02,2026-11-07,279,,,False,True,False
+TRIA-USD,TRIA,Tria,online,1e-06,1.0,2026-02-03T14:11:02.254Z,online,2026-02-03,2026-11-07,278,,,False,True,False
+DOOD-USD,DOOD,Doodles,online,1e-06,1.0,2026-02-04T16:53:04.506Z,online,2026-02-05,2026-11-07,276,,,False,True,False
+HYPE-USD,HYPE,Hyperliquid,online,0.01,0.001,2026-02-05T16:56:00.025Z,online,2026-02-05,2026-11-07,276,,,False,True,False
+RNBW-USD,RNBW,Rainbow,online,1e-05,0.1,2026-02-05T17:39:00.017Z,online,2026-02-05,2026-11-07,276,,,False,True,False
+UP-USD,UP,Superform,online,1e-05,0.1,2026-02-10T17:06:02.269Z,online,2026-02-10,2026-11-07,271,,,False,True,False
+DEEP-USD,DEEP,Deepbook,online,1e-05,1.0,2026-02-10T16:54:00.016Z,online,2026-02-11,2026-11-07,270,,,False,True,False
+RAVE-USD,RAVE,Ravedao,online,0.0001,0.1,2026-02-10T16:54:00.016Z,online,2026-02-11,2026-11-07,270,,,False,True,False
+WAL-USD,WAL,Walrus,online,1e-05,0.1,2026-02-10T16:54:00.016Z,online,2026-02-11,2026-11-07,270,,,False,True,False
+AZTEC-USD,AZTEC,Aztec,online,1e-05,1.0,2026-02-12T13:07:01.140Z,online,2026-02-12,2026-11-07,269,,,False,True,False
+ESP-USD,ESP,Espresso,online,1e-05,0.1,2026-02-12T13:07:01.140Z,online,2026-02-13,2026-11-07,268,,,False,True,False
+GWEI-USD,GWEI,Ethgas,online,1e-06,1.0,2026-02-23T16:53:00.006Z,online,2026-02-24,2026-11-07,257,,,False,True,False
+ROBO-USD,ROBO,Robo Token,online,1e-05,1.0,2026-02-26T21:06:00.009Z,online,2026-02-27,2026-11-07,254,,,False,True,False
+OPN-USD,OPN,OPINION,online,0.0001,0.01,2026-03-04T22:07:00.018Z,online,2026-03-05,2026-11-07,248,,,False,True,False
+LMTS-USD,LMTS,Limitless,online,1e-05,0.1,2026-03-04T16:51:04.504Z,online,2026-03-06,2026-11-07,247,,,False,True,False
+KAT-USD,KAT,Katana,online,1e-06,1.0,2026-03-18T12:07:00.016Z,online,2026-03-18,2026-11-07,235,,,False,True,False
+ICNT-USD,ICNT,Impossible Cloud Network,online,0.0001,0.1,2026-03-24T15:55:00.032Z,online,2026-03-25,2026-11-07,228,,,False,True,False
+PRL-USD,PRL,Perle,online,1e-05,0.1,2026-03-24T20:30:00.037Z,online,2026-03-25,2026-11-07,228,,,False,True,False
+BASED1-USD,BASED1,Based One,online,1e-05,0.1,2026-03-27T20:16:00.037Z,online,2026-03-30,2026-11-07,223,,,False,True,False
+EDGEX-USD,EDGEX,Edgex,online,0.0001,0.01,2026-03-30T20:17:00.034Z,online,2026-03-31,2026-11-07,222,,,False,True,False
+MEZO-USD,MEZO,Mezo,online,1e-06,0.1,2026-04-01T12:42:00.019Z,online,2026-04-01,2026-11-07,221,,,False,True,False
+CHECK-USD,CHECK,Checkmate,online,1e-05,1.0,2026-04-01T12:46:04.525Z,online,2026-04-02,2026-11-07,220,,,False,True,False
+CHIP-USD,CHIP,USD.AI,online,1e-05,1.0,2026-04-20T21:06:00.022Z,online,2026-04-21,2026-11-07,201,,,False,True,False
+OPG-USD,OPG,Opengradient,online,1e-05,0.1,2026-04-20T21:06:00.022Z,online,2026-04-21,2026-11-07,201,,,False,True,False
+SIGN-USD,SIGN,Sign,online,1e-06,1.0,2026-04-01T12:46:04.525Z,online,2026-04-21,2026-11-07,201,,,False,True,False
+DIEM-USD,DIEM,Diem,online,0.01,1e-05,2026-04-21T20:23:00.031Z,online,2026-04-22,2026-11-07,200,,,False,True,False
+BLEND-USD,BLEND,Fluent,online,0.0001,0.1,2026-04-22T16:36:03.411Z,online,2026-04-24,2026-11-07,198,,,False,True,False
+PROS-USD,PROS,Pharos,online,0.0001,0.01,2026-04-28T13:24:01.140Z,online,2026-04-28,2026-11-07,194,,,False,True,False
+AI-USD,AI,Gensyn,online,1e-05,1.0,2026-04-29T17:25:00.016Z,online,2026-04-29,2026-11-07,193,,,False,True,False
+VIRTUAL-USD,VIRTUAL,Virtuals Protocol,online,0.0001,0.01,2026-04-28T15:53:00.025Z,online,2026-04-29,2026-11-07,193,,,False,True,False
+MEGA-USD,MEGA,MegaETH,online,1e-05,0.1,2026-04-29T20:37:02.276Z,online,2026-04-30,2026-11-07,192,,,False,True,False
+BILL-USD,BILL,Billions Network,online,1e-05,1.0,2026-05-01T21:14:00.036Z,online,2026-05-04,2026-11-07,188,,,False,True,False
+KAIO-USD,KAIO,Kaio,online,1e-06,1.0,2026-05-05T19:09:00.023Z,online,2026-05-06,2026-11-07,186,,,False,True,False
+NEX-USD,NEX,Nexus,online,1e-08,1.0,2026-05-20T13:10:03.408Z,online,2026-05-20,2026-11-07,172,,,False,True,False
+CTR-USD,CTR,Citrea,online,1e-06,1.0,2026-05-26T11:40:00.056Z,online,2026-05-26,2026-11-07,166,,,False,True,False
+DRV-USD,DRV,Derive,online,1e-05,0.1,2026-05-26T15:56:03.383Z,online,2026-05-28,2026-11-07,164,,,False,True,False
+META-USD,META,Metadao,online,0.001,0.01,2026-05-26T15:56:03.383Z,online,2026-05-28,2026-11-07,164,,,False,True,False
+O-USD,O,O1.Exchange,online,1e-05,0.1,2026-06-16T16:08:00.009Z,online,2026-06-17,2026-11-07,144,,,False,True,False
+RE-USD,RE,Re,online,0.0001,0.01,2026-06-17T16:09:00.018Z,online,2026-06-18,2026-11-07,143,,,False,True,False
+ARX-USD,ARX,Arcium,online,0.0001,0.1,2026-06-22T11:37:04.508Z,online,2026-06-22,2026-11-07,139,,,False,True,False
+GEOD-USD,GEOD,Geodnet,online,0.0001,0.1,2026-06-22T15:53:00.010Z,online,2026-06-23,2026-11-07,138,,,False,True,False
+CAP-USD,CAP,Cap,online,1e-05,1.0,2026-06-25T15:54:00.021Z,online,2026-06-26,2026-11-07,135,,,False,True,False
+GROVE-USD,GROVE,Grove,online,1e-05,1.0,2026-07-06T15:18:00.033Z,online,2026-07-06,2026-11-07,125,,,False,True,False
+GRVT-USD,GRVT,Grvt,online,0.0001,0.1,2026-07-29T15:57:00.022Z,online,2026-07-30,2026-11-07,101,,,False,True,False
+ALIGN-USD,ALIGN,Aligned,online,1e-05,1.0,2026-08-19T19:09:00.007Z,online,2026-08-20,2026-11-07,80,,,False,True,False
+BASECAT-USD,BASECAT,Basecat,online,1e-05,1.0,2026-08-24T15:59:00.007Z,online,2026-08-24,2026-11-07,76,,,False,True,False
+DRB-USD,DRB,Debtreliefbot,online,1e-07,1.0,2026-08-24T15:59:00.007Z,online,2026-08-24,2026-11-07,76,,,False,True,False
+GRASS-USD,GRASS,Grass,online,0.0001,0.1,2026-08-26T15:56:00.011Z,online,2026-08-26,2026-11-07,74,,,False,True,False
+CP-USD,CP,Cluster Protocol,online,1e-05,1.0,2026-09-01T20:39:00.010Z,online,2026-09-02,2026-11-07,67,,,False,True,False
+BLUECHIP-USD,BLUECHIP,Blue Chip,online,1e-05,1.0,2026-09-16T15:57:00.011Z,online,2026-09-16,2026-11-07,53,,,False,True,False
+CT-USD,CT,Concrete,online,1e-05,0.1,2026-09-29T18:37:00.010Z,online,2026-09-30,2026-11-07,39,,,False,True,False
+PONS-USD,PONS,Pons,online,0.0001,0.1,2026-10-07T15:56:00.008Z,online,2026-10-07,2026-11-07,32,,,False,True,False
+DATA-USD,DATA,Data Network,online,0.0001,0.1,2026-10-08T15:07:00.006Z,online,2026-10-08,2026-11-07,31,,,False,True,False
+WHUF-USD,WHUF,Ethos,online,0.001,0.001,2026-10-07T17:36:00.007Z,online,2026-10-08,2026-11-07,31,,,False,True,False
+AXIS-USD,AXIS,Axis Robotics,online,1e-05,1.0,2026-10-20T16:11:00.005Z,online,2026-10-21,2026-11-07,18,,,False,True,False
+RITUAL-USD,RITUAL,Ritual,online,1e-05,1.0,2026-10-26T14:09:00.032Z,online,2026-10-26,2026-11-07,13,,,False,True,False
+STABLE-USD,STABLE,Stable,online,1e-05,1.0,2026-10-27T15:54:00.006Z,online,2026-10-27,2026-11-07,12,,,False,True,False
+CARD-USD,CARD,Collector Crypt,online,1e-05,0.1,2026-11-06T17:02:00.007Z,online,2026-11-06,2026-11-07,2,,,False,True,False

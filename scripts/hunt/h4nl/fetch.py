@@ -132,8 +132,8 @@ def minutes(pid, start, end):
     d = pd.DataFrame([rows[k] for k in sorted(rows)], columns=["t", "low", "high", "open", "close", "volume"])
     d.insert(0, "ts", pd.to_datetime(d.pop("t"), unit="s"))
     d = d[d.ts < e]
-    out = d[["ts", "open", "high", "low", "close"]].astype({c: np.float64 for c in ("open", "high", "low", "close")})
-    out["volume"] = d["volume"].astype(np.float64)
+    out = d[["ts", "open", "high", "low", "close"]].astype({c: np.float32 for c in ("open", "high", "low", "close")})
+    out["volume"] = d["volume"].astype(np.float32)
     out.insert(0, "pid", pid)
     return out
 

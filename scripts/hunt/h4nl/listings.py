@@ -51,7 +51,14 @@ MIGRATIONS = {
     "POL": ["MATIC"], "RENDER": ["RNDR"], "SKY": ["MKR"], "A": ["EOS"], "S": ["FTM"], "T": ["NU", "KEEP"],
     "SYRUP": ["MPL"], "FET": ["AGIX", "OCEAN"], "ASI": ["FET", "AGIX", "OCEAN"], "CELO": ["CGLD"],
     "CFG": ["WCFG"], "AEVO": ["RBN"], "POLYX": ["POLY"], "XCN": ["CHAIN"], "LUNA": ["LUNC", "WLUNA"],
+    # added after reading the product/currency metadata (names and first trading days only; no prices seen):
+    # the same asset already had a Coinbase market under another ticker, so the book was not new
+    "G": ["GAL"],                  # Galxe: GAL -> G (Gravity)
+    "MANTLE": ["BIT"],             # BitDAO BIT -> Mantle MNT
+    "ZETACHAIN": ["ZETA"],         # ZetaChain: ERC-20 ZETA-USD (2024-02) then native ZETACHAIN-USD (2024-09)
+    "AXL": ["WAXL"],               # Axelar traded as Wrapped Axelar (2022-10) before the native AXL pair (2023-02)
 }
+NOT_STABLE = {"CHIP"}              # CHIP: USD.AI's governance token (the currency name is the protocol's, "USD.AI")
 RE_STABLE_NAME = re.compile(r"\b(usd|us dollar|dollar|euro|yen|gold|treasury|treasuries|stablecoin)\b", re.I)
 RE_WRAPPED_NAME = re.compile(r"\b(wrapped|staked|bridged|restaked)\b", re.I)
 
@@ -60,6 +67,8 @@ def rule_exclusion(base, name):
     """Ticker/name rules (2) and (3). Returns a reason string or ''."""
     b = (base or "").upper()
     n = name or ""
+    if b in NOT_STABLE:
+        return ""
     if b in STABLE:
         return "stable/fiat/asset-backed (list)"
     if "USD" in b or b.startswith("EUR"):
