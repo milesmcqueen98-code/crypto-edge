@@ -207,33 +207,36 @@ def trade_job(shard, n):
     shard, n = int(shard), int(n)
     Q = pd.read_csv(os.path.join(DATA, "trade_sample.csv"), parse_dates=["ts"])
     Q = Q[[shard_of(f"{p}|{t}", n) == shard for p, t in zip(Q.pid, Q.ts.astype(str))]]
-    print(f"shard {shard}/{n}: {len(Q)} sampled fills", flush=True)
+    W = Q.groupby(["pid", "ts"], sort=True)
+    print(f"shard {shard}/{n}: {len(Q)} levels in {W.ngroups} sampled fill minutes", flush=True)
     F = common.TradeFetcher(rate=RATE)
     out, t0 = [], time.time()
-    for i, q in enumerate(Q.itertuples()):
-        w0, w1 = q.ts - pd.Timedelta(minutes=2), q.ts + pd.Timedelta(minutes=17)
-        src = "adv"
-        try:
-            d = F.window(q.pid, w0, w1)
-        except Exception as e:  # noqa: BLE001
-            print("adv fail", q.pid, q.ts, type(e).__name__, str(e)[:100], flush=True)
-            d = pd.DataFrame(columns=["trade_id", "time", "price", "size", "side"])
-        if len(d) == 0:
-            src = "exch"
+    for i, ((pid, ts), g) in enumerate(W):
+        w0, w1 = ts - pd.Timedelta(minutes=2), ts + pd.Timedelta(minutes=17)
+        d, src = None, "exch"
+        if g.status.iloc[0] != "delisted":             # Advanced Trade serves online products only (404 otherwise)
+            src = "adv"
             try:
-                d = exch_trades_window(q.pid, w0, w1)
+                d = F.window(pid, w0, w1)
             except Exception as e:  # noqa: BLE001
-                print("exch fail", q.pid, q.ts, type(e).__name__, str(e)[:100], flush=True)
-                d = None
-        rec = dict(pid=q.pid, ts=q.ts, k=q.k, lvl=q.lvl, tick=q.tick, cand_through_usd=q.through_usd, src=src)
-        rec.update(trade_stats(d, q.ts, q.lvl, q.tick))
-        out.append(rec)
+                print("adv fail", pid, ts, type(e).__name__, str(e)[:100], flush=True)
+            if d is None or len(d) == 0:
+                d, src = None, "exch"
+        if d is None:
+            try:
+                d = exch_trades_window(pid, w0, w1)
+            except Exception as e:  # noqa: BLE001
+                print("exch fail", pid, ts, type(e).__name__, str(e)[:100], flush=True)
+        for q in g.itertuples():
+            rec = dict(pid=pid, ts=ts, k=q.k, lvl=q.lvl, tick=q.tick, cand_through_usd=q.thr_usd, src=src)
+            rec.update(trade_stats(d, ts, q.lvl, q.tick))
+            out.append(rec)
         if i % 20 == 0:
-            print(f"  {i}/{len(Q)} {q.pid} {q.ts} n={rec.get('n_trades')} {src} req={F.n_req + N_REQ[0]} "
+            print(f"  {i}/{W.ngroups} {pid} {ts} n={out[-1].get('n_trades')} {src} req={F.n_req + N_REQ[0]} "
                   f"{time.time() - t0:.0f}s", flush=True)
     os.makedirs(DATA, exist_ok=True)
     pd.DataFrame(out).to_csv(os.path.join(DATA, f"trade_check_{shard}.csv"), index=False)
-    print(f"done {len(out)} in {time.time() - t0:.0f}s")
+    print(f"done {len(out)} levels in {time.time() - t0:.0f}s, requests {F.n_req + N_REQ[0]}")
 
 
 def trade_stats(d, ts, lvl, tick):
@@ -264,6 +267,7 @@ def trade_stats(d, ts, lvl, tick):
             thr += p * after["size"].iloc[j]
     out["print_through_usd"] = thr
     out["sweep_usd"] = float((m.price * m["size"])[m.side == "BUY"].sum()) if len(m) else 0.0
+    out["drop_bp"] = float(1e4 * (1 - m.price.min() / m.price.iloc[0])) if len(m) else np.nan
     out["vol_usd_min"] = float((m.price * m["size"]).sum()) if len(m) else 0.0
     s = d.sort_values(["time", "trade_id"]).reset_index(drop=True)
     p, sd, tt = s.price.to_numpy(), s.side.to_numpy(), s.time.to_numpy()

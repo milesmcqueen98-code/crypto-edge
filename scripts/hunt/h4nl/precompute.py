@@ -66,9 +66,9 @@ def scans(cand, lvl, tp, o, h, lo, v, tick, H, n):
         for i in range(t + 1, min(t + H + 1, n)):
             if v[i] <= 0:
                 continue
-            if tp_off[q] < 0 and h[i] >= T + 0.98 * tick:
-                tp_off[q] = i - t
-            if h[i] > T:
+            if h[i] >= T + 0.98 * tick:                     # traded through the take-profit by >= 1 tick
+                if tp_off[q] < 0:
+                    tp_off[q] = i - t
                 rng = h[i] - lo[i]
                 frac = 1.0 if rng <= 0 else min(1.0, (h[i] - T) / rng)
                 tp_cap[q] += v[i] * frac * 0.5 * (T + h[i])
