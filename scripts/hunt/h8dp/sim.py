@@ -409,6 +409,32 @@ def mode_mech():
           bool((R.t_exit >= R.t_fill).all()))
 
 
+def mode_freeze():
+    """Selection rule (pre-registration + SPEC): among DEV trials with >= 20 fills, the highest DEV alpha t
+    (sleeve at 2x costs on the incumbent at $70K); ties go to the simpler variant (usdt < all, tp < tp7)."""
+    import subprocess
+    T = pd.read_csv(os.path.join(OUT, "dev_trials.csv"))
+    T["simplicity"] = (T.universe == "all").astype(int) * 2 + (T.exit == "tp7").astype(int)
+    elig = T[T.fills_scored >= 20].sort_values(["t_alpha", "simplicity"], ascending=[False, True])
+    best = elig.iloc[0]
+    commit = subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+    F = dict(idea="h8dp", variant=best.variant, universe=best.universe, ladder=best.ladder, exit=best.exit,
+             depths_bp=[int(round(d * 1e4)) for d in LADDERS[best.ladder]], tp_bp_below_par=LV.TP_BP,
+             timeout_days=EXITS[best.exit], pairs=list(UNIVERSES[best.universe]), theta=0.5, cost_mult_for_gates=2.0,
+             fees=dict(fx_stablecoin_pairs="0% maker / 0.45 bp taker (R3 memo, third-party Aug 2026, unverified)",
+                       usdt_and_cbeth="VIP 1: 0.06% maker / 0.125% taker (common.py)"),
+             code_commit=commit, selection="highest DEV alpha t among trials with >= 20 fills; ties to simpler",
+             n_dev_trials=int(len(T)), eligible=int(len(elig)),
+             dev=dict(t_alpha=float(best.t_alpha), sleeve_sharpe=float(best.sleeve_sharpe),
+                      dev_book_sharpe=float(best.dev_book_sharpe), fills=int(best.fills_scored),
+                      lots=int(best.lots_scored), pnl_usd_30k=float(best.pnl_usd_scored),
+                      sleeve_ret_per_yr=float(best.sleeve_ret_per_yr), alpha_yr=float(best.alpha_yr)),
+             frozen_utc=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
+    with open(os.path.join(OUT, "frozen.json"), "w") as f:
+        json.dump(F, f, indent=1)
+    print(json.dumps(F, indent=1))
+
+
 def frozen_variant():
     return json.load(open(os.path.join(OUT, "frozen.json")))
 
@@ -435,8 +461,16 @@ def mode_hold():
     G025 = gates.path_b({30000: D["s30_2x_th025"], 50000: D["s50_2x_th025"]}, days=gates.ERA_DAYS)
     R = trades["s30_2x"]
     R.to_csv(os.path.join(OUT, "lots_s30_2x.csv"), index=False)
+    ex_day = R.t_exit.dt.floor("D")
+    Rs = R[ex_day.isin(gates.ERA_DAYS)]
+    Rd, Rh = Rs[Rs.t_exit < HOLD0], Rs[Rs.t_exit >= HOLD0]
     out = dict(frozen=F, path_b_2x=G, path_b_1x_info=G1x, path_b_2x_theta025_info=G025,
-               fills_rung_episodes=n_fills(R), lots=len(R), info=info_all,
+               fills_scored=n_fills(Rs), fills_dev=n_fills(Rd), fills_hold=n_fills(Rh), lots_scored=len(Rs),
+               lots_hold=len(Rh), pnl_usd_30k_2x=dict(dev=float(Rd.pnl.sum()), hold=float(Rh.pnl.sum())),
+               fills_rung_episodes_all=n_fills(R), lots_all=len(R), info=info_all,
+               deployed_usd_theta025_vs_05=dict(
+                   th05=float((trades["s30_2x"].qty * trades["s30_2x"].px_in).sum()),
+                   th025=float((trades["s30_2x_th025"].qty * trades["s30_2x_th025"].px_in).sum())),
                note="G4 is provisional: the coordinator recomputes the deflated Sharpe centrally with the final ledger.")
     with open(os.path.join(OUT, "gates.json"), "w") as f:
         json.dump(out, f, indent=1, default=str)
@@ -447,4 +481,4 @@ if __name__ == "__main__":
     if sys.argv[1] == "dev":
         mode_dev(tuple(sys.argv[2:]) or ("usdt", "all"))
     else:
-        {"episodes": mode_episodes, "mech": mode_mech, "hold": mode_hold}[sys.argv[1]]()
+        {"episodes": mode_episodes, "mech": mode_mech, "hold": mode_hold, "freeze": mode_freeze}[sys.argv[1]]()
