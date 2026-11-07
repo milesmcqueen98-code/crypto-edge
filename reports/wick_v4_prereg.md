@@ -162,3 +162,31 @@ $500K 2.19 vs 2.67; at $1M 1.32 vs 1.73), and better in selection only at $1M an
 - Robinhood routes orders rather than running a public order book.
 - Wick capacity is volume through our price, and Coinbase has the most US spot volume. The signal was also fitted on
   Coinbase's own candles.
+
+## Addendum C1: is the simulator's fill capacity right? (written 2026-11-07 ~00:55 UTC, before running)
+The simulator caps a fill at θ × V̂.
+- V̂ is the dollar volume below our bid, estimated from 1-minute candles: each minute's volume is spread evenly over its
+  high–low range (`below_usd`).
+- Deeper rungs share the parent's V̂ (same sellers).
+- This is the main untested piece of the fill model, and it sets capacity.
+
+**Test.** It uses the trade data already fetched: 1,567 parent fills, Jan 2025 – Nov 2026, covering the fill minute and
+the next one.
+- V = dollar volume of trades strictly below the bid. Those sellers would have reached a resting bid at our price
+  before any bid below it, so queue position at our own price doesn't matter for this volume.
+- V̂ = the simulator's estimate on the same minutes, from Coinbase's minute candles (as the simulator uses) and from
+  candles rebuilt from the same trades (a check).
+- R = ΣV / ΣV̂, with a bootstrap 95% interval over events, per period (selection Jan 2025 – Mar 2026, check Apr – Nov
+  2026).
+- Fill ratio F(C) = Σ min(want, θV) / Σ min(want, θV̂), with:
+  - θ = 0.5;
+  - want = the $1M-rule 4σ tranche, min(25% C, 0.2% ADV) / 3;
+  - C = $250K, $500K, $1M.
+- Variant: only trades from 2 s after the minute start. The live bot's bid goes in a second or two into the minute.
+
+**Rule.**
+- If F($250K) is within 0.9–1.1 in both periods, the fill sizes at $250K are validated and nothing changes.
+- Otherwise the simulator's entry capacity is scaled by R (pooled over both periods), and the $250K / $500K / $1M
+  tables (1-second detection) are re-reported with it.
+- Either way, the realism and capacity scores are revisited with the result, up or down.
+- The bot itself doesn't change: it sizes by S, and the exchange decides the fills.
