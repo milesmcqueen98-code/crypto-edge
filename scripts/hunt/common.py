@@ -127,6 +127,7 @@ class TradeFetcher:
         self.S = requests.Session()
         self.S.headers["User-Agent"] = "crypto-edge-research/1.0"
         self.rate, self._last, self.n_req = rate, 0.0, 0
+        self._ex = None
 
     def _get(self, pid, s, e):
         for a in range(8):
@@ -140,8 +141,12 @@ class TradeFetcher:
                 if r.status_code == 429:
                     time.sleep(1 + a)
                     continue
+                if r.status_code == 404:                  # delisted or unknown on Advanced Trade
+                    raise LookupError(pid)
                 r.raise_for_status()
                 return r.json().get("trades", [])
+            except LookupError:
+                raise
             except Exception:  # noqa: BLE001
                 if a == 7:
                     raise
@@ -149,6 +154,16 @@ class TradeFetcher:
         return []
 
     def window(self, pid, start, end):
+        """All trades in [start, end). Products Advanced Trade no longer serves (delisted spot pairs) fall back to the
+        Exchange API's trade-id cursor (ExchangeTrades), which still serves them."""
+        try:
+            return self._window_adv(pid, start, end)
+        except LookupError:
+            if self._ex is None:
+                self._ex = ExchangeTrades(rate=min(self.rate, 6.0))
+            return self._ex.window(pid, start, end)
+
+    def _window_adv(self, pid, start, end):
         s = int(pd.Timestamp(start).timestamp())
         e = int(pd.Timestamp(end).timestamp())
         seen, rows = set(), []
@@ -165,8 +180,86 @@ class TradeFetcher:
         if not rows:
             return pd.DataFrame(columns=["trade_id", "time", "price", "size", "side"])
         d = pd.DataFrame(rows)
-        d["time"] = pd.to_datetime(d["time"], utc=True).dt.tz_convert(None)
+        d["time"] = pd.to_datetime(d["time"], utc=True, format="ISO8601").dt.tz_convert(None)
         d["price"] = d["price"].astype(float)
         d["size"] = d["size"].astype(float)
         d = d[(d.time >= pd.Timestamp(start)) & (d.time < pd.Timestamp(end))]
+        return d[["trade_id", "time", "price", "size", "side"]].sort_values(["time", "trade_id"]).reset_index(drop=True)
+
+
+EXCH = "https://api.exchange.coinbase.com"
+
+
+class ExchangeTrades:
+    """Exchange API trades by trade-id cursor; serves delisted spot products (from builder h5an). `side` is the maker
+    side, upper-cased to match Advanced Trade. ~4-6 requests/second."""
+
+    def __init__(self, rate=4.0):
+        import requests
+        self.S = requests.Session()
+        self.S.headers["User-Agent"] = "crypto-edge-research/1.0"
+        self.rate, self._last, self.n_req = rate, 0.0, 0
+
+    def get(self, path, params):
+        for a in range(8):
+            w = self._last + 1.0 / self.rate - time.time()
+            if w > 0:
+                time.sleep(w)
+            self._last = time.time()
+            self.n_req += 1
+            try:
+                r = self.S.get(f"{EXCH}{path}", params=params, timeout=30)
+                if r.status_code == 429:
+                    time.sleep(1 + a)
+                    continue
+                r.raise_for_status()
+                return r.json()
+            except Exception:  # noqa: BLE001
+                if a == 7:
+                    raise
+                time.sleep(1 + a)
+        return []
+
+    def _time_of(self, pid, tid):
+        js = self.get(f"/products/{pid}/trades", {"after": int(tid) + 1, "limit": 1})
+        return (pd.Timestamp(js[0]["time"]).tz_convert(None), int(js[0]["trade_id"])) if js else (None, None)
+
+    def id_at(self, pid, ts, hi):
+        """Smallest trade id whose time is >= ts (hi = latest id), by bisection."""
+        lo = 1
+        while lo < hi:
+            mid = (lo + hi) // 2
+            t, _ = self._time_of(pid, mid)
+            if t is None or t < ts:
+                lo = mid + 1
+            else:
+                hi = mid
+        return lo
+
+    def window(self, pid, start, end):
+        js = self.get(f"/products/{pid}/trades", {"limit": 1})
+        empty = pd.DataFrame(columns=["trade_id", "time", "price", "size", "side"])
+        if not js:
+            return empty
+        top = int(js[0]["trade_id"])
+        i0 = self.id_at(pid, pd.Timestamp(start), top)
+        i1 = self.id_at(pid, pd.Timestamp(end), top)
+        rows, cur = [], i1
+        while cur > i0:
+            page = self.get(f"/products/{pid}/trades", {"after": cur, "limit": 1000})
+            if not page:
+                break
+            rows.extend(page)
+            mn = min(int(t["trade_id"]) for t in page)
+            if mn >= cur:
+                break
+            cur = mn
+        if not rows:
+            return empty
+        d = pd.DataFrame(rows)
+        d["time"] = pd.to_datetime(d["time"], utc=True, format="ISO8601").dt.tz_convert(None)
+        d["price"] = d["price"].astype(float)
+        d["size"] = d["size"].astype(float)
+        d["side"] = d["side"].str.upper()
+        d = d[(d.time >= pd.Timestamp(start)) & (d.time < pd.Timestamp(end))].drop_duplicates("trade_id")
         return d[["trade_id", "time", "price", "size", "side"]].sort_values(["time", "trade_id"]).reset_index(drop=True)
