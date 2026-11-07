@@ -181,7 +181,36 @@ def trades_probe():
         json.dump(res, f, indent=1, default=str)
 
 
+def exchange_all(pid):
+    """Every trade of a (small, delisted) product via the Exchange trade-id cursor (newest -> oldest). Used where the
+    Advanced market-trades endpoint (common.TradeFetcher) returns 404: products delisted before ~mid-2025."""
+    t0, rows, cur = time.time(), [], None
+    while True:
+        js = get(f"/products/{pid}/trades", {"limit": 1000, **({"after": cur} if cur else {})})
+        if not js:
+            break
+        rows += [(int(t["trade_id"]), t["time"], float(t["price"]), float(t["size"]), t["side"]) for t in js]
+        cur = min(int(t["trade_id"]) for t in js)
+        if cur <= 1 or len(js) < 1000:
+            break
+        if N_REQ[0] % 200 == 0:
+            print(pid, N_REQ[0], len(rows), js[-1]["time"], flush=True)
+    d = pd.DataFrame(rows, columns=["trade_id", "time", "price", "size", "side"]).drop_duplicates("trade_id")
+    d["time"] = pd.to_datetime(d["time"], utc=True, format="ISO8601").dt.tz_convert(None)
+    # Exchange /trades `side` is the TAKER side (buy = aggressive buyer); convert to the Advanced/common convention
+    # (MAKER side: "BUY" = a resting bid was hit by an aggressive seller).
+    d["side"] = d["side"].map({"buy": "SELL", "sell": "BUY"})
+    d = d.sort_values(["time", "trade_id"]).reset_index(drop=True)
+    os.makedirs(os.path.join(OUT, "trades_all"), exist_ok=True)
+    d.to_parquet(os.path.join(OUT, "trades_all", f"{pid}.parquet"), index=False, compression="zstd")
+    print(f"{pid}: {len(d)} trades {d.time.min()} .. {d.time.max()}, {N_REQ[0]} requests, {time.time() - t0:.0f}s")
+
+
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "xall":
+        for pid in sys.argv[2:]:
+            exchange_all(pid)
+        sys.exit(0)
     if sys.argv[1] == "discover":
         discover()
     elif sys.argv[1] == "candles":
