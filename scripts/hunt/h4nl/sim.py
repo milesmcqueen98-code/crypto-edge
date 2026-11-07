@@ -61,8 +61,8 @@ def candidates(C, L, v, keep=None):
     q = q[q.ts < q.t0 + pd.Timedelta(days=v["win"] + 1)]
     if v["liq"]:
         q = q[q.liq_from.notna() & (q.ts >= q.liq_from)]
-    if keep is not None:
-        q = q[q.index.isin(keep)]
+    if keep is not None:                                # keep: set of (pid, ts) candidate keys
+        q = q[[(p_, t_) in keep for p_, t_ in zip(q.pid, q.ts)]]
     H = v["H"]
     q = q.assign(tp_off=q[f"tp_off{H}"], tp_cap=q[f"tp_cap{H}"], x_off=q[f"x_off{H}"], x_px=q[f"x_px{H}"])
     return q[q.x_off > 0].sort_values(["ts", "t0", "pid"], ascending=[True, False, True])
@@ -142,7 +142,8 @@ def labels(q, theta=0.5, mult=2.0):
 
 def ai_keep(q_all, rule, first_q="2022Q3", last_q=None):
     """Walk-forward by quarter: train on candidates before (quarter start - 1 day), keep test candidates with
-    predicted net bp > 0 ("pos") or > the training-prediction median ("med")."""
+    predicted net bp > 0 ("pos") or > the training-prediction median ("med"). Before the first test quarter there is
+    no model, so candidates pass unfiltered. Resting bids of filtered coins still reserve cash (conservative)."""
     import lightgbm as lgb
     sys.path.insert(0, ROOT)
     from edge import wick
@@ -152,7 +153,10 @@ def ai_keep(q_all, rule, first_q="2022Q3", last_q=None):
     for per in pd.period_range(first_q, last_q, freq="Q"):
         tr = q_all[q_all.ts < per.start_time - pd.Timedelta(days=1)]
         te = q_all[(q_all.ts >= per.start_time) & (q_all.ts <= per.end_time)]
-        if te.empty or len(tr) < 100:
+        if te.empty:
+            continue
+        if len(tr) < 100:                               # too little history for a model: pass unfiltered
+            keep += list(zip(te.pid, te.ts))
             continue
         p_te, p_tr = [], []
         for s in (7, 11, 23):
@@ -162,6 +166,8 @@ def ai_keep(q_all, rule, first_q="2022Q3", last_q=None):
             p_tr.append(m.predict(tr[FEATS]))
         p_te, p_tr = np.mean(p_te, axis=0), np.mean(p_tr, axis=0)
         thr = 0.0 if rule == "pos" else float(np.median(p_tr))
-        keep += list(te.index[p_te > thr])
-        preds.update(dict(zip(te.index, p_te)))
+        keep += list(zip(te.pid[p_te > thr], te.ts[p_te > thr]))
+        preds.update(dict(zip(zip(te.pid, te.ts), p_te)))
+    keep += list(zip(q_all.pid[q_all.ts < pd.Period(first_q, "Q").start_time],
+                     q_all.ts[q_all.ts < pd.Period(first_q, "Q").start_time]))   # no model yet: unfiltered
     return set(keep), pd.Series(preds)
