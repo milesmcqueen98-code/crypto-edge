@@ -85,6 +85,7 @@ def load(stage="dev"):
     E = pd.read_csv(EVENTS, parse_dates=["T_lo", "T_ft", "T_auction", "T_postonly", "T_transfer"])
     E = E[E.in_universe].copy()
     V = _read("ev", parts)
+    V = V.drop(columns=[c for c in ("tick_now",) if c in V.columns])
     S = _read("slot", parts)
     M = E.merge(V, on="key", how="inner")
     if stage == "dev":
