@@ -1,0 +1,636 @@
+{
+ "best_density_cfg": "N14_R30-10_H60",
+ "mechanism_pass_any": false,
+ "N7_R15-05_H60": {
+  "dens": {
+   "trades": 481,
+   "fills_per_year": {
+    "2022": 161,
+    "2023": 85,
+    "2025": 184,
+    "2026": 51
+   },
+   "by_coin": {
+    "BTC": 54,
+    "ETH": 116,
+    "SOL": 211,
+    "XRP": 100
+   },
+   "venue": {
+    "perp": 113,
+    "spot": 368
+   },
+   "top3_share": 0.3505570359573581,
+   "years_2x": {
+    "2022": -0.6222,
+    "2023": 0.1261,
+    "2025": 0.7489,
+    "2026": 0.4009
+   },
+   "corr_inc": 0.11413937033526043,
+   "unit_fill_above_low_bp_median": 131.95639701663708,
+   "unit_fill_at_low_share": 0.037243947858473,
+   "unit_tp_share": 0.5493482309124768,
+   "notional_median": 29813.85,
+   "full_size_share": 0.9064449064449065,
+   "sleeve_ret_yr_2x_fee012": 0.3196009901831053,
+   "sleeve_ret_yr_2x_fee030": 0.031652664340408705,
+   "sleeve_sharpe_2x_fee012": 1.2029479198332278,
+   "sleeve_sharpe_2x_fee030": -0.02335699684433972
+  },
+  "ctrl": {
+   "trades": 393,
+   "fills_per_year": {
+    "2022": 144,
+    "2023": 63,
+    "2025": 147,
+    "2026": 39
+   },
+   "by_coin": {
+    "BTC": 41,
+    "ETH": 90,
+    "SOL": 179,
+    "XRP": 83
+   },
+   "venue": {
+    "perp": 88,
+    "spot": 305
+   },
+   "top3_share": 0.4236498400332447,
+   "years_2x": {
+    "2022": -0.6111,
+    "2023": 0.1282,
+    "2025": 0.7358,
+    "2026": 0.4907
+   },
+   "corr_inc": 0.10099025013028261,
+   "unit_fill_above_low_bp_median": 138.92924155764373,
+   "unit_fill_at_low_share": 0.047058823529411764,
+   "unit_tp_share": 0.5623529411764706,
+   "notional_median": 29788.85,
+   "full_size_share": 0.910941475826972,
+   "sleeve_ret_yr_2x_fee012": 0.32402973349188213,
+   "sleeve_ret_yr_2x_fee030": 0.08544116366844715,
+   "sleeve_sharpe_2x_fee012": 1.1816869100406675,
+   "sleeve_sharpe_2x_fee030": 0.19665193623214683
+  }
+ },
+ "N7_R15-05_H240": {
+  "dens": {
+   "trades": 440,
+   "fills_per_year": {
+    "2022": 144,
+    "2023": 82,
+    "2025": 168,
+    "2026": 46
+   },
+   "by_coin": {
+    "BTC": 49,
+    "ETH": 106,
+    "SOL": 194,
+    "XRP": 91
+   },
+   "venue": {
+    "perp": 107,
+    "spot": 333
+   },
+   "top3_share": 0.8152362988222148,
+   "years_2x": {
+    "2022": -0.7084,
+    "2023": 0.2751,
+    "2025": 0.4091,
+    "2026": 0.2423
+   },
+   "corr_inc": 0.09012574200143743,
+   "unit_fill_above_low_bp_median": 131.95639701663708,
+   "unit_fill_at_low_share": 0.037243947858473,
+   "unit_tp_share": 0.7001862197392924,
+   "notional_median": 29816.825,
+   "full_size_share": 0.9045454545454545,
+   "sleeve_ret_yr_2x_fee012": 0.1809200113856972,
+   "sleeve_ret_yr_2x_fee030": -0.08223587143934287,
+   "sleeve_sharpe_2x_fee012": 0.5452278241798464,
+   "sleeve_sharpe_2x_fee030": -0.44143095174402874
+  },
+  "ctrl": {
+   "trades": 372,
+   "fills_per_year": {
+    "2022": 121,
+    "2023": 59,
+    "2025": 151,
+    "2026": 41
+   },
+   "by_coin": {
+    "BTC": 37,
+    "ETH": 82,
+    "SOL": 163,
+    "XRP": 90
+   },
+   "venue": {
+    "perp": 92,
+    "spot": 280
+   },
+   "top3_share": 0.4599385492726136,
+   "years_2x": {
+    "2022": -0.4938,
+    "2023": 0.4222,
+    "2025": 0.2128,
+    "2026": 0.3141
+   },
+   "corr_inc": 0.17716817258811804,
+   "unit_fill_above_low_bp_median": 135.94425037929403,
+   "unit_fill_at_low_share": 0.04186046511627907,
+   "unit_tp_share": 0.6744186046511628,
+   "notional_median": 29798.125,
+   "full_size_share": 0.8924731182795699,
+   "sleeve_ret_yr_2x_fee012": 0.22794770604939535,
+   "sleeve_ret_yr_2x_fee030": 0.015410900270904214,
+   "sleeve_sharpe_2x_fee012": 0.7595865672310728,
+   "sleeve_sharpe_2x_fee030": -0.08623954646592949
+  }
+ },
+ "N7_R30-10_H60": {
+  "dens": {
+   "trades": 302,
+   "fills_per_year": {
+    "2022": 96,
+    "2023": 58,
+    "2025": 110,
+    "2026": 38
+   },
+   "by_coin": {
+    "BTC": 23,
+    "ETH": 70,
+    "SOL": 142,
+    "XRP": 67
+   },
+   "venue": {
+    "perp": 68,
+    "spot": 234
+   },
+   "top3_share": 0.17303772061717834,
+   "years_2x": {
+    "2022": -0.0658,
+    "2023": 0.1447,
+    "2025": 0.7207,
+    "2026": 0.4974
+   },
+   "corr_inc": 0.16143758269505668,
+   "unit_fill_above_low_bp_median": 146.20689655172382,
+   "unit_fill_at_low_share": 0.032640949554896145,
+   "unit_tp_share": 0.5311572700296736,
+   "notional_median": 29814.825,
+   "full_size_share": 0.9006622516556292,
+   "sleeve_ret_yr_2x_fee012": 0.4598947494501779,
+   "sleeve_ret_yr_2x_fee030": 0.2805435151002582,
+   "sleeve_sharpe_2x_fee012": 2.2711481502080755,
+   "sleeve_sharpe_2x_fee030": 1.3258854779872908
+  },
+  "ctrl": {
+   "trades": 249,
+   "fills_per_year": {
+    "2022": 68,
+    "2023": 54,
+    "2025": 90,
+    "2026": 37
+   },
+   "by_coin": {
+    "BTC": 20,
+    "ETH": 57,
+    "SOL": 110,
+    "XRP": 62
+   },
+   "venue": {
+    "perp": 63,
+    "spot": 186
+   },
+   "top3_share": 0.16060778506514822,
+   "years_2x": {
+    "2022": -0.0315,
+    "2023": 0.2472,
+    "2025": 0.6345,
+    "2026": 0.4662
+   },
+   "corr_inc": 0.09193834577185403,
+   "unit_fill_above_low_bp_median": 154.58899771320756,
+   "unit_fill_at_low_share": 0.043010752688172046,
+   "unit_tp_share": 0.5448028673835126,
+   "notional_median": 29830.050000000003,
+   "full_size_share": 0.8875502008032129,
+   "sleeve_ret_yr_2x_fee012": 0.45491808965981617,
+   "sleeve_ret_yr_2x_fee030": 0.299627625775386,
+   "sleeve_sharpe_2x_fee012": 2.2429473916495035,
+   "sleeve_sharpe_2x_fee030": 1.4465685337370175
+  }
+ },
+ "N7_R30-10_H240": {
+  "dens": {
+   "trades": 277,
+   "fills_per_year": {
+    "2022": 89,
+    "2023": 54,
+    "2025": 99,
+    "2026": 35
+   },
+   "by_coin": {
+    "BTC": 22,
+    "ETH": 65,
+    "SOL": 128,
+    "XRP": 62
+   },
+   "venue": {
+    "perp": 64,
+    "spot": 213
+   },
+   "top3_share": 0.2499663301860268,
+   "years_2x": {
+    "2022": -0.0276,
+    "2023": 0.2201,
+    "2025": 0.2788,
+    "2026": 0.299
+   },
+   "corr_inc": 0.0549675349284649,
+   "unit_fill_above_low_bp_median": 146.20689655172382,
+   "unit_fill_at_low_share": 0.032640949554896145,
+   "unit_tp_share": 0.6824925816023739,
+   "notional_median": 29825.700000000004,
+   "full_size_share": 0.9025270758122743,
+   "sleeve_ret_yr_2x_fee012": 0.2998579621508865,
+   "sleeve_ret_yr_2x_fee030": 0.13326175027287684,
+   "sleeve_sharpe_2x_fee012": 1.1864843287860718,
+   "sleeve_sharpe_2x_fee030": 0.43624759508202643
+  },
+  "ctrl": {
+   "trades": 246,
+   "fills_per_year": {
+    "2022": 71,
+    "2023": 46,
+    "2025": 103,
+    "2026": 26
+   },
+   "by_coin": {
+    "BTC": 20,
+    "ETH": 60,
+    "SOL": 111,
+    "XRP": 55
+   },
+   "venue": {
+    "perp": 57,
+    "spot": 189
+   },
+   "top3_share": 0.2221056402629541,
+   "years_2x": {
+    "2022": -0.2697,
+    "2023": 0.3776,
+    "2025": 0.4553,
+    "2026": 0.2798
+   },
+   "corr_inc": 0.053922335416229934,
+   "unit_fill_above_low_bp_median": 160.85838285059717,
+   "unit_fill_at_low_share": 0.037037037037037035,
+   "unit_tp_share": 0.6734006734006734,
+   "notional_median": 29803.649999999998,
+   "full_size_share": 0.9146341463414634,
+   "sleeve_ret_yr_2x_fee012": 0.3131864441233663,
+   "sleeve_ret_yr_2x_fee030": 0.16446696258243532,
+   "sleeve_sharpe_2x_fee012": 1.2033085687241332,
+   "sleeve_sharpe_2x_fee030": 0.5494071524664195
+  }
+ },
+ "N14_R15-05_H60": {
+  "dens": {
+   "trades": 476,
+   "fills_per_year": {
+    "2022": 161,
+    "2023": 84,
+    "2025": 180,
+    "2026": 51
+   },
+   "by_coin": {
+    "BTC": 56,
+    "ETH": 117,
+    "SOL": 210,
+    "XRP": 93
+   },
+   "venue": {
+    "perp": 112,
+    "spot": 364
+   },
+   "top3_share": 0.32928076496671627,
+   "years_2x": {
+    "2022": -0.5924,
+    "2023": 0.1518,
+    "2025": 0.7574,
+    "2026": 0.3791
+   },
+   "corr_inc": 0.11790503582514536,
+   "unit_fill_above_low_bp_median": 128.449763494346,
+   "unit_fill_at_low_share": 0.041666666666666664,
+   "unit_tp_share": 0.5568181818181818,
+   "notional_median": 29818.800000000003,
+   "full_size_share": 0.9054621848739496,
+   "sleeve_ret_yr_2x_fee012": 0.3319545112085121,
+   "sleeve_ret_yr_2x_fee030": 0.044069503182829955,
+   "sleeve_sharpe_2x_fee012": 1.2455468241261776,
+   "sleeve_sharpe_2x_fee030": 0.027589874465294185
+  },
+  "ctrl": {
+   "trades": 387,
+   "fills_per_year": {
+    "2022": 127,
+    "2023": 64,
+    "2025": 155,
+    "2026": 41
+   },
+   "by_coin": {
+    "BTC": 31,
+    "ETH": 86,
+    "SOL": 189,
+    "XRP": 81
+   },
+   "venue": {
+    "perp": 96,
+    "spot": 291
+   },
+   "top3_share": 0.2576482211233592,
+   "years_2x": {
+    "2022": -0.1219,
+    "2023": 0.239,
+    "2025": 0.6476,
+    "2026": 0.3507
+   },
+   "corr_inc": 0.1274533343980933,
+   "unit_fill_above_low_bp_median": 140.47594087430502,
+   "unit_fill_at_low_share": 0.043583535108958835,
+   "unit_tp_share": 0.5665859564164649,
+   "notional_median": 29808.0,
+   "full_size_share": 0.9121447028423773,
+   "sleeve_ret_yr_2x_fee012": 0.43000230718127125,
+   "sleeve_ret_yr_2x_fee030": 0.19818874377838197,
+   "sleeve_sharpe_2x_fee012": 1.7408180404211562,
+   "sleeve_sharpe_2x_fee030": 0.7250037760291577
+  }
+ },
+ "N14_R15-05_H240": {
+  "dens": {
+   "trades": 436,
+   "fills_per_year": {
+    "2022": 145,
+    "2023": 80,
+    "2025": 165,
+    "2026": 46
+   },
+   "by_coin": {
+    "BTC": 49,
+    "ETH": 105,
+    "SOL": 192,
+    "XRP": 90
+   },
+   "venue": {
+    "perp": 106,
+    "spot": 330
+   },
+   "top3_share": 0.5577079261148592,
+   "years_2x": {
+    "2022": -0.6717,
+    "2023": 0.2973,
+    "2025": 0.473,
+    "2026": 0.224
+   },
+   "corr_inc": 0.12532534630581074,
+   "unit_fill_above_low_bp_median": 128.449763494346,
+   "unit_fill_at_low_share": 0.041666666666666664,
+   "unit_tp_share": 0.7026515151515151,
+   "notional_median": 29824.4,
+   "full_size_share": 0.9036697247706422,
+   "sleeve_ret_yr_2x_fee012": 0.21090259181297136,
+   "sleeve_ret_yr_2x_fee030": -0.05086733435075239,
+   "sleeve_sharpe_2x_fee012": 0.6584231097228941,
+   "sleeve_sharpe_2x_fee030": -0.325617768481789
+  },
+  "ctrl": {
+   "trades": 363,
+   "fills_per_year": {
+    "2022": 109,
+    "2023": 68,
+    "2025": 144,
+    "2026": 42
+   },
+   "by_coin": {
+    "BTC": 32,
+    "ETH": 80,
+    "SOL": 175,
+    "XRP": 76
+   },
+   "venue": {
+    "perp": 99,
+    "spot": 264
+   },
+   "top3_share": 0.35428772733639297,
+   "years_2x": {
+    "2022": -0.0878,
+    "2023": 0.4288,
+    "2025": 0.3006,
+    "2026": 0.147
+   },
+   "corr_inc": 0.06285542191819973,
+   "unit_fill_above_low_bp_median": 139.71485881487666,
+   "unit_fill_at_low_share": 0.043583535108958835,
+   "unit_tp_share": 0.6924939467312349,
+   "notional_median": 29820.15,
+   "full_size_share": 0.9118457300275482,
+   "sleeve_ret_yr_2x_fee012": 0.3279476987747212,
+   "sleeve_ret_yr_2x_fee030": 0.11018365543603752,
+   "sleeve_sharpe_2x_fee012": 1.1647950498370363,
+   "sleeve_sharpe_2x_fee030": 0.2985557397047363
+  }
+ },
+ "N14_R30-10_H60": {
+  "dens": {
+   "trades": 300,
+   "fills_per_year": {
+    "2022": 97,
+    "2023": 56,
+    "2025": 109,
+    "2026": 38
+   },
+   "by_coin": {
+    "BTC": 25,
+    "ETH": 67,
+    "SOL": 144,
+    "XRP": 64
+   },
+   "venue": {
+    "perp": 67,
+    "spot": 233
+   },
+   "top3_share": 0.17313111887437335,
+   "years_2x": {
+    "2022": -0.0428,
+    "2023": 0.12,
+    "2025": 0.7023,
+    "2026": 0.5015
+   },
+   "corr_inc": 0.14681115097285194,
+   "unit_fill_above_low_bp_median": 149.1761598418584,
+   "unit_fill_at_low_share": 0.03293413173652695,
+   "unit_tp_share": 0.5389221556886228,
+   "notional_median": 29810.65,
+   "full_size_share": 0.9,
+   "sleeve_ret_yr_2x_fee012": 0.4543750677390196,
+   "sleeve_ret_yr_2x_fee030": 0.27700779165555256,
+   "sleeve_sharpe_2x_fee012": 2.2595623176134003,
+   "sleeve_sharpe_2x_fee030": 1.3149535749712526
+  },
+  "ctrl": {
+   "trades": 253,
+   "fills_per_year": {
+    "2022": 74,
+    "2023": 44,
+    "2025": 102,
+    "2026": 33
+   },
+   "by_coin": {
+    "BTC": 16,
+    "ETH": 56,
+    "SOL": 119,
+    "XRP": 62
+   },
+   "venue": {
+    "perp": 64,
+    "spot": 189
+   },
+   "top3_share": 0.2514005676208141,
+   "years_2x": {
+    "2022": -0.2285,
+    "2023": 0.1668,
+    "2025": 0.7434,
+    "2026": 0.4392
+   },
+   "corr_inc": 0.2018579343566793,
+   "unit_fill_above_low_bp_median": 154.31954869690844,
+   "unit_fill_at_low_share": 0.014234875444839857,
+   "unit_tp_share": 0.5088967971530249,
+   "notional_median": 29814.75,
+   "full_size_share": 0.9169960474308301,
+   "sleeve_ret_yr_2x_fee012": 0.39381364395260693,
+   "sleeve_ret_yr_2x_fee030": 0.24698666160910768,
+   "sleeve_sharpe_2x_fee012": 1.8254567669162285,
+   "sleeve_sharpe_2x_fee030": 1.0869308579854766
+  }
+ },
+ "N14_R30-10_H240": {
+  "dens": {
+   "trades": 275,
+   "fills_per_year": {
+    "2022": 90,
+    "2023": 52,
+    "2025": 98,
+    "2026": 35
+   },
+   "by_coin": {
+    "BTC": 21,
+    "ETH": 67,
+    "SOL": 129,
+    "XRP": 58
+   },
+   "venue": {
+    "perp": 63,
+    "spot": 212
+   },
+   "top3_share": 0.22334743379605643,
+   "years_2x": {
+    "2022": -0.0257,
+    "2023": 0.2069,
+    "2025": 0.3283,
+    "2026": 0.3095
+   },
+   "corr_inc": 0.07565922630274623,
+   "unit_fill_above_low_bp_median": 149.1761598418584,
+   "unit_fill_at_low_share": 0.03293413173652695,
+   "unit_tp_share": 0.6856287425149701,
+   "notional_median": 29825.700000000004,
+   "full_size_share": 0.9018181818181819,
+   "sleeve_ret_yr_2x_fee012": 0.3141953260667107,
+   "sleeve_ret_yr_2x_fee030": 0.14750765511968017,
+   "sleeve_sharpe_2x_fee012": 1.2776744969369895,
+   "sleeve_sharpe_2x_fee030": 0.5114664060243518
+  },
+  "ctrl": {
+   "trades": 236,
+   "fills_per_year": {
+    "2022": 73,
+    "2023": 48,
+    "2025": 89,
+    "2026": 26
+   },
+   "by_coin": {
+    "BTC": 20,
+    "ETH": 38,
+    "SOL": 115,
+    "XRP": 63
+   },
+   "venue": {
+    "perp": 51,
+    "spot": 185
+   },
+   "top3_share": 0.14299360353700075,
+   "years_2x": {
+    "2022": 0.1045,
+    "2023": 0.5391,
+    "2025": 0.4243,
+    "2026": 0.1923
+   },
+   "corr_inc": 0.06567468669101617,
+   "unit_fill_above_low_bp_median": 155.0561797752814,
+   "unit_fill_at_low_share": 0.03914590747330961,
+   "unit_tp_share": 0.7153024911032029,
+   "notional_median": 29794.375000000004,
+   "full_size_share": 0.9322033898305084,
+   "sleeve_ret_yr_2x_fee012": 0.42950718537283256,
+   "sleeve_ret_yr_2x_fee030": 0.29424625760397216,
+   "sleeve_sharpe_2x_fee012": 1.937845152682086,
+   "sleeve_sharpe_2x_fee030": 1.3026149519527022
+  }
+ },
+ "best_sum_net_bp_by_era_coin": {
+  "2022-23|BTC": {
+   "dens": 926.2,
+   "ctrl": 76.8
+  },
+  "2022-23|ETH": {
+   "dens": -1890.0,
+   "ctrl": -213.6
+  },
+  "2022-23|SOL": {
+   "dens": 3247.0,
+   "ctrl": -736.2
+  },
+  "2022-23|XRP": {
+   "dens": 540.3,
+   "ctrl": 1204.4
+  },
+  "2025-26|BTC": {
+   "dens": 1551.7,
+   "ctrl": 713.9
+  },
+  "2025-26|ETH": {
+   "dens": 2843.8,
+   "ctrl": 1681.4
+  },
+  "2025-26|SOL": {
+   "dens": 6829.8,
+   "ctrl": 7437.7
+  },
+  "2025-26|XRP": {
+   "dens": 5324.1,
+   "ctrl": 6007.2
+  }
+ },
+ "best_events_by_coin": {
+  "BTC": 29671,
+  "ETH": 26020,
+  "SOL": 21057,
+  "XRP": 16044
+ }
+}

@@ -1,0 +1,20 @@
+{
+ "dens": {
+  "n": 457,
+  "oi_ch_bp_median": -1.240079756376078,
+  "oi_ch_bp_mean": -12.179007159349236,
+  "hr_ret_bp_median": -345.7957521962894,
+  "oi_per_100bp_drop": -5.429531873052949
+ },
+ "ctrl": {
+  "n": 425,
+  "oi_ch_bp_median": -6.992820299773772,
+  "oi_ch_bp_mean": -18.56205316522023,
+  "hr_ret_bp_median": -355.594654868134,
+  "oi_per_100bp_drop": -5.625627004020964
+ },
+ "resid_diff_bp": 5.991324394792654,
+ "resid_diff_t": 0.405296383223509,
+ "cfg": "N14_R30-10_H60",
+ "note": "Hours where the price crossed the estimated cluster (density arm) vs crossed a depth-matched random bucket (control). OI = Binance USD-M sum_open_interest (coins), hourly; research context only."
+}

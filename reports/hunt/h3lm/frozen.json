@@ -1,0 +1,92 @@
+{
+ "idea": "h3lm",
+ "variant": null,
+ "params": null,
+ "status": "NO FREEZE: the mechanism test failed on DEV for all 8 density configs (SPEC: stop; HOLD not read)",
+ "mechanism_rule": "paired t of per-event net bp (density - depth-matched control, 2x costs) >= 2, event-level and day-clustered (Newey-West 5 lags)",
+ "configs_passing": [],
+ "code_commit": "407a549e1f110cf0d49d51503ea57bc34d81c9c8",
+ "would_be_selection_if_screen_had_passed": {
+  "variant": "dens_N14_R30-10_H60",
+  "dev_t_alpha_inc70": 2.470123679742237,
+  "dev_t_alpha_inc100": 2.5058633899766813,
+  "trades": 300,
+  "dev_sleeve_sharpe_2x": 1.850558250740879,
+  "dev_book_sharpe_a07": 2.625591402113713
+ },
+ "mech": {
+  "N7_R15-05_H60": {
+   "n_events": 92959,
+   "dens_fills": 537,
+   "ctrl_fills": 425,
+   "diff_mean_bp": 0.006115592252148891,
+   "t_naive": 0.15341548918839673,
+   "t_day_cluster": 0.18111704654936556,
+   "pass": false
+  },
+  "N7_R15-05_H240": {
+   "n_events": 92959,
+   "dens_fills": 537,
+   "ctrl_fills": 430,
+   "diff_mean_bp": -0.0225406002696927,
+   "t_naive": -0.3994606850397492,
+   "t_day_cluster": -0.3823280323584248,
+   "pass": false
+  },
+  "N7_R30-10_H60": {
+   "n_events": 92959,
+   "dens_fills": 337,
+   "ctrl_fills": 279,
+   "diff_mean_bp": 0.006642483093097162,
+   "t_naive": 0.235330757037328,
+   "t_day_cluster": 0.26792757589087024,
+   "pass": false
+  },
+  "N7_R30-10_H240": {
+   "n_events": 92959,
+   "dens_fills": 337,
+   "ctrl_fills": 297,
+   "diff_mean_bp": 0.03275898524501463,
+   "t_naive": 0.881402021043003,
+   "t_day_cluster": 0.9976741827300777,
+   "pass": false
+  },
+  "N14_R15-05_H60": {
+   "n_events": 92792,
+   "dens_fills": 528,
+   "ctrl_fills": 413,
+   "diff_mean_bp": -0.03599011555180783,
+   "t_naive": -0.858532566576615,
+   "t_day_cluster": -0.9622576331353557,
+   "pass": false
+  },
+  "N14_R15-05_H240": {
+   "n_events": 92792,
+   "dens_fills": 528,
+   "ctrl_fills": 413,
+   "diff_mean_bp": -0.07756228059727378,
+   "t_naive": -1.3519191415543355,
+   "t_day_cluster": -1.0933560330766872,
+   "pass": false
+  },
+  "N14_R30-10_H60": {
+   "n_events": 92792,
+   "dens_fills": 334,
+   "ctrl_fills": 281,
+   "diff_mean_bp": 0.03449949944284784,
+   "t_naive": 1.3077040721244189,
+   "t_day_cluster": 1.3479517552091154,
+   "pass": false
+  },
+  "N14_R30-10_H240": {
+   "n_events": 92792,
+   "dens_fills": 334,
+   "ctrl_fills": 281,
+   "diff_mean_bp": -0.03640717518123194,
+   "t_naive": -0.9975888911471081,
+   "t_day_cluster": -1.2561024347914411,
+   "pass": false
+  }
+ },
+ "written": "2026-11-07T06:03:40Z"
+}

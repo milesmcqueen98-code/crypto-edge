@@ -723,6 +723,8 @@ def run_full():
     if not os.path.exists(fz):
         raise SystemExit("full mode needs reports/hunt/h3lm/frozen.json (the freeze commit) first")
     F = json.load(open(fz))
+    if not F.get("variant") or not F.get("params"):
+        raise SystemExit("frozen.json names no variant (the idea stopped at the mechanism test): HOLD is not read")
     N, R, H = int(F["params"]["N"]), tuple(F["params"]["R"]), int(F["params"]["H"])
     ci = [cfg_name(*c) for c in grid()].index(cfg_name(N, R, H))
     days = scored_days()
