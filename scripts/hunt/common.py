@@ -6,6 +6,7 @@ Trade-side convention on Coinbase (checked in reports/hunt/probe2.json): `side` 
 means a resting bid was hit by an aggressive seller (the price ticks down); side == "SELL" means an aggressive buyer
 lifted a resting offer.
 """
+import math
 import os
 import sys
 import time
@@ -63,11 +64,24 @@ def perp_half_spread_bp():
 _HS = None
 
 
+# PEPE perp prices (data/cfm candles and CDE prints) are quoted per 1,000 PEPE, while PERP's contract size is in PEPE
+# units (found by builder h9mc). usd_per_coin converts a quoted price; PEPE's USD price has never been above 1e-3, so a
+# larger price is taken to be the per-1,000 quote.
+PX_PER_COIN = {"PEPE": 1e-3}
+
+
+def usd_per_coin(coin, price):
+    k = PX_PER_COIN.get(coin)
+    return price * k if (k is not None and price > 1e-3) else price
+
+
 def perp_cost_bp(coin, price, taker=False, mult=1.0):
-    """One side of a perp trade in bp of notional: the per-contract fee, plus the half-spread for market orders."""
+    """One side of a perp trade in bp of notional: the per-contract fee, plus the half-spread for market orders.
+    `price` may be USD per coin or the venue's quote (PEPE per 1,000); both give the same answer."""
     global _HS
     if _HS is None:
         _HS = perp_half_spread_bp()
+    price = usd_per_coin(coin, price)
     size = PERP[coin][1]
     fee = PERP_FEE_USD / (price * size) * 1e4
     hs = PERP_HS_MULT * _HS.get(coin, 5.0) if taker else 0.0
@@ -84,7 +98,7 @@ def spot_cost_bp(taker=False, mult=1.0):
 
 
 def contract_ok(coin, price):
-    return coin in PERP and price * PERP[coin][1] >= MIN_CONTRACT_USD
+    return coin in PERP and usd_per_coin(coin, price) * PERP[coin][1] >= MIN_CONTRACT_USD
 
 
 # ------------------------------------------------------------------ data
@@ -166,17 +180,25 @@ class TradeFetcher:
     def _window_adv(self, pid, start, end):
         s = int(pd.Timestamp(start).timestamp())
         e = int(pd.Timestamp(end).timestamp())
+        # Paging fix (2026-11-07, found by builder h9mc): `end` is exclusive and whole-second, so ending the next page at
+        # the oldest print's second dropped the earlier prints of that second (ETH lost 4,865 of 5,709 contracts in the
+        # 16:00 ET minute of 2026-03-11). The next page now re-requests the boundary second; trade ids de-duplicate.
         seen, rows = set(), []
+        self.lost_seconds = 0
         while e > s:
             tr = self._get(pid, s, e)
             new = [t for t in tr if t["trade_id"] not in seen]
             for t in new:
                 seen.add(t["trade_id"])
                 rows.append(t)
-            if len(tr) < 1000 or not new:
+            if len(tr) < 1000:
                 break
-            e_new = int(min(pd.Timestamp(t["time"]).timestamp() for t in tr))
-            e = e_new if e_new < e else e - 1           # >1000 trades inside one second: step past it
+            tmin = math.floor(min(pd.Timestamp(t["time"]).timestamp() for t in tr))
+            e_next = int(tmin) + 1                      # re-request the boundary second
+            if e_next >= e or not new:                  # >= 1000 prints inside one second: step past it
+                self.lost_seconds += 1
+                e_next = int(tmin) if int(tmin) < e else e - 1
+            e = e_next
         if not rows:
             return pd.DataFrame(columns=["trade_id", "time", "price", "size", "side"])
         d = pd.DataFrame(rows)
