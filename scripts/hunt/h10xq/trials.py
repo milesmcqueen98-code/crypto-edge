@@ -57,8 +57,9 @@ def main(tag, spec):
         D = pd.DataFrame(out)
         D.index.name = "day"
         D.to_parquet(os.path.join(OUT, f"{v}.parquet"))
-        T2x.drop(columns=[x for x in ("book",) if x in T2x]).to_parquet(os.path.join(OUT, f"trades_{v}.parquet"),
-                                                                         index=False)
+        tdir = os.environ.get("H10_TRADES_DIR", OUT)          # per-trade files are large: kept out of git
+        os.makedirs(tdir, exist_ok=True)
+        T2x.to_parquet(os.path.join(tdir, f"trades_{v}.parquet"), index=False)
         src = T.src.value_counts().to_dict() if len(T) else {}
         rows.append(dict(variant=v, k=k, exit=ex, qset=q, H=H, cascade=c, trades=len(T2x),
                          fill_musd=float(T2x.fill.sum() / 1e6) if len(T2x) else 0.0,
