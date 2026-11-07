@@ -1,0 +1,366 @@
+[
+ {
+  "coin": "BTC",
+  "day": "2025-10-15",
+  "win": "13:30-14:30",
+  "prints": 1568,
+  "req": 2,
+  "secs": 0.6,
+  "sum_size": 10748.0,
+  "median_size": 5.0,
+  "sides": {
+   "SELL": 856,
+   "BUY": 712
+  },
+  "dupes": 0,
+  "first": "2025-10-15 17:30:11.148738",
+  "last": "2025-10-15 18:29:53.992295",
+  "candle_vol_coin": 108.46,
+  "candle_vol_contracts": 10846.0,
+  "candle_minutes": 60
+ },
+ {
+  "coin": "BTC",
+  "day": "2025-10-15",
+  "win": "15:30-17:10",
+  "prints": 4062,
+  "req": 5,
+  "secs": 1.2,
+  "sum_size": 31900.0,
+  "median_size": 5.0,
+  "sides": {
+   "BUY": 2370,
+   "SELL": 1692
+  },
+  "dupes": 0,
+  "first": "2025-10-15 19:30:00.364838",
+  "last": "2025-10-15 21:09:51.930254",
+  "candle_vol_coin": 319.83000000000004,
+  "candle_vol_contracts": 31983.000000000004,
+  "candle_minutes": 99
+ },
+ {
+  "coin": "BTC",
+  "day": "2026-03-11",
+  "win": "13:30-14:30",
+  "prints": 3976,
+  "req": 4,
+  "secs": 1.0,
+  "sum_size": 66805.0,
+  "median_size": 11.0,
+  "sides": {
+   "SELL": 2152,
+   "BUY": 1824
+  },
+  "dupes": 0,
+  "first": "2026-03-11 17:30:00.020068",
+  "last": "2026-03-11 18:29:59.732999",
+  "candle_vol_coin": 679.88,
+  "candle_vol_contracts": 67988.0,
+  "candle_minutes": 60
+ },
+ {
+  "coin": "BTC",
+  "day": "2026-03-11",
+  "win": "15:30-17:10",
+  "prints": 3835,
+  "req": 4,
+  "secs": 1.0,
+  "sum_size": 63522.0,
+  "median_size": 10.0,
+  "sides": {
+   "SELL": 2231,
+   "BUY": 1604
+  },
+  "dupes": 0,
+  "first": "2026-03-11 19:30:00.091862",
+  "last": "2026-03-11 21:09:49.224164",
+  "candle_vol_coin": 641.72,
+  "candle_vol_contracts": 64172.0,
+  "candle_minutes": 100
+ },
+ {
+  "coin": "ETH",
+  "day": "2025-10-15",
+  "win": "13:30-14:30",
+  "prints": 2688,
+  "req": 3,
+  "secs": 0.8,
+  "sum_size": 63938.0,
+  "median_size": 20.0,
+  "sides": {
+   "SELL": 1487,
+   "BUY": 1201
+  },
+  "dupes": 0,
+  "first": "2025-10-15 17:30:00.750917",
+  "last": "2025-10-15 18:29:59.182570",
+  "candle_vol_coin": 6451.4000000000015,
+  "candle_vol_contracts": 64514.000000000015,
+  "candle_minutes": 60
+ },
+ {
+  "coin": "ETH",
+  "day": "2025-10-15",
+  "win": "15:30-17:10",
+  "prints": 6630,
+  "req": 7,
+  "secs": 1.7,
+  "sum_size": 94106.0,
+  "median_size": 5.0,
+  "sides": {
+   "BUY": 3739,
+   "SELL": 2891
+  },
+  "dupes": 0,
+  "first": "2025-10-15 19:30:03.623679",
+  "last": "2025-10-15 21:09:49.591214",
+  "candle_vol_coin": 9502.900000000003,
+  "candle_vol_contracts": 95029.00000000003,
+  "candle_minutes": 100
+ },
+ {
+  "coin": "ETH",
+  "day": "2026-03-11",
+  "win": "13:30-14:30",
+  "prints": 737,
+  "req": 1,
+  "secs": 0.3,
+  "sum_size": 34040.0,
+  "median_size": 20.0,
+  "sides": {
+   "BUY": 427,
+   "SELL": 310
+  },
+  "dupes": 0,
+  "first": "2026-03-11 17:30:05.508892",
+  "last": "2026-03-11 18:29:51.142892",
+  "candle_vol_coin": 3404.0,
+  "candle_vol_contracts": 34040.0,
+  "candle_minutes": 58
+ },
+ {
+  "coin": "ETH",
+  "day": "2026-03-11",
+  "win": "15:30-17:10",
+  "prints": 1388,
+  "req": 2,
+  "secs": 0.4,
+  "sum_size": 38761.0,
+  "median_size": 10.0,
+  "sides": {
+   "SELL": 723,
+   "BUY": 665
+  },
+  "dupes": 0,
+  "first": "2026-03-11 19:30:07.243784",
+  "last": "2026-03-11 21:09:15.932939",
+  "candle_vol_coin": 4362.6,
+  "candle_vol_contracts": 43626.0,
+  "candle_minutes": 88
+ },
+ {
+  "coin": "SOL",
+  "day": "2025-10-15",
+  "win": "13:30-14:30",
+  "prints": 1554,
+  "req": 2,
+  "secs": 0.5,
+  "sum_size": 7137.0,
+  "median_size": 2.0,
+  "sides": {
+   "SELL": 885,
+   "BUY": 669
+  },
+  "dupes": 0,
+  "first": "2025-10-15 17:30:05.057106",
+  "last": "2025-10-15 18:29:49.814285",
+  "candle_vol_coin": 35835.0,
+  "candle_vol_contracts": 7167.0,
+  "candle_minutes": 60
+ },
+ {
+  "coin": "SOL",
+  "day": "2025-10-15",
+  "win": "15:30-17:10",
+  "prints": 4055,
+  "req": 5,
+  "secs": 1.2,
+  "sum_size": 16244.0,
+  "median_size": 1.0,
+  "sides": {
+   "BUY": 2178,
+   "SELL": 1877
+  },
+  "dupes": 0,
+  "first": "2025-10-15 19:30:01.901771",
+  "last": "2025-10-15 21:09:50.420576",
+  "candle_vol_coin": 85275.0,
+  "candle_vol_contracts": 17055.0,
+  "candle_minutes": 99
+ },
+ {
+  "coin": "SOL",
+  "day": "2026-03-11",
+  "win": "13:30-14:30",
+  "prints": 1813,
+  "req": 2,
+  "secs": 0.5,
+  "sum_size": 11897.0,
+  "median_size": 3.0,
+  "sides": {
+   "BUY": 989,
+   "SELL": 824
+  },
+  "dupes": 0,
+  "first": "2026-03-11 17:30:00.024238",
+  "last": "2026-03-11 18:29:34.363515",
+  "candle_vol_coin": 59830.0,
+  "candle_vol_contracts": 11966.0,
+  "candle_minutes": 60
+ },
+ {
+  "coin": "SOL",
+  "day": "2026-03-11",
+  "win": "15:30-17:10",
+  "prints": 979,
+  "req": 1,
+  "secs": 0.3,
+  "sum_size": 5078.0,
+  "median_size": 2.0,
+  "sides": {
+   "SELL": 546,
+   "BUY": 433
+  },
+  "dupes": 0,
+  "first": "2026-03-11 19:30:01.710482",
+  "last": "2026-03-11 21:06:01.379039",
+  "candle_vol_coin": 25390.0,
+  "candle_vol_contracts": 5078.0,
+  "candle_minutes": 84
+ },
+ {
+  "coin": "DOGE",
+  "day": "2025-10-15",
+  "win": "13:30-14:30",
+  "prints": 0,
+  "req": 1,
+  "secs": 0.1,
+  "candle_vol_coin": 0.0,
+  "candle_vol_contracts": 0.0,
+  "candle_minutes": 0
+ },
+ {
+  "coin": "DOGE",
+  "day": "2025-10-15",
+  "win": "15:30-17:10",
+  "prints": 0,
+  "req": 1,
+  "secs": 0.1,
+  "candle_vol_coin": 0.0,
+  "candle_vol_contracts": 0.0,
+  "candle_minutes": 0
+ },
+ {
+  "coin": "DOGE",
+  "day": "2026-03-11",
+  "win": "13:30-14:30",
+  "prints": 99,
+  "req": 1,
+  "secs": 0.1,
+  "sum_size": 275.0,
+  "median_size": 1.0,
+  "sides": {
+   "BUY": 54,
+   "SELL": 45
+  },
+  "dupes": 0,
+  "first": "2026-03-11 17:31:03.887768",
+  "last": "2026-03-11 18:28:48.883679",
+  "candle_vol_coin": 1375000.0,
+  "candle_vol_contracts": 275.0,
+  "candle_minutes": 20
+ },
+ {
+  "coin": "DOGE",
+  "day": "2026-03-11",
+  "win": "15:30-17:10",
+  "prints": 111,
+  "req": 1,
+  "secs": 0.2,
+  "sum_size": 386.0,
+  "median_size": 2.0,
+  "sides": {
+   "BUY": 69,
+   "SELL": 42
+  },
+  "dupes": 0,
+  "first": "2026-03-11 19:33:42.638524",
+  "last": "2026-03-11 20:59:28.140373",
+  "candle_vol_coin": 1930000.0,
+  "candle_vol_contracts": 386.0,
+  "candle_minutes": 23
+ },
+ {
+  "coin": "AAVE",
+  "day": "2025-10-15",
+  "win": "13:30-14:30",
+  "prints": 0,
+  "req": 1,
+  "secs": 0.1,
+  "candle_vol_coin": 0.0,
+  "candle_vol_contracts": 0.0,
+  "candle_minutes": 0
+ },
+ {
+  "coin": "AAVE",
+  "day": "2025-10-15",
+  "win": "15:30-17:10",
+  "prints": 0,
+  "req": 1,
+  "secs": 0.1,
+  "candle_vol_coin": 0.0,
+  "candle_vol_contracts": 0.0,
+  "candle_minutes": 0
+ },
+ {
+  "coin": "AAVE",
+  "day": "2026-03-11",
+  "win": "13:30-14:30",
+  "prints": 4,
+  "req": 1,
+  "secs": 0.1,
+  "sum_size": 16.0,
+  "median_size": 5.0,
+  "sides": {
+   "BUY": 3,
+   "SELL": 1
+  },
+  "dupes": 0,
+  "first": "2026-03-11 17:31:09.611863",
+  "last": "2026-03-11 17:37:08.117566",
+  "candle_vol_coin": 80.0,
+  "candle_vol_contracts": 16.0,
+  "candle_minutes": 2
+ },
+ {
+  "coin": "AAVE",
+  "day": "2026-03-11",
+  "win": "15:30-17:10",
+  "prints": 5,
+  "req": 1,
+  "secs": 0.1,
+  "sum_size": 22.0,
+  "median_size": 5.0,
+  "sides": {
+   "SELL": 4,
+   "BUY": 1
+  },
+  "dupes": 0,
+  "first": "2026-03-11 19:59:28.882406",
+  "last": "2026-03-11 20:56:50.834174",
+  "candle_vol_coin": 110.0,
+  "candle_vol_contracts": 22.0,
+  "candle_minutes": 3
+ }
+]
