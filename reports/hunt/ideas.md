@@ -47,7 +47,7 @@ Status key: **W2** = built in wave 2 · **alt** = next in line · **merged** = t
 | 9 | RN: front-run round-number bid walls | Retail limit orders cluster at round prices. | Spot 1m | 3 | merged (SR) |
 | 10 | CW: cross-venue liquidation feed as a live trigger | Binance/Bybit liquidations lead US prices. | Live feed geo-blocked in the US | 5 | blocked |
 | 11 | WE: weekend thin-book wicks in BTC | Thin weekend books. | Spot 1m | 3 | dead (seasonality) |
-| 12 | LT: long-tail Coinbase spot wick catcher (beyond 31 coins) | Same forced sellers, thinner books. | Spot 1m to fetch | 4 | alt |
+| 12 | LT: long-tail Coinbase spot wick catcher (beyond 31 coins) | Same forced sellers, thinner books. | Spot 1m to fetch | 4 | W2e (H12) |
 | 13 | FU: monthly perp-futures expiry convergence | Forced rollers at the 11 am ET settlement window. | Perp trades / Coinbase | 3 | low power (~50 events) |
 
 ### B. Venue and basis dislocations
@@ -61,7 +61,7 @@ Status key: **W2** = built in wave 2 · **alt** = next in line · **merged** = t
 | 19 | PX: PAXG spot vs PAXG perp vs gold futures on Coinbase | Three Coinbase instruments on one asset. | Small | 3 | alt |
 | 20 | ST: stablecoin-pair oscillation (USDT-USD etc.) at low fees | Tether mint/redeem flow. Stable pairs pay 0% maker (R2/R3), but USDT-USD likely pays standard fees. | Two-sided quoting dead | 2 | dead (two-sided quoting) |
 | 45 | **XQ: secondary-book wicks (BTC/ETH/USDT-quoted pairs)** | Makers pull secondary books first in cascades; sellers sweep near-empty books; slow triangular arbitrage pays the bidder (R4). | Candles and prints for every pair / Coinbase | 6 | W2c (H10) |
-| 46 | PS: new-listing phase switch (limit-only → full trading) | App and market-order buyers can only arrive at full trading, 14–24 h after the open, at a public timestamp (R2, E5). | Status-page phase times (history depth unverified) + prints | 5 | alt (wave 2d) |
+| 46 | PS: new-listing phase switch (limit-only → full trading) | App and market-order buyers can only arrive at full trading, 14–24 h after the open, at a public timestamp (R2, E5). | Status-page phase times (history depth unverified) + prints | 5 | W2e (H13) |
 | 48 | **MJ: deep hourly bids on BTC/ETH/SOL/XRP perps** | Forced selling into empty books on the majors; R2-08 never bids in BTC. From H3's control arm (DEV only). | Spot 1m 2021–26, perp candles and prints / Coinbase | 6 | W2d (H11) |
 | 47 | UF: unlock and delisting filters on the incumbent | Skip alt dip bids within 30 days of a cliff ≥5% of float, or under a delisting notice: forced sales there carry information (R2). | DefiLlama CDN + Binance delist notices | 4 | build-plan risk filter (refinement, not a new book) |
 

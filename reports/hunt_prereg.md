@@ -231,3 +231,18 @@ read its hold-out. Every finished idea (H2–H7, H9) fails G1–G3, so no verdic
   reports/hunt/central_gates.csv.
 - **Scored days:** the central recompute uses each idea's own scored days (the index of its daily.parquet), as the
   builder guide told builders to do. It reproduced every builder's t, gain and a to within 0.01.
+
+**2026-11-07 06:45 UTC: loop 3 (wave 2e) adds H12 (LT) and H13 (PS), before their builds.** By now H2–H7 and H9 have
+failed, H11 is frozen with its HOLD unread, and H1, H8 and H10 are still running.
+- **H12 (LT):** R2-08 unchanged on Coinbase's long-tail spot coins (2024 median volume $0.5–3M, tick ≤ 3 bp).
+  Spec reports/hunt/h12lt/SPEC.md, ≤ 6 trials.
+- **H13 (PS):** the switch from limit-only to full trading on new Coinbase listings. Spec reports/hunt/h13ps/SPEC.md,
+  ≤ 10 trials.
+- **Alternates not built, with reasons:**
+  - SR (stop runs): H3 found structural levels add nothing over random depth, and H11 tests the random-depth version.
+  - DL (delisting notices): about 10–20 batched events a year, too few for t ≥ 3.
+  - IX/PX (metals and PAXG weekends): about 55 weekends.
+  - FU, CM, IR: 50 events or fewer.
+  - EF (ETF fixing): in-kind creations since 2025 shrink the flow.
+  - TW (TWAP footprints): heavy data, prior 3.
+  - Blocked: HL position history, Binance/Bybit live feeds, Upbit.
