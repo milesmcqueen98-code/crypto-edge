@@ -1,45 +1,42 @@
 # H6 (VD): Coinbase dislocation bids against Bitstamp / perp fair value: REPORT
 
 **Verdict: FAILS.** All 15 DEV trials lose money, even before fees. The frozen variant fails every gate (G1 to G5)
-in DEV, in HOLD and over all days, at 2x costs and also at 1x. The bids are adversely selected: at a 1-minute
-horizon Coinbase leads Bitstamp and the Coinbase perps, so most "gaps" are a stale reference, not a Coinbase-only
-seller who gets reversed.
+in DEV, HOLD and over all days, at 2x costs and also at 1x. The bids are adversely selected: at a 1-minute horizon
+Coinbase leads Bitstamp and the Coinbase perps, so most "gaps" are a stale reference, not a Coinbase-only seller who
+gets reversed.
 
 ## Mechanism (SPEC, unchanged)
-- Bid on Coinbase spot at ref_close(t-1) * exp(gbar - k * sigma_e).
-  - gbar: the trailing 24h median of the log gap g = log(CB close / ref close).
-  - sigma_e: the trailing 3-day std of g - gbar. Both use information through t-1.
-  - Freshness guard: the reference must have traded in t-1.
-- Fill: the minute opens above the bid and trades at least one tick through it.
-  - Size: min($5K, theta * through-volume), theta = 0.5. Through-volume spreads each candle's volume over its range;
-    the scan lasts up to 15 minutes while the price stays below the bid.
-- Exits:
-  - Post-only take-profit 60% of the way back to fair value.
-  - Otherwise a market exit at the open of the first traded minute >= t+H+1.
-- Costs (common.spot_cost_bp): maker 6 bp; taker 12.5 bp + 2 bp half-spread. 2x for the gates.
-- Book: one position per coin, at most 6 open. Resting bids count at full size against cash.
+- **Bid:** on Coinbase spot at ref_close(t-1) * exp(gbar - k * sigma_e).
+  - gbar: the trailing 24h median of g = log(CB close / ref close).
+  - sigma_e: the trailing 3-day std of g - gbar.
+  - Both use information through t-1. The reference must have traded in t-1.
+- **Fill:** the minute opens above the bid and trades at least 1 tick through it.
+  - Size: min($5K, theta * through-volume), theta = 0.5.
+  - Through-volume: candle volume spread over the range, scanned up to 15 minutes while the price stays below.
+- **Exits:** a post-only take-profit 60% of the way back to fair value. Otherwise a market exit at the next open after
+  H minutes.
+- **Costs:** common.spot_cost_bp (maker 6 bp; taker 12.5 bp + 2 bp half-spread); 2x for the gates.
+- **Book:** one position per coin, at most 6 open; resting bids count against cash at full size.
 
-## Data actually used
-- **Coinbase spot:** 1-minute candles (data/minute) for 34 alts plus BTC (BTC only for the quiet filter), 2024-01-01
-  to 2026-11-05. 2024 is warm-up only.
-- **Bitstamp:** 1-minute candles (data/bitstamp).
-  - 30 alts had Bitstamp prints in DEV; AERO, APT, JTO and ZEC had fewer than 2,000 traded minutes before June 2026
-    and were skipped.
-  - Bitstamp trades in only 1-96% of minutes, depending on the coin: ETH, SOL and XRP above 94%; ICP, INJ, SEI, GRT
-    and LDO 1-3%.
-- **Coinbase perps:** data/cfm, from each launch (ETH 2025-07-18 to HYPE 2026-06-05); 19 alts. Alt perps trade in
-  only 2-12% of minutes (ETH 86%, SOL 64%, XRP 60%).
+## Data used
+- **Coinbase spot:** 1-minute candles, 2024-01-01 to 2026-11-05, for 34 alts plus BTC (quiet filter only). 2024 is
+  warm-up.
+- **Bitstamp:** 1-minute candles.
+  - 30 alts usable in DEV. AERO, APT, JTO and ZEC had fewer than 2,000 traded minutes before June 2026.
+  - Share of minutes Bitstamp traded: 94-96% for ETH, SOL and XRP; 1-3% for ICP, INJ, SEI, GRT and LDO.
+- **Coinbase perps:** 19 alts, each from its launch (ETH 2025-07-18 to HYPE 2026-06-05).
+  - Share of minutes traded: 2-12% for alts; ETH 86%, SOL 64%, XRP 60%.
 - **Scored days:**
-  - Bitstamp variants: 2025-01-01 to 2026-05-31 in DEV (516 days).
-  - Perp variants: 2025-07-19 to 2026-05-31 in DEV (317 days).
-  - Frozen variant: 2025-07-19 to 2026-11-05 (475 days, of which 158 are HOLD).
-- **Candidate fill-minutes on DEV scored days:**
-  - Bitstamp: 861,483 (k=3), 532,649 (k=4), 226,430 (k=6).
-  - Perp: 97,071, 48,875 and 15,086.
-- **Trade prints:** 1,768 fills (a 25% sample, seed 0, of the frozen variant's 7,073 fills), fetched on Actions
-  with common.TradeFetcher (4,118 requests, 0 errors).
+  - Bitstamp variants: 2025-01-01 to 2026-05-31 (516 DEV days).
+  - Perp variants: from 2025-07-19 (317 DEV days).
+  - Frozen variant: 475 days, 158 of them HOLD.
+- **Candidate fill-minutes in DEV:**
+  - Bitstamp: 861K (k=3), 533K (k=4), 226K (k=6).
+  - Perp: 97K, 49K, 15K.
+- **Trade prints:** 1,768 fills, a 25% sample (seed 0) of the frozen variant's 7,073 fills. Fetched on Actions with
+  common.TradeFetcher: 4,118 requests, 0 errors.
 
-## Trials (DEV; sleeve $30K at 2x; all 15 in reports/hunt/trials.csv)
+## Trials (DEV; sleeve $30K at 2x; all 15 logged in reports/hunt/trials.csv)
 | Variant | Trades | Fills $M | Sleeve Sharpe | Alpha t ($70K) | Gross bp | Net bp 1x | Net bp 2x |
 |---|---|---|---|---|---|---|---|
 | bi_k3_H30 | 198,498 | 878 | -53.3 | -45.9 | -6.3 | -20.2 | -34.1 |
@@ -59,140 +56,109 @@ seller who gets reversed.
 | pe_k6_H30_quiet_aiq50 | 6,491 | 32 | -15.0 | -9.4 | -2.9 | -17.1 | -31.3 |
 
 How the grid ran:
-- Core grid: k in {3, 4, 6} x reference in {Bitstamp, perp} x H in {30, 60}.
-- Quiet filter on the best core variant: no bid while BTC's 15-minute move is beyond 2 sigma.
-- Two AI variants on the better of those two:
-  - LightGBM with the SPEC's features; walk-forward by quarter.
-  - A model needs at least 6 months of candidate history, so for the perp reference the first model is 2026Q2.
-  - Bids allowed when pred > 0 ("pos") or pred >= the training median ("q50").
-- Net bp is very flat across k (-30 to -34 at 2x). A deeper bid only trades less.
+- **Core:** k in {3, 4, 6} x reference in {Bitstamp, perp} x H in {30, 60}.
+- **Quiet filter:** added to the best core variant (no bid while BTC's 15-minute move is beyond 2 sigma).
+- **AI:** two variants on the better of those two.
+  - LightGBM on the SPEC's features, walk-forward by quarter.
+  - A model needs at least 6 months of history, so the first perp model is 2026Q2.
+  - Bids allowed when pred > 0 ("pos") or pred is at least the training median ("q50").
+- **Net bp:** flat across k (-30 to -34 at 2x); a deeper bid only trades less.
 
 ## Frozen variant
-- **Variant:** pe_k6_H30_quiet_aipos: perp reference, k = 6, H = 30, BTC-quiet filter, AI pred > 0.
-- **Why:** it has the highest DEV alpha t (-7.78; least negative) among trials with at least 40 trades.
+- **Variant:** pe_k6_H30_quiet_aipos: perp reference, k = 6, H = 30, quiet filter, AI pred > 0.
+- **Why:** the highest DEV alpha t (-7.78) among trials with at least 40 trades.
 - **Freeze commit:** 1bf0d58 (code 2004966).
-- **Reproduced:** the final run gives the DEV numbers exactly (5,987 trades, -30.87 bp at 2x).
+- **Reproduced:** the final run gives the DEV numbers exactly (5,987 trades, -30.87 bp).
 
-## Gates (Path B, sleeve at 2x, incumbent at 1x; a = 0.7 chosen on DEV)
-| | Value | Bar | Result |
+## Gates (Path B; sleeve at 2x, incumbent at 1x; a = 0.7 chosen on DEV)
+| Gate | Value | Bar | Result |
 |---|---|---|---|
-| G1 full-window alpha t | -8.02 | >= 3 | FAIL |
+| G1 all-day alpha t | -8.02 | >= 3 | FAIL |
 | G2 HOLD alpha t / book Sharpe gain | -5.03 / -5.68 | >= 1.5 / >= +0.25 | FAIL |
-| G3 full-window book Sharpe gain | -10.23 (book -7.44 vs incumbent 2.80) | >= +0.5 | FAIL |
+| G3 all-day book Sharpe gain | -10.23 (book -7.44 vs incumbent 2.80) | >= +0.5 | FAIL |
 | G4 deflated Sharpe (provisional; recomputed centrally) | 0.00 (N = 3,117) | >= 0.95 | FAIL |
 | G5 no losing year (book) | 2025 -37.5%, 2026 -37.1% | all > 0 | FAIL |
 
 - **Sleeve Sharpe at 2x:** DEV -13.5, HOLD -9.0, all days -11.7.
-- **At 1x (information):**
-  - Alpha t: -6.96 over all days, -3.70 in HOLD.
-  - Book Sharpe gain: -6.23 over all days.
-  - Sleeve Sharpe: -9.1.
+- **At 1x (information):** alpha t -6.96 over all days and -3.70 in HOLD; book gain -6.23; sleeve Sharpe -9.1.
 - **Theta 0.25:** essentially the same (alpha t -8.09).
-- **Path A:** not applicable; the sleeve does not beat the incumbent.
+- **Path A:** not applicable.
 
 ## Years, capacity, P&L anatomy
-**Fills by year:**
-- 2025 (from Jul 19): 3,486 fills, $17.2M, -31.4 bp at 2x.
-- 2026: 3,587 fills, $17.0M, -29.6 bp at 2x.
-- The sleeve on $30K loses 179% (2025) and 168% (2026) of its capital (simple sums at 2x). A live sleeve would be
-  wiped out within months.
-
-**HOLD:** 1,086 fills, $4.8M, -28.3 bp at 2x and -13.8 bp at 1x.
-
-**Capacity (theta 0.5):**
-- Every order uses its full $5K: 7,073 fills, $34.2M, average $4,829, 93.7% at full size.
-- At theta 0.25: 7,020 fills, 89.9% at full size.
-- Only 201 fills went unplaced for lack of a slot.
-- Capacity is not the constraint; every deployed dollar loses.
-
-**Anatomy (all fills, bp of notional):**
-- Fills are profitable often but lose big when wrong:
-  - 75% of dollars exit at the take-profit, for +17.1 bp.
-  - The time-exit remainder gives -19.3 bp.
-- Gross is -2.2 bp, before 14.1 bp of fees at 1x (28.3 at 2x).
-- Depth and take-profit: the median bid sits 32.6 bp under fair value, and the take-profit earns 19.8 bp. That is too
-  thin to carry 12 bp of round-trip maker fees (24 bp at 2x).
-- Time exits: mean -75 bp, median -50 bp; 5th-percentile adverse excursion -186 bp.
-- By coin: ETH, SOL and XRP are 82% of the dollars. 18 of the 19 coins lose at 2x; the exception is AAVE (8 fills, +$7).
+- **By year:**
+  - 2025 (from Jul 19): 3,486 fills, $17.2M, -31.4 bp at 2x.
+  - 2026: 3,587 fills, $17.0M, -29.6 bp.
+  - In simple sums, the $30K sleeve loses 179% and 168% of its capital at 2x, so a live sleeve would be wiped out.
+- **HOLD:** 1,086 fills, $4.8M, -28.3 bp at 2x and -13.8 bp at 1x.
+- **Capacity:**
+  - Orders deploy nearly in full: 7,073 fills, $34.2M, average $4,829, 93.7% at the full $5K.
+  - Theta 0.25: 89.9% at full size.
+  - 201 fills went unplaced for lack of a slot.
+  - Capacity is not the constraint.
+- **Anatomy:**
+  - Take-profit exits are 75% of the dollars and add +17.1 bp.
+  - Time-exit remainders cost -19.3 bp (mean -75 bp, median -50 bp each; 5th-percentile excursion -186 bp).
+  - Gross is -2.2 bp, before fees of 14.1 bp (1x) or 28.3 bp (2x).
+  - Why fees win: the median bid sits 32.6 bp under fair value and the take-profit earns 19.8 bp, too thin for 12 bp
+    of round-trip maker fees (24 bp at 2x).
+- **Coins:** ETH, SOL and XRP are 82% of the dollars. 18 of the 19 coins lose at 2x; AAVE (8 fills) made +$7.
 
 ## SPEC checks
-**Overlap with R2-08** (incumbent parent fills, reports/wick1m/trades_main):
-- Same coin and minute: 0.49% of fills.
-- Within 5 minutes: 1.33%.
-- DEV 0.42% / 1.05%; HOLD 0.92% / 2.85%.
-- The trigger really is disjoint from R2-08.
+- **Overlap with R2-08** (parent fills, reports/wick1m/trades_main):
+  - Same coin and minute: 0.49% of fills. Within 5 minutes: 1.33%.
+  - DEV 0.42% / 1.05%; HOLD 0.92% / 2.85%.
+  - The trigger is disjoint from R2-08.
+- **Net bp by k** (2x):
+  - Bitstamp: -33.2 to -34.1 (k=3), -32.7 to -33.6 (k=4), -31.7 to -32.7 (k=6).
+  - Perp: -31.1 to -31.7, -30.5 to -31.4, -30.7 to -31.4.
+  - Per candidate, without the book: -28.5 to -32.2.
+- **Which venue moved first** (6 minutes before the fill: Coinbase falling vs the reference rising):
+  - Coinbase-led share: 46-65% with Bitstamp (k=3 to 6), 52-79% with the perp.
+  - Frozen variant: 78% Coinbase-led (-30.6 bp), 19% reference-led (-28.8 bp), 2% unclear (-41.0 bp).
+  - Both kinds lose.
+- **Lead-lag** (1-minute returns, DEV):
+  - Coinbase leads every reference: corr(CB_t, ref_t+1) = 0.06 to 0.28.
+  - The reverse is -0.03 to +0.05 (ARB 0.16 is the exception).
+  - The reference does most of the gap-closing in 45% of frozen fills.
+- **Top-3 days:** not meaningful with negative P&L. The three best days offset 0.35% of the loss; 305 losing days
+  vs 46 winning days.
+- **Correlation with the incumbent** (daily, $100K): -0.36. On the incumbent's 20 worst days, the sleeve lost 37% of
+  its capital.
 
-**Net bp by k** (book, 2x):
-- Bitstamp: -33.2 to -34.1 (k=3), -32.7 to -33.6 (k=4), -31.7 to -32.7 (k=6).
-- Perp: -31.1 to -31.7 (k=3), -30.5 to -31.4 (k=4), -30.7 to -31.4 (k=6).
-- Per candidate fill without the book: -28.5 to -32.2 (mean).
-
-**Which venue moved first** (the 6 minutes before the fill: Coinbase falling to the bid vs the reference rising):
-- Bitstamp reference: Coinbase-led 46% (k=3) to 65% (k=6).
-- Perp reference: 52% to 79%.
-- Frozen variant:
-  - 78% Coinbase-led, at -30.6 bp.
-  - 19% reference-led, at -28.8 bp.
-  - 2% with no clear leader, at -41.0 bp.
-- So it is not just thin Bitstamp moving: both kinds lose.
-
-**Lead-lag of 1-minute returns** (DEV scored days):
-- Coinbase leads every reference: corr(CB_t, ref_t+1) is 0.06 to 0.28.
-- The reverse, corr(ref_t, CB_t+1), is -0.03 to +0.05 (ARB 0.16 is the exception).
-- So Coinbase is the price-discovery venue and the reference is the stale one. A gap often closes by the reference
-  moving: the reference does more than half the closing in 45% of frozen fills.
-
-**Top-3 days' share of P&L:** not meaningful, because total P&L is negative.
-- The three best days offset 0.35% of the loss.
-- 305 losing days vs 46 winning days.
-
-**Correlation with the incumbent** (daily, sleeve 2x vs incumbent at $100K): -0.36.
-- The sleeve loses most on the volatile days the incumbent wins.
-- On the incumbent's 20 worst days, the sleeve lost 37% of its capital.
-
-## Fill realism
-**Trade prints** (1,768 sampled fills across DEV and HOLD; reports/hunt/h6vd/prints_summary.json):
-- **Fills:** confirmed on prints for 99.4% of fills (99.6% of dollars). A confirmed fill has a print at least 1 tick
-  below the bid, at least 1 s into the minute.
-  - The first live print was above the bid in 99.7% of fills.
+## Fill realism (trade prints, 1,768 sampled fills; prints_summary.json)
+- **Fills:** 99.4% of fills (99.6% of dollars) had a print at least 1 tick below the bid, at least 1 s into the
+  minute.
+  - The first live print was above the bid in 99.7%.
   - 67% of the prints below the bid were sellers hitting bids (maker side BUY).
 - **Through-volume:**
-  - All prints below the bid in the fill minute come to a median 95% of the candle estimate.
-  - Only the first unbroken run below the bid, the strict pre-registered rule, comes to 17%.
-  - The strict rule in the fill minute plus the candle estimate for later minutes supports 91% of the simulated
-    dollars.
-- **Take-profits:** 99.7% of the 1,354 checked traded through on prints.
-- **Time exits:** the first print at least 2 s after the exit minute's open differs from the candle open by +0.26 bp
-  on average (median 0).
-- **Print-adjusted P&L:** on the sample, -32.0 bp at 2x vs -29.7 bp simulated. The loss is not a candle artefact;
-  the prints make it slightly worse.
+  - All prints below the bid in the fill minute: a median 95% of the candle estimate.
+  - The first unbroken run only, the strict pre-registered rule: 17%.
+  - The strict rule plus the candle estimate for later minutes supports 91% of the simulated dollars.
+- **Take-profits:** 99.7% of 1,354 confirmed.
+- **Time exits:** the first print at least 2 s after the open is +0.26 bp from the candle open (median 0).
+- **Print-adjusted sample P&L:** -32.0 bp at 2x vs -29.7 bp simulated. The loss is not a candle artefact.
+- **Other modelling notes:**
+  - 0.07% of bids sat at or above the last trade, so a post-only order could have been rejected.
+  - Market exits pay common.py's 2 bp half-spread, where the pre-registration text says 1.5x the half-spread. The
+    difference is under 0.3 bp per trade.
 
-**Other modelling notes:**
-- **Latency:** the levels use t-1 candles (1-minute-old information).
-- **Post-only rejection:** 0.07% of bids sat at or above the last Coinbase trade, and could be rejected as post-only.
-- **Market exits:** they pay common.py's 2 bp half-spread. The pre-registration text says "1.5x the half-spread";
-  the difference is under 0.3 bp per trade.
-
-## Weaknesses and engineering choices
+## Weaknesses and choices
 - **Choices fixed before any result:**
-  - With $5K bids on $30K, at most 6 bids and positions can coexist. Bid slots go each minute to the free eligible
-    coins with the most negative gap z at t-1.
-  - Spot ticks are inferred per coin and month from Coinbase prices (APT and SEI changed in 2025Q4).
-  - The 24h median needs 30 observations and the 3-day sigma needs 100.
-  - The take-profit position is held until its last part sells.
-  - Daily P&L books the take-profit part on its day and the remainder on the exit day.
-- **AI:** the AI filter could only be trained from 2026Q2 for the perp reference (the 6-month history rule).
-  - In DEV it predicted positive on 3.4% of the candidates it scored.
-  - Rank IC 0.16, but the bids it allowed still averaged -22 bp at 2x.
-- **Candles only for the levels:** a sub-minute bot would see the reference's own lag. That would not remove the
-  adverse selection; it would sharpen it.
-- **No redesign was done after HOLD.** There were no bug fixes after the freeze.
+  - Bid slots go each minute to the free eligible coins with the most negative gap z at t-1 ($5K bids on $30K allow
+    at most 6 bids plus positions).
+  - Spot ticks are inferred per coin and month (APT and SEI changed in 2025Q4).
+  - The median needs 30 observations and sigma needs 100.
+  - The slot is held until the take-profit has fully sold.
+  - Take-profit P&L is booked on its own day.
+- **AI:** only 2026Q2 had a model in DEV. It allowed 3.4% of the candidates it scored. Rank IC was 0.16, but the
+  allowed bids still averaged -22 bp at 2x.
+- **Latency:** candle-level only (1-minute latency). A faster bot was not tested.
+- **After the freeze:** no redesign and no bug fixes.
 
 ## Verdict
-**FAIL.** The pre-registered mechanism does not exist at a tradable size at this latency:
-- Gross P&L per fill is about zero to negative for every k, both references and both holds.
-- Costs at 1x (14 bp) and 2x (28 bp) make it deeply negative.
-- The idea is uncorrelated with R2-08 in timing (1% overlap), but that does not help a sleeve that loses about 30 bp
-  on every dollar.
-- Recommend: drop H6. The useful by-product is the lead-lag table: Coinbase leads Bitstamp and the Coinbase perps at
-  1 minute, which argues against using them as live fair-value anchors for Coinbase spot bids.
+**FAIL.**
+- Gross P&L is about zero to negative for every k, reference and hold, and 1x costs (14 bp) make it deeply negative.
+- Timing is disjoint from R2-08, but the sleeve loses about 30 bp on every dollar.
+- Drop H6.
+- The useful finding is that Coinbase leads Bitstamp and its own perps at 1 minute. Neither is a sound live
+  fair-value anchor for Coinbase spot bids.
