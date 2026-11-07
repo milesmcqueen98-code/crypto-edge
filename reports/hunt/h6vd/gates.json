@@ -1,0 +1,169 @@
+{
+ "2x": {
+  "path": "B",
+  "a": 0.7,
+  "full_t_alpha": -8.014577272582203,
+  "full_appraisal": -11.40874322595107,
+  "full_beta": -0.7368518742546175,
+  "full_book_sharpe": -7.435869733245541,
+  "full_inc_sharpe": 2.7985928866895047,
+  "full_gain": -10.234462619935046,
+  "full_sleeve_sharpe": -11.682052987895489,
+  "dev_t_alpha": -7.78178676033909,
+  "dev_appraisal": -13.656158238387082,
+  "dev_beta": -0.9301912268466421,
+  "dev_book_sharpe": -9.834418414194525,
+  "dev_inc_sharpe": 2.622457032429016,
+  "dev_gain": -12.456875446623542,
+  "dev_sleeve_sharpe": -13.485897648346539,
+  "hold_t_alpha": -5.031656882313052,
+  "hold_appraisal": -9.61681776875847,
+  "hold_beta": 0.23178837299523922,
+  "hold_book_sharpe": -2.0376390486734692,
+  "hold_inc_sharpe": 3.6425920222450707,
+  "hold_gain": -5.6802310709185395,
+  "hold_sleeve_sharpe": -8.97294143066507,
+  "dsr": 0.0,
+  "sr0_ann": 40.51197300496528,
+  "n_trials": 3117,
+  "years": {
+   "2025": -0.3747,
+   "2026": -0.3711
+  },
+  "G1": false,
+  "G2": false,
+  "G3": false,
+  "G4": false,
+  "G5": false,
+  "pass_G1_G5": false,
+  "a_grid": [
+   {
+    "a": 1.0,
+    "dev_book_sharpe": 2.622457032429016
+   },
+   {
+    "a": 0.7,
+    "dev_book_sharpe": -9.834418414194525
+   },
+   {
+    "a": 0.5,
+    "dev_book_sharpe": -11.815864895206792
+   }
+  ]
+ },
+ "1x_info": {
+  "path": "B",
+  "a": 0.7,
+  "full_t_alpha": -6.956721915921998,
+  "full_appraisal": -8.714311906739292,
+  "full_beta": -0.598493302126344,
+  "full_book_sharpe": -3.428890980003544,
+  "full_inc_sharpe": 2.7985928866895047,
+  "full_gain": -6.227483866693049,
+  "full_sleeve_sharpe": -9.110583864660184,
+  "dev_t_alpha": -6.869170447432747,
+  "dev_appraisal": -10.798651070447667,
+  "dev_beta": -0.7491126785528626,
+  "dev_book_sharpe": -5.125536813314516,
+  "dev_inc_sharpe": 2.622457032429016,
+  "dev_gain": -7.747993845743531,
+  "dev_sleeve_sharpe": -10.69521572955436,
+  "hold_t_alpha": -3.6988362359268487,
+  "hold_appraisal": -6.067681285241033,
+  "hold_beta": 0.15204634330184286,
+  "hold_book_sharpe": 0.3954847130158167,
+  "hold_inc_sharpe": 3.6425920222450707,
+  "hold_gain": -3.247107309229254,
+  "hold_sleeve_sharpe": -5.591021219776951,
+  "dsr": 0.0,
+  "sr0_ann": 40.51197300496528,
+  "n_trials": 3117,
+  "years": {
+   "2025": -0.135,
+   "2026": -0.1275
+  },
+  "G1": false,
+  "G2": false,
+  "G3": false,
+  "G4": false,
+  "G5": false,
+  "pass_G1_G5": false,
+  "a_grid": [
+   {
+    "a": 1.0,
+    "dev_book_sharpe": 2.622457032429016
+   },
+   {
+    "a": 0.7,
+    "dev_book_sharpe": -5.125536813314516
+   },
+   {
+    "a": 0.5,
+    "dev_book_sharpe": -7.332754646379976
+   }
+  ]
+ },
+ "2x_theta0.25_info": {
+  "path": "B",
+  "a": 0.7,
+  "full_t_alpha": -8.087123555997112,
+  "full_appraisal": -11.545106163062504,
+  "full_beta": -0.73156324581781,
+  "full_book_sharpe": -7.503775970087533,
+  "full_inc_sharpe": 2.7985928866895047,
+  "full_gain": -10.302368856777038,
+  "full_sleeve_sharpe": -11.8111840529336,
+  "dev_t_alpha": -7.787282110316836,
+  "dev_appraisal": -13.72582079502759,
+  "dev_beta": -0.9260967195680228,
+  "dev_book_sharpe": -9.850908410176558,
+  "dev_inc_sharpe": 2.622457032429016,
+  "dev_gain": -12.473365442605575,
+  "dev_sleeve_sharpe": -13.547307599477874,
+  "hold_t_alpha": -5.17979321777709,
+  "hold_appraisal": -10.03396609330954,
+  "hold_beta": 0.24252667222167834,
+  "hold_book_sharpe": -2.246233555355261,
+  "hold_inc_sharpe": 3.6425920222450707,
+  "hold_gain": -5.888825577600332,
+  "hold_sleeve_sharpe": -9.352657736037743,
+  "dsr": 0.0,
+  "sr0_ann": 40.51197300496528,
+  "n_trials": 3117,
+  "years": {
+   "2025": -0.3731,
+   "2026": -0.3779
+  },
+  "G1": false,
+  "G2": false,
+  "G3": false,
+  "G4": false,
+  "G5": false,
+  "pass_G1_G5": false,
+  "a_grid": [
+   {
+    "a": 1.0,
+    "dev_book_sharpe": 2.622457032429016
+   },
+   {
+    "a": 0.7,
+    "dev_book_sharpe": -9.850908410176558
+   },
+   {
+    "a": 0.5,
+    "dev_book_sharpe": -11.851474319159406
+   }
+  ]
+ },
+ "corr_inc100": -0.3625336184296373,
+ "sleeve_on_inc_worst20_days": -0.36547456188793087,
+ "sleeve_years_2x": {
+  "2025": -1.7939,
+  "2026": -1.6784
+ },
+ "top3_share": -0.003517527660176883,
+ "days": [
+  "2025-07-19",
+  "2026-11-05"
+ ]
+}
