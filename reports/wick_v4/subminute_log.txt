@@ -1,0 +1,26 @@
+4,319,439 trades in 2618 of 2618 windows
+
+parents with trades: 1567; trade-through of the 4-sigma bid seen in the trades: 98.4%
+
+S1: 236 same-minute deeper fills (simulator). Share still caught when reacting L s after the 4σ fill:
+                            0.5s     1s     2s     5s    15s    30s  60s
+rest: share of fills       0.890  0.873  0.835  0.737  0.424  0.169  0.0
+cross: share of fills      0.898  0.890  0.890  0.860  0.653  0.369  0.0
+rest: share of their P&L   0.847  0.824  0.759  0.670  0.436  0.190  0.0
+cross: share of their P&L  0.865  0.847  0.847  0.806  0.588  0.326  0.0
+seconds from the 4σ trade-through to the deeper trade-through: median 9.1, 25% 3.4, 75% 19.2
+
+S3: 1542 parent fills; take-profit price traded inside the fill minute after L seconds:
+                                         0.5s     1s     2s     5s    15s    30s  60s
+share with a same-minute TP             0.045  0.045  0.044  0.039  0.030  0.021  0.0
+same-minute TP where research had none  0.002  0.002  0.002  0.001  0.001  0.001  0.0
+mean gain per parent fill, bp           0.915  0.915  0.915  0.331  0.234  0.234  0.0
+
+BTC move from minute start to our fill (quintiles) vs outcome (descriptive):
+     n  btc_bp  outcome_bp
+q                         
+0  309   -70.8        62.5
+1  309   -27.2        63.0
+2  307   -13.8        51.6
+3  308    -6.3        37.4
+4  308     3.3        58.2
