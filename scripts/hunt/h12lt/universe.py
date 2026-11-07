@@ -119,8 +119,8 @@ def finalize(ddir):
     C = pd.read_csv(os.path.join(ddir, "candidates.csv"))
     T = pd.concat([pd.read_csv(f) for f in sorted(glob.glob(os.path.join(ddir, "ticks_*.csv")))], ignore_index=True)
     U = C.merge(T[["coin", "tick", "tick_bp", "n_tick_rows", "n_min"]], on="coin", how="left")
-    U["reason"] = np.where(U.n_min.fillna(0) <= 0, "no 1-minute candles",
-                           np.where(~(U.tick_bp <= TICK_BP_MAX), "tick > 3 bp", ""))
+    U["reason"] = np.where(~(U.tick_bp <= TICK_BP_MAX), "tick > 3 bp",
+                           np.where(U.n_min.fillna(0) <= 0, "no 1-minute candles", ""))
     ok = U[U.reason == ""].sort_values("vol2024", ascending=False)
     dropped = max(0, len(ok) - MAX_COINS)
     keep = set(ok.coin.head(MAX_COINS))
