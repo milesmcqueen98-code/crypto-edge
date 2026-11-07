@@ -1,0 +1,25 @@
+import pandas as pd, numpy as np
+T=pd.read_parquet('/home/claude/wt/h1pb/reports/hunt/h1pb/trades_frozen.parquet')
+tf=pd.to_datetime(T.t_fill).dt.tz_localize('UTC').dt.tz_convert('America/New_York')
+T['et']=tf; T['dow']=tf.dt.dayofweek; T['etmin']=tf.dt.hour*60+tf.dt.minute; T['dst']=tf.map(lambda x: bool(x.dst()))
+T['sec_after5']=(tf.dt.hour-17)*3600+tf.dt.minute*60+tf.dt.second+tf.dt.microsecond/1e6
+T['alt']=~T.coin.isin(['BTC','ETH','SOL','XRP'])
+T['bp']=T.net/T.notional*1e4; T['gbp']=T.gross/T.notional*1e4
+T['hold']=pd.to_datetime(T.t_close)>=pd.Timestamp('2026-06-01')
+pd.set_option('display.width',250)
+def summ(g):
+    return pd.Series(dict(n=len(g), pnl=g.net.sum(), gross=g.gross.sum(), net_bp=(g.net.sum()/g.notional.sum()*1e4), gbp=(g.gross.sum()/g.notional.sum()*1e4), notional=g.notional.sum()))
+print("== by weekday (0=Mon)"); print(T.groupby('dow').apply(summ).round(1))
+print("== by weekday x alt"); print(T.groupby(['alt','dow']).apply(summ).round(1))
+T['bucket']=pd.cut(T.etmin,[16*60+55,17*60,17*60+5,17*60+15,17*60+30,17*60+45,18*60,18*60+5],right=False,labels=['4:55-5:00','5:00-5:05','5:05-5:15','5:15-5:30','5:30-5:45','5:45-6:00','6:00-6:05'])
+print("== by ET bucket"); print(T.groupby('bucket').apply(summ).round(1))
+print("== by ET bucket, alts only"); print(T[T.alt].groupby('bucket').apply(summ).round(1))
+print("== by DST"); print(T.groupby('dst').apply(summ).round(1))
+print("== by DST x alt"); print(T.groupby(['alt','dst']).apply(summ).round(1))
+print("== Friday vs not"); print(T.groupby(T.dow==4).apply(summ).round(1))
+print("== first 60s after 5:00:00"); print(T.groupby((T.sec_after5>=0)&(T.sec_after5<60)).apply(summ).round(1))
+print("== first 10s after 5:00:00"); print(T.groupby((T.sec_after5>=0)&(T.sec_after5<10)).apply(summ).round(1))
+print("== by minute 17:00..17:10 ET"); print(T[(T.etmin>=17*60)&(T.etmin<17*60+10)].groupby('etmin').apply(summ).round(1))
+print("== Fri buckets"); print(T[T.dow==4].groupby('bucket').apply(summ).round(1))
+print("== HOLD/DEV x alt"); print(T.groupby(['hold','alt']).apply(summ).round(1))
+T.to_pickle('/home/claude/redteam/h1pb/T.pkl')
