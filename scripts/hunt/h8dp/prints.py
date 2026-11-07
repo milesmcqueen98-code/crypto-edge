@@ -90,8 +90,8 @@ def run_win(pid, shard, n):
             ids = d.trade_id.astype(np.int64)
             miss.append((a, b, int(ids.max() - ids.min() + 1 - ids.nunique())))
             parts.append(aggregate(d, pid, L.loc[a - pd.Timedelta(minutes=5):b]))
-        if k % 100 == 0:
-            print(f"{pid} shard {shard}: {k}/{len(W)} windows, {tf.n_req} requests, {time.time() - t0:.0f}s", flush=True)
+        if k % 200 == 0:                                   # progress only: no HOLD counts are printed before the freeze
+            print(f"{pid} shard {shard}: {tf.n_req} requests, {time.time() - t0:.0f}s", flush=True)
     A = pd.concat(parts) if parts else pd.DataFrame()
     A = A[~A.index.duplicated()].sort_index()
     save(A, pid, f"w{shard}")
