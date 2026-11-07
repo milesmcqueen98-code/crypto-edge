@@ -1,0 +1,56 @@
+{
+ "status": 200,
+ "n_products": 929,
+ "hits": [
+  {
+   "product_id": "CBETH-USD",
+   "status": "online",
+   "product_type": "SPOT",
+   "quote_currency_id": "USD",
+   "trading_disabled": false,
+   "is_disabled": false,
+   "new_at": "2023-01-01T00:00:00Z",
+   "volume_24h": "331.91207"
+  },
+  {
+   "product_id": "CBETH-USDC",
+   "status": "online",
+   "product_type": "SPOT",
+   "quote_currency_id": "USDC",
+   "trading_disabled": false,
+   "is_disabled": false,
+   "new_at": "2023-01-01T00:00:00Z",
+   "volume_24h": "331.91207"
+  },
+  {
+   "product_id": "LSETH-USD",
+   "status": "online",
+   "product_type": "SPOT",
+   "quote_currency_id": "USD",
+   "trading_disabled": false,
+   "is_disabled": false,
+   "new_at": "2023-01-01T00:00:00Z",
+   "volume_24h": "1.79538"
+  },
+  {
+   "product_id": "LSETH-USDC",
+   "status": "online",
+   "product_type": "SPOT",
+   "quote_currency_id": "USDC",
+   "trading_disabled": false,
+   "is_disabled": false,
+   "new_at": "2023-01-01T00:00:00Z",
+   "volume_24h": "1.79538"
+  },
+  {
+   "product_id": "CBETH-ETH",
+   "status": "online",
+   "product_type": "SPOT",
+   "quote_currency_id": "ETH",
+   "trading_disabled": false,
+   "is_disabled": false,
+   "new_at": "2023-01-01T00:00:00Z",
+   "volume_24h": "31.92353"
+  }
+ ]
+}
