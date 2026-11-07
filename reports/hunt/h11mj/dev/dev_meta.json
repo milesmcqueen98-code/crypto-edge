@@ -1,0 +1,340 @@
+{
+ "coin_era": {
+  "BTC|early": {
+   "minutes": 1095840,
+   "hours": 17407,
+   "scored_hours": 17407,
+   "switch": null
+  },
+  "ETH|early": {
+   "minutes": 1095840,
+   "hours": 13773,
+   "scored_hours": 13773,
+   "switch": null
+  },
+  "SOL|early": {
+   "minutes": 1095840,
+   "hours": 8782,
+   "scored_hours": 8782,
+   "switch": null
+  },
+  "XRP|early": {
+   "minutes": 1095840,
+   "hours": 4030,
+   "scored_hours": 4030,
+   "switch": null
+  },
+  "BTC|main": {
+   "minutes": 1270080,
+   "hours": 20857,
+   "scored_hours": 12294,
+   "switch": "2025-07-19 00:00:00"
+  },
+  "ETH|main": {
+   "minutes": 1270080,
+   "hours": 20825,
+   "scored_hours": 12262,
+   "switch": "2025-07-19 00:00:00"
+  },
+  "SOL|main": {
+   "minutes": 1270080,
+   "hours": 20857,
+   "scored_hours": 12294,
+   "switch": "2025-08-16 00:00:00"
+  },
+  "XRP|main": {
+   "minutes": 1270080,
+   "hours": 20857,
+   "scored_hours": 12294,
+   "switch": "2025-08-16 00:00:00"
+  }
+ },
+ "clamp_share": {
+  "k5|BTC|early": 0.04590107428046188,
+  "k7|BTC|early": 0.1672890216579537,
+  "k5|ETH|early": 0.08088288680752197,
+  "k7|ETH|early": 0.2639947723807449,
+  "k5|SOL|early": 0.572990207242086,
+  "k7|SOL|early": 0.8737189706217262,
+  "k5|XRP|early": 0.062034739454094295,
+  "k7|XRP|early": 0.23027295285359803,
+  "k5|BTC|main": 0.019130268015534354,
+  "k7|BTC|main": 0.09589106774703936,
+  "k5|ETH|main": 0.08038415366146459,
+  "k7|ETH|main": 0.32326530612244897,
+  "k5|SOL|main": 0.19791916382988925,
+  "k7|SOL|main": 0.5835930383084815,
+  "k5|XRP|main": 0.17500119863834684,
+  "k7|XRP|main": 0.38797526010452127,
+  "k9|BTC|early": 0.3179180789337623,
+  "k9|ETH|early": 0.4983663689827924,
+  "k9|SOL|early": 0.9593486677294466,
+  "k9|XRP|early": 0.4660049627791563,
+  "k9|BTC|main": 0.24202905499352736,
+  "k9|ETH|main": 0.5853061224489796,
+  "k9|SOL|main": 0.8438893417078199,
+  "k9|XRP|main": 0.5988397180802608
+ },
+ "best_core": "k7_H60_ALL",
+ "core_t_alpha_inc70": {
+  "k5_H60_BE": -4.025634054900656,
+  "k5_H60_ALL": -1.6942413165190386,
+  "k5_H240_BE": -3.4705685958570314,
+  "k5_H240_ALL": -3.038624318819287,
+  "k7_H60_BE": -1.9532050058999517,
+  "k7_H60_ALL": 1.0540169863441842,
+  "k7_H240_BE": -0.9688044224638509,
+  "k7_H240_ALL": 0.5149020809091275
+ },
+ "ai": {
+  "a": {
+   "n_labels": 422,
+   "quarters": [
+    {
+     "q": "2022Q3",
+     "n_train": 52,
+     "model": false,
+     "keep_rate": 1.0
+    },
+    {
+     "q": "2022Q4",
+     "n_train": 67,
+     "model": false,
+     "keep_rate": 1.0
+    },
+    {
+     "q": "2023Q1",
+     "n_train": 80,
+     "model": false,
+     "keep_rate": 1.0
+    },
+    {
+     "q": "2023Q2",
+     "n_train": 90,
+     "model": false,
+     "keep_rate": 1.0
+    },
+    {
+     "q": "2023Q3",
+     "n_train": 105,
+     "model": false,
+     "keep_rate": 1.0
+    },
+    {
+     "q": "2023Q4",
+     "n_train": 136,
+     "model": false,
+     "keep_rate": 1.0
+    },
+    {
+     "q": "2024Q1",
+     "n_train": 168,
+     "model": false,
+     "keep_rate": 1.0
+    },
+    {
+     "q": "2024Q2",
+     "n_train": 194,
+     "model": false,
+     "keep_rate": 1.0
+    },
+    {
+     "q": "2024Q3",
+     "n_train": 218,
+     "model": true,
+     "thr_bp": 23.3,
+     "keep_rate": 0.526
+    },
+    {
+     "q": "2024Q4",
+     "n_train": 235,
+     "model": true,
+     "thr_bp": 22.84,
+     "keep_rate": 0.522
+    },
+    {
+     "q": "2025Q1",
+     "n_train": 272,
+     "model": true,
+     "thr_bp": 47.86,
+     "keep_rate": 0.509
+    },
+    {
+     "q": "2025Q2",
+     "n_train": 320,
+     "model": true,
+     "thr_bp": 73.05,
+     "keep_rate": 0.273
+    },
+    {
+     "q": "2025Q3",
+     "n_train": 341,
+     "model": true,
+     "thr_bp": 68.99,
+     "keep_rate": 0.291
+    },
+    {
+     "q": "2025Q4",
+     "n_train": 357,
+     "model": true,
+     "thr_bp": 74.43,
+     "keep_rate": 0.255
+    },
+    {
+     "q": "2026Q1",
+     "n_train": 378,
+     "model": true,
+     "thr_bp": 80.81,
+     "keep_rate": 0.309
+    },
+    {
+     "q": "2026Q2",
+     "n_train": 415,
+     "model": true,
+     "thr_bp": 89.46,
+     "keep_rate": 0.092
+    }
+   ]
+  },
+  "b": {
+   "n_labels": 514,
+   "quarters": [
+    {
+     "q": "2022Q3",
+     "n_train": 61,
+     "model": false,
+     "keep_rate": 1.0
+    },
+    {
+     "q": "2022Q4",
+     "n_train": 79,
+     "model": false,
+     "keep_rate": 1.0
+    },
+    {
+     "q": "2023Q1",
+     "n_train": 92,
+     "model": false,
+     "keep_rate": 1.0
+    },
+    {
+     "q": "2023Q2",
+     "n_train": 102,
+     "model": false,
+     "keep_rate": 1.0
+    },
+    {
+     "q": "2023Q3",
+     "n_train": 117,
+     "model": false,
+     "keep_rate": 1.0
+    },
+    {
+     "q": "2023Q4",
+     "n_train": 150,
+     "model": false,
+     "keep_rate": 1.0
+    },
+    {
+     "q": "2024Q1",
+     "n_train": 187,
+     "model": false,
+     "keep_rate": 1.0
+    },
+    {
+     "q": "2024Q2",
+     "n_train": 222,
+     "model": true,
+     "thr_bp": 39.29,
+     "keep_rate": 0.355
+    },
+    {
+     "q": "2024Q3",
+     "n_train": 257,
+     "model": true,
+     "thr_bp": 38.96,
+     "keep_rate": 0.372
+    },
+    {
+     "q": "2024Q4",
+     "n_train": 287,
+     "model": true,
+     "thr_bp": 42.51,
+     "keep_rate": 0.356
+    },
+    {
+     "q": "2025Q1",
+     "n_train": 329,
+     "model": true,
+     "thr_bp": 60.41,
+     "keep_rate": 0.331
+    },
+    {
+     "q": "2025Q2",
+     "n_train": 389,
+     "model": true,
+     "thr_bp": 84.54,
+     "keep_rate": 0.168
+    },
+    {
+     "q": "2025Q3",
+     "n_train": 414,
+     "model": true,
+     "thr_bp": 75.93,
+     "keep_rate": 0.197
+    },
+    {
+     "q": "2025Q4",
+     "n_train": 433,
+     "model": true,
+     "thr_bp": 78.51,
+     "keep_rate": 0.15
+    },
+    {
+     "q": "2026Q1",
+     "n_train": 459,
+     "model": true,
+     "thr_bp": 84.46,
+     "keep_rate": 0.178
+    },
+    {
+     "q": "2026Q2",
+     "n_train": 505,
+     "model": true,
+     "thr_bp": 91.25,
+     "keep_rate": 0.066
+    }
+   ]
+  }
+ },
+ "n_trades": {
+  "k5_H60_BE": 393,
+  "k5_H60_ALL": 565,
+  "k5_H240_BE": 381,
+  "k5_H240_ALL": 531,
+  "k7_H60_BE": 176,
+  "k7_H60_ALL": 318,
+  "k7_H240_BE": 174,
+  "k7_H240_ALL": 302,
+  "k7_H60_BTC": 82,
+  "k9_H60_ALL": 238,
+  "k7_H60_ALL_AIa": 253,
+  "k7_H60_ALL_AIb": 246
+ },
+ "trials": [
+  "k5_H60_BE",
+  "k5_H60_ALL",
+  "k5_H240_BE",
+  "k5_H240_ALL",
+  "k7_H60_BE",
+  "k7_H60_ALL",
+  "k7_H240_BE",
+  "k7_H240_ALL",
+  "k7_H60_BTC",
+  "k9_H60_ALL",
+  "k7_H60_ALL_AIa",
+  "k7_H60_ALL_AIb"
+ ],
+ "generated": "2026-11-07T06:32:19Z",
+ "end": "2026-06-01 00:00:00"
+}
