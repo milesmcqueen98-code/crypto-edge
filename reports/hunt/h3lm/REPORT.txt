@@ -73,15 +73,15 @@ Builder h3lm, 2026-11-07. Branch hunt/h3lm. Code: scripts/hunt/h3lm/lm.py (DEV r
 
 - **Result: no configuration passes.**
   - The pooled daily difference across all 8 is t = −0.52 (descriptive).
-  - At 1× costs the best t is 1.60.
-- **Split by era:** no config reaches 2 in either 2022–23 or 2025–26. The only |t| > 2 is negative: N14 R1.5–5 H240,
-  2022–23.
+  - At 1× costs the best paired t is 1.60 (day-clustered 1.69).
+- **Split by era:** no config reaches +2 in either 2022–23 or 2025–26. The only |t| > 2 values are negative, both in
+  2022–23: N14 R1.5–5 H240 (event t −2.19) and N14 R3–10 H240 (day t −2.06).
 - **Why density "fills" more:**
-  - It fills about 25% more often than control, because the max-density bucket sits slightly nearer the price.
+  - It fills 19–28% more often than control, because the max-density bucket sits slightly nearer the price.
   - Per fill it earns no more: Welch t of per-fill net from −1.45 to +0.16.
   - It is the same fishing at the same depth.
-- **Where clusters sit:** in 27–33% of hours the densest eligible bucket is the deepest one allowed. The 5% Fair Value
-  Limit binds, and the bid is then a fixed-depth bid.
+- **Where clusters sit:** for BTC and SOL in 2025–26, in 27–33% of hours the densest eligible bucket is the deepest one
+  allowed. The 5% Fair Value Limit binds, and the bid is then a fixed-depth bid.
 - **Where fills land:** a median of 149 bp above the cascade low (control: 154 bp). Only 3% are within 10 bp of the
   low. Density bids do not catch the end of the cascade.
 - **Binance OI cross-check** (best config, hours where the price crossed the cluster vs the control bucket, DEV):
@@ -110,7 +110,7 @@ Builder h3lm, 2026-11-07. Branch hunt/h3lm. Code: scripts/hunt/h3lm/lm.py (DEV r
 | dens N14 R3–10 H240 | 275 | 0.94 | 1.29 |
 | ctrl N14 R3–10 H240 | 236 | 1.66 | 2.91 |
 
-- **Control vs density:** the control matches or beats density in 6 of 8 pairs.
+- **Control vs density:** on DEV alpha t the control beats density in 6 of 8 pairs and ties a seventh.
 - **What the P&L is:** whatever these sleeves earn comes from deep (~4.5%, ~7σ) hourly-refreshed bids on BTC, ETH,
   SOL and XRP, the incumbent's own kind of mechanism. It does not come from the liquidation estimate.
 
@@ -133,6 +133,12 @@ Builder h3lm, 2026-11-07. Branch hunt/h3lm. Code: scripts/hunt/h3lm/lm.py (DEV r
 
 ## Weaknesses
 - The proxy cannot see real leverage, entry or exit, or other venues' positions.
+- **Protocol note (shared, not this idea's verdict):** G4's null variance v_z is the variance of z across all ledger
+  trials. Every logged trial is a book that is 70% incumbent, so v_z (7.4–7.7 now) mostly measures differences between
+  ideas.
+  - SR0 is then about 4.95 annualised; the incumbent alone scores DSR 0.000.
+  - At the pooled within-idea variance (3.26), SR0 is 3.28. At the 1.126 floor, SR0 is 1.93 and the incumbent scores
+    DSR 0.91.
 - The 5% Fair Value Limit truncates the deepest clusters.
 - 2022–23 is spot-priced with perp costs.
 
