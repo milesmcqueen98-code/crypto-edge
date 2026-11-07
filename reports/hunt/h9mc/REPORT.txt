@@ -5,7 +5,7 @@
 ## Mechanism
 - **The rule:** CFM's opt-in intraday margin (weekdays 8 am–4 pm ET) ends at 4:00 pm. Overnight margin is 2–4× higher; rates ramp from 3:30, and a short account liquidates at 4:00. CDE settles on the 15:59–16:00 VWAP.
 - **Who is forced, who is paid:** retail longs on intraday margin must sell into thin books. A liquidity provider, or a buyer after the step, should earn the reversion.
-- **Kill test:** CFM may internalise liquidations (memo R1), so the flow might leave no public footprint. Step 1 checks for one.
+- **Kill test:** CFM may internalise liquidations (memo R1), leaving no public footprint.
 
 ## Data
 - **Prints:** 7.33M CDE perp prints in 12,244 windows: 19 perps, every day from launch to 2026-11-05, in two ET windows (13:30–14:30 control; 15:30–17:30). 17,130 requests, no errors.
@@ -25,13 +25,9 @@
 | Basis residual 15:55–16:05 (volume-weighted) | −2.79 bp | −0.17 bp | **−7.79** (−4.52) | −0.72 |
 | Perp − spot return 15:45–16:05 (information) | −0.71 bp gap | | −2.04 | |
 
-- **Information:**
-  - Equal-weighted aggressive selling: +5.8 pp (t 9.7). R1's 16:00–16:02 check: +4.1 pp (t 2.2).
-  - Volume in the window is 1.6× the control.
+- **Information:** equal-weighted selling +5.8 pp (t 9.7); R1's 16:00–16:02 check +4.1 pp (t 2.2); volume 1.6× the control.
 - **By coin:** extra selling in 18 of 18 coins (t ≥ 2 in 14); negative residual in 17 of 18.
-- **Minute profile:**
-  - The residual sinks from −2 bp at 15:40 to between −3.2 and −3.6 bp at 16:01–16:05.
-  - It is still −2.2 bp at 16:15 on BTC/ETH: a slow reversion.
+- **Minute profile:** the residual sinks from −2 bp at 15:40 to about −3.4 bp at 16:01–16:05, and is still −2.2 bp at 16:15 (BTC/ETH).
 - **Friday:** same as Mon–Thu (Welch t 0.38 and −0.45).
 - **Decay:**
 
@@ -40,7 +36,7 @@
   | Jul–Oct 2025 | +5.9 pp (t 5.3) | −5.8 bp |
   | Nov 2025 – May 2026 | +1.1 pp (t 1.7) | −0.95 bp |
 
-  By month, the selling t was ≥ 3.7 in Aug–Oct 2025 and ≤ 1.5 in every later month. That fits CFM changing its margin terms, or retail adapting.
+  By month, the selling t was ≥ 3.7 in Aug–Oct 2025 and ≤ 1.5 afterwards: CFM's terms, or retail, changed.
 - **Result:** both tests pass, so Step 2 was built.
 
 ## DEV trials (21 logged)
@@ -69,7 +65,7 @@
 | **vflow x2 all** | 54 | −1.1 (−0.3) | **−1.07** | +42.5 | +10.8 |
 | vflow x2 all, short mirror | 68 | −2.6 (−1.7) | −1.79 | +21.8 | −12.1 |
 
-Positive net bp with a negative Sharpe is not a contradiction: the sleeve is idle about 90% of days, and the gates charge T-bills on idle capital. Net bp by coin: step2_dev_netbp_by_coin.csv.
+Positive net bp can still give a negative Sharpe: the sleeve is idle about 90% of days, and the gates charge T-bills on idle capital.
 
 ## Frozen variant
 **vflow_x2_all**, freeze commit 7c378c0. It had the highest DEV alpha t among trials with at least 40 trades; the runner-up was −1.56.
@@ -97,14 +93,9 @@ Path B at 2× costs, a = 0.7 chosen on DEV, 476 scored days.
   - $0.12 per contract: HOLD −25.7 bp, full-window alpha t −1.67.
   - $0.30 per contract: HOLD −43.6 bp.
 - **Sleeve years at 2×:** 2025 −0.8%, 2026 −2.0%.
-- **Concentration:**
-  - P&L: DEV +$167, HOLD −$1,007; three HOLD days account for −$957.
-  - Top-3 days' share: not meaningful, because total P&L is negative.
+- **Concentration:** P&L DEV +$167, HOLD −$1,007; three HOLD days account for −$957 (top-3 share undefined: total negative).
 - **HOLD by month (net bp at 2×, trades):** Jun −64 (11), Jul −66 (19), Aug +19 (13), Sep −28 (26), Oct none, Nov −8 (4).
-- **Overlap:**
-  - Correlation with the incumbent: 0.002.
-  - On the incumbent's worst 5% of days, the sleeve averages +0.03%.
-  - H1: no daily.parquet on hunt/h1pb at finish, so not computed.
+- **Overlap:** correlation with the incumbent 0.002; +0.03% on its worst 5% of days. H1: no daily.parquet on hunt/h1pb at finish.
 
 ## Capacity and fill realism
 - **Capacity:** mean notional $7.5K, 50% of the target. Majors fill about $14.5K; alts $0.3–4.5K, where the volume cap binds. Active on 38 of 476 days.
@@ -119,13 +110,11 @@ Path B at 2× costs, a = 0.7 chosen on DEV, 476 scored days.
 - **The gross edges that exist are too small or too rare:**
   - V-after (z ≤ −1, BTC+ETH): +10.6 bp, trade-level t 3.2.
   - V-flow (x = 2): +42 bp, but on only 54 trades.
-- **Post hoc, not a trial:** BTC-only V-after netted +1.8 bp. ETH's contract fee is the main drag.
+- **Post hoc, not a trial:** BTC-only V-after netted +1.8 bp; ETH's fee is the drag.
 
 ## Weaknesses
-- The mechanism faded about 6× after Oct 2025. Its HOLD state is unknown, because Step 1 is DEV-only.
-- Taker fills use the next print, not the book (no CDE book history before Oct 14 2026).
-- The fee is unverified.
-- Spot data are 1-minute closes, which adds up to a minute of timing noise.
+- The mechanism faded about 6× after Oct 2025; its HOLD state is unknown (Step 1 is DEV-only).
+- Taker fills use the next print, not the book. The fee is unverified. Spot closes are 1-minute.
 
 ## Scorecard (pre-registered weights)
 | Criterion | Score | Note |
@@ -162,6 +151,4 @@ Path B at 2× costs, a = 0.7 chosen on DEV, 476 scored days.
 3. **The gates' v_z is inflated**, so G4 is provisional, as the coordinator noted.
 
 ## Reproduce
-All scripts are in scripts/hunt/h9mc/:
-- On Actions: fetch.py, step1.py, and step2.py with `dev`, `dev-mirror` or `final`.
-- Locally: log_dev.py, freeze.py, gates_run.py.
+scripts/hunt/h9mc/: fetch.py, step1.py, step2.py (Actions); log_dev.py, freeze.py, gates_run.py (local).
