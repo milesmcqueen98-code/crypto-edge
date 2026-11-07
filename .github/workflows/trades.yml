@@ -1,0 +1,39 @@
+name: fetch-trades
+
+# Trade-by-trade Coinbase data for the wick v4 sub-minute tests (reports/wick_v4_prereg.md). Six shards in parallel
+# (separate runners, separate rate limits). Raw trades are uploaded as artifacts and never committed.
+on:
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/wick_v4
+            reports/wick_v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas requests pyarrow
+      - name: Probe that old trades are reachable
+        run: |
+          python - <<'EOF'
+          import requests
+          r = requests.get("https://api.exchange.coinbase.com/products/BTC-USD/trades", params={"limit": 1, "after": 600000000}, timeout=20)
+          print(r.status_code, r.text[:300])
+          EOF
+      - name: Fetch shard
+        run: python scripts/wick_v4/fetch_trades.py ${{ matrix.shard }} 6
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trades-${{ matrix.shard }}
+          path: out/trades_${{ matrix.shard }}.parquet
+          retention-days: 7
