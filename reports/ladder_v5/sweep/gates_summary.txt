@@ -1,0 +1,35 @@
+C7a_sweep_skip (path return): gates {'G1': False, 'G2': False, 'G3': False, 'G4': False, 'pass': False}
+  S_0.5: pooled t -1.37 (vol-matched -1.04)
+    sel   inc  19.5% /  2.31  cand  20.3% /  2.40  t +0.75
+    chk   inc  15.1% /  2.31  cand  13.2% /  2.01  t -1.36
+    early inc  10.4% /  1.72  cand   8.6% /  1.38  t -1.84
+  S_0.25: pooled t -1.13 (vol-matched -0.79)
+    sel   inc  16.2% /  1.96  cand  17.1% /  2.08  t +0.68
+    chk   inc  13.1% /  1.98  cand  11.7% /  1.73  t -1.11
+    early inc   9.1% /  1.48  cand   7.5% /  1.13  t -1.73
+  base_0.5: pooled t -2.08 (vol-matched -1.29)
+    sel   inc  22.4% /  2.16  cand  22.6% /  2.18  t +0.17
+    chk   inc  17.6% /  2.61  cand  16.1% /  2.58  t -1.54
+    early inc  13.7% /  2.18  cand  11.4% /  1.83  t -2.27
+  cap_1M: pooled t -2.11 (vol-matched -0.64)
+    sel   inc  12.1% /  1.76  cand  11.0% /  1.68  t -1.50
+    chk   inc   6.9% /  0.97  cand   4.9% /  0.40  t -1.89
+    early inc   4.7% /  0.55  cand   4.3% /  0.37  t -0.74
+
+C7b_sweep_tilt (path return): gates {'G1': False, 'G2': True, 'G3': False, 'G4': True, 'pass': False}
+  S_0.5: pooled t +1.51 (vol-matched +0.57)
+    sel   inc  19.5% /  2.31  cand  20.8% /  2.47  t +1.46
+    chk   inc  15.1% /  2.31  cand  15.4% /  2.39  t +0.38
+    early inc  10.4% /  1.72  cand  10.9% /  1.70  t +0.70
+  S_0.25: pooled t +1.25 (vol-matched +0.76)
+    sel   inc  16.2% /  1.96  cand  17.2% /  2.10  t +1.18
+    chk   inc  13.1% /  1.98  cand  13.7% /  2.13  t +0.69
+    early inc   9.1% /  1.48  cand   9.4% /  1.48  t +0.42
+  base_0.5: pooled t +1.48 (vol-matched -0.64)
+    sel   inc  22.4% /  2.16  cand  24.4% /  2.24  t +1.43
+    chk   inc  17.6% /  2.61  cand  18.1% /  2.65  t +0.65
+    early inc  13.7% /  2.18  cand  14.0% /  2.04  t +0.45
+  cap_1M: pooled t +0.86 (vol-matched +0.45)
+    sel   inc  12.1% /  1.76  cand  12.6% /  1.86  t +0.82
+    chk   inc   6.9% /  0.97  cand   6.8% /  0.88  t -0.09
+    early inc   4.7% /  0.55  cand   4.9% /  0.63  t +0.65
