@@ -1,0 +1,269 @@
+{
+ "started_utc": "2026-11-07T04:05:35.612423+00:00",
+ "user_agent": "crypto-edge-research/1.0 (academic event study; contact via github milesmcqueen98-code)",
+ "pages": [
+  {
+   "page": 1,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 2,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 3,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 4,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 5,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 6,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 7,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 8,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 9,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 10,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 11,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 12,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 13,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 14,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 15,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 16,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 17,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 18,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 19,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 20,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 21,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 22,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 23,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 24,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 25,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 26,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 27,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  },
+  {
+   "page": 28,
+   "status": 200,
+   "success": true,
+   "total": 2292,
+   "n": 50
+  }
+ ],
+ "n_articles_all": 1400,
+ "n_articles_since_2022": 1394,
+ "first": "2022-01-04 08:00:40.624000",
+ "last": "2026-10-29 11:48:52.329000",
+ "cb_exchange": {
+  "n": 846,
+  "n_usd": 496,
+  "status_usd": {
+   "online": 405,
+   "delisted": 91
+  }
+ },
+ "cb_adv": {
+  "status": 200,
+  "n": 929
+ },
+ "delisted_ticker_probe": {
+  "COVAL-USD|2022-06-01 12:00": {
+   "status": 404,
+   "n_trades": 0
+  },
+  "COVAL-USD|2023-03-01 12:00": {
+   "status": 404,
+   "n_trades": 0
+  },
+  "PIRATE-USD|2022-06-01 12:00": {
+   "status": 404,
+   "n_trades": 0
+  },
+  "PIRATE-USD|2023-03-01 12:00": {
+   "status": 404,
+   "n_trades": 0
+  },
+  "BLAST-USD|2022-06-01 12:00": {
+   "status": 404,
+   "n_trades": 0
+  },
+  "BLAST-USD|2023-03-01 12:00": {
+   "status": 404,
+   "n_trades": 0
+  },
+  "RLY-USD|2022-06-01 12:00": {
+   "status": 404,
+   "n_trades": 0
+  },
+  "RLY-USD|2023-03-01 12:00": {
+   "status": 404,
+   "n_trades": 0
+  },
+  "KEEP-USD|2022-06-01 12:00": {
+   "status": 404,
+   "n_trades": 0
+  },
+  "KEEP-USD|2023-03-01 12:00": {
+   "status": 404,
+   "n_trades": 0
+  },
+  "UNFI-USD|2022-06-01 12:00": {
+   "status": 404,
+   "n_trades": 0
+  },
+  "UNFI-USD|2023-03-01 12:00": {
+   "status": 404,
+   "n_trades": 0
+  }
+ },
+ "finished_utc": "2026-11-07T04:06:40.502739+00:00"
+}
