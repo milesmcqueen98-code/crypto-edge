@@ -211,3 +211,9 @@ would decide pass or fail; the three ideas finished so far (H2, H5, H7) fail G1â
 - **Reported alongside:** the pre-registered plain-variance version, in every gate table.
 - **When G4 is computed:** once, centrally, at the end, with the final ledger (N = 3,000 + every trial of every
   wave), since N keeps growing while builders run. Builder-time DSR values are provisional.
+
+**2026-11-07 06:20 UTC: loop 2 (wave 2d) adds H11 (MJ), before its build.** H2, H3, H5 and H7 have failed and H4 is
+frozen.
+- The mechanism is deep, hourly-refreshed bids on the BTC/ETH/SOL/XRP perps. It comes from H3's DEV-only
+  observation: random-depth bids made money even though the liquidation estimate added nothing.
+- Spec: reports/hunt/h11mj/SPEC.md, â‰¤ 12 trials, the same gates. Its HOLD has never been computed in any form.

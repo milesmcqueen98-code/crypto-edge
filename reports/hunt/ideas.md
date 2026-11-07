@@ -1,4 +1,4 @@
-# Edge hunt, wave 1: 47 mechanism-first ideas (research memos R1–R4 folded in)
+# Edge hunt, wave 1: 48 mechanism-first ideas (research memos R1–R4 folded in)
 
 The test for every idea: **who is forced (or eager) to trade, and why does a small liquidity provider or fast follower
 get paid?** Research memos: reports/hunt/research/R1–R4. Data probes: reports/hunt/probe.json and probe2.json.
@@ -62,6 +62,7 @@ Status key: **W2** = built in wave 2 · **alt** = next in line · **merged** = t
 | 20 | ST: stablecoin-pair oscillation (USDT-USD etc.) at low fees | Tether mint/redeem flow. Stable pairs pay 0% maker (R2/R3), but USDT-USD likely pays standard fees. | Two-sided quoting dead | 2 | dead (two-sided quoting) |
 | 45 | **XQ: secondary-book wicks (BTC/ETH/USDT-quoted pairs)** | Makers pull secondary books first in cascades; sellers sweep near-empty books; slow triangular arbitrage pays the bidder (R4). | Candles and prints for every pair / Coinbase | 6 | W2c (H10) |
 | 46 | PS: new-listing phase switch (limit-only → full trading) | App and market-order buyers can only arrive at full trading, 14–24 h after the open, at a public timestamp (R2, E5). | Status-page phase times (history depth unverified) + prints | 5 | alt (wave 2d) |
+| 48 | **MJ: deep hourly bids on BTC/ETH/SOL/XRP perps** | Forced selling into empty books on the majors; R2-08 never bids in BTC. From H3's control arm (DEV only). | Spot 1m 2021–26, perp candles and prints / Coinbase | 6 | W2d (H11) |
 | 47 | UF: unlock and delisting filters on the incumbent | Skip alt dip bids within 30 days of a cliff ≥5% of float, or under a delisting notice: forced sales there carry information (R2). | DefiLlama CDN + Binance delist notices | 4 | build-plan risk filter (refinement, not a new book) |
 
 ### C. Events: listings, delistings, unlocks, airdrops
