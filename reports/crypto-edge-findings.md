@@ -136,6 +136,10 @@ eras (26 / 5 / 22 bp gross vs ~50).
 | Implementation and risk | 3 | 2.75 | Parity, fault, server-death and Coinbase-sandbox tests pass. Not yet run against the real Coinbase API |
 | Live validation | 3 | 0 | Paper started Nov 6; no live fills yet |
 
+- Supplementary robustness evidence (spot-only, paper, $250K): the fixed strategy's probabilistic Sharpe against zero is
+  0.9997 in the check period and 0.9998 in 2022–23.
+  - The daily returns are very lumpy: skew about 5, kurtosis 45–68. Crash days carry the P&L.
+  - This doesn't replace the deflated-Sharpe bar. That bar counts all ~2,000 setups, and only new data can clear it.
 - The 6.25 missing points can't come from more backtesting, which would only overfit. They come from:
   - live validation (3): months of paper and live consistent with the backtest;
   - robustness (1): forward out-of-sample data, which the deflated Sharpe needs;
