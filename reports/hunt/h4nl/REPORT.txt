@@ -1,0 +1,183 @@
+# H4 (NL): liquidity for new Coinbase listings, first 30 days
+
+Builder h4nl, 2026-11-07, branch hunt/h4nl. Path B.
+- **Freeze commit:** c912018 (frozen.json; code 0e5aa3b).
+- **Verdict: FAILS G1, G2, G3 and G4; passes G5.** The sleeve is positive in every year and uncorrelated with the
+  incumbent, but far too small to add Sharpe.
+
+## Mechanism
+- A new Coinbase spot book opens thin, with no market-maker inventory, while airdrop and early holders sell.
+- A resting bid kσ under the 60-minute VWAP buys their sweeps. It exits post-only 60% of the way back, or at market
+  after H minutes.
+- These coins are never in R2-08's universe.
+
+## Data
+**Universe** (scripts/hunt/h4nl/listings.py; rules committed before any price was fetched). Of 496 USD products in
+Exchange /products (any status), these were excluded:
+- 127 first traded before 2022;
+- 15 stablecoins or asset-backed tokens;
+- 10 wrapped or staked tokens;
+- 10 ticker migrations (T, RENDER, POL, SYRUP, SKY, CFG, G, MANTLE, ZETACHAIN, AXL).
+
+**Listings:** 334 remain (2022: 97, 2023: 24, 2024: 43, 2025: 101, 2026: 69).
+- **43 are delisted now**, 31 of them from the 2022 cohort.
+- 333 have minute data.
+
+**t0** = the first 1-minute candle with volume.
+- It always falls on the first daily-candle day.
+- Against Advanced Trade's `new_at`: 215 of 219 t0 values fall 0–72 h after it (median 20 h).
+
+**Candles and sample:**
+- **Candles:** 1-minute, days 0–31, 7.4M rows, from 8 Actions shards.
+- **Candidate fills:** 2,711 on DEV.
+- **Trade-print sample:** a fixed-seed 25% of DEV fill minutes, 553 windows. Delisted products were fetched by
+  Exchange trade-id paging.
+
+**Scoring:** gates.ERA_DAYS. 2024 listings only train the AI.
+
+## Simulation (rules fixed in sim.py before any trial)
+- **Bid:** F = 60-minute VWAP. σ = the std of 1-minute log returns over the trailing min(1,440, minutes since t0),
+  × √60. Both are known at t−1. The bid is F·e^(−kσ), floored to the tick. Warm-up is 2 h.
+- **Entry:** the minute opens above the bid and trades through it by at least 1 tick.
+  - Size: min($3K, θ × candle through-volume), θ = 0.5.
+- **Exits:**
+  - The take-profit is capped at θ × the volume traded above it.
+  - The rest is sold at the next traded open after t+H.
+- **Costs:** maker 6 bp, taker 12.5 bp, plus a market-exit half-spread of 5 bp. Gates use 2×.
+- **Limits:**
+  - At most 6 positions, one per coin.
+  - Resting bids reserve cash; the newest listings come first.
+  - Peak cash: $3.6K of $30K for the frozen variant.
+
+## Trials (15 logged; DEV; sleeve $30K at 2×; alpha t vs the incumbent at $70K)
+| Variant | Trades | Sleeve Sharpe | Alpha t | DEV book Sharpe |
+|---|---|---|---|---|
+| k3 d0–7 all H60 | 189 | 0.43 | 0.77 | 2.19 |
+| k3 d0–7 liq≥$1M H60 | 129 | 0.36 | 0.64 | 2.18 |
+| k3 d0–30 all H60 | 843 | −0.94 | −1.12 | 1.88 |
+| k3 d0–30 liq H60 | 678 | −0.46 | −0.11 | 2.07 |
+| k4 d0–7 all H60 | 56 | −0.46 | −2.95 | 2.03 |
+| k4 d0–7 liq H60 | 42 | −0.49 | −3.02 | 2.03 |
+| k4 d0–30 all H60 | 318 | −0.71 | −0.76 | 1.99 |
+| k4 d0–30 liq H60 | 252 | −0.03 | 0.22 | 2.14 |
+| k6 d0–7 all H60 | 16 | −0.87 | −5.24 | 1.97 |
+| k6 d0–7 liq H60 | 10 | −0.83 | −4.79 | 1.98 |
+| k6 d0–30 all H60 | 80 | −1.27 | −2.04 | 1.98 |
+| k6 d0–30 liq H60 | 63 | −1.34 | −2.52 | 2.05 |
+| k3 d0–7 all H30 | 195 | 0.57 | 1.04 | 2.21 |
+| k3 d0–7 H30 + AI (pred > 0) | 185 | 0.60 | 1.09 | 2.22 |
+| **k3 d0–7 H30 + AI (pred > median)** | **114** | **0.65** | **1.21** | **2.23** |
+
+- **Incumbent alone (DEV):** Sharpe 2.35. No trial beats it at a = 0.7.
+- **Negative t on sparse k4/k6 cells:** mostly T-bill drag on an idle sleeve; those cells' P&L was positive.
+- **Decay with days since listing** (DEV, k3 d0–30 H60, net bp after 2× costs):
+
+| Days since listing | 0 | 1 | 2–3 | 4–7 | 8–14 | 15–30 |
+|---|---|---|---|---|---|---|
+| Net bp | +602 | +279 | +152 | +81 | −45 | −78 |
+
+## Frozen variant
+k3_d7_all_H30_aimed:
+- k = 3, days 0–7, no liquidity filter, 30-minute exit;
+- a walk-forward LightGBM filter, quarterly from 2022Q3, keeping predictions above the training median;
+- DEV: alpha t 1.21, 114 trades.
+
+## Results (book = 0.7 × incumbent + 0.3 × sleeve at 2×; HOLD read once)
+| Window | Alpha t | Book Sharpe | Incumbent Sharpe | Gain | Sleeve Sharpe |
+|---|---|---|---|---|---|
+| DEV | 1.21 | 2.23 | 2.35 | −0.12 | 0.65 |
+| HOLD (18 trades) | 1.28 | 4.00 | 3.64 | +0.36 | 1.28 |
+| All scored days | 1.53 | 2.39 | 2.47 | −0.07 | 0.73 |
+
+a = 0.7 was chosen on DEV (book Sharpe 2.23, against 2.09 at a = 0.5).
+
+**Gates at 2×:**
+- **G1** fail: t 1.53.
+- **G2** fail: HOLD t 1.28 < 1.5. The gain of +0.36 alone would pass.
+- **G3** fail: gain −0.07.
+- **G4** fail, provisional:
+  - gates.py gives DSR ≈ 0.00 (N = 3,101, v_z = 5.5).
+  - At the 1.126 floor it is 0.86.
+  - The coordinator recomputes G4 centrally.
+- **G5** pass: book +11.0% (2022), +14.0% (2023), +29.5% (2025), +14.5% (2026 YTD).
+
+**1×, for information:** t 1.78, HOLD t 1.36, gain −0.05. Same outcome.
+
+**Sleeve years ($30K, 2×):** +7.3% (2022), +1.3% (2023), +9.3% (2025), +4.3% (2026), positive at 1× too.
+- 5.8% a year, Sharpe 0.73.
+- Max daily drawdown 1.2%.
+- Longest hold 186 minutes, so there is no overnight risk.
+
+## Capacity filled (frozen, $30K)
+- **θ = 0.5:**
+  - 132 scored trades.
+  - $263K filled against $396K bid, 67%.
+  - Net +253 bp per trade after 2× costs.
+  - 40% of dollars exited at the take-profit.
+- **θ = 0.25:** $222K filled, Sharpe 0.35.
+- **Scale:** about $1.7K a year on $30K, about 34 trades a year. The sleeve is active on 107 of 1,404 days.
+
+## Fill realism (DEV trade sample)
+**Coverage:**
+- In 535 of 682 levels, the prints' USD volume matched the candle's (within 10%).
+- The rest had incomplete prints, a data gap.
+
+**Confirmation:**
+- With complete prints, **96.8%** of candle fills are confirmed by a print at least one tick through the level.
+- With incomplete prints, 48%.
+- Overall, 86%.
+
+**Through-volume:**
+- With complete, confirmed prints, the print through-volume is a median **0.32×** the candle estimate (IQR
+  0.03–0.96; 0.26× in aggregate).
+- Spreading candle volume evenly over the range badly overstates the volume available at the lows.
+
+**Frozen trades in the sample** (23 with complete prints):
+- Capping each fill at θ × the print through-volume cuts the filled dollars from $48K to $25K.
+- It cuts P&L from $1,403 to $231.
+- **So the candle-based P&L likely overstates live P&L by 2–6×.**
+
+**Spreads** (adjacent opposite-side prints within 2 s):
+- Half-spread: median 6.0 bp, mean 12.2 bp, p90 28 bp.
+- At the frozen variant's fills: median 9.9 bp, mean 22 bp.
+- So the SPEC's 10 bp at 2× is only median-level.
+
+**Depth:**
+- A median $3.9K of seller sweep per fill minute, which moved price a median 158 bp (about $32 per bp).
+- The median tick is 0.67 bp.
+
+## Other checks
+- **Net bp by day (frozen):**
+
+| Days since listing | 0 | 1 | 2–3 | 4–7 |
+|---|---|---|---|---|
+| Net bp | +652 | +236 | +336 | +166 |
+| Trades | 7 | 10 | 37 | 78 |
+
+- **Survivorship:** without today's delisted products, Sharpe falls from 0.73 to 0.66 and t from 1.53 to 1.31. The 8
+  delisted trades made +$247.
+- **Concentration:** the top-3 days are 26% of P&L; the top-3 listings 28% (GLM, PRO, TROLL).
+- **Correlation with the incumbent:** −0.04. +$1.3K on the incumbent's 20 worst days.
+
+## Weaknesses
+- **Too small:** about 5–6% a year on $30K. Taking 30% of capital from a Sharpe-2.4 incumbent costs more than the
+  sleeve adds.
+- **Fills:** candle fills overstate size badly (print through-volume is about 0.3×).
+- **Selection noise:**
+  - The AI filter's improvement is within noise (t 1.04 → 1.21).
+  - The selection maximum came from a mostly negative grid.
+- **Listing phases not modelled:** limit-only phases, 14–24 h after the auction, reject post-only orders.
+- **Half-spread tail:** fatter than modelled (mean 22 bp at fills).
+
+## Deviations
+- **Exclusion lists:** four migrations (G, MANTLE, ZETACHAIN, AXL) and a carve-out for CHIP (a governance token named
+  "USD.AI") were added to the fixed lists. They came from reading names and first trading days only, before any
+  price.
+- **Shared code:** after my trade runs, the coordinator fixed common.TradeFetcher (ISO8601 parsing, a delisted
+  fallback). My runs used their own Exchange fallback for delisted products, so nothing changed.
+- **G4:** provisional, per the coordinator.
+- **After HOLD:** no change.
+
+## Verdict
+**Fails.** There is a real but small, front-loaded effect in a listing's first week, positive in every year even at
+2× costs. It cannot reach t ≥ 3 or a +0.5 Sharpe gain, and print-level fills shrink it further. Not worth a sleeve.
