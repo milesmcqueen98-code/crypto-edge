@@ -1,0 +1,59 @@
+{
+ "participation_dev": {
+  "median_size_over_buy10": 0.8488988224623877,
+  "median_size_over_buy60": 0.23572445310262663,
+  "share_size_gt_half_buy60": 0.44021739130434784,
+  "share_size_gt_quarter_buy60": 0.5217391304347826,
+  "median_size_over_sell60_at_exit": 1.4142796414335868,
+  "pnl_share_kept_theta0.5": 1.1465582252248019,
+  "pnl_share_kept_theta0.25": 1.1412609053171343
+ },
+ "participation_all": {
+  "median_size_over_buy10": 0.9189304612617067,
+  "median_size_over_buy60": 0.2343406829116042,
+  "share_size_gt_half_buy60": 0.441025641025641,
+  "share_size_gt_quarter_buy60": 0.517948717948718,
+  "median_size_over_sell60_at_exit": 1.2767342064750091,
+  "pnl_share_kept_theta0.5": 1.1416554980930456,
+  "pnl_share_kept_theta0.25": 1.1378940026407576
+ },
+ "worst_print_dev": {
+  "n": 184,
+  "entry_worst_vs_print_bp_median": 51.005997893295294,
+  "exit_worst_vs_print_bp_median": -5.479454623178448,
+  "mean_net_model_2x_bp": 244.26220067464013,
+  "mean_net_worst_1x_bp": -0.6310409993874188,
+  "mean_net_worst_2x_bp": -25.598332305541057,
+  "pnl_model_2x": 16456.15788777183,
+  "pnl_worst_2x": -3513.665531998263
+ },
+ "worst_print_hold": {
+  "n": 11,
+  "entry_worst_vs_print_bp_median": 98.1675392670156,
+  "exit_worst_vs_print_bp_median": -27.540512493015036,
+  "mean_net_model_2x_bp": 141.13386406380965,
+  "mean_net_worst_1x_bp": -94.8550731675759,
+  "mean_net_worst_2x_bp": -119.58709774151609,
+  "pnl_model_2x": 776.236252350953,
+  "pnl_worst_2x": -657.7290375783383
+ },
+ "worst_print_all": {
+  "n": 195,
+  "entry_worst_vs_print_bp_median": 53.19148936170137,
+  "exit_worst_vs_print_bp_median": -6.510416666666297,
+  "mean_net_model_2x_bp": 238.4447047632599,
+  "mean_net_worst_1x_bp": -5.946242814003173,
+  "mean_net_worst_2x_bp": -30.900262663467846,
+  "pnl_model_2x": 17232.394140122786,
+  "pnl_worst_2x": -4171.3945695766015
+ },
+ "worst_print_sleeve_sharpe_2x_all": -1.3432430008208118,
+ "worst_print_t_alpha70_dev": -2.1747895245650093,
+ "model_sleeve_sharpe_2x_all": 1.4248459461938663,
+ "entry_latency_s": {
+  "median": 3.095,
+  "p75": 9.0275,
+  "share_gt_10s": 0.24615384615384617,
+  "share_gt_60s": 0.07692307692307693
+ }
+}
