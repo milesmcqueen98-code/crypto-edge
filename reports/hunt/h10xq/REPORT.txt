@@ -89,7 +89,17 @@ stale-quote pick-offs, not by forced sellers.
 ## Fill realism (prints)
 - **Sample.** Prints were fetched with the fixed TradeFetcher and the 1-second latency rule, for a seeded sample:
   150 random plus the 40 deepest fills of each of 30 configurations, 4,917 windows.
-- **Results.** {PRINTS}
+- **Coverage.** Shard 0 of 3 completed: 1,639 windows, 1,701 rows, 0 fetch failures. Shards 1–2 were cancelled
+  in the shared queue once the result was settled. checks.py recomputes everything with whatever shards exist.
+- **Candles are optimistic on every measure.**
+  - Confirmation: only 81.7% of candle fills confirm on prints (BTC 78.6%, ETH 73.1%, USDT 84.9%). The rest had
+    a print at the level within the first second, or no print a tick through after it.
+  - Size cap: through-volume on prints is a median 28% of the candle estimate.
+  - Take-profits confirm 88.9% of the time.
+  - Hedge: on the same 610 hedged fills, the hedge at the first USD print ≥ 2 s after the fill locks 12.7 bp,
+    vs 17.8 bp at the next minute's open. (These include the deepest fills, so they exceed the variant's average.)
+  - Measured median half-spreads in these stressed windows: USDT books 1.5 bp, BTC 2.2 bp, ETH 9.9 bp.
+- **Implication.** Applying prints would only make the results worse.
 
 ## Other SPEC checks
 - **Overlap with the incumbent.**
@@ -111,7 +121,8 @@ stale-quote pick-offs, not by forced sellers.
 - **Fixed-capital returns** ignore ruin.
 
 ## Deviations
-1. **Print verification sampled.** Prints were fetched for a sample (~1% of fills), not every window. The 13
+1. **Print verification sampled.** Prints were fetched for a sample (~0.1% of fills, 1,639 windows), not every
+   window. The 13
    trials produce 1.41M fills, and the Actions queue (20 jobs shared by all builders) made full verification
    infeasible. All scoring (trials, freeze, gates) uses candles for every fill with costs exactly as in
    common.py, one consistent basis. The prints measure the bias (H10_USE_PRINTS=1 applies them, for information).

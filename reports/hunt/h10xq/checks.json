@@ -407,5 +407,25 @@
    "best_sleeve_sharpe_1x": -11.55,
    "total_trades": 1119443
   }
- ]
+ ],
+ "prints_sample": {
+  "windows": 1701,
+  "fetch_failed": 0,
+  "confirmation_rate": 0.8172,
+  "confirmation_by_quote": {
+   "BTC": 0.7858,
+   "ETH": 0.7308,
+   "USDT": 0.8486
+  },
+  "thru_ratio_print_vs_candle_median": 0.2751,
+  "tp_confirmed_share": 0.8886,
+  "half_spread_bp_median_by_quote": {
+   "BTC": 2.16,
+   "ETH": 9.87,
+   "USDT": 1.53
+  },
+  "hedge_rows": 610,
+  "hedge_locked_bp_print_mean": 12.6822,
+  "hedge_locked_bp_candle_mean": 17.8165
+ }
 }
