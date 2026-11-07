@@ -27,7 +27,8 @@ def freeze_pushed():
                          text=True).stdout.strip()
     if not sha:
         return None
-    subprocess.run(["git", "-C", ROOT, "fetch", "-q", "origin", "hunt/h9mc"], check=False)
+    subprocess.run(["git", "-C", ROOT, "fetch", "-q", "origin", "+refs/heads/hunt/h9mc:refs/remotes/origin/hunt/h9mc"],
+                   check=False)
     ok = subprocess.run(["git", "-C", ROOT, "merge-base", "--is-ancestor", sha, "origin/hunt/h9mc"]).returncode == 0
     return sha if ok else None
 
@@ -90,6 +91,8 @@ def main():
     res["checks"]["sleeve_on_incumbent_worst5pct_days"] = float(s.reindex(worst).mean())
     # H1 overlap (if its daily.parquet exists on origin/hunt/h1pb)
     try:
+        subprocess.run(["git", "-C", ROOT, "fetch", "-q", "origin",
+                        "+refs/heads/hunt/h1pb:refs/remotes/origin/hunt/h1pb"], check=False)
         raw = subprocess.run(["git", "-C", ROOT, "show", "origin/hunt/h1pb:reports/hunt/h1pb/daily.parquet"],
                              capture_output=True, check=True).stdout
         import io
