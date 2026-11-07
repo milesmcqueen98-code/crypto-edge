@@ -57,9 +57,9 @@ def load_devc(H=60, theta=0.5, mode=None):
     D2 = load("dev2", H, theta, mode)
     dr = pd.read_parquet(os.path.join(REP, "delta_rows.parquet"))
     key = set(zip(dr.coin, dr.row.astype(np.int64)))
-    m1 = D1.coin.isin(MAJORS).to_numpy()
+    m1 = D1.coin.isin(MAJORS).to_numpy().copy()
     if key:
-        m1 &= ~np.array([(c, int(r)) in key for c, r in zip(D1.coin, D1.row)])
+        m1 &= ~np.array([(c, int(r)) in key for c, r in zip(D1.coin, D1.row)], dtype=bool)
     out = pd.concat([D1[m1], D2], ignore_index=True)
     return out.drop_duplicates(["coin", "mode", "k", "side", "t_fill"]).reset_index(drop=True)
 
