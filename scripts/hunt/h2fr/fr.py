@@ -67,26 +67,35 @@ class Coin:
     def __init__(self, c, end):
         self.c = c
         end = pd.Timestamp(end)
-        parts = [d for d in (common.load_minute(c, "minute_early"), common.load_minute(c, "minute")) if d is not None]
-        d = pd.concat(parts)
-        d = d[~d.index.duplicated(keep="last")].sort_index()
-        d = d[(d.index >= START) & (d.index < end)]
         idx = pd.date_range(START, end, freq="min", inclusive="left")
-        d = d.reindex(idx)
         self.idx, self.T = idx, len(idx)
-        self.o, self.h, self.l, self.cl = (d[k].to_numpy(np.float32) for k in ("open", "high", "low", "close"))
-        self.v = d["volume"].fillna(0.0).to_numpy(np.float32)
-        self.cf = d["close"].ffill(limit=60).to_numpy(np.float64)      # gaps > 1 h stay NaN (XRP 2021-23 hole)
-        self.lf = np.where(np.isnan(self.l), self.cf, self.l).astype(np.float32)
-        del d
+        T = self.T
+        o, h, l, cl, v = (np.full(T, np.nan, np.float32) for _ in range(5))
+        for src in ("minute_early", "minute"):
+            d = common.load_minute(c, src, start=START, end=end)
+            if d is None or d.empty:
+                continue
+            pos = ((d.index.values - np.datetime64(START)) // np.timedelta64(1, "m")).astype(np.int64)
+            for arr, k in ((o, "open"), (h, "high"), (l, "low"), (cl, "close"), (v, "volume")):
+                arr[pos] = d[k].to_numpy(np.float32)
+            del d
+        self.o, self.h, self.l, self.cl = o, h, l, cl
+        self.v = np.nan_to_num(v, nan=0.0)
+        self.cf = pd.Series(cl, dtype=np.float64).ffill(limit=60).to_numpy()   # gaps > 1 h stay NaN (XRP 2021-23)
+        self.lf = np.where(np.isnan(l), self.cf, l).astype(np.float32)
         P = common.load_perp(c)
         self.perp_first = P.index[0]
         launch_ts = self.perp_first.normalize() + pd.Timedelta(days=1)      # first full UTC day of perp prints
-        P = P[(P.index >= START) & (P.index < end)].reindex(idx)
-        self.po, self.ph, self.pl = (P[k].to_numpy(np.float32) for k in ("open", "high", "low"))
-        self.pv = P["volume"].fillna(0.0).to_numpy(np.float32)
-        self.pcf = P["close"].ffill(limit=5).to_numpy(np.float32)
+        P = P[(P.index >= START) & (P.index < end)]
+        pos = ((P.index.values - np.datetime64(START)) // np.timedelta64(1, "m")).astype(np.int64)
+        po, ph, pl, pc, pv = (np.full(T, np.nan, np.float32) for _ in range(5))
+        for arr, k in ((po, "open"), (ph, "high"), (pl, "low"), (pc, "close"), (pv, "volume")):
+            arr[pos] = P[k].to_numpy(np.float32)
         del P
+        self.po, self.ph, self.pl = po, ph, pl
+        self.pv = np.nan_to_num(pv, nan=0.0)
+        self.pcf = pd.Series(pc).ffill(limit=5).to_numpy(np.float32)
+        del pc
         self.launch = int(np.searchsorted(idx.values, np.datetime64(launch_ts)))
         self.size, self.tick = common.PERP[c][1], common.PERP[c][2]
         # emulated perp halts for spot-priced (pre-launch) trades
@@ -113,16 +122,19 @@ class Coin:
     def prep(self, W):
         if W in self.D:
             return
-        cf = pd.Series(self.cf)
-        hi = cf.rolling(W, min_periods=1).max().to_numpy()
+        hi = pd.Series(self.cf).rolling(W, min_periods=1).max().to_numpy()
         self.D[W] = np.log(self.cf / hi).astype(np.float32)
+        del hi
         lc = np.log(self.cf)
         rW = lc - np.r_[np.full(W, np.nan), lc[:-W]]
+        del lc
         self.sig[W] = shift1(rstd(rW)).astype(np.float32)
+        del rW
         vW = pd.Series(np.where(np.isfinite(self.cf), self.v, np.nan)).rolling(W, min_periods=W).sum()
         med = shift1(vW.rolling(W3D, min_periods=MINP).median().to_numpy())
         with np.errstate(invalid="ignore", divide="ignore"):
             self.vr[W] = np.where(med > 0, vW.to_numpy() / med, np.nan).astype(np.float32)
+        del vW, med
 
     def events(self, W, k):
         """Cascade events with the re-arm rule. Returns a list of dicts (t0, tH0, H0, rearm)."""
@@ -191,8 +203,11 @@ class Coin:
             return None
         spot_ref = float(self.cf[e - 1])
         ratio = 1.0
-        if mode == "perp" and np.isfinite(self.pcf[t_dec]) and np.isfinite(self.cf[t_dec]):
-            ratio = float(self.pcf[t_dec]) / float(self.cf[t_dec])     # perp/spot basis at the decision minute
+        if mode == "perp":                                 # perp/spot basis at the decision minute
+            if np.isfinite(self.pcf[t_dec]) and np.isfinite(self.cf[t_dec]):
+                ratio = float(self.pcf[t_dec]) / float(self.cf[t_dec])
+            elif np.isfinite(spot_ref) and spot_ref > 0:   # no perp print in 5 min: the entry print vs spot
+                ratio = px_e / spot_ref
         tp = math.ceil(tp_spot * ratio / self.tick - 1e-9) * self.tick
         if tp <= px_e:                                     # never a take-profit at or below the entry price
             tp = math.ceil(px_e / self.tick - 1e-9) * self.tick + self.tick
