@@ -1,0 +1,14 @@
+804,064 prints in 744 windows
+timestamps with a non-zero sub-millisecond part: 99.9% (microsecond resolution)
+windows where (time, trade id) order equals trade-id order: 98.12%
+
+first order through our bid (728 parents; 461 with more than one print at that time)
+  maker side: {'buy': 689, 'sell': 33, 'buysell': 6}
+  price path in trade-id order (multi-print groups): {'down': 360, 'flat': 85, 'mixed': 8, 'up': 8}
+  consecutive trade ids: 100.00%
+  microseconds to the next print: median 102192; share < 1 ms 5.5%; share < 100 us 1.6%
+  next print within 1 ms, same side, at or below the group's low (a possible split order): 3.8%
+
+all same-timestamp groups at or below our price in the fill minute: 87,164 (30,780 multi-print)
+  mixed maker sides: 0.039%; consecutive trade ids: 99.99%
+  price path (multi-print): {'down': 0.4026, 'up': 0.3236, 'flat': 0.2727, 'mixed': 0.0011}
