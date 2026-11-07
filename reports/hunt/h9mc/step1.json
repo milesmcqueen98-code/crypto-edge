@@ -1,0 +1,262 @@
+{
+ "definitions": "before any Step-1 number was computed (this file is committed before it first runs):\n- Days: DEV trading days = weekdays with US holidays dropped (hcommon.US_HOLIDAYS), from each perp's first full day\n  through 2026-05-31. Nothing dated 2026-06-01 or later enters any statistic here (asserted).\n- Windows on the ET clock (America/New_York, DST-aware): 4 pm = [15:30, 16:30); control = [13:30, 14:30).\n- Measure 1, aggressive-sell share = USD volume of prints whose maker side is BUY (an aggressive seller hit a bid)\n  divided by all USD volume.\n  T1 (primary): per day, pool the USD volume of every coin with prints in both windows into one share per window;\n  d1 = share(4 pm) - share(control); paired t = mean(d1) / sd(d1) * sqrt(days). Pass if t >= 2.\n- Measure 2, basis residual e (H1's definition): b = log(perp close / spot close) on minutes where both traded;\n  bbar = trailing 24 h median of b known at t-1; e = b - bbar. Sub-windows [15:55, 16:05) and, shifted by the same\n  two hours, [13:55, 14:05). Per coin-day: mean e over valid minutes in each sub-window (at least one in each).\n  T2 (primary): per day, the mean across coins of (mean e at 4 pm - mean e in control) weighted by the coin's USD\n  perp volume in the two Step-1 windows that day (1-minute candles); paired t across days. Pass if t <= -2.\n- Measure 3 (information): return gap = perp log return - spot log return over [15:45, 16:05) minus the same over\n  [13:45, 14:05); prices = the last 1-minute close before each boundary, at most 15 minutes stale; pooled as T2.\n- Step 2 is built only if T1 and T2 both pass. Everything else below (equal-weighted and z versions, per coin, per\n  month, per weekday, minute profiles, R1's 16:00-16:02 check, weekend/holiday placebo days) is information only.",
+ "T1_aggsell_pooled": {
+  "mean": 0.02719550347184216,
+  "t": 4.587724498698927,
+  "t_nw": 3.6737141325719023,
+  "n": 217,
+  "share_pos": 0.6129032258064516,
+  "share_4pm": 0.532183682007063,
+  "share_ctrl": 0.5048447858773693
+ },
+ "T1_info_equal_weighted": {
+  "mean": 0.05802981601300281,
+  "t": 9.71640339282368,
+  "t_nw": 8.438257435693185,
+  "n": 217,
+  "share_pos": 0.7649769585253456
+ },
+ "T1_info_R1_1600_1602": {
+  "mean": 0.04079767364396818,
+  "t": 2.2168635722036822,
+  "t_nw": 2.0288961863521395,
+  "n": 217,
+  "share_pos": 0.543778801843318
+ },
+ "info_log_volume_ratio_4pm_vs_ctrl": {
+  "mean": 0.4814335865018573,
+  "t": 12.656036053508368,
+  "t_nw": 9.114466494048491,
+  "n": 217,
+  "share_pos": 0.8202764976958525
+ },
+ "placebo_weekend_holiday_T1": {
+  "mean": 0.01776156638493245,
+  "t": 1.0412514239441555,
+  "t_nw": 1.0997431677944833,
+  "n": 99,
+  "share_pos": 0.5757575757575758
+ },
+ "T2_basis_vw_bp": {
+  "mean": -2.6136672124045703,
+  "t": -7.789793209007296,
+  "t_nw": -4.5212859728318735,
+  "n": 217,
+  "share_pos": 0.3087557603686636,
+  "e_4pm_bp": -2.7923996124631274,
+  "e_ctrl_bp": -0.17253149916730265
+ },
+ "T2_info_equal_weighted_bp": {
+  "mean": -3.3091947131926425,
+  "t": -10.205626703625752,
+  "t_nw": -6.518243842230139,
+  "n": 217,
+  "share_pos": 0.18433179723502305
+ },
+ "T2_info_z_equal_weighted": {
+  "mean": -0.4616826746366714,
+  "t": -11.231921587476524,
+  "t_nw": -7.204080542859614,
+  "n": 217,
+  "share_pos": 0.19815668202764977
+ },
+ "T3_info_return_gap_vw_bp": {
+  "mean": -0.7080572652189785,
+  "t": -2.0357588543549228,
+  "t_nw": -2.0155730580354896,
+  "n": 217,
+  "share_pos": 0.39631336405529954
+ },
+ "placebo_weekend_holiday_T2": {
+  "mean": -0.2596592186094728,
+  "t": -0.7189364764106213,
+  "t_nw": -0.7926426718410945,
+  "n": 98,
+  "share_pos": 0.47959183673469385
+ },
+ "pass_T1": true,
+ "pass_T2": true,
+ "pass_step1": true,
+ "by_month": [
+  {
+   "month": "2025-07",
+   "days": 9,
+   "d1_mean": -0.024984563522679845,
+   "d1_t": -0.7069820896905572,
+   "d2_mean_bp": -16.251324700642325,
+   "d2_t": -4.2151811111299,
+   "d3_mean_bp": -3.161235965760636,
+   "d3_t": -0.6682110783957913,
+   "log_vol_ratio": 0.8313274700597211
+  },
+  {
+   "month": "2025-08",
+   "days": 21,
+   "d1_mean": 0.08643202432051507,
+   "d1_t": 3.880334076407408,
+   "d2_mean_bp": -5.779403986321927,
+   "d2_t": -6.675881250983909,
+   "d3_mean_bp": -1.2337558340125683,
+   "d3_t": -0.8340588158948384,
+   "log_vol_ratio": 0.965235232702223
+  },
+  {
+   "month": "2025-09",
+   "days": 21,
+   "d1_mean": 0.08286829054862455,
+   "d1_t": 3.674257075033268,
+   "d2_mean_bp": -4.183515977620518,
+   "d2_t": -4.4183760190852865,
+   "d3_mean_bp": -3.1063111116178472,
+   "d3_t": -4.820632725393059,
+   "log_vol_ratio": 0.6970897320081386
+  },
+  {
+   "month": "2025-10",
+   "days": 23,
+   "d1_mean": 0.04466999380606103,
+   "d1_t": 3.798884281633378,
+   "d2_mean_bp": -3.27785182572883,
+   "d2_t": -7.707025245174529,
+   "d3_mean_bp": -0.8960252888948813,
+   "d3_t": -1.2841917821621573,
+   "log_vol_ratio": 0.4853543642237922
+  },
+  {
+   "month": "2025-11",
+   "days": 19,
+   "d1_mean": 0.010127348914182406,
+   "d1_t": 0.7052393842732035,
+   "d2_mean_bp": -1.8769829137668104,
+   "d2_t": -2.719758408876215,
+   "d3_mean_bp": -1.5577772232934084,
+   "d3_t": -2.084767897320381,
+   "log_vol_ratio": 0.20974364836664017
+  },
+  {
+   "month": "2025-12",
+   "days": 22,
+   "d1_mean": 0.007680865457546033,
+   "d1_t": 0.5132445274561226,
+   "d2_mean_bp": -1.3741683256946844,
+   "d2_t": -2.6353399875896755,
+   "d3_mean_bp": -0.2754298825317015,
+   "d3_t": -0.37319232468882885,
+   "log_vol_ratio": 0.27635357808898026
+  },
+  {
+   "month": "2026-01",
+   "days": 20,
+   "d1_mean": 0.017381831333054584,
+   "d1_t": 1.0463285834249623,
+   "d2_mean_bp": -0.14943233015342128,
+   "d2_t": -0.24117324881751215,
+   "d3_mean_bp": 1.1592190017927277,
+   "d3_t": 1.0445906956515814,
+   "log_vol_ratio": 0.35818452942457457
+  },
+  {
+   "month": "2026-02",
+   "days": 19,
+   "d1_mean": 0.001785853456351744,
+   "d1_t": 0.1464338770162968,
+   "d2_mean_bp": -0.9967309378744452,
+   "d2_t": -1.4771033075456814,
+   "d3_mean_bp": 0.40180845059705783,
+   "d3_t": 0.3362347683705161,
+   "log_vol_ratio": 0.07739083077831396
+  },
+  {
+   "month": "2026-03",
+   "days": 22,
+   "d1_mean": -0.0052191173465847155,
+   "d1_t": -0.2631129034485556,
+   "d2_mean_bp": -0.19229934241444668,
+   "d2_t": -0.44818648838387665,
+   "d3_mean_bp": 0.16278859171371324,
+   "d3_t": 0.16860827879936563,
+   "log_vol_ratio": 0.23347708945390266
+  },
+  {
+   "month": "2026-04",
+   "days": 21,
+   "d1_mean": 0.011014712991901456,
+   "d1_t": 0.664282590822816,
+   "d2_mean_bp": -0.5668593589605402,
+   "d2_t": -0.7887387023757055,
+   "d3_mean_bp": 0.5239502481091314,
+   "d3_t": 0.5996995683920712,
+   "log_vol_ratio": 0.6441290684606964
+  },
+  {
+   "month": "2026-05",
+   "days": 20,
+   "d1_mean": 0.03420569761651056,
+   "d1_t": 1.454468411526059,
+   "d2_mean_bp": -1.6168203265315966,
+   "d2_t": -2.7306642127591196,
+   "d3_mean_bp": -1.1596567762385779,
+   "d3_t": -1.51180146485748,
+   "log_vol_ratio": 0.6777467794218535
+  }
+ ],
+ "by_weekday": [
+  {
+   "weekday": "Friday",
+   "days": 44,
+   "d1_mean": 0.03151644820840281,
+   "d1_t": 2.4745078640531544,
+   "d2_mean_bp": -2.975417954521468,
+   "d2_t": -3.144529880008396,
+   "d3_mean_bp": -0.6641696249484652,
+   "d3_t": -0.7628327999352434,
+   "log_vol_ratio": 0.4874596599843119
+  },
+  {
+   "weekday": "Monday",
+   "days": 41,
+   "d1_mean": 0.01898863153672872,
+   "d1_t": 1.433564453898834,
+   "d2_mean_bp": -2.205422294094005,
+   "d2_t": -2.9488426679971065,
+   "d3_mean_bp": -1.545480220876014,
+   "d3_t": -1.860011054151562,
+   "log_vol_ratio": 0.5905140169481562
+  },
+  {
+   "weekday": "Thursday",
+   "days": 42,
+   "d1_mean": 0.021694381810994774,
+   "d1_t": 1.4730067057999263,
+   "d2_mean_bp": -1.9961665769515817,
+   "d2_t": -3.6298747869321466,
+   "d3_mean_bp": -0.5368832441661395,
+   "d3_t": -0.5731266061346306,
+   "log_vol_ratio": 0.403959519584415
+  },
+  {
+   "weekday": "Tuesday",
+   "days": 45,
+   "d1_mean": 0.015569976592084794,
+   "d1_t": 1.2386426339164338,
+   "d2_mean_bp": -2.949501359496688,
+   "d2_t": -3.92312782804953,
+   "d3_mean_bp": -0.2884730888983734,
+   "d3_t": -0.4444012064123474,
+   "log_vol_ratio": 0.5835544552508481
+  },
+  {
+   "weekday": "Wednesday",
+   "days": 45,
+   "d1_mean": 0.04720785903352335,
+   "d1_t": 3.6180991122168624,
+   "d2_mean_bp": -2.872411636126124,
+   "d2_t": -4.064737102402804,
+   "d3_mean_bp": -0.5673308609658815,
+   "d3_t": -0.9411849493294118,
+   "log_vol_ratio": 0.34634529395300684
+  }
+ ],
+ "coverage_total": 1.0000496513931463,
+ "n_dev_trading_days": 217
+}
