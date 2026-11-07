@@ -27,7 +27,9 @@ Fills (candles): the minute opens above the bid and its low is at or below bid -
   whole contracts, target notional 1x sleeve capital. Take-profit post-only (one-tick trade-through; volume above it
   spread over the range, <= theta); else a market exit at the open of the first tradable minute H minutes after the
   fill. No stop. One position per coin; gross <= 2x across coins (later fills trimmed, whole contracts).
-Prints (fixed before any run): the gate series of the frozen variant uses perp prints for every post-launch trade:
+Prints (fixed before any run; units fixed after the first HOLD read, logged deviation: Coinbase perp print sizes are
+  contracts, converted to coins with the contract size): the gate series of the frozen variant uses perp prints for
+  every post-launch trade:
   a fill needs a print at or below bid - 1 tick in the candle fill minute; size <= theta x the volume of prints
   strictly below the bid from that print while the price stays below it (<= 15 minutes), never above the candle size;
   take-profit volume = prints strictly above it after the fill, <= theta; the market exit is priced at the first print
@@ -725,15 +727,18 @@ def print_check(pr, t, tick, theta):
     """Re-evaluate one trade on perp prints (sorted by time). Returns the print-based fill, size, take-profit and
     market exit. pr: DataFrame time, price, size."""
     out = dict(p_fill=False, p_qty=0.0, p_q_tp=0.0, p_tp_ts=pd.NaT, p_x_ts=pd.NaT, p_x_px=np.nan, p_through=0.0,
-               p_n=int(len(pr)))
+               p_n=int(len(pr)), p_vol_fill_min_contracts=0.0)
     if len(pr) == 0:
         return out
+    csize = common.PERP[t.coin][1]
     tm = pr.time.to_numpy()
     px = pr.price.to_numpy()
-    sz = pr["size"].to_numpy()
+    sz = pr["size"].to_numpy() * csize                 # perp print sizes are contracts: convert to coins
     f0 = np.datetime64(t.fill_ts)
     f1 = f0 + np.timedelta64(60, "s")
-    hit = np.nonzero((tm >= f0) & (tm < f1) & (px <= t.bid - tick + 1e-12))[0]
+    inmin = (tm >= f0) & (tm < f1)
+    out["p_vol_fill_min_contracts"] = float(pr["size"].to_numpy()[inmin].sum())
+    hit = np.nonzero(inmin & (px <= t.bid - tick + 1e-12))[0]
     if not len(hit):
         return out
     i0 = hit[0]
@@ -745,7 +750,6 @@ def print_check(pr, t, tick, theta):
             break
         vol += sz[i]
         i += 1
-    csize = common.PERP[t.coin][1]
     q = min(t.qty, math.floor(theta * vol / csize + 1e-9) * csize)
     out.update(p_fill=q > 0, p_qty=q, p_through=vol)
     if q <= 0:
@@ -814,6 +818,8 @@ def run_prints(coin):
     ok_w = P.groupby("w").ok.all()
     P = P[P.ok & P.price.notna()].sort_values("time").reset_index(drop=True)
     starts = np.array([np.datetime64(m[0]) for m in merged])
+    raw = pd.read_parquet(os.path.join(common.DATA, "cfm", f"{coin}.parquet")).drop_duplicates("ts").set_index("ts")
+    cvol = raw["volume"]                                # candle volume in contracts (completeness check)
     rows = []
     for t in T.itertuples():
         w = int(np.searchsorted(starts, np.datetime64(t.fill_ts.floor("min")), side="right") - 1)
@@ -821,7 +827,8 @@ def run_prints(coin):
         pr = P[(P.time >= s) & (P.time < e)][["time", "price", "size"]]
         theta = 0.25 if "_0.25" in t.file else 0.5
         r = print_check(pr, t, tick, theta)
-        r.update(file=t.file, row=t.row, fetch_ok=bool(ok_w.get(w, False)))
+        r.update(file=t.file, row=t.row, fetch_ok=bool(ok_w.get(w, False)),
+                 c_vol_fill_min_contracts=float(cvol.get(t.fill_ts, np.nan)))
         rows.append(r)
     R = pd.DataFrame(rows)
     R.to_parquet(os.path.join(OUT, "full", f"prints_{coin}.parquet"))
