@@ -57,10 +57,13 @@ SCORE0 = {"bitstamp": pd.Timestamp("2025-01-01"),     # scored days start (2024 
 ORDER_USD, MAX_OPEN, TP_SHARE, SCAN_MIN = 5000.0, 6, 0.6, 15
 MIN_MED, MIN_SD = 30, 100                             # observations in the 24h median / 3-day std windows
 KS, HS, REFS = (3.0, 4.0, 6.0), (30, 60), ("bitstamp", "perp")
+if SMOKE and os.environ.get("H6_REFS"):
+    REFS = tuple(os.environ["H6_REFS"].split(","))
 TICKS = 10.0 ** np.arange(-10, 1)
 MIN_TRADES = 40
-AI_FEATS = ["zgap", "depth_bp", "z_res15", "z_res60", "btc_z5", "btc_z15", "btc_z60", "vol_cb15", "vol_ref15",
-            "hour_utc", "weekend", "coin_id"]
+THETAS = (0.5, 0.25)                                  # theta 0.5 for the gates, 0.25 reported
+AI_FEATS = ["zgap", "z_res15", "z_res60", "btc_z5", "btc_z15", "btc_z60", "vol_cb15", "vol_ref15", "hour_utc",
+            "weekend", "coin_id"]                    # SPEC: gap z, coin residual vs BTC, BTC moves, volumes, hour, weekend, coin
 
 
 def inc_trades():
@@ -188,8 +191,9 @@ class Lev:
         F = np.exp(self.lfair[cand])
         TP = np.ceil(np.exp(np.log(Lc) + TP_SHARE * (np.log(F) - np.log(Lc))) / tc - 1e-9) * tc
         TP = np.maximum(TP, Lc + tc)
-        thr, thr0, i_tp, tp_usd, i_x, px_x, mae = scan(cand, Lc, TP, self.O, self.Hh, self.Lo, self.V, self.tick,
-                                                 np.array(HS, np.int64), SCAN_MIN)
+        thr, thr0, i_tp, tp_usd, i_x, px_x, mae, i_full = scan(cand, Lc, TP, self.O, self.Hh, self.Lo, self.V,
+                                                               self.tick, np.array(HS, np.int64), SCAN_MIN,
+                                                               np.array(THETAS, np.float64), ORDER_USD)
         T = len(idx)
         lc = np.log(pd.Series(self.Cl).ffill().to_numpy())
         lr = np.log(pd.Series(self.rc).ffill().to_numpy())
@@ -203,6 +207,8 @@ class Lev:
             D[f"i_tp{H}"] = i_tp[:, h]
             D[f"tp_usd{H}"] = tp_usd[:, h]
             D[f"i_x{H}"] = i_x[:, h]
+            for q, th in enumerate(THETAS):
+                D[f"i_full{H}_{th}"] = i_full[:, h, q]
             D[f"ret_tp{H}"] = TP / Lc - 1.0
             D[f"ret_x{H}"] = px_x[:, h] / Lc - 1.0
             D[f"mae{H}"] = mae[:, h]
@@ -212,8 +218,9 @@ class Lev:
 
 
 @numba.njit(cache=True)
-def scan(cand, L, TP, O, Hh, Lo, V, tick, Hs, scan_min):
-    n, nh, T = len(cand), len(Hs), len(O)
+def scan(cand, L, TP, O, Hh, Lo, V, tick, Hs, scan_min, thetas, order_usd):
+    n, nh, T, nt = len(cand), len(Hs), len(O), len(thetas)
+    i_full = np.full((n, nh, nt), -1, np.int64)
     thr = np.zeros(n)
     thr0 = np.zeros(n)
     i_tp = np.full((n, nh), -1, np.int64)
@@ -242,6 +249,7 @@ def scan(cand, L, TP, O, Hh, Lo, V, tick, Hs, scan_min):
         for h in range(nh):
             H = Hs[h]
             first, usd, mn = -1, 0.0, Lo[i0]
+            done = np.zeros(nt, np.bool_)
             for i in range(i0 + 1, min(i0 + H + 1, T)):
                 hi = Hh[i]
                 if not (hi == hi):
@@ -256,6 +264,11 @@ def scan(cand, L, TP, O, Hh, Lo, V, tick, Hs, scan_min):
                     rng = hi - lo
                     frac = 1.0 if rng <= 0 else min(1.0, (hi - tp) / rng)
                     usd += V[i] * frac * 0.5 * (tp + hi)
+                    for q in range(nt):
+                        size = min(order_usd, thetas[q] * thr[a])
+                        if not done[q] and thetas[q] * usd >= size:
+                            done[q] = True
+                            i_full[a, h, q] = i
             i_tp[a, h] = first
             tp_usd[a, h] = usd
             mae[a, h] = mn / lv - 1.0
@@ -264,7 +277,7 @@ def scan(cand, L, TP, O, Hh, Lo, V, tick, Hs, scan_min):
                     i_x[a, h] = i
                     px_x[a, h] = O[i]
                     break
-    return thr, thr0, i_tp, tp_usd, i_x, px_x, mae
+    return thr, thr0, i_tp, tp_usd, i_x, px_x, mae, i_full
 
 
 def btc_series(idx, end):
@@ -284,12 +297,16 @@ def btc_series(idx, end):
 # ------------------------------------------------------------------------------------------------ the book
 def run_book(C, Z, lo, hi, theta, H, quiet=None, allow=None):
     """Sequential book over candidate minutes in [lo, hi). C: candidates of one (ref, k), Z: (T, n_coins) ranking key
-    (NaN = no bid possible). allow: optional (U minutes, bool[T_U, n_coins]) AI permission. Returns the fills."""
+    (NaN = no bid possible). allow: optional bool array over C's rows (AI permission). The bid slots are assigned
+    from the t-1 ranking alone; a bid the AI blocks keeps its slot (whether a coin is a candidate is minute-t
+    information, so freeing the slot would look ahead). Returns the fills."""
     sub = C[(C.i0 >= lo) & (C.i0 < hi)].sort_values(["i0", "coin_id"])
+    al = None if allow is None else np.asarray(allow)[sub.index.to_numpy()]
     i0 = sub.i0.to_numpy()
     coin = sub.coin_id.to_numpy()
     thr = sub.thr_usd.to_numpy()
     itp, tpu, ix = sub[f"i_tp{H}"].to_numpy(), sub[f"tp_usd{H}"].to_numpy(), sub[f"i_x{H}"].to_numpy()
+    ifull = sub[f"i_full{H}_{theta}"].to_numpy()
     busy = np.full(Z.shape[1], -1, np.int64)
     keep, sizes, tpss, ends, nslot, nelig = [], [], [], [], [], []
     if len(i0) == 0:
@@ -308,10 +325,6 @@ def run_book(C, Z, lo, hi, theta, H, quiet=None, allow=None):
             continue
         z = Z[t]
         ok = free & ~np.isnan(z)
-        if allow is not None:
-            U, A = allow
-            p = np.searchsorted(U, t)
-            ok &= A[p] if (p < len(U) and U[p] == t) else False
         ids = np.nonzero(ok)[0]
         if len(ids) > slots:
             ids = ids[np.argsort(z[ids], kind="stable")[:slots]]
@@ -319,8 +332,10 @@ def run_book(C, Z, lo, hi, theta, H, quiet=None, allow=None):
         for r in range(s, e):
             c = coin[r]
             if c not in bid:
-                if busy[c] < t and (allow is None or ok[c]):
+                if busy[c] < t:
                     n_noslot += 1
+                continue
+            if al is not None and not al[r]:
                 continue
             size = min(ORDER_USD, theta * thr[r])
             if size <= 1.0:
@@ -329,7 +344,7 @@ def run_book(C, Z, lo, hi, theta, H, quiet=None, allow=None):
             rem = size - tps
             if rem > 1e-9 and ix[r] < 0:
                 continue                                         # no exit candle (end of data)
-            end = ix[r] if rem > 1e-9 else itp[r]
+            end = ix[r] if rem > 1e-9 else max(itp[r], ifull[r])  # full take-profit: when the last part sells
             busy[c] = end                                        # free again from the minute after the exit
             keep.append(r)
             sizes.append(size)
@@ -372,28 +387,28 @@ def venue_led(F, H):
     d_rf = F["rf_0"] - F["rf_m6"]
     down, up = np.maximum(0.0, -d_cb), np.maximum(0.0, d_rf)
     tot = down + up
-    share = np.where(tot > 0, down / tot.where(tot > 0, 1.0), 0.5)
+    share = np.where(tot > 0, down / tot.where(tot > 0, 1.0), np.nan)
+    lead = np.where(tot > 0, np.where(share > 0.5, "cb", "ref"), "none")
     cl_cb = np.log1p(F[f"ret_x{H}"].fillna(0.0))                  # Coinbase from the bid to the time exit
     cl_rf = F[f"rf_x{H}"] - F["rf_0"]                             # reference over the same hold
     up_cb, dn_rf = np.maximum(0.0, cl_cb), np.maximum(0.0, -cl_rf)
     tc = up_cb + dn_rf
     close_ref = np.where(tc > 0, dn_rf / np.where(tc > 0, tc, 1.0), 0.5)
-    return pd.DataFrame(dict(cb_share_open=share, cb_led=share > 0.5, cb_after_bp=cl_cb * 1e4,
+    return pd.DataFrame(dict(cb_share_open=share, lead=lead, cb_led=lead == "cb", cb_after_bp=cl_cb * 1e4,
                              ref_after_bp=cl_rf * 1e4, ref_share_close=close_ref), index=F.index)
 
 
 def overlap(F, inc):
     """Share of fills in the same coin and minute (or within 5 minutes) as an incumbent parent fill."""
     if len(F) == 0:
-        return dict(same_minute=np.nan, within5=np.nan)
-    s = {(c, t) for c, t in zip(inc.coin, inc.ts)}
-    same = np.array([(c, t) in s for c, t in zip(F.coin, F.ts)])
-    near = np.zeros(len(F), bool)
-    for j, (c, t) in enumerate(zip(F.coin, F.ts)):
-        for dm in range(-5, 6):
-            if (c, t + pd.Timedelta(minutes=dm)) in s:
-                near[j] = True
-                break
+        return dict(same_minute=np.nan, within5=np.nan, n=0)
+    mk = lambda ts: np.asarray(pd.DatetimeIndex(ts).as_unit("s").asi8 // 60, np.int64)  # noqa: E731
+    keys = {}
+    for c, m in zip(inc.coin.to_numpy(), mk(inc.ts)):
+        keys.setdefault(c, set()).add(int(m))
+    fm, fc = mk(F.ts), F.coin.to_numpy()
+    same = np.array([int(m) in keys.get(c, ()) for c, m in zip(fc, fm)])
+    near = np.array([any((int(m) + d) in keys.get(c, ()) for d in range(-5, 6)) for c, m in zip(fc, fm)])
     return dict(same_minute=float(same.mean()), within5=float(near.mean()), n=int(len(F)))
 
 
@@ -434,7 +449,6 @@ def ai_frame(levs_fn, coins, idx, btc, k, C):
             f[nm] = shift((v15 / avg.where(avg > 0)).to_numpy(), 1)[u]
         D = pd.DataFrame(f, index=rows)
         D["zgap"] = lv.z[u]
-        D["depth_bp"] = k * lv.sig[u] * 1e4
         for L in (5, 15, 60):
             D[f"btc_z{L}"] = btc[f"btc_z{L}"][u]
         ts = idx[u]
@@ -551,15 +565,13 @@ class Run:
         X = ai_frame(lambda c: self.lev(c, v["ref"]), self.coins, self.idx, self.btc, v["k"], C)
         y = ai_labels(C, v["H"])
         pred, thr50 = ai_walk_forward(X, y, q_last)
-        U = np.unique(C.i0.to_numpy())
+        assert len(X) == len(C) and (X.index.to_numpy() == np.arange(len(C))).all()
         out = {}
         for mode in ("pos", "q50"):
-            okr = np.ones(len(X), bool)
+            okr = np.ones(len(X), bool)                          # no model yet: the filter is off
             m = np.isfinite(pred)
             okr[m] = pred[m] > 0.0 if mode == "pos" else pred[m] >= thr50[m]
-            A = np.ones((len(U), len(self.coins)), bool)
-            A[np.searchsorted(U, X.t.to_numpy()), X.coin_id.to_numpy()] = okr
-            out[mode] = (U, A)
+            out[mode] = okr
         P = pd.DataFrame(dict(ts=X.ts.to_numpy(), coin_id=X.coin_id.to_numpy(), pred=pred, thr50=thr50, y=y))
         return out, P
 
@@ -604,7 +616,9 @@ def evaluate(R, v, F, last, inc_tr):
         st["cb_led_share"] = float(vl.cb_led.mean())
         p2 = pnl(F, v["H"], 2.0)
         st["net_bp_2x_cbled"] = float(p2[vl.cb_led].sum() / F["size"][vl.cb_led].sum() * 1e4) if vl.cb_led.any() else np.nan
-        st["net_bp_2x_refled"] = float(p2[~vl.cb_led].sum() / F["size"][~vl.cb_led].sum() * 1e4) if (~vl.cb_led).any() else np.nan
+        rl = (vl.lead == "ref").to_numpy()
+        st["ref_led_share"] = float(rl.mean())
+        st["net_bp_2x_refled"] = float(p2[rl].sum() / F["size"][rl].sum() * 1e4) if rl.any() else np.nan
         st["ref_share_close_med"] = float(vl.ref_share_close.median())
         st.update({f"overlap_{a}": b for a, b in overlap(F, inc_tr).items()})
         d = s2 * 30e3
@@ -710,21 +724,28 @@ def log_trials():
 
 
 def final():
-    fz = json.load(open(os.path.join(OUT, "frozen.json")))
+    out_dir, end, last = OUT, FULL_END, gates.END
+    if SMOKE:                                                     # mechanics only: a variant from the environment
+        out_dir, end = DEV_OUT, min(pd.Timestamp(os.environ["H6_END"]), gates.HOLD0)
+        last = end - pd.Timedelta(days=1)
+        fz = dict(params=json.loads(os.environ["H6_VARIANT"]))
+    else:
+        fz = json.load(open(os.path.join(OUT, "frozen.json")))
     v = fz["params"]
-    R = Run(FULL_END)
+    R = Run(end)
     R.build(v["ref"], (v["k"],))
     allow = None
     if v.get("ai"):
         allows, P = R.ai_allow(v, "2026Q4")
         allow = allows[v["ai"]]
-    last = gates.END
     days = pd.date_range(SCORE0[v["ref"]], last, freq="D")
     cols, out = {}, {}
     inc_tr = inc_trades()
     for theta, sfx in ((0.5, ""), (0.25, "_t25")):
         F = R.book(v, theta=theta, allow=allow)
         F = F[F.ts < last + pd.Timedelta(days=1)]
+        if len(F) == 0:
+            raise RuntimeError("the frozen variant has no fills")
         for C in (30e3, 50e3):
             for m in (2.0, 1.0):
                 cols[f"s{int(C / 1e3)}_{int(m)}x{sfx}"] = daily(F, v["H"], m, C, R.idx, days)
@@ -741,7 +762,7 @@ def final():
                 st[f"{nm}_net_bp_2x"] = float(F.pnl2[msk].sum() / F["size"][msk].sum() * 1e4) if msk.any() else np.nan
             st["ref_share_close_med"] = float(F.ref_share_close.median())
             st["closed_by_ref_share"] = float((F.ref_share_close > 0.5).mean())
-            for nm, msk in (("cb_led", F.cb_led), ("ref_led", ~F.cb_led)):
+            for nm, msk in (("cb_led", F.lead == "cb"), ("ref_led", F.lead == "ref"), ("no_leader", F.lead == "none")):
                 st[f"{nm}_trades"] = int(msk.sum())
                 st[f"{nm}_net_bp_2x"] = float(F.pnl2[msk].sum() / F["size"][msk].sum() * 1e4) if msk.any() else np.nan
                 st[f"{nm}_cb_after_bp"] = float(F.cb_after_bp[msk].median()) if msk.any() else np.nan
@@ -754,17 +775,20 @@ def final():
             H = v["H"]
             keep = ["coin", "ts", "i0", "k", "L", "F", "TP", "tick", "sig_bp", "z", "thr_usd", "thr_m0", "size", "tp_size",
                     "end", f"i_tp{H}", f"i_x{H}", f"ret_tp{H}", f"ret_x{H}", f"mae{H}", "pnl2", "pnl1", "cb_share_open",
-                    "cb_led", "cb_after_bp", "ref_after_bp", "ref_share_close", "slots", "n_elig"]
+                    "lead", "cb_led", "cb_after_bp", "ref_after_bp", "ref_share_close", "slots", "n_elig"]
             G = F[keep].copy()
             for c_ in G.columns:
                 if G[c_].dtype == np.float64 and c_ not in ("L", "F", "TP", "tick"):
                     G[c_] = G[c_].astype(np.float32)
-            G.to_parquet(os.path.join(OUT, "fills.parquet"))
+            G.to_parquet(os.path.join(out_dir, "fills.parquet"))
     D = pd.DataFrame(cols)
     D.index.name = "day"
-    D.to_parquet(os.path.join(OUT, "daily.parquet"))
+    D.to_parquet(os.path.join(out_dir, "daily.parquet"))
     out["ticks"] = {c: {str(m): t for m, t in tm.items()} for (r, c), tm in R.ticks.items()}
-    json.dump(out, open(os.path.join(OUT, "final_stats.json"), "w"), indent=1, default=str)
+    json.dump(out, open(os.path.join(out_dir, "final_stats.json"), "w"), indent=1, default=str)
+    if SMOKE:
+        print("smoke final ok:", {k_: out["theta0.5"].get(k_) for k_ in ("trades", "dev_trades", "hold_trades", "overlap")})
+        return
     print(json.dumps({k_: v_ for k_, v_ in out["theta0.5"].items() if k_ not in ("by_coin",)}, indent=1, default=str))
 
 
