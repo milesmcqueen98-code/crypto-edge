@@ -802,11 +802,13 @@ def run_prints(coin):
             merged.append([r.s, r.e])
     fe = common.TradeFetcher()
     prints = []
+    lost = 0
     t0 = time.time()
     for i, (s, e) in enumerate(merged):
         try:
             d = fe.window(pid, s, e)
             d["ok"] = True
+            lost += int(getattr(fe, "lost_seconds", 0))
         except Exception as ex:  # noqa: BLE001
             print("fetch failed", s, e, repr(ex)[:200], flush=True)
             d = pd.DataFrame(dict(time=[pd.Timestamp(s)], price=[np.nan], size=[0.0], ok=[False]))
@@ -833,7 +835,10 @@ def run_prints(coin):
     R = pd.DataFrame(rows)
     R.to_parquet(os.path.join(OUT, "full", f"prints_{coin}.parquet"))
     P.to_parquet(os.path.join(OUT, "full", f"rawprints_{coin}.parquet"))
-    print(f"{coin}: {len(T)} trade rows, {len(merged)} windows, {len(P)} prints, {fe.n_req} requests", flush=True)
+    R["lost_seconds_total"] = lost
+    R.to_parquet(os.path.join(OUT, "full", f"prints_{coin}.parquet"))
+    print(f"{coin}: {len(T)} trade rows, {len(merged)} windows, {len(P)} prints, {fe.n_req} requests, "
+          f"lost seconds {lost}", flush=True)
 
 
 def run_smoke(outdir):
