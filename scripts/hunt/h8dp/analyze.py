@@ -156,5 +156,24 @@ def mode_full():
     print(json.dumps(out, indent=1, default=str))
 
 
+def mode_compare():
+    """Pre-fix (old TradeFetcher paging) vs fixed prints: the frozen variant's gate numbers side by side."""
+    keys = ["a", "full_t_alpha", "dev_t_alpha", "hold_t_alpha", "full_gain", "dev_gain", "hold_gain",
+            "full_sleeve_sharpe", "hold_sleeve_sharpe", "dsr", "G1", "G2", "G3", "G4", "G5"]
+    rows = {}
+    for tag, f in (("pre_fix", "gates_prefix.json"), ("fixed", "gates.json")):
+        g = json.load(open(os.path.join(OUT, f)))
+        r = {k: g["path_b_2x"][k] for k in keys}
+        r.update({"1x_full_t": g["path_b_1x_info"]["full_t_alpha"], "1x_hold_t": g["path_b_1x_info"]["hold_t_alpha"],
+                  "th025_full_t": g["path_b_2x_theta025_info"]["full_t_alpha"], "fills_scored": g["fills_scored"],
+                  "fills_hold": g["fills_hold"], "lots_scored": g["lots_scored"],
+                  "pnl_dev": g["pnl_usd_30k_2x"]["dev"], "pnl_hold": g["pnl_usd_30k_2x"]["hold"]})
+        r.update({f"book_{y}": v for y, v in g["path_b_2x"]["years"].items()})
+        rows[tag] = r
+    T = pd.DataFrame(rows)
+    T.to_csv(os.path.join(OUT, "fetchfix_compare.csv"))
+    print(T.to_string())
+
+
 if __name__ == "__main__":
-    {"dev": mode_dev, "full": mode_full}[sys.argv[1]]()
+    {"dev": mode_dev, "full": mode_full, "compare": mode_compare}[sys.argv[1]]()
