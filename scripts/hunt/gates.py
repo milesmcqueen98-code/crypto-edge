@@ -45,7 +45,10 @@ N_PRIOR = 3000
 VZ_FLOOR = 1.1257       # variance of z = daily Sharpe * sqrt(days) across the wick v2 lab's 139 trials (455 days)
 A_GRID = (1.0, 0.7, 0.5)
 LAGS = 5
-LEDGER = os.path.join(ROOT, "reports", "hunt", "trials.csv")
+# One ledger for every builder: the main clone's copy when it exists (builders work in sparse worktrees).
+_MAIN_LEDGER = "/home/claude/crypto-edge/reports/hunt/trials.csv"
+LEDGER = os.environ.get("HUNT_LEDGER") or (_MAIN_LEDGER if os.path.isdir(os.path.dirname(_MAIN_LEDGER))
+                                           else os.path.join(ROOT, "reports", "hunt", "trials.csv"))
 INC = os.path.join(ROOT, "reports", "hunt", "incumbent_daily.parquet")
 
 
@@ -244,6 +247,15 @@ def path_a(cand, theta=0.5, variant="instant", days=ERA_DAYS):
     out["G5"] = bool((yr > 0).all())
     out["pass_G1_G5"] = all(out[g] for g in ("G1", "G2", "G3", "G4", "G5"))
     return out
+
+
+def dev_book(sleeve30, theta=0.5):
+    """The DEV book a builder logs as a trial: 0.7 x incumbent($70K) + 0.3 x sleeve($30K, 2x costs), over the
+    sleeve's own scored DEV days (pass the sleeve indexed by its scored days, zeros when idle)."""
+    s = pd.Series(sleeve30).astype(float)
+    s = s[s.index < HOLD0]
+    ri = incumbent(70e3, theta, "instant", s.index)
+    return 0.7 * ri + 0.3 * s
 
 
 def dev_screen(rs, ri=None, theta=0.5):

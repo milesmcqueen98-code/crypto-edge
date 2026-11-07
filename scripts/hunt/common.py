@@ -18,6 +18,16 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 
+def _data_root():
+    d = os.path.join(ROOT, "data")
+    if os.path.isdir(os.path.join(d, "minute")) or os.path.isdir(os.path.join(d, "cfm")):
+        return d
+    alt = "/home/claude/crypto-edge/data"               # builders' sparse worktrees read the main clone's data
+    return alt if os.path.isdir(alt) else d
+
+
+DATA = os.environ.get("HUNT_DATA") or _data_root()
+
 # ------------------------------------------------------------------ products
 # Coinbase Derivatives perp-style futures: (product id, contract size in coin units, tick in USD)
 PERP = {
@@ -81,7 +91,7 @@ def contract_ok(coin, price):
 def load_minute(coin, src="minute", start=None, end=None):
     """1-minute Coinbase spot OHLCV (minutes with trades only), indexed by ts. src: minute (2024-01 .. 2026-11),
     minute_early (2021-01 .. 2023-12), bitstamp."""
-    p = os.path.join(ROOT, "data", src, f"{coin}.parquet")
+    p = os.path.join(DATA, src, f"{coin}.parquet")
     if not os.path.exists(p):
         return None
     d = pd.read_parquet(p).drop_duplicates("ts").set_index("ts").sort_index()
@@ -95,7 +105,7 @@ def load_minute(coin, src="minute", start=None, end=None):
 
 def load_perp(coin):
     """1-minute Coinbase perp OHLCV in USD per coin (volume converted to coin units), minutes with trades only."""
-    p = os.path.join(ROOT, "data", "cfm", f"{coin}.parquet")
+    p = os.path.join(DATA, "cfm", f"{coin}.parquet")
     if not os.path.exists(p):
         return None
     d = pd.read_parquet(p).drop_duplicates("ts").set_index("ts").sort_index()
