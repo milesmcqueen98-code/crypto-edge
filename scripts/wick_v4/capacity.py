@@ -91,8 +91,8 @@ def main(art_dir):
     D.to_csv(os.path.join(OUT, "capacity_out.csv"), index=False)
     D["period"] = np.where(D.ts < SELECTION_END, "selection", "check")
     print(f"C1: {len(D)} events with trades ({(D.k == 4).sum()} parents)\n")
-    par = D[(D.k == 4) & D.bot]
-    print(f"Parent fills the bot takes: {len(par)}. V-hat on these 2 minutes is "
+    par = D[D.k == 4]                                    # the $1M rules take every signal
+    print(f"Parent fills: {len(par)}. V-hat on these 2 minutes is "
           f"{par.vhat.sum() / par.in_spot.sum():.0%} of the simulator's full capacity (dollar-weighted).\n")
     print("R = trades volume below the bid / simulator estimate, same minutes (dollar-weighted, 95% bootstrap interval):")
     for name, sub in (("selection", par[par.period == "selection"]), ("check", par[par.period == "check"]),
