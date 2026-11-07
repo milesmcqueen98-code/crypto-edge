@@ -1,0 +1,69 @@
+off switch (size_fn = 1.0) vs cached incumbent, every era and configuration (95s):
+  sel   S_0.5    max |daily diff| = 1.735e-17  (same day index: True, days 455)
+  chk   S_0.5    max |daily diff| = 8.674e-19  (same day index: True, days 219)
+  early S_0.5    max |daily diff| = 8.674e-18  (same day index: True, days 730)
+  sel   S_0.25   max |daily diff| = 1.908e-17  (same day index: True, days 455)
+  chk   S_0.25   max |daily diff| = 8.674e-19  (same day index: True, days 219)
+  early S_0.25   max |daily diff| = 7.806e-18  (same day index: True, days 730)
+  sel   base_0.5 max |daily diff| = 6.939e-18  (same day index: True, days 455)
+  chk   base_0.5 max |daily diff| = 8.674e-19  (same day index: True, days 219)
+  early base_0.5 max |daily diff| = 1.214e-17  (same day index: True, days 730)
+  sel   cap_1M   max |daily diff| = 5.204e-18  (same day index: True, days 455)
+  chk   cap_1M   max |daily diff| = 1.735e-18  (same day index: True, days 219)
+  early cap_1M   max |daily diff| = 3.036e-18  (same day index: True, days 730)
+  worst 1.908e-17
+C2a_margin_terciles (path return): gates {'G1': True, 'G2': True, 'G3': True, 'G4': True, 'pass': True}
+  S_0.5: pooled t +2.21 (vol-matched +1.04)
+    sel   inc  19.5% /  2.31  cand  22.4% /  2.65  t +1.81
+    chk   inc  15.1% /  2.31  cand  15.7% /  2.28  t +0.38
+    early inc  10.4% /  1.72  cand  11.6% /  1.84  t +1.30
+  S_0.25: pooled t +2.06 (vol-matched +1.16)
+    sel   inc  16.2% /  1.96  cand  18.6% /  2.23  t +1.38
+    chk   inc  13.1% /  1.98  cand  14.2% /  2.05  t +0.74
+    early inc   9.1% /  1.48  cand  10.3% /  1.69  t +1.37
+  base_0.5: pooled t +1.63 (vol-matched +0.38)
+    sel   inc  22.4% /  2.16  cand  25.6% /  2.65  t +1.98
+    chk   inc  17.6% /  2.61  cand  18.3% /  2.42  t +0.34
+    early inc  13.7% /  2.18  cand  14.2% /  1.86  t +0.42
+  cap_1M: pooled t +3.04 (vol-matched +1.62)
+    sel   inc  12.1% /  1.76  cand  14.9% /  2.13  t +2.59
+    chk   inc   6.9% /  0.97  cand   8.2% /  1.22  t +1.16
+    early inc   4.7% /  0.55  cand   5.5% /  0.87  t +1.33
+  (80s)
+C2b_drop_bottom (path sharpe): gates {'G1': False, 'G2': False, 'G3': False, 'G4': True, 'pass': False}
+  S_0.5: pooled t -1.61 (vol-matched -0.41)
+    sel   inc  19.5% /  2.31  cand  19.7% /  2.49  t +0.14
+    chk   inc  15.1% /  2.31  cand  12.2% /  1.86  t -1.26
+    early inc  10.4% /  1.72  cand   8.3% /  1.36  t -1.98
+  S_0.25: pooled t -0.98 (vol-matched +0.11)
+    sel   inc  16.2% /  1.96  cand  17.1% /  2.23  t +0.46
+    chk   inc  13.1% /  1.98  cand  11.0% /  1.63  t -0.96
+    early inc   9.1% /  1.48  cand   7.5% /  1.21  t -1.56
+  base_0.5: pooled t -1.74 (vol-matched +0.45)
+    sel   inc  22.4% /  2.16  cand  21.7% /  2.50  t -0.25
+    chk   inc  17.6% /  2.61  cand  14.9% /  2.37  t -1.11
+    early inc  13.7% /  2.18  cand  10.9% /  1.81  t -2.16
+  cap_1M: pooled t -1.30 (vol-matched +0.60)
+    sel   inc  12.1% /  1.76  cand  10.8% /  1.80  t -0.91
+    chk   inc   6.9% /  0.97  cand   5.5% /  0.64  t -0.91
+    early inc   4.7% /  0.55  cand   4.3% /  0.39  t -0.55
+  (60s)
+C6_stress (path return): gates {'G1': False, 'G2': False, 'G3': False, 'G4': False, 'pass': False}
+  S_0.5: pooled t -0.99 (vol-matched -2.49)
+    sel   inc  19.5% /  2.31  cand  14.2% /  1.44  t -1.70
+    chk   inc  15.1% /  2.31  cand  14.8% /  2.10  t -0.21
+    early inc  10.4% /  1.72  cand  11.6% /  1.60  t +1.42
+  S_0.25: pooled t -1.42 (vol-matched -2.75)
+    sel   inc  16.2% /  1.96  cand  10.4% /  0.93  t -1.76
+    chk   inc  13.1% /  1.98  cand  12.2% /  1.67  t -0.77
+    early inc   9.1% /  1.48  cand   9.8% /  1.33  t +0.75
+  base_0.5: pooled t -1.15 (vol-matched -1.79)
+    sel   inc  22.4% /  2.16  cand  15.3% /  1.33  t -1.78
+    chk   inc  17.6% /  2.61  cand  17.9% /  2.61  t +0.30
+    early inc  13.7% /  2.18  cand  15.0% /  2.04  t +1.60
+  cap_1M: pooled t +1.98 (vol-matched -1.00)
+    sel   inc  12.1% /  1.76  cand  12.8% /  1.68  t +0.72
+    chk   inc   6.9% /  0.97  cand   7.5% /  0.98  t +0.48
+    early inc   4.7% /  0.55  cand   5.9% /  0.85  t +2.26
+  (78s)
+total 333s

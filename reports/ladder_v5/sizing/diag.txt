@@ -1,0 +1,12 @@
+sel: incumbent recomputed vs cache, max |daily diff| = 1.735e-17
+sel C2a_margin_terciles: total diff +371.9 bp of capital over the era; 5 largest days +65.1 bp, 10 largest +266.4 bp; days up / down 46 / 61
+sel C2b_drop_bottom: total diff +33.9 bp of capital over the era; 5 largest days +269.1 bp, 10 largest +293.4 bp; days up / down 37 / 71
+sel C6_stress: total diff -651.5 bp of capital over the era; 5 largest days -664.3 bp, 10 largest -645.5 bp; days up / down 29 / 30
+chk: incumbent recomputed vs cache, max |daily diff| = 8.674e-19
+chk C2a_margin_terciles: total diff +37.5 bp of capital over the era; 5 largest days +185.1 bp, 10 largest +131.4 bp; days up / down 22 / 52
+chk C2b_drop_bottom: total diff -169.8 bp of capital over the era; 5 largest days +145.6 bp, 10 largest -7.6 bp; days up / down 20 / 54
+chk C6_stress: total diff -13.8 bp of capital over the era; 5 largest days -43.4 bp, 10 largest -35.2 bp; days up / down 17 / 12
+early: incumbent recomputed vs cache, max |daily diff| = 8.674e-18
+early C2a_margin_terciles: total diff +250.9 bp of capital over the era; 5 largest days +260.4 bp, 10 largest +346.4 bp; days up / down 50 / 74
+early C2b_drop_bottom: total diff -419.1 bp of capital over the era; 5 largest days +54.9 bp, 10 largest -52.8 bp; days up / down 32 / 87
+early C6_stress: total diff +240.1 bp of capital over the era; 5 largest days +74.1 bp, 10 largest +166.5 bp; days up / down 54 / 25
