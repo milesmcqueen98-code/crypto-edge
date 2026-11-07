@@ -119,9 +119,8 @@ stale-quote pick-offs, not by forced sellers.
 
 ## Deviations
 1. **Print verification sampled.** Prints were fetched for a sample (~0.1% of fills, 1,639 windows), not every
-   window. The 13
-   trials produce 1.41M fills, and the Actions queue (20 jobs shared by all builders) made full verification
-   infeasible. All scoring (trials, freeze, gates) uses candles for every fill with costs exactly as in
+   window. The 13 trials produce 1.41M fills, and the Actions queue (20 jobs shared by all builders) made full
+   verification infeasible. All scoring (trials, freeze, gates) uses candles for every fill with costs exactly as in
    common.py, one consistent basis. The prints measure the bias (H10_USE_PRINTS=1 applies them, for information).
 2. **Shared-code fixes pulled before any print run** (coordinator):
    - cfbe931: ISO8601 times; Exchange trade-id fallback for delisted pairs (Advanced returns 404).
