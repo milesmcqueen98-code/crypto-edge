@@ -1,0 +1,16 @@
+{
+ "status": "post-hoc descriptive only; not a pre-registered trial and not adoptable (wave 3 combines survivors only, and none survived). Both combinations are logged in trials.csv as idea wave3_desc, stage descriptive, so the deflated Sharpe's N counts them.",
+ "rule": "scripts/hunt/wave3.py: incumbent share a in {0.5, 0.6, 0.7, 0.8} chosen on DEV; the rest split across sleeves by inverse DEV volatility; sleeves at 2x costs",
+ "combos": [
+  {"ideas": ["h4nl", "h5an", "h7ul", "h8dp", "h11mj"], "selection": "every finished sleeve with a positive DEV alpha t (a DEV-only rule)",
+   "a": 0.5, "weights": {"h4nl": 0.466, "h5an": 0.155, "h7ul": 0.066, "h8dp": 0.237, "h11mj": 0.077},
+   "full_t_alpha": 4.087, "full_gain": 0.412, "full_book_sharpe": 2.879, "full_inc_sharpe": 2.466,
+   "hold_t_alpha": 0.548, "hold_gain": 0.23, "dsr": 0.981, "years": {"2022": 0.1083, "2023": 0.1553, "2025": 0.2522, "2026": 0.1268},
+   "gates": {"G1": true, "G2": false, "G3": false, "G4": true, "G5": true}},
+  {"ideas": ["h4nl", "h5an", "h11mj"], "selection": "sleeves with a positive HOLD gain (uses HOLD: biased upward)",
+   "a": 0.5, "weights": {"h4nl": 0.668, "h5an": 0.222, "h11mj": 0.11},
+   "full_t_alpha": 3.272, "full_gain": 0.335, "full_book_sharpe": 2.801, "full_inc_sharpe": 2.466,
+   "hold_t_alpha": 1.306, "hold_gain": 0.672, "dsr": 0.976, "years": {"2022": 0.0971, "2023": 0.1219, "2025": 0.2909, "2026": 0.1405},
+   "gates": {"G1": true, "G2": false, "G3": false, "G4": true, "G5": true}}
+ ]
+}
