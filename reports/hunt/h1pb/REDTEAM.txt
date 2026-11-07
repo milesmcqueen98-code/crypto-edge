@@ -266,6 +266,10 @@ Documents:
     runs.
 - **Products API (cfm_products.json):** the FCM session rolls at 22:00 UTC, with open_time equal to the previous
   close_time. There is no session gap, and maintenance is null on weekdays.
+- **Daily cycles:** the daily settlement is the VWAP of the 60 s before 3:00 pm CT (4 pm ET), before the window. The
+  mid-day and end-of-day margin runs have unpublished times.
+- **Order cancellations:** no documented cancellation of resting GTC orders at the trade-date roll. GTD orders only
+  cannot expire on holidays or weekends.
 - **Conclusion:** on Mon-Thu a resting order can exist and fill at those prints. Only Friday 5-6 pm ET is closed, and the
   model handles it.
 
@@ -397,6 +401,19 @@ None found.
 - **Time-of-day window:** applied to the ET clock of the fill.
 - **$150 contract rule:** applied at the level price at the print.
 - **Universe:** common.PERP, joined from each listing. No delisted perps found; BNB and PAXG are missing (m5).
+
+=====================================================================================================================
+COSTS (pre-registered model, re-implemented from the pre-registration text)
+=====================================================================================================================
+- **Every leg pays $0.20 x mult per contract.** That covers entries (maker), take-profits (maker) and time exits
+  (taker).
+- **Time exits also pay** 1.5 x the measured median half-spread (cfm_book_summary.csv) on the exited notional, x mult.
+- **Funding** is 1 bp per 8 h on contract-hours at the entry price, x mult.
+- **Gates use mult = 2** on every term: fee, spread and funding.
+- **Result:** my cost model equals the builder's per trade to 1.5e-8 USD and rebuilds all four daily series to 5e-13.
+- **Per-contract fee in bp** at the contract value at trade time is in the break-even section.
+- **Real funding** is hourly and premium-based (CFTC certification). It is immaterial here at a median hold of 2.2 min
+  (total $33 at 2x).
 
 =====================================================================================================================
 CAPITAL
