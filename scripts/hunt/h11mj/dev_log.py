@@ -104,7 +104,7 @@ def main():
                  code_commit=commit, dev=dict(t_alpha_inc70=float(best.t_alpha_inc70),
                                               t_alpha_inc100=float(best.t_alpha_inc100), trades=int(best.trades),
                                               sleeve_sharpe_2x=float(best.sleeve_sharpe_2x),
-                                              book_sharpe_a07=float(best.book_sharpe), corr=float(best.corr),
+                                              book_sharpe_a07=float(best.book_sharpe), corr=float(best["corr"]),
                                               ret_yr_2x=float(best.ret_yr_2x), ret_yr_1x=float(best.ret_yr_1x)),
                  best_core=M["best_core"], n_trials_logged=int(len(tab)),
                  gate_series="candle fills before each perp launch; perp prints for every post-launch trade "

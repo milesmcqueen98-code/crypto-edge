@@ -1,0 +1,13 @@
+time,idea,variant,stage,n_days,daily_sr,sharpe,note,extra
+2026-11-07T06:33:38Z,h11mj,k5_H60_BE,dev,1246,0.016798390869950098,0.3209328069458813,"deep hourly bid P*exp(-5 sigma_1h), H60, BE","{""trades"": 393, ""sleeve_sharpe_2x"": -1.9256, ""t_alpha_inc70"": -4.0256}"
+2026-11-07T06:33:38Z,h11mj,k5_H60_ALL,dev,1246,0.04269483899809321,0.8156837537499946,"deep hourly bid P*exp(-5 sigma_1h), H60, ALL","{""trades"": 565, ""sleeve_sharpe_2x"": -0.6991, ""t_alpha_inc70"": -1.6942}"
+2026-11-07T06:33:38Z,h11mj,k5_H240_BE,dev,1246,0.000665940991217759,0.012722784773043727,"deep hourly bid P*exp(-5 sigma_1h), H240, BE","{""trades"": 381, ""sleeve_sharpe_2x"": -1.9417, ""t_alpha_inc70"": -3.4706}"
+2026-11-07T06:33:38Z,h11mj,k5_H240_ALL,dev,1246,0.00011476935525742336,0.002192665453452646,"deep hourly bid P*exp(-5 sigma_1h), H240, ALL","{""trades"": 531, ""sleeve_sharpe_2x"": -1.5105, ""t_alpha_inc70"": -3.0386}"
+2026-11-07T06:33:38Z,h11mj,k7_H60_BE,dev,1246,0.0683637390460778,1.3060874005867604,"deep hourly bid P*exp(-7 sigma_1h), H60, BE","{""trades"": 176, ""sleeve_sharpe_2x"": -0.6834, ""t_alpha_inc70"": -1.9532}"
+2026-11-07T06:33:38Z,h11mj,k7_H60_ALL,dev,1246,0.11248246683481174,2.1489745114854784,"deep hourly bid P*exp(-7 sigma_1h), H60, ALL","{""trades"": 318, ""sleeve_sharpe_2x"": 1.2534, ""t_alpha_inc70"": 1.054}"
+2026-11-07T06:33:38Z,h11mj,k7_H240_BE,dev,1246,0.07143667814954416,1.3647958197254888,"deep hourly bid P*exp(-7 sigma_1h), H240, BE","{""trades"": 174, ""sleeve_sharpe_2x"": -0.3875, ""t_alpha_inc70"": -0.9688}"
+2026-11-07T06:33:38Z,h11mj,k7_H240_ALL,dev,1246,0.09022080962243627,1.7236661476221777,"deep hourly bid P*exp(-7 sigma_1h), H240, ALL","{""trades"": 302, ""sleeve_sharpe_2x"": 0.5747, ""t_alpha_inc70"": 0.5149}"
+2026-11-07T06:33:38Z,h11mj,k7_H60_BTC,dev,1246,0.09146428867215961,1.747422781510248,"deep hourly bid P*exp(-7 sigma_1h), H60, BTC","{""trades"": 82, ""sleeve_sharpe_2x"": -0.9086, ""t_alpha_inc70"": -2.1584}"
+2026-11-07T06:33:38Z,h11mj,k9_H60_ALL,dev,1246,0.13219507095523236,2.5255832844064963,"deep hourly bid P*exp(-9 sigma_1h), H60, ALL","{""trades"": 238, ""sleeve_sharpe_2x"": 1.7818, ""t_alpha_inc70"": 1.927}"
+2026-11-07T06:33:38Z,h11mj,k7_H60_ALL_AIa,dev,1246,0.10994293356247159,2.100456796441561,"deep hourly bid P*exp(-7 sigma_1h), H60, ALL, AI filter (book fills)","{""trades"": 253, ""sleeve_sharpe_2x"": 1.0268, ""t_alpha_inc70"": 0.9654}"
+2026-11-07T06:33:38Z,h11mj,k7_H60_ALL_AIb,dev,1246,0.10879452765649425,2.0785165324143775,"deep hourly bid P*exp(-7 sigma_1h), H60, ALL, AI filter (unit fills)","{""trades"": 246, ""sleeve_sharpe_2x"": 0.9121, ""t_alpha_inc70"": 0.9353}"
