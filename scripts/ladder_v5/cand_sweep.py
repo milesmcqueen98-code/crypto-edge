@@ -256,6 +256,79 @@ def run():
         open(os.path.join(RES, "gates_summary.txt"), "w").write("\n\n".join(lines) + "\n")
 
 
+def _logged():
+    for name, _ in TRIALS:
+        if not os.path.exists(os.path.join(fsim.OUT, "trials", f"{name}.json")):
+            raise SystemExit(f"{name} is not logged yet: outcome views wait for both trials")
+
+
+def drivers(cfg="S_0.5", top=4):
+    """After both trials: what drives the difference at S*, theta 0.5 — hsim's counters, P&L by era x rung x bucket
+    (minute/instant blended with the era's latency share, as the daily returns are), and the largest days."""
+    _logged()
+    det = pd.read_parquet(os.path.join(RES, "detail.parquet"))
+    daily = pd.read_parquet(os.path.join(RES, "daily.parquet"))
+    st = pd.read_csv(os.path.join(RES, "hsim_stats.csv"))
+    names = ["offswitch"] + [n for n, _ in TRIALS]
+    lines = [f"Drivers at {cfg} ($250K): offswitch = the incumbent (all multipliers 1, reproduces the cache)"]
+    s = st[(st.cfg == cfg) & (st.bound == "instant")].set_index(["era", "name"])
+    s["funded"] = s.parents - s.parent_unfunded
+    lines.append("\nhsim counters, instant bound (parents funded / deeper rungs placed / deeper rungs filled / "
+                 "minutes a deeper rung waited for cash)")
+    lines.append(s.loc[:, ["funded", "deep_placed", "deep_filled", "cash_short_minutes"]].unstack("name")
+                 .reindex(columns=names, level=1).to_string())
+    B = pd.concat([buckets(t).assign(tag=t) for t in ("main", "early")])[["ts", "coin", "bucket"]]
+    d = det[det.cfg == cfg].merge(B, on=["ts", "coin"], how="left")
+    rows = []
+    for era, g in d.groupby("era"):
+        sh = fsim.lat_share(era, gates.CONFIGS[cfg]["theta"])
+        lo, hi = fsim.ERAS[era][1]
+        yrs = ((pd.Timestamp(hi) - pd.Timestamp(lo)).days + 1) / 365.0
+        a = g.groupby(["name", "bound", "k", "bucket"])[["pnl", "fill"]].sum().unstack("bound").fillna(0.0)
+        for col in ("pnl", "fill"):
+            a[(col, "blend")] = a[(col, "minute")] + sh * (a[(col, "instant")] - a[(col, "minute")])
+        b = a.xs("blend", axis=1, level=1).reset_index()
+        b["era"], b["pnl_yr"], b["fill_yr"] = era, b.pnl / yrs, b.fill / yrs
+        rows.append(b)
+    R = pd.concat(rows, ignore_index=True)
+    R.to_csv(os.path.join(RES, "drivers_rung_bucket.csv"), index=False)
+    C = gates.CONFIGS[cfg]["C"]
+    for era in fsim.ERAS:
+        x = R[R.era == era]
+        p = x.pivot_table(index=["k", "bucket"], columns="name", values="pnl_yr", aggfunc="sum").reindex(columns=names)
+        f = x.pivot_table(index=["k", "bucket"], columns="name", values="fill_yr", aggfunc="sum").reindex(columns=names)
+        p, f = p.fillna(0.0), f.fillna(0.0)                     # no filled tranche in a cell = $0 (C7a's lo rungs)
+        tab = pd.DataFrame({f"{n} net $K/yr": p[n] / 1e3 for n in names})
+        for n in names[1:]:
+            tab[f"{n} - inc, bp of C/yr"] = 1e4 * (p[n] - p["offswitch"]) / C
+        for n in names:
+            tab[f"{n} bought $M/yr"] = f[n] / 1e6
+        tot = tab.sum().to_frame("total").T
+        lines.append(f"\n{era}: net P&L by rung and D bucket (blended bounds; bucket 'none' = no cutoff or no D)")
+        lines.append(pd.concat([tab, tot]).round(2).to_string())
+    for n in names[1:]:
+        lines.append(f"\n{n}: largest daily differences vs the incumbent ({cfg}), bp of capital")
+        x = []
+        for era in fsim.ERAS:
+            inc = gates.incumbent_cached(era, cfg)
+            c = daily[(daily.name == n) & (daily.era == era) & (daily.cfg == cfg)].set_index("date").r
+            dd = (c.reindex(inc.index, fill_value=0.0) - inc)
+            x.append(pd.DataFrame(dict(era=era, diff_bp=1e4 * dd)))
+        X = pd.concat(x)
+        X = X.reindex(X.diff_bp.abs().sort_values(ascending=False).index[:top])
+        for day, r in X.iterrows():
+            g = d[(d.name.isin(["offswitch", n])) & (d.ts.dt.normalize() == day) & (d.k == 4.0) & (d.fill > 0)
+                  & (d.bound == "instant")]
+            par = g[g.name == "offswitch"].bucket.value_counts().to_dict()
+            dp = d[(d.ts.dt.normalize() == day) & (d.k > 4.0) & (d.bound == "instant")]
+            fills = {m: int((dp[dp.name == m].fill > 0).sum()) for m in ("offswitch", n)}
+            lines.append(f"  {day.date()} {r.era}: {r.diff_bp:+.1f} bp; incumbent parents by bucket {par}; "
+                         f"deeper fills incumbent {fills['offswitch']} vs candidate {fills[n]}")
+    txt = "\n".join(lines)
+    open(os.path.join(RES, "drivers.txt"), "w").write(txt + "\n")
+    print(txt)
+
+
 def _net(g):
     return pd.Series(dict(n=int((g.fill > 0).sum()), usd=g.fill.sum(),
                           net_bp=1e4 * g.pnl.sum() / g.fill.sum() if g.fill.sum() > 0 else np.nan))
@@ -264,9 +337,7 @@ def _net(g):
 def oos():
     """After both trials are logged: the deeper rungs' net per $ by D tercile, research book ($250K, theta 0.5, 1x
     costs, instant bound, as in step 1's diagnosis) and the live incumbent at S*, theta 0.5 (off-switch detail)."""
-    for name, _ in TRIALS:
-        if not os.path.exists(os.path.join(fsim.OUT, "trials", f"{name}.json")):
-            raise SystemExit(f"{name} is not logged yet: the out-of-sample view waits for both trials")
+    _logged()
     os.makedirs(RES, exist_ok=True)
     lines, rows = [], []
     det = pd.read_parquet(os.path.join(RES, "detail.parquet")) if os.path.exists(os.path.join(RES, "detail.parquet")) \
@@ -293,14 +364,34 @@ def oos():
             Z = Q[(Q.k > 4.0)].merge(M[["ts", "coin", "D", "tercile", "bucket"]], on=["ts", "coin"], how="inner")
             for split in ("tercile", "bucket"):            # ... and the rule's walk-forward buckets
                 t = Z.groupby(["k", split], observed=True).apply(_net, include_groups=False).reset_index()
+                t = t.rename(columns={split: "group"})
                 t.insert(0, "split", split)
                 t.insert(0, "book", bk)
                 t.insert(0, "era", era)
-                rows.append(t.rename(columns={split: "group"}))
+                rows.append(t)
                 lines.append(f"\n{era} {bk}: deeper rungs' net bp per $ by {split} of D "
                              f"({len(M)} parents with D and a fill)")
                 lines.append(t.pivot(index="group", columns="k", values=["net_bp", "n"]).round(1).to_string())
             lines.append("  tercile edges (bp): " + ", ".join(f"{x:.2f}" for x in M.D.quantile([1 / 3, 2 / 3])))
+            if bk.startswith("research"):                  # deep minus shallow tercile, parents resampled per tercile
+                rng = np.random.default_rng(7)
+                for k in (6.0, 8.0):
+                    g = Z[(Z.k == k) & (Z.fill > 0)]
+                    a = {t: (g[g.tercile == t].pnl.to_numpy(), g[g.tercile == t].fill.to_numpy())
+                         for t in ("T1 shallow", "T3 deep")}
+                    pt = 1e4 * (a["T3 deep"][0].sum() / a["T3 deep"][1].sum()
+                                - a["T1 shallow"][0].sum() / a["T1 shallow"][1].sum())
+                    bs = []
+                    for _ in range(2000):
+                        v = []
+                        for t in ("T1 shallow", "T3 deep"):
+                            p, f = a[t]
+                            i = rng.integers(0, len(p), len(p))
+                            v.append(p[i].sum() / f[i].sum())
+                        bs.append(1e4 * (v[1] - v[0]))
+                    lo5, hi95 = np.percentile(bs, [5, 95])
+                    lines.append(f"  {k:.0f}-sigma deep minus shallow tercile: {pt:+.0f} bp per $ "
+                                 f"(bootstrap 90% interval {lo5:+.0f} to {hi95:+.0f}; P(<= 0) {np.mean(np.array(bs) <= 0):.2f})")
         lines.append(f"  latency share s ({era}, theta 0.5): {s:.3f}")
     T = pd.concat(rows, ignore_index=True)
     T.to_csv(os.path.join(RES, "oos_terciles.csv"), index=False)
@@ -322,6 +413,8 @@ if __name__ == "__main__":
         hook(*sys.argv[2:4])
     elif cmd == "run":
         run()
+    elif cmd == "drivers":
+        drivers()
     elif cmd == "oos":
         oos()
     else:

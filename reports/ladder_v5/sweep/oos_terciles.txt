@@ -1,0 +1,168 @@
+
+sel research_250k_t0.5_instant: deeper rungs' net bp per $ by tercile of D (1078 parents with D and a fill)
+           net_bp             n      
+k             6.0    8.0    6.0   8.0
+group                                
+T1 shallow   15.0   16.9  128.0  59.0
+T2           50.1   65.1  139.0  61.0
+T3 deep      81.1  181.8  135.0  61.0
+
+sel research_250k_t0.5_instant: deeper rungs' net bp per $ by bucket of D (1078 parents with D and a fill)
+      net_bp             n      
+k        6.0    8.0    6.0   8.0
+group                           
+hi      96.1  189.4  116.0  52.0
+lo      12.1   17.8   65.0  35.0
+mid     30.5   39.0  120.0  58.0
+none    40.5   78.7  101.0  36.0
+  tercile edges (bp): 1.49, 5.04
+  6-sigma deep minus shallow tercile: +66 bp per $ (bootstrap 90% interval +19 to +111; P(<= 0) 0.01)
+  8-sigma deep minus shallow tercile: +165 bp per $ (bootstrap 90% interval +97 to +233; P(<= 0) 0.00)
+
+sel live_S0.5_instant: deeper rungs' net bp per $ by tercile of D (1101 parents with D and a fill)
+           net_bp             n      
+k             6.0    8.0    6.0   8.0
+group                                
+T1 shallow   10.8   34.1  153.0  93.0
+T2           32.5   81.9  166.0  93.0
+T3 deep      72.9  145.8  149.0  76.0
+
+sel live_S0.5_instant: deeper rungs' net bp per $ by bucket of D (1101 parents with D and a fill)
+      net_bp             n      
+k        6.0    8.0    6.0   8.0
+group                           
+hi      92.3  176.4  133.0  67.0
+lo       2.9   25.5   81.0  51.0
+mid     26.5   54.3  142.0  84.0
+none    18.7   69.0  112.0  60.0
+  tercile edges (bp): 1.51, 5.17
+
+sel live_S0.5_minute: deeper rungs' net bp per $ by tercile of D (1102 parents with D and a fill)
+           net_bp             n      
+k             6.0    8.0    6.0   8.0
+group                                
+T1 shallow    4.5   24.1  151.0  94.0
+T2           29.8   82.6  161.0  92.0
+T3 deep      44.4  123.0  121.0  67.0
+
+sel live_S0.5_minute: deeper rungs' net bp per $ by bucket of D (1102 parents with D and a fill)
+      net_bp             n      
+k        6.0    8.0    6.0   8.0
+group                           
+hi      67.7  152.7  105.0  58.0
+lo      -2.1   28.0   80.0  52.0
+mid     23.4   53.4  139.0  83.0
+none    11.1   54.8  109.0  60.0
+  tercile edges (bp): 1.52, 5.15
+  latency share s (sel, theta 0.5): 0.523
+
+chk research_250k_t0.5_instant: deeper rungs' net bp per $ by tercile of D (398 parents with D and a fill)
+           net_bp            n      
+k             6.0    8.0   6.0   8.0
+group                               
+T1 shallow   24.2  122.8  52.0  24.0
+T2           63.2   90.1  60.0  31.0
+T3 deep      40.3   82.8  57.0  25.0
+
+chk research_250k_t0.5_instant: deeper rungs' net bp per $ by bucket of D (398 parents with D and a fill)
+      net_bp            n      
+k        6.0    8.0   6.0   8.0
+group                          
+hi      45.0   82.8  58.0  25.0
+lo      20.2  152.5  36.0  15.0
+mid     52.0   81.8  75.0  40.0
+  tercile edges (bp): 2.07, 5.16
+  6-sigma deep minus shallow tercile: +16 bp per $ (bootstrap 90% interval -32 to +67; P(<= 0) 0.30)
+  8-sigma deep minus shallow tercile: -40 bp per $ (bootstrap 90% interval -148 to +59; P(<= 0) 0.72)
+
+chk live_S0.5_instant: deeper rungs' net bp per $ by tercile of D (391 parents with D and a fill)
+           net_bp            n      
+k             6.0    8.0   6.0   8.0
+group                               
+T1 shallow    7.4  129.7  47.0  23.0
+T2           49.4   67.0  53.0  30.0
+T3 deep      28.4  124.9  51.0  25.0
+
+chk live_S0.5_instant: deeper rungs' net bp per $ by bucket of D (391 parents with D and a fill)
+      net_bp            n      
+k        6.0    8.0   6.0   8.0
+group                          
+hi      34.2  124.9  52.0  25.0
+lo       4.1  155.7  32.0  15.0
+mid     36.7   57.7  67.0  38.0
+  tercile edges (bp): 2.07, 5.17
+
+chk live_S0.5_minute: deeper rungs' net bp per $ by tercile of D (391 parents with D and a fill)
+           net_bp            n      
+k             6.0    8.0   6.0   8.0
+group                               
+T1 shallow    3.9  129.8  46.0  23.0
+T2           48.4   65.3  53.0  30.0
+T3 deep       9.0  125.1  44.0  21.0
+
+chk live_S0.5_minute: deeper rungs' net bp per $ by bucket of D (391 parents with D and a fill)
+      net_bp            n      
+k        6.0    8.0   6.0   8.0
+group                          
+hi      16.4  125.1  45.0  21.0
+lo      -0.9  155.7  31.0  15.0
+mid     36.0   55.5  67.0  38.0
+  tercile edges (bp): 2.07, 5.17
+  latency share s (chk, theta 0.5): 0.618
+
+early research_250k_t0.5_instant: deeper rungs' net bp per $ by tercile of D (722 parents with D and a fill)
+           net_bp             n      
+k             6.0    8.0    6.0   8.0
+group                                
+T1 shallow   67.9  119.8  108.0  55.0
+T2           48.9  116.6  115.0  53.0
+T3 deep     117.3  231.4  102.0  50.0
+
+early research_250k_t0.5_instant: deeper rungs' net bp per $ by bucket of D (722 parents with D and a fill)
+      net_bp             n      
+k        6.0    8.0    6.0   8.0
+group                           
+hi     110.6  222.8  120.0  55.0
+lo      55.2  118.7   77.0  41.0
+mid     49.2  104.0   87.0  40.0
+none    76.9  126.9   41.0  22.0
+  tercile edges (bp): 2.65, 6.25
+  6-sigma deep minus shallow tercile: +49 bp per $ (bootstrap 90% interval -20 to +121; P(<= 0) 0.12)
+  8-sigma deep minus shallow tercile: +112 bp per $ (bootstrap 90% interval -3 to +255; P(<= 0) 0.06)
+
+early live_S0.5_instant: deeper rungs' net bp per $ by tercile of D (722 parents with D and a fill)
+           net_bp             n      
+k             6.0    8.0    6.0   8.0
+group                                
+T1 shallow   61.2  117.0  110.0  62.0
+T2           43.7   98.4  115.0  55.0
+T3 deep     108.3  225.9  103.0  51.0
+
+early live_S0.5_instant: deeper rungs' net bp per $ by bucket of D (722 parents with D and a fill)
+      net_bp             n      
+k        6.0    8.0    6.0   8.0
+group                           
+hi     110.5  217.5  121.0  55.0
+lo      43.0  121.2   77.0  42.0
+mid     41.2   74.8   87.0  40.0
+none    72.5  125.9   43.0  31.0
+  tercile edges (bp): 2.65, 6.25
+
+early live_S0.5_minute: deeper rungs' net bp per $ by tercile of D (722 parents with D and a fill)
+           net_bp             n      
+k             6.0    8.0    6.0   8.0
+group                                
+T1 shallow   58.0  115.6  105.0  60.0
+T2           39.2   95.6  110.0  53.0
+T3 deep     100.6  245.3   94.0  48.0
+
+early live_S0.5_minute: deeper rungs' net bp per $ by bucket of D (722 parents with D and a fill)
+      net_bp             n      
+k        6.0    8.0    6.0   8.0
+group                           
+hi     104.2  234.7  112.0  52.0
+lo      36.8  119.0   73.0  40.0
+mid     34.0   69.7   81.0  38.0
+none    72.5  125.9   43.0  31.0
+  tercile edges (bp): 2.65, 6.25
+  latency share s (early, theta 0.5): 0.910
