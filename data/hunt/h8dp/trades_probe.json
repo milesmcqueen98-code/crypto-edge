@@ -1,0 +1,300 @@
+{
+ "USDT-USD 2022-05-12 01:00": {
+  "advanced": {
+   "n": 644,
+   "first": "2022-05-12 01:00:00.314401",
+   "last": "2022-05-12 01:09:58.162166",
+   "sides": {
+    "SELL": 415,
+    "BUY": 229
+   },
+   "secs": 0.3
+  },
+  "exchange": {
+   "newest": [
+    {
+     "trade_id": 149724037,
+     "side": "sell",
+     "size": "18.99000000",
+     "price": "0.99867000",
+     "time": "2026-11-07T04:32:30.016616Z"
+    }
+   ],
+   "secs": 0.0,
+   "after_1000": [
+    {
+     "trade_id": 999,
+     "side": "sell",
+     "size": "27.86000000",
+     "price": "1.00040000",
+     "time": "2021-05-04T04:09:27.526Z"
+    },
+    {
+     "trade_id": 998,
+     "side": "sell",
+     "size": "1.00000000",
+     "price": "1.00040000",
+     "time": "2021-05-04T04:09:19.203Z"
+    }
+   ]
+  }
+ },
+ "DAI-USD 2023-03-11 06:00": {
+  "advanced": {
+   "n": 49,
+   "first": "2023-03-11 06:01:26.291272",
+   "last": "2023-03-11 06:09:00.604285",
+   "sides": {
+    "BUY": 49
+   },
+   "secs": 0.1
+  },
+  "exchange": {
+   "newest": [
+    {
+     "trade_id": 23525601,
+     "side": "buy",
+     "size": "9.10238000",
+     "price": "0.99850000",
+     "time": "2026-05-04T15:43:54.240577Z"
+    }
+   ],
+   "secs": 0.0,
+   "after_1000": [
+    {
+     "trade_id": 999,
+     "side": "sell",
+     "size": "497.33590000",
+     "price": "1.02036900",
+     "time": "2020-04-30T18:21:41.435Z"
+    },
+    {
+     "trade_id": 998,
+     "side": "sell",
+     "size": "300.00000000",
+     "price": "1.02036800",
+     "time": "2020-04-30T18:21:41.435Z"
+    }
+   ]
+  }
+ },
+ "GUSD-USD 2023-03-11 06:00": {
+  "advanced": {
+   "error": "HTTPError('404 Client Error: Not Found for url: https://api.coinbase.com/api/v3/brokerage/market/products/GUSD-USD/ticker?limit=1000&start=1678514400&end=1678518000')"
+  },
+  "exchange": {
+   "newest": [
+    {
+     "trade_id": 84565,
+     "side": "buy",
+     "size": "9.51000000",
+     "price": "0.99900000",
+     "time": "2025-05-07T15:41:22.523897Z"
+    }
+   ],
+   "secs": 0.0,
+   "after_1000": [
+    {
+     "trade_id": 999,
+     "side": "sell",
+     "size": "78.54000000",
+     "price": "1.00100000",
+     "time": "2022-08-10T14:47:39.656748Z"
+    },
+    {
+     "trade_id": 998,
+     "side": "sell",
+     "size": "1940.67000000",
+     "price": "1.00100000",
+     "time": "2022-08-10T14:45:22.689194Z"
+    }
+   ]
+  }
+ },
+ "PYUSD-USD 2024-06-01 00:00": {
+  "advanced": {
+   "error": "HTTPError('404 Client Error: Not Found for url: https://api.coinbase.com/api/v3/brokerage/market/products/PYUSD-USD/ticker?limit=1000&start=1717200000&end=1717221600')"
+  },
+  "exchange": {
+   "newest": [
+    {
+     "trade_id": 528150,
+     "side": "buy",
+     "size": "0.51000000",
+     "price": "0.99977000",
+     "time": "2025-04-24T16:04:53.433739Z"
+    }
+   ],
+   "secs": 0.0,
+   "after_1000": [
+    {
+     "trade_id": 999,
+     "side": "buy",
+     "size": "20.06000000",
+     "price": "0.99991000",
+     "time": "2023-09-07T13:56:52.992426Z"
+    },
+    {
+     "trade_id": 998,
+     "side": "sell",
+     "size": "36.58000000",
+     "price": "1.00000000",
+     "time": "2023-09-07T13:56:35.979822Z"
+    }
+   ]
+  }
+ },
+ "USDS-USD 2025-10-10 21:00": {
+  "advanced": {
+   "n": 254,
+   "first": "2025-10-10 21:01:39.401207",
+   "last": "2025-10-10 21:56:59.501753",
+   "sides": {
+    "BUY": 187,
+    "SELL": 67
+   },
+   "secs": 0.1
+  },
+  "exchange": {
+   "newest": [
+    {
+     "trade_id": 168632,
+     "side": "sell",
+     "size": "1.25000000",
+     "price": "1.00000000",
+     "time": "2026-11-07T04:21:41.970191Z"
+    }
+   ],
+   "secs": 0.0,
+   "after_1000": [
+    {
+     "trade_id": 999,
+     "side": "sell",
+     "size": "0.01000000",
+     "price": "1.01000000",
+     "time": "2025-07-10T16:40:17.017668Z"
+    },
+    {
+     "trade_id": 998,
+     "side": "sell",
+     "size": "0.01000000",
+     "price": "1.01000000",
+     "time": "2025-07-10T16:40:16.790182Z"
+    }
+   ]
+  }
+ },
+ "CBETH-USD 2022-11-09 00:00": {
+  "advanced": {
+   "n": 154,
+   "first": "2022-11-09 00:00:09.371685",
+   "last": "2022-11-09 00:29:57.261581",
+   "sides": {
+    "BUY": 124,
+    "SELL": 30
+   },
+   "secs": 0.1
+  },
+  "exchange": {
+   "newest": [
+    {
+     "trade_id": 5832892,
+     "side": "buy",
+     "size": "0.01564000",
+     "price": "2559.07000000",
+     "time": "2026-11-07T04:32:45.373063Z"
+    }
+   ],
+   "secs": 0.0,
+   "after_1000": [
+    {
+     "trade_id": 999,
+     "side": "buy",
+     "size": "0.02477000",
+     "price": "1582.92000000",
+     "time": "2022-08-25T17:05:49.771642Z"
+    },
+    {
+     "trade_id": 998,
+     "side": "buy",
+     "size": "0.34907000",
+     "price": "1582.92000000",
+     "time": "2022-08-25T17:05:49.632804Z"
+    }
+   ]
+  }
+ },
+ "UST-USD 2022-05-09 20:00": {
+  "advanced": {
+   "error": "HTTPError('404 Client Error: Not Found for url: https://api.coinbase.com/api/v3/brokerage/market/products/UST-USD/ticker?limit=1000&start=1652126400&end=1652127000')"
+  },
+  "exchange": {
+   "newest": [
+    {
+     "trade_id": 2260920,
+     "side": "sell",
+     "size": "984.64000000",
+     "price": "0.03289000",
+     "time": "2022-05-27T16:03:54.578448Z"
+    }
+   ],
+   "secs": 0.0,
+   "after_1000": [
+    {
+     "trade_id": 999,
+     "side": "buy",
+     "size": "277.83000000",
+     "price": "1.00200000",
+     "time": "2021-08-11T22:26:28.715208Z"
+    },
+    {
+     "trade_id": 998,
+     "side": "sell",
+     "size": "15.56000000",
+     "price": "1.00300000",
+     "time": "2021-08-11T22:26:12.571045Z"
+    }
+   ]
+  }
+ },
+ "USDT-USD 2026-05-01 00:00": {
+  "advanced": {
+   "n": 71,
+   "first": "2026-05-01 00:00:11.149148",
+   "last": "2026-05-01 00:04:57.902672",
+   "sides": {
+    "SELL": 44,
+    "BUY": 27
+   },
+   "secs": 0.1
+  },
+  "exchange": {
+   "newest": [
+    {
+     "trade_id": 149724051,
+     "side": "sell",
+     "size": "24.78000000",
+     "price": "0.99867000",
+     "time": "2026-11-07T04:33:54.141896Z"
+    }
+   ],
+   "secs": 0.0,
+   "after_1000": [
+    {
+     "trade_id": 999,
+     "side": "sell",
+     "size": "27.86000000",
+     "price": "1.00040000",
+     "time": "2021-05-04T04:09:27.526Z"
+    },
+    {
+     "trade_id": 998,
+     "side": "sell",
+     "size": "1.00000000",
+     "price": "1.00040000",
+     "time": "2021-05-04T04:09:19.203Z"
+    }
+   ]
+  }
+ }
+}
