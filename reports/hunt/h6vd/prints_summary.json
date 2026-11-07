@@ -1,0 +1,31 @@
+{
+ "sampled": 1768,
+ "errors": 0,
+ "checked": 1768,
+ "fill_confirmed_share": 0.994343891402715,
+ "fill_confirmed_share_usd": 0.995592888719952,
+ "through_usd_trades_vs_candle_m0_median": 0.1703873235503143,
+ "through_usd_trades_all_vs_candle_m0_median": 0.9528524583873603,
+ "size_supported_share_usd": 0.9133519525268323,
+ "maker_buy_share_below_bid": 0.6720231548030856,
+ "first_live_trade_above_bid_share": 0.996606334841629,
+ "tp_checked": 1354,
+ "tp_confirmed_share": 0.9970457902511078,
+ "exit_checked": 443,
+ "exit_first_trade_2s_vs_open_bp_mean": 0.2573109110815478,
+ "exit_first_trade_2s_vs_open_bp_median": -3.7234437755966776e-07,
+ "sample_pnl2_usd": -25429.80092837778,
+ "sample_pnl2_print_adjusted_usd": -25022.064382117598,
+ "sample_net_bp_2x": -29.74367257400865,
+ "sample_net_bp_2x_print_adjusted": -32.04325359677583,
+ "by_year": {
+  "2025": {
+   "n": 857,
+   "confirmed": 1.0
+  },
+  "2026": {
+   "n": 911,
+   "confirmed": 0.989
+  }
+ }
+}

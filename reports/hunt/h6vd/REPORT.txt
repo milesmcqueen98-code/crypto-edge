@@ -36,8 +36,8 @@ seller who gets reversed.
 - **Candidate fill-minutes on DEV scored days:**
   - Bitstamp: 861,483 (k=3), 532,649 (k=4), 226,430 (k=6).
   - Perp: 97,071, 48,875 and 15,086.
-- **Trade prints:** a 25% sample of the frozen variant's fills (PRINTS_N), fetched on Actions with
-  common.TradeFetcher.
+- **Trade prints:** 1,768 fills (a 25% sample, seed 0, of the frozen variant's 7,073 fills), fetched on Actions
+  with common.TradeFetcher (4,118 requests, 0 errors).
 
 ## Trials (DEV; sleeve $30K at 2x; all 15 in reports/hunt/trials.csv)
 | Variant | Trades | Fills $M | Sleeve Sharpe | Alpha t ($70K) | Gross bp | Net bp 1x | Net bp 2x |
@@ -151,7 +151,21 @@ How the grid ran:
 - On the incumbent's 20 worst days, the sleeve lost 37% of its capital.
 
 ## Fill realism
-PRINTS_SECTION
+**Trade prints** (1,768 sampled fills across DEV and HOLD; reports/hunt/h6vd/prints_summary.json):
+- **Fills:** confirmed on prints for 99.4% of fills (99.6% of dollars). A confirmed fill has a print at least 1 tick
+  below the bid, at least 1 s into the minute.
+  - The first live print was above the bid in 99.7% of fills.
+  - 67% of the prints below the bid were sellers hitting bids (maker side BUY).
+- **Through-volume:**
+  - All prints below the bid in the fill minute come to a median 95% of the candle estimate.
+  - Only the first unbroken run below the bid, the strict pre-registered rule, comes to 17%.
+  - The strict rule in the fill minute plus the candle estimate for later minutes supports 91% of the simulated
+    dollars.
+- **Take-profits:** 99.7% of the 1,354 checked traded through on prints.
+- **Time exits:** the first print at least 2 s after the exit minute's open differs from the candle open by +0.26 bp
+  on average (median 0).
+- **Print-adjusted P&L:** on the sample, -32.0 bp at 2x vs -29.7 bp simulated. The loss is not a candle artefact;
+  the prints make it slightly worse.
 
 **Other modelling notes:**
 - **Latency:** the levels use t-1 candles (1-minute-old information).
