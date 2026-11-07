@@ -190,3 +190,47 @@ the next one.
   tables (1-second detection) are re-reported with it.
 - Either way, the realism and capacity scores are revisited with the result, up or down.
 - The bot itself doesn't change: it sizes by S, and the exchange decides the fills.
+
+### C1 results (2026-11-07 ~01:10 UTC): the simulator's fill capacity is right. Validated, nothing changes.
+reports/wick_v4/capacity_log.txt and capacity_out.csv. All 1,567 parent fills. A first run on the old bot list (1,263)
+gave the same answers.
+
+**Volume below the bid.** R = trade volume / the simulator's estimate, same minutes; bootstrap 95% interval in brackets:
+
+| Trades counted | Selection | Check | Both |
+|---|---|---|---|
+| All | 1.01 [0.97, 1.04] | 1.02 [0.98, 1.06] | 1.01 [0.98, 1.04] |
+| From 2 s | 1.01 | 1.02 | 1.01 |
+| Taker sells only | 0.68 | 0.65 | 0.67 |
+
+- Candles rebuilt from the trades match Coinbase's candles (1.00).
+- The same-minute 6σ and 8σ fills give 0.99 and 0.96.
+
+**Fill dollars the trades support, F.** F stays above 0.9 at every size, so the rule's 0.9–1.1 band holds:
+
+| Size | Selection | Check |
+|---|---|---|
+| $250K | 0.960 | 0.951 |
+| $500K | 0.961 | 0.950 |
+| $1M | 0.964 | 0.945 |
+
+- Taker sells only: 0.89–0.93.
+- On the simulator's full window, with the trades replacing the covered minutes: 0.95–0.97.
+- F sits about 4% below 1 although R ≈ 1. Per-event scatter around the estimate costs a little wherever fills are
+  capped.
+
+**Rule outcome: validated.**
+- The fill sizes hold at $250K, and nothing changes.
+- The capture share θ is still an assumption: what share of the volume below the bid we would actually get. Only
+  live fills can measure it.
+
+**Found on the way (not part of C1): perp capacity in the research numbers.**
+- The research numbers let fills use the perp venue's volume too: Coinbase's US perp-style futures, which exist from
+  mid-2025.
+- The spot bot can't use it.
+- Removing it changes selection by +0.1 points and 2022–23 not at all (no perps then). It costs the check period
+  about 1.2–1.4 points a year.
+- Spot-only, 1-second bot, $250K, θ 0.5: 29.9% / 2.28 (selection), 20.1% / 2.82 (check), 14.0% / 2.28 (2022–23).
+- At θ 0.25: 2.15 / 2.54 / 2.02. At $1M: 2.41 / 1.55 / 1.21.
+- Source: reports/wick_v4/spot_only.csv. The 1-second values are interpolated between the minute and instant bots,
+  corrected by the interpolation's error where the exact 1-second result exists.
