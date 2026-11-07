@@ -3,32 +3,32 @@
  "fills_per_year": [
   {
    "t_exit": 2022,
-   "lots": 3179,
-   "pnl": 2117.491041103344,
-   "fills": 436
+   "lots": 3180,
+   "pnl": 2129.0834281870198,
+   "fills": 435
   },
   {
    "t_exit": 2023,
    "lots": 11747,
-   "pnl": 9833.108494970864,
+   "pnl": 9807.941755684093,
    "fills": 1608
   },
   {
    "t_exit": 2025,
-   "lots": 3389,
-   "pnl": -3651.55780781499,
-   "fills": 1002
+   "lots": 3392,
+   "pnl": -3644.845990604975,
+   "fills": 1005
   },
   {
    "t_exit": 2026,
-   "lots": 1624,
-   "pnl": -1453.0070396086135,
-   "fills": 411
+   "lots": 1626,
+   "pnl": -1429.7529636733857,
+   "fills": 413
   }
  ],
- "top3_days_share_of_pnl": 0.43944018617819747,
- "corr_with_incumbent": -0.18285740286925325,
- "sleeve_on_incumbent_10_worst_days": -0.024718016163125064,
+ "top3_days_share_of_pnl": 0.4380595507839261,
+ "corr_with_incumbent": -0.18072698234383575,
+ "sleeve_on_incumbent_10_worst_days": -0.02468480902565495,
  "incumbent_10_worst_days": [
   "2026-01-19",
   "2022-05-11",
@@ -41,47 +41,47 @@
   "2023-10-16",
   "2025-02-12"
  ],
- "mtm_max_drawdown": -0.11200066603408532,
+ "mtm_max_drawdown": -0.11125782781733384,
  "mtm_max_drawdown_day": "2026-10-30",
  "power_all": {
   "label": "all|deep|tp all scored days",
   "n_days": 1404,
   "active_days": 684,
-  "sleeve_ret_yr": 0.0593257991775278,
+  "sleeve_ret_yr": 0.0594678436325108,
   "rf_yr": 0.0371900284900285,
-  "excess_yr": 0.022135770687499307,
-  "sd_daily": 0.0026638254327022654,
-  "t_iid": 0.8530599945458719,
-  "excess_needed_yr_for_t3": 0.07784600436907134,
-  "sleeve_ret_needed_yr_for_t3": 0.11503603285909983,
+  "excess_yr": 0.022277815142482282,
+  "sd_daily": 0.0026614277196306602,
+  "t_iid": 0.8593075141780602,
+  "excess_needed_yr_for_t3": 0.07777593506950069,
+  "sleeve_ret_needed_yr_for_t3": 0.11496596355952918,
   "active_days_per_yr": 177.82051282051282,
-  "mean_active_day_ret": 0.0003336274214742009,
-  "active_days_per_yr_needed_for_t3": 503
+  "mean_active_day_ret": 0.0003344262295123174,
+  "active_days_per_yr_needed_for_t3": 501
  },
  "power_hold": {
   "label": "all|deep|tp HOLD",
   "n_days": 158,
   "active_days": 52,
-  "sleeve_ret_yr": -0.0637283194198338,
+  "sleeve_ret_yr": -0.06372831941983395,
   "rf_yr": 0.036347784810126585,
-  "excess_yr": -0.1000761042299604,
-  "sd_daily": 0.0009387794900430722,
-  "t_iid": -3.6711529351915546,
-  "excess_needed_yr_for_t3": 0.08178038833847048,
-  "sleeve_ret_needed_yr_for_t3": 0.11812817314859707,
+  "excess_yr": -0.10007610422996054,
+  "sd_daily": 0.0009387794900430739,
+  "t_iid": -3.671152935191554,
+  "excess_needed_yr_for_t3": 0.08178038833847065,
+  "sleeve_ret_needed_yr_for_t3": 0.11812817314859723,
   "active_days_per_yr": 120.12658227848101,
-  "mean_active_day_ret": -0.0005305097190902917
+  "mean_active_day_ret": -0.0005305097190902931
  },
  "years_2x": {
-  "2022": 0.0706,
-  "2023": 0.3278,
-  "2025": -0.1217,
-  "2026": -0.0484
+  "2022": 0.071,
+  "2023": 0.3269,
+  "2025": -0.1215,
+  "2026": -0.0477
  },
  "years_1x": {
-  "2022": 0.1087,
-  "2023": 0.439,
-  "2025": -0.0579,
-  "2026": -0.0195
+  "2022": 0.1091,
+  "2023": 0.4382,
+  "2025": -0.0576,
+  "2026": -0.0185
  }
 }
