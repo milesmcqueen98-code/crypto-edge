@@ -44,7 +44,7 @@ def check(tr, ts, lvl, tick, tp, tp_ts, tr_tp):
         if below.any():
             out["fill_time"] = m0.time.iloc[int(np.flatnonzero(below.to_numpy())[0])]
             i0 = int(np.flatnonzero(below.to_numpy())[0])
-            seq = tr[tr.time >= m0.time.iloc[i0]]
+            seq = tr.loc[m0.index[i0]:]                       # positional: tr is sorted by (time, trade_id)
             seq = seq[seq.time < ts + pd.Timedelta(minutes=SCAN)]
             px = seq.price.to_numpy()
             stop = np.flatnonzero(px >= lvl - 0.5 * tick)
@@ -55,6 +55,20 @@ def check(tr, ts, lvl, tick, tp, tp_ts, tr_tp):
         w = tr_tp[(tr_tp.time >= tp_ts) & (tr_tp.time < tp_ts + pd.Timedelta(minutes=1))]
         out["tp_ok"] = float(bool((w.price >= tp + 0.5 * tick).any())) if len(w) else 0.0
     return out
+
+
+def first_after(F, pid, t0):
+    """First print of pid at or after t0 (widening windows: 2 s, 30 s, 5 min)."""
+    for w in (2, 30, 300):
+        try:
+            d = F.window(pid, t0, t0 + pd.Timedelta(seconds=w))
+        except Exception:  # noqa: BLE001
+            return np.nan, pd.NaT
+        d = d[d.time >= t0]
+        if len(d):
+            return float(d.price.iloc[0]), d.time.iloc[0]
+        t0 = t0 + pd.Timedelta(seconds=w)
+    return np.nan, pd.NaT
 
 
 def half_spread_bp(tr):
@@ -70,6 +84,7 @@ def half_spread_bp(tr):
 
 def main(tag, shard, nsh):
     R = pd.read_parquet(os.path.join(DIR, f"req_{tag}.parquet"))
+    legs = pd.read_csv(os.path.join(ROOT, "reports", "hunt", "h10xq", "pairs.csv")).set_index("id")
     keys = R[["pair", "ts"]].drop_duplicates().sort_values(["pair", "ts"]).reset_index(drop=True)
     keys = keys.iloc[shard::nsh]
     R = R.merge(keys, on=["pair", "ts"])
@@ -100,6 +115,10 @@ def main(tag, shard, nsh):
                     tr_tp = tp_cache[r.tp_ts]
             o = check(tr, ts, r.lvl, r.tick, r.tp, r.tp_ts, tr_tp)
             o.update(pair=pair, ts=ts, k=r.k, fetched=True, n_win=len(tr), hs_bp=hs)
+            if bool(getattr(r, "hedge", False)) and o["confirmed"]:
+                t2 = o["fill_time"] + pd.Timedelta(seconds=2)
+                o["hx_px"], o["hx_time"] = first_after(F, legs.loc[pair, "base_usd"], t2)
+                o["hq_px"], o["hq_time"] = first_after(F, legs.loc[pair, "quote_usd"], t2)
             out.append(o)
         if n % 200 == 0:
             print(n, pair, ts, len(tr), f"req {F.n_req} fail {nfail} {time.time() - t0:.0f}s", flush=True)
