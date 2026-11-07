@@ -81,8 +81,13 @@ def main():
     check("place: post-only GTC take-profit sell", lambda: b.place(sp, "SELL", 60000.0, 0.001),
           lambda o: o[0] is not None and o[1] is None)
     oid = oid_gtd[0] if oid_gtd and oid_gtd[0] else "sandbox-order"
-    st = check("status (get order)", lambda: b.status(oid),
-               lambda o: isinstance(o["filled"], float) and isinstance(o["avg"], float) and isinstance(o["status"], str))
+    # the sandbox's get-order mock answers only for its own static order ids (any other id -> 400 INVALID_ARGUMENT)
+    known = check("a static order id from the sandbox (list orders)", lambda: b.open_orders()[0]["order_id"],
+                  lambda o: isinstance(o, str) and len(o) > 0)
+    check("status (get order)", lambda: b.status(known or oid),
+          lambda o: isinstance(o["filled"], float) and isinstance(o["avg"], float) and isinstance(o["status"], str))
+    check("increment from a status", lambda: b.increment(order(known or oid), b.status(known or oid)),
+          lambda o: o is None or (len(o) == 3 and all(isinstance(x, float) for x in o)))
     check("fills (status per order)", lambda: b.fills("BTC", [("4", order(oid))], None, None, 0.01),
           lambda o: isinstance(o, list))
     check("cancel (batch cancel + status)", lambda: b.cancel(order(oid)),
