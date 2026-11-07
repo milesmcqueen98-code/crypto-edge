@@ -1,61 +1,51 @@
 # H9 (MC): the 4 pm ET margin step-up on Coinbase US perps
 
-**Verdict: FAIL.** The forced flow is real on DEV, and Step 1 passes both tests. But it moves the basis only 2–3 bp, against round trips of 9–40 bp at 2× costs. All 19 trading trials had a negative DEV alpha t, and the frozen variant lost on HOLD. G1–G4 fail; G5 passes.
+**Verdict: FAIL.** Step 1 passes both tests: the forced flow is real on DEV. But it moves the basis only 2–3 bp, against round trips of 9–40 bp at 2× costs. All 19 trading trials had a negative DEV alpha t, and the frozen variant lost on HOLD. G1–G4 fail; G5 passes.
 
 ## Mechanism
-- **The rule:** CFM's opt-in intraday margin (weekdays 8 am–4 pm ET) gives way at 4:00 pm to overnight margin 2–4× higher. Rates ramp up from 3:30, and an account that is short at 4:00 goes straight into liquidation. CDE settles on the 15:59–16:00 VWAP.
-- **Who is forced:** retail longs sized on intraday margin must sell into thin books.
-- **Who is paid:** a liquidity provider, or a buyer after the step, should earn the reversion.
-- **The catch:** CFM may internalise liquidations (memo R1), so Step 1 is the kill test.
+- **The rule:** CFM's opt-in intraday margin (weekdays 8 am–4 pm ET) ends at 4:00 pm. Overnight margin is 2–4× higher; rates ramp from 3:30, and a short account liquidates at 4:00. CDE settles on the 15:59–16:00 VWAP.
+- **Who is forced, who is paid:** retail longs on intraday margin must sell into thin books. A liquidity provider, or a buyer after the step, should earn the reversion.
+- **Kill test:** CFM may internalise liquidations (memo R1), so the flow might leave no public footprint. Step 1 checks for one.
 
 ## Data
-- **Prints:** 7,333,526 CDE perp prints in 12,244 windows. That is 19 perps × every calendar day from launch to 2026-11-05 × two ET windows (13:30–14:30 control; 15:30–17:30). Fetched with 17,130 requests on six Actions runners, with no errors.
-- **Completeness:** on DEV trading days (4,236 windows, 4.69M prints), print volume matches 1-minute candle volume to within 0.005%. Only 2 windows are off by more than 1%.
-- **Basis residual:** H1's definition, built from perp candles (data/cfm) and spot candles (data/minute).
-- **Calendar:** the ET clock with daylight saving; weekdays minus US holidays (listed in hcommon.py).
-  - 217 DEV trading days (2025-07-21 – 2026-05-29).
-  - 99 weekend/holiday DEV days, used as a descriptive placebo.
-- **Universe, by launch:**
-  - BTC, ETH: Jul 2025.
-  - SOL, XRP: Aug 2025.
-  - DOGE, LTC, LINK, ADA, BCH, SUI, XLM, HBAR: Dec 2025.
-  - NEAR, AAVE, ENA, PEPE, ONDO, ZEC: Mar 2026.
-  - HYPE: Jun 2026 (HOLD only).
+- **Prints:** 7.33M CDE perp prints in 12,244 windows: 19 perps, every day from launch to 2026-11-05, in two ET windows (13:30–14:30 control; 15:30–17:30). 17,130 requests, no errors.
+- **Completeness:** on DEV trading days (4,236 windows, 4.69M prints), print volume matches 1-minute candle volume within 0.005%.
+- **Basis residual:** H1's definition, from the perp and spot candles.
+- **Calendar:** ET with daylight saving; weekdays minus US holidays (listed in hcommon.py). 217 DEV trading days (2025-07-21 – 2026-05-29); 99 weekend/holiday days as a placebo.
+- **Universe:**
+  - BTC/ETH from Jul 2025; SOL/XRP from Aug 2025.
+  - 8 alts from Dec 2025; 6 more from Mar 2026.
+  - HYPE in HOLD only.
 - **Excluded:** AVAX fails the $150 contract rule every day; BNB, DOT and SHIB have no candles.
 
 ## Step 1 (DEV; 4 pm window vs the same window two hours earlier)
-| Measure | 4 pm | Control | Diff | Paired t (NW) | Placebo t |
-|---|---|---|---|---|---|
-| Aggressive-sell share, USD-pooled | 53.2% | 50.5% | +2.7 pp | **4.59** (3.67) | 1.04 |
-| Basis residual 15:55–16:05, volume-weighted | −2.79 bp | −0.17 bp | −2.61 bp | **−7.79** (−4.52) | −0.72 |
-| Perp − spot return 15:45–16:05 (information) | | | −0.71 bp | −2.04 | |
+| Measure | 4 pm | Control | Paired t (NW) | Placebo t |
+|---|---|---|---|---|
+| Aggressive-sell share (USD-pooled) | 53.2% | 50.5% | **4.59** (3.67) | 1.04 |
+| Basis residual 15:55–16:05 (volume-weighted) | −2.79 bp | −0.17 bp | **−7.79** (−4.52) | −0.72 |
+| Perp − spot return 15:45–16:05 (information) | −0.71 bp gap | | −2.04 | |
 
-- **Information only:**
-  - Equal-weighted selling: +5.8 pp (t 9.7).
-  - R1's 16:00–16:02 check: +4.1 pp (t 2.2).
-  - Residual in σ units: −0.46 (t −11.2).
-  - Volume in the 4 pm window is 1.6× the control. The settlement minute trades about 6× a control minute.
-- **By coin:**
-  - Excess selling is positive in 18 of 18 coins, with t ≥ 2 in 14.
-  - The residual is negative in 17 of 18.
+- **Information:**
+  - Equal-weighted aggressive selling: +5.8 pp (t 9.7). R1's 16:00–16:02 check: +4.1 pp (t 2.2).
+  - Volume in the window is 1.6× the control.
+- **By coin:** extra selling in 18 of 18 coins (t ≥ 2 in 14); negative residual in 17 of 18.
 - **Minute profile:**
   - The residual sinks from −2 bp at 15:40 to between −3.2 and −3.6 bp at 16:01–16:05.
-  - It is still −2.2 bp (BTC/ETH) at 16:15, so the reversion is slow.
-  - Aggressive selling peaks at 16:03–16:05 (57–58%).
-- **Friday vs Mon–Thu:** no difference (Welch t 0.38 and −0.45).
+  - It is still −2.2 bp at 16:15 on BTC/ETH: a slow reversion.
+- **Friday:** same as Mon–Thu (Welch t 0.38 and −0.45).
 - **Decay:**
 
-  | Period | Extra aggressive selling | Basis residual |
+  | Period | Extra selling | Basis residual |
   |---|---|---|
   | Jul–Oct 2025 | +5.9 pp (t 5.3) | −5.8 bp |
-  | Nov 2025 – May 2026 | +1.1 pp (t 1.7) | −0.95 bp (t −4.1) |
+  | Nov 2025 – May 2026 | +1.1 pp (t 1.7) | −0.95 bp |
 
-  - By month, selling t was ≥ 3.7 in Aug–Oct 2025 and ≤ 1.5 in every later month.
-  - This fits CFM changing its intraday-margin terms, or retail adapting.
-- **Result:** both tests pass, so Step 2 was built. The two Step-1 trials are logged.
+  By month, the selling t was ≥ 3.7 in Aug–Oct 2025 and ≤ 1.5 in every later month. That fits CFM changing its margin terms, or retail adapting.
+- **Result:** both tests pass, so Step 2 was built.
 
 ## DEV trials (21 logged)
-Sleeve $30K at 2× costs (1× in brackets). Alpha t is measured on the incumbent at $70K. Gross and net are per trade, in bp.
+- **Step 1:** two trials, logged as the idle-sleeve DEV book.
+- **Step 2:** 19 trials in the table below, sleeve $30K at 2× costs (1× in brackets). Alpha t is on the incumbent at $70K; gross and net are bp per trade.
 
 | Variant | Trades | Sleeve Sharpe | Alpha t | Gross | Net 2× |
 |---|---|---|---|---|---|
@@ -79,72 +69,63 @@ Sleeve $30K at 2× costs (1× in brackets). Alpha t is measured on the incumbent
 | **vflow x2 all** | 54 | −1.1 (−0.3) | **−1.07** | +42.5 | +10.8 |
 | vflow x2 all, short mirror | 68 | −2.6 (−1.7) | −1.79 | +21.8 | −12.1 |
 
-- **Step-1 trials:** logged as the DEV book with an idle sleeve (there is no sleeve to log).
-- **Positive net bp can still mean a negative Sharpe.** The sleeve is idle about 90% of days, and the gates charge T-bills on idle capital.
-- **Net bp by coin:** step2_dev_netbp_by_coin.csv.
+Positive net bp with a negative Sharpe is not a contradiction: the sleeve is idle about 90% of days, and the gates charge T-bills on idle capital. Net bp by coin: step2_dev_netbp_by_coin.csv.
 
 ## Frozen variant
-**vflow_x2_all** (freeze commit 7c378c0). It had the highest DEV alpha t of the 21 trials; the runner-up was vafter z2 17:00 all at −1.56.
-- **Signal:** at 16:01 ET, buy the perp of any coin whose 15:30–16:00 return is below −2× the trailing 20-day standard deviation of that return.
+**vflow_x2_all**, freeze commit 7c378c0. It had the highest DEV alpha t among trials with at least 40 trades; the runner-up was −1.56.
+- **Signal:** at 16:01 ET, buy the perp of any coin whose 15:30–16:00 return is below −2× its trailing 20-day standard deviation.
 - **Entry:** taker, at the first print at or after 16:01:02, worse by 1.5× the half-spread.
 - **Exit:** at market, at the first print at or after 16:45:02.
-- **Size:** min($15K, 2% of the trailing 20-day median 15:30–16:30 perp volume); gross ≤ 3× the sleeve.
+- **Size:** min($15K, 2% of the trailing 20-day median 15:30–16:30 volume).
 
 ## Gates
-Path B at 2× costs, with a = 0.7 chosen on DEV. 476 scored days (2025-07-18 – 2026-11-05).
+Path B at 2× costs, a = 0.7 chosen on DEV, 476 scored days.
 
 | Gate | Value | Result |
 |---|---|---|
 | G1: full-window alpha t ≥ 3 | −2.18 | FAIL |
 | G2: HOLD t ≥ 1.5 and gain ≥ +0.25 | t −2.08, gain −0.64 | FAIL |
-| G3: full-window gain ≥ +0.5 | −0.27 (book 2.53 vs incumbent 2.80) | FAIL |
-| G4: deflated Sharpe ≥ 0.95 | 0.00, provisional (0.14 at the v_z floor; N = 3,117) | FAIL |
-| G5: no losing book year | 2025 +16.2% (from Jul 18), 2026 +12.6% | PASS |
+| G3: full-window gain ≥ +0.5 | −0.27 (book Sharpe 2.53 vs 2.80) | FAIL |
+| G4: deflated Sharpe ≥ 0.95 | 0.00, provisional (0.14 at the v_z floor) | FAIL |
+| G5: no losing book year | 2025 +16.2%, 2026 +12.6% | PASS |
 
 - **HOLD:**
-  - Book Sharpe 3.00 vs the incumbent's 3.64.
-  - Sleeve Sharpe −3.46 (DEV −1.12, full window −1.97).
-  - 73 trades at −33.6 bp net at 2× (−13.7 at 1×), against +10.8 bp on DEV (+26.7 at 1×).
-- **At 1× (information):** full-window alpha t −0.88, HOLD −1.03, full-window gain −0.12. At θ = 0.25 the results are identical, because a taker variant is not capped by through-volume.
-- **Fee sensitivity (information, 2×):**
-  - $0.12 per contract: DEV +17.4 bp, HOLD −25.7 bp, full-window alpha t −1.67.
-  - $0.30 per contract: DEV +2.7 bp, HOLD −43.6 bp.
-- **Years (sleeve, $30K, 2×):** 2025 −0.8%, 2026 −2.0%.
-- **P&L:** DEV +$167, HOLD −$1,007. Three HOLD days account for −$957.
-- **Top-3 days' share:** not meaningful, because total P&L is negative. On DEV, the top-3 days made 5.3× the DEV total.
-- **HOLD by month (net bp at 2×, trades):** Jun −64 (11), Jul −66 (19), Aug +19 (13), Sep −28 (26), Oct no trades, Nov −8 (4).
+  - Book Sharpe 3.00 vs the incumbent's 3.64; sleeve Sharpe −3.46.
+  - 73 trades at −33.6 bp at 2× (−13.7 bp at 1×), against +10.8 bp on DEV.
+- **At 1×:** full-window alpha t −0.88, HOLD −1.03. θ = 0.25 changes nothing (a taker variant).
+- **Fee sensitivity, at 2×:**
+  - $0.12 per contract: HOLD −25.7 bp, full-window alpha t −1.67.
+  - $0.30 per contract: HOLD −43.6 bp.
+- **Sleeve years at 2×:** 2025 −0.8%, 2026 −2.0%.
+- **Concentration:**
+  - P&L: DEV +$167, HOLD −$1,007; three HOLD days account for −$957.
+  - Top-3 days' share: not meaningful, because total P&L is negative.
+- **HOLD by month (net bp at 2×, trades):** Jun −64 (11), Jul −66 (19), Aug +19 (13), Sep −28 (26), Oct none, Nov −8 (4).
 - **Overlap:**
-  - Correlation with the incumbent is 0.002.
-  - On the incumbent's worst 5% of days, the sleeve averages +0.03%; it is mostly idle on those days.
-  - H1: branch hunt/h1pb had no daily.parquet when this finished, so the correlation was not computed.
+  - Correlation with the incumbent: 0.002.
+  - On the incumbent's worst 5% of days, the sleeve averages +0.03%.
+  - H1: no daily.parquet on hunt/h1pb at finish, so not computed.
 
 ## Capacity and fill realism
-- **Capacity:**
-  - Mean notional $7.5K, 50% of the $15K target: about $14.5K on the majors, $0.3–4.5K on alts, where the 2%-of-volume cap binds.
-  - Active on 38 of 476 days.
-- **Entries and exits** are priced on actual prints:
-  - The median entry is 4.3 s after 16:01:00 (p90 42 s). 12 of 127 entries came more than 60 s late, all in thin alts.
-  - Each leg also pays 1.5× the median half-spread and the per-contract fee.
+- **Capacity:** mean notional $7.5K, 50% of the target. Majors fill about $14.5K; alts $0.3–4.5K, where the volume cap binds. Active on 38 of 476 days.
+- **Prices:** every entry and exit is priced on actual prints. The median entry is 4.3 s after 16:01:00 (p90 42 s). Each leg pays 1.5× the half-spread plus the fee.
 - **V-bid fills:**
-  - Rules: prints strictly through the level, size ≤ θ × through-volume, live from t + 1 s, post-only feasibility checked, ±5% Fair Value Limit enforced.
-  - 85% of fills reached the take-profit. The rest lost about 57 bp, because the bid filled while spot itself was falling (adverse selection). Gross P&L was about 0.
+  - Rules: prints strictly through the level, size ≤ θ × through-volume, live from t + 1 s, post-only and ±5% Fair Value Limit checks.
+  - 85% of fills hit the take-profit. The rest lost about 57 bp: the bids filled when spot itself was falling (adverse selection).
 
 ## Why it fails
-- **Size of the footprint:** the step-up causes visible forced selling, but it moves the majors' basis only about 2–3 bp, and the move reverts slowly.
-- **Cost of a round trip at 2×:**
-  - About 9 bp on BTC (maker).
-  - About 28 bp on ETH (maker), because $0.40 is charged per 0.1-ETH contract.
-  - 12–40 bp as a taker.
-- **The gross edges that do appear are too small or too rare:**
-  - V-after (z ≤ −1, BTC+ETH): +10.6 bp gross, trade-level t 3.2. Smaller than costs.
-  - V-flow (x = 2): +42 bp gross on 54 trades. Too rare to beat T-bills on idle capital.
-- **Post hoc, not a trial:** BTC alone in V-after z ≤ −1 netted +1.8 bp at 2×. The fee on ETH's small contract is the main drag.
+- **Size of the footprint:** the selling is visible, but the majors' dislocation is only about 2–3 bp, and it reverts slowly.
+- **Cost of a round trip at 2×:** about 9 bp on BTC as maker; about 28 bp on ETH, where $0.40 is paid per 0.1-ETH contract; 12–40 bp as taker.
+- **The gross edges that exist are too small or too rare:**
+  - V-after (z ≤ −1, BTC+ETH): +10.6 bp, trade-level t 3.2.
+  - V-flow (x = 2): +42 bp, but on only 54 trades.
+- **Post hoc, not a trial:** BTC-only V-after netted +1.8 bp. ETH's contract fee is the main drag.
 
 ## Weaknesses
-- The mechanism faded about 6× after Oct 2025. Its state on HOLD is unknown, because Step 1 is DEV-only by design.
-- Taker fills use the next print, not the book: there is no CDE book history before 2026-10-14, and thin alts print late.
-- The all-in perp fee is unverified; $0.20 per side is the assumption.
-- Spot data are 1-minute closes, which adds up to a minute of timing noise to the residual.
+- The mechanism faded about 6× after Oct 2025. Its HOLD state is unknown, because Step 1 is DEV-only.
+- Taker fills use the next print, not the book (no CDE book history before Oct 14 2026).
+- The fee is unverified.
+- Spot data are 1-minute closes, which adds up to a minute of timing noise.
 
 ## Scorecard (pre-registered weights)
 | Criterion | Score | Note |
@@ -153,34 +134,34 @@ Path B at 2× costs, with a = 0.7 chosen on DEV. 476 scored days (2025-07-18 –
 | Statistical strength | 0/20 | |
 | Robustness | 0/15 | Neighbouring settings agree only in being negative |
 | Fill and cost realism | 12/15 | Fees unverified |
-| Mechanism | 8/10 | Weak evidence of persistence |
+| Mechanism | 8/10 | |
 | Implementability | 10/10 | |
 | Diversification | 5/5 | |
 | Capacity | 2/5 | |
 | **Total** | **37/100** | |
 
 ## Deviations (none after HOLD)
-1. **Print fetcher:** common.TradeFetcher.window drops prints (see below). A subclass in hcommon.py re-requests the boundary second and removes duplicates. common.py itself is unchanged.
-2. **Fetch windows:** 15:30–17:30 ET instead of the SPEC's 15:30–16:45, to cover the 17:00 exits; plus the 13:30–14:30 control. Weekend and holiday aggregates are a descriptive placebo, not a trial.
-3. **Step-1 choices:** USD-volume weights per day (equal weights also reported) and the window bounds were committed before step1.py first ran.
+1. **Print fetcher:** a subclass of the shared fetcher fixes its paging (below). common.py is unchanged.
+2. **Fetch windows:** 15:30–17:30 ET instead of 15:30–16:45, to cover the 17:00 exits; plus the 13:30–14:30 control. Weekend/holiday aggregates are a placebo, not a trial.
+3. **Step-1 choices:** the volume weights and window bounds were committed before step1.py ran.
 4. **Step-1 trials:** logged as the idle-sleeve DEV book, with their t-stats in `extra`.
-5. **Taker sizing:** the volume measure is the 15:30–16:30 ET USD perp volume over the trailing 20 trading days.
-6. **Exits and V-bid rules:** if no print comes within 30 minutes of an exit, the trade exits at the next candle's open. This and the V-bid rules above were fixed before any Step-2 number existed.
-7. **PEPE prices** are quoted per 1,000 PEPE. They are converted (× 1e−3) before costs and the $150 rule.
+5. **Taker sizing:** the volume measure is the 15:30–16:30 USD perp volume over the trailing 20 trading days.
+6. **Exits:** with no print within 30 minutes, a trade exits at the next candle's open. This was fixed before any Step-2 number existed.
+7. **PEPE prices** (quoted per 1,000 PEPE) are converted before costs and the $150 rule.
 
 ## Shared-code problems
 1. **TradeFetcher.window drops prints at page boundaries.**
-   - Each next page ends at int(oldest print time), and `end` is exclusive, so earlier prints in that same second are lost.
-   - In the pilot, ETH lost 4,865 of the 5,709 contracts traded in the 16:00 ET minute on 2026-03-11.
+   - It ends each next page at int(oldest print), and `end` is exclusive, so earlier prints in that second are lost.
+   - ETH lost 4,865 of the 5,709 contracts in the 16:00 ET minute of 2026-03-11.
    - The losses fall in bursts, exactly where the 4 pm and wick studies look (H1 especially).
    - Fix: hcommon.Fetcher.
-2. **PEPE units.**
-   - common.PERP is in PEPE units, but data/cfm and the prints quote per 1,000 PEPE.
-   - Passing a raw perp price makes perp_cost_bp understate PEPE fees 1,000×, and USD volume comes out 1,000× too high.
-   - SHIB's tick in common.PERP (1e−9 per coin) also disagrees with the product metadata (1e−8). This is untested: there is no SHIB data.
-3. **gates v_z is inflated** (ledger v_z 163), so G4 is provisional, as the coordinator noted.
+2. **PEPE units:**
+   - common.PERP is in PEPE units, but the candles and prints quote per 1,000 PEPE.
+   - Passing a raw price makes perp_cost_bp understate PEPE fees 1,000×.
+   - SHIB's tick also disagrees with the product metadata; untested.
+3. **The gates' v_z is inflated**, so G4 is provisional, as the coordinator noted.
 
 ## Reproduce
 All scripts are in scripts/hunt/h9mc/:
-- On Actions: fetch.py (6 shards), step1.py, and step2.py with `dev`, `dev-mirror vflow_x2_all` or `final`.
-- Locally: log_dev.py, freeze.py and gates_run.py.
+- On Actions: fetch.py, step1.py, and step2.py with `dev`, `dev-mirror` or `final`.
+- Locally: log_dev.py, freeze.py, gates_run.py.
