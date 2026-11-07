@@ -211,7 +211,7 @@ class LiveBroker:
     def __init__(self, count_usdc=False):
         from coinbase.rest import RESTClient
         secret = os.environ["COINBASE_API_SECRET"].replace("\\n", "\n")     # accept the one-line (\\n) form
-        self.c = RESTClient(api_key=os.environ["COINBASE_API_KEY"], api_secret=secret)
+        self.c = RESTClient(api_key=os.environ["COINBASE_API_KEY"], api_secret=secret, timeout=10)   # no hung loop
         self.count_usdc = count_usdc
 
     @staticmethod
@@ -236,10 +236,24 @@ class LiveBroker:
                             limit_price=fmt(px, spec.tick), post_only=post_only)
                 r = self._d(self.c.limit_order_gtc_buy(**args) if side == "BUY" else self.c.limit_order_gtc_sell(**args))
         except Exception as err:
-            return None, repr(err)[:300]
+            oid = self._find_by_client_id(spec.product, cid)  # a timed-out call may still have placed the order
+            return (oid, None) if oid else (None, repr(err)[:300])
         if r.get("success"):
             return r["success_response"]["order_id"], None
         return None, json.dumps(r.get("error_response") or r, default=str)[:300]
+
+    def _find_by_client_id(self, product, cid, tries=2):
+        for i in range(tries):
+            try:
+                r = self._d(self.c.list_orders(product_ids=[product], limit=50))
+                for od in r.get("orders", []) or []:
+                    if od.get("client_order_id") == cid:
+                        return od.get("order_id")
+            except Exception:
+                pass
+            if i + 1 < tries:
+                time.sleep(0.5)
+        return None
 
     def preview_gtd(self, spec, px, size, end_time):
         """Errors Coinbase would give a good-til-date bid (nothing is placed)."""
@@ -313,7 +327,9 @@ class LiveBroker:
                 continue
             if s["status"] in self.TERMINAL:
                 break
-        if not s or s["filled"] <= 0:
+        if not s or s["status"] not in self.TERMINAL:     # accepted, outcome unknown: resolve it before selling again
+            return None, None, 0.0, {"pending_order": oid, "status": s}
+        if s["filled"] <= 0:
             return None, None, 0.0, f"market sell {oid} not filled: {s}"
         return s["avg"], s["fees"], s["filled"], (None if s["filled"] >= size * 0.999 else f"partial: {s['filled']} of {size}")
 
@@ -400,6 +416,7 @@ class Engine:
         self.cash_live = np.inf
         self.counts = {}
         self._tp_dirty = set()
+        self._no_buys = False                              # set while market data or cash is unavailable
         # entry bids expire on their own after ttl seconds (0: good-til-cancelled); the bot re-places them while alive
         self.ttl = int(self.state.get("gtd_ttl_s") or self.cfg.get("bid_ttl_s", 300) or 0)
         # share of each signal per rung (default: thirds); e.g. {"4": 1, "6": 1, "8": 2} is the wick v4 W2 challenger
@@ -530,13 +547,16 @@ class Engine:
     # ---------- orders
     def _place(self, lad, key, side, px, size, t, open_rule=False, first_fill=None):
         sp = self.spec(lad["coin"])
+        if side == "BUY" and self._no_buys:
+            return False, "no new bids while market data or cash is unavailable"
         size = floor_size(size, sp.lot)
         if size <= 0 or size * px < sp.min_usd:
             return False, "below minimum size"
         while True:
             end = self.clock() + pd.Timedelta(seconds=self.ttl) if side == "BUY" and self.ttl else None
             oid, err = self.broker.place(sp, side, px, size, end_time=end)
-            if oid is None and err and "DURATION_TOO_SMALL" in str(err).upper() and 0 < self.ttl < 3600:
+            if oid is None and err and any(x in str(err).upper() for x in ("DURATION", "END_TIME", "EXPIR")) \
+                    and 0 < self.ttl < 3600:
                 self.ttl = min(3600, 2 * self.ttl)          # Coinbase wants longer-lived bids: use its minimum
                 self.state["gtd_ttl_s"] = self.ttl
                 self.log("warning", t=t, msg=f"good-til-date bids now last {self.ttl} s (Coinbase minimum)")
@@ -558,6 +578,7 @@ class Engine:
         o = lad["orders"].pop(key, None)
         if o is None:
             return True
+        o["cancel_req"] = True
         inc, ok = self.broker.cancel(o)
         if inc:                                            # live: it filled before the cancel took effect
             q, px, fee = inc
@@ -592,6 +613,7 @@ class Engine:
             tr["size"] += q
             tr["cost"] += q * px
             tr["fees"] += fee
+            lad.setdefault("bought", {})[k] = lad.get("bought", {}).get(k, 0.0) + q * px
             if o.get("first_fill") is None:
                 o["first_fill"] = minute.isoformat()
             self.log("fill_entry", t=minute, coin=c, ladder=lad["id"], rung=int(k), px=px, size=q,
@@ -636,17 +658,24 @@ class Engine:
                 keep.add((lid, k))
                 continue
             tr = lad["tranches"].get(k)
-            if not tr:
+            if not tr or tr.get("sell_order"):
                 continue
             ok, err = self._place(lad, f"tp{k}", "SELL", tr["tp_px"], tr["size"], t)
             if not ok and err and "POST_ONLY" in str(err).upper():   # market already above the target: sell now
                 self._exit_market(lad, k, t, "tp_cross")
+            elif not ok and "minimum" not in str(err):
+                keep.add((lid, k))                          # transient error: try again next pass
         self._tp_dirty = keep
 
     def _exit_market(self, lad, k, t, reason):
         c, sp = lad["coin"], self.spec(lad["coin"])
         if f"tp{k}" in lad["orders"] and not self._cancel(lad, f"tp{k}", t):   # live: books take-profit fills first
             return                                         # take-profit still live: retry next minute
+        tr = lad["tranches"].get(k)
+        if tr is None:
+            return
+        if tr.get("sell_order") and not self._resolve_sell(lad, k, t):
+            return                                         # an earlier sell's outcome is still unknown: never sell twice
         tr = lad["tranches"].get(k)
         if tr is None:
             return
@@ -662,10 +691,37 @@ class Engine:
         cost_px = last * (self.cfg.get("half_spread_bp", 2.0) / 1e4 + imp)
         px, fee, sold, err = self.broker.market_sell(sp, size, last, cost_px)
         if px is None or not sold:
+            if isinstance(err, dict) and err.get("pending_order"):
+                tr.update(sell_order=err["pending_order"], sell_reason=reason, sell_ref=last)
+                self.log("warning", t=t, coin=c, ladder=lad["id"], rung=int(k),
+                         msg=f"market sell {err['pending_order']} sent, outcome unknown: resolving before any new sell")
+                return
             self.log("error", t=t, coin=c, ladder=lad["id"], rung=int(k), error=f"exit failed, retry next minute: {err}")
             return
         if err:
             self.log("warning", t=t, coin=c, ladder=lad["id"], msg=err)
+        self._book_sell(lad, k, tr, sold, px, fee, last, reason, imp, t)
+
+    def _resolve_sell(self, lad, k, t):
+        """Book a market sell whose outcome was unknown when it was sent. True once resolved."""
+        tr = lad["tranches"].get(k)
+        if tr is None or not tr.get("sell_order"):
+            return True
+        try:
+            s = self.broker.status(tr["sell_order"])
+        except Exception:
+            return False
+        if s["status"] not in self.broker.TERMINAL:
+            return False
+        oid, tr["sell_order"] = tr["sell_order"], None
+        if s["filled"] > 0:
+            self.log("warning", t=t, coin=lad["coin"], ladder=lad["id"], msg=f"resolved market sell {oid}: {s['filled']} sold")
+            self._book_sell(lad, k, tr, s["filled"], s["avg"], s["fees"], tr.get("sell_ref") or s["avg"],
+                            tr.get("sell_reason") or "time", 0.0, t)
+        return True
+
+    def _book_sell(self, lad, k, tr, sold, px, fee, last, reason, imp, t):
+        c, sp = lad["coin"], self.spec(lad["coin"])
         if fee is None:
             fee = sold * px * self.cfg.get("fee_bp_taker", 12.5) / 1e4
         share = min(1.0, sold / tr["size"])
@@ -686,11 +742,15 @@ class Engine:
     def step(self, t=None):
         t = pd.Timestamp(t if t is not None else self.clock()).floor("min")    # the minute now starting
         prev = t - pd.Timedelta(minutes=1)
-        self.update_spot(t)
-        self.refresh_adv(t)
+        try:
+            self.update_spot(t)
+            self.refresh_adv(t)
+            if self.broker.live:
+                self.cash_live = self.broker.cash() - self.cfg.get("usd_reserve", 500.0)
+        except Exception:
+            self._orders_only(prev, t)                     # exits and take-profits still run; no new bids
+            raise
         self._new_day(t)
-        if self.broker.live:
-            self.cash_live = self.broker.cash() - self.cfg.get("usd_reserve", 500.0)
         self._settle(prev, t)
         idx, cf, vol = self.arrays(t)
         pn = wick.panel(cf, vol, self.coins, idx, k=self.k, lookback=self.lookback, coin_codes=self.codes, wbeta=self.wbeta)
@@ -710,6 +770,20 @@ class Engine:
             self.counts = {}
         self.state["last_minute"] = t.isoformat()
         self.save()
+
+    def _orders_only(self, prev, t):
+        """Market data or cash unavailable this minute: book fills, run exits and keep take-profits, place no bids."""
+        self._no_buys = True
+        try:
+            self._new_day(t)
+            self._settle(prev, t)
+            self._manage(t)
+            self._refresh_tps(t)
+        except Exception as err:
+            self.log("error", t=t, error=f"order handling without market data failed: {err!r}"[:300])
+        finally:
+            self._no_buys = False
+            self.save()
 
     def _settle(self, m, t):
         """Book fills for minute m (the one that just closed)."""
@@ -738,7 +812,8 @@ class Engine:
                     if done and key in lad["orders"]:
                         gone = lad["orders"].pop(key)
                         left = gone["size"] - gone["filled"]
-                        if (key[1:] in DEEP and left * gone["px"] >= self.spec(c).min_usd and lad["status"] == "open"
+                        if (key[1:] in DEEP and not gone.get("cancel_req") and gone["filled"] <= 0
+                                and left * gone["px"] >= self.spec(c).min_usd and lad["status"] == "open"
                                 and not lad.get("tp4_touched") and t < pd.Timestamp(lad["cancel_at"])
                                 and key[1:] not in lad["pending"]):
                             lad["pending"].append(key[1:])        # it expired (bot down): place it again
@@ -781,10 +856,15 @@ class Engine:
                         self.count("deep_cancel")
                 lad["pending"] = []
             for k, tr in list(lad["tranches"].items()):
-                if t >= pd.Timestamp(tr["exit_due"]):
+                if tr.get("sell_order"):
+                    self._resolve_sell(lad, k, t)          # a sell sent earlier with an unknown outcome
+                elif t >= pd.Timestamp(tr["exit_due"]):
                     self._exit_market(lad, k, t, "time")
             for key in [k for k, o in lad["orders"].items() if k.startswith("tp") and k[2:] not in lad["tranches"]]:
                 self._cancel(lad, key, t)                  # take-profit left over a closed rung (dust remainder)
+            for k, tr in lad["tranches"].items():
+                if f"tp{k}" not in lad["orders"] and not tr.get("sell_order") and t < pd.Timestamp(tr["exit_due"]):
+                    self._tp_dirty.add((lad["id"], k))     # a take-profit lost to an error or cancelled by the exchange
             self._refresh_bids(lad, t)
             if lad["pending"] and not self._halted(t):
                 self._place_pending(lad, t)
@@ -795,33 +875,49 @@ class Engine:
     def _refresh_bids(self, lad, t):
         """Good-til-date bids expire on their own, so a dead server leaves no bids behind. While the bot is alive it
         re-places the ones still wanted (a partly filled 4-sigma rung in its remainder window, deeper rungs) first."""
+        if self._no_buys:
+            return                                         # no data: let the bids expire rather than re-place blind
         now = self.clock()
+        closed = lad.get("tp4_touched") or t >= pd.Timestamp(lad["cancel_at"])
+        halted = self._halted(t)
         for key in [k for k, o in lad["orders"].items() if o["side"] == "BUY"]:
             o = lad["orders"][key]
             if not o.get("expires") or pd.Timestamp(o["expires"]) - now > pd.Timedelta(seconds=REFRESH_S):
                 continue
             if not self._cancel(lad, key, t):
                 continue
+            deep = key[1:] in DEEP
+            if halted or (deep and closed):
+                continue                                   # halted, or the deeper rungs' window closed: let it go
             left = o["size"] - o["filled"]
             if lad["id"] in self.state["ladders"] and left * o["px"] >= self.spec(lad["coin"]).min_usd:
-                self._place(lad, key, "BUY", o["px"], left, t, first_fill=o.get("first_fill"))
+                ok, _ = self._place(lad, key, "BUY", o["px"], left, t, first_fill=o.get("first_fill"))
                 self.count("refresh")
+                if not ok and deep and o["filled"] <= 0 and key[1:] not in lad["pending"]:
+                    lad["pending"].append(key[1:])         # retried while the window is open (e.g. post-only reject)
 
     def _place_pending(self, lad, t):
         """Deeper rungs at fair value (frozen at the 4-sigma fill) minus 6 / 8 sigma, if the market is above them and
         cash allows; otherwise retried next minute while the window is open."""
+        if self._no_buys:
+            return
         c, sp = lad["coin"], self.spec(lad["coin"])
         mkt = self._market_px(c, t)
         keep = []
         for k in lad["pending"]:
             if f"e{k}" in lad["orders"]:
                 continue
+            ra = lad.get("retry_at", {}).get(k)
+            if ra and self.clock() < pd.Timestamp(ra):
+                keep.append(k)
+                continue
             lvl = floor_to(math.exp(lad["fair_log"] - float(k) * lad["sig"]), sp.tick)
             if not (np.isfinite(mkt) and mkt > lvl):
                 keep.append(k)
                 self.count("deep_deferred_market")
                 continue
-            usd, free = lad["S"] * self.rung_w[k] - lad["tranches"].get(k, {}).get("cost", 0.0), self.free_cash()
+            bought = lad.get("bought", {}).get(k, lad["tranches"].get(k, {}).get("cost", 0.0))
+            usd, free = lad["S"] * self.rung_w[k] - bought, self.free_cash()
             if usd < sp.min_usd:
                 continue
             if usd * (1 + self.fee_m()) > free:
@@ -836,6 +932,9 @@ class Engine:
                 self.log("rung", t=t, coin=c, ladder=lad["id"], rung=int(k), px=lvl, usd=round(usd))
             elif err and "POST_ONLY" in str(err).upper():
                 keep.append(k)
+            elif "minimum" not in str(err):                # transient error: retry in a minute while the window is open
+                keep.append(k)
+                lad.setdefault("retry_at", {})[k] = (self.clock() + pd.Timedelta(seconds=60)).isoformat()
         lad["pending"] = keep
 
     def _market_px(self, c, t):
@@ -897,11 +996,11 @@ class Engine:
         px = floor_to(float(row["level"]), sp.tick)
         size = floor_size(usd / px, sp.lot)
         if lad is not None:
-            lad.update(sig=float(row["sig"]), pred=pred)
             o = lad["orders"].get("e4")
             fresh = not o or not o.get("expires") or \
                 pd.Timestamp(o["expires"]) - self.clock() > pd.Timedelta(seconds=REFRESH_S)
             if o and fresh and abs(o["px"] - px) < sp.tick / 2 and abs(o["size"] - size) <= 0.02 * size:
+                lad.update(sig=float(row["sig"]), pred=pred)
                 return None                                # unchanged: keep the queue position
             if o:
                 if not self._cancel(lad, "e4", t, minute=t - pd.Timedelta(minutes=1)):
@@ -909,6 +1008,7 @@ class Engine:
                 if lad["status"] != "armed":               # it filled before the cancel: that ladder is now open
                     return None
                 self.count("reprice")
+            lad.update(sig=float(row["sig"]), pred=pred)
         if self.broker.live:
             bb = self._market_px(c, t)
             if not (np.isfinite(bb) and px < bb):         # market already at or below the level
@@ -1044,7 +1144,7 @@ class Engine:
         ids = None
         if armed and hasattr(self.broker, "filled_order_ids"):
             try:
-                ids = self.broker.filled_order_ids(since - pd.Timedelta(seconds=5))
+                ids = self.broker.filled_order_ids(since - pd.Timedelta(seconds=30))
                 self._fills_since = t
             except Exception:
                 ids = None                                 # fall back to checking each bid (slower)
@@ -1062,7 +1162,8 @@ class Engine:
                     lad["orders"].pop("e4", None)
             if lad["status"] == "open":
                 self._refresh_tps(t.floor("min"))
-                self._place_pending(lad, t.floor("min"))
+                if not self._halted(t):
+                    self._place_pending(lad, t.floor("min"))
                 self.save()
         for lad in self.ladders():                         # deeper rungs waiting for the market to come back above them
             if lad["status"] == "open" and lad["pending"] and not lad.get("tp4_touched") \

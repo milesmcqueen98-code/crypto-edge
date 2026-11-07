@@ -44,7 +44,7 @@ def broker():
                             serialization.NoEncryption()).decode()
     b = LiveBroker.__new__(LiveBroker)
     b.c = RESTClient(api_key="organizations/sandbox/apiKeys/sandbox", api_secret=pem,
-                     base_url="api-sandbox.coinbase.com")
+                     base_url="api-sandbox.coinbase.com", timeout=10)                # as LiveBroker builds it
     b.count_usdc = False
     return b
 
@@ -96,8 +96,15 @@ def main():
     check("filled_order_ids (list fills, 1-second detection)", lambda: b.filled_order_ids(now - pd.Timedelta(hours=1)),
           lambda o: isinstance(o, set))
     check("preview good-til-date bid", lambda: b.preview_gtd(sp, 50000.0, 0.001, end), lambda o: isinstance(o, list))
-    check("market sell", lambda: b.market_sell(sp, 0.001, 50000.0, 50000.0),
-          lambda o: isinstance(o, tuple) and len(o) == 4)
+    # the sandbox can't report the new order's status, so the sell comes back as pending (outcome unknown), with its
+    # order id: the engine resolves it before any new sell instead of selling twice
+    check("market sell with unreadable status -> pending with its order id", lambda: b.market_sell(sp, 0.001, 5e4, 5e4),
+          lambda o: isinstance(o, tuple) and len(o) == 4 and o[0] is None and isinstance(o[3], dict)
+          and bool(o[3].get("pending_order")))
+    listed = b.open_orders()[0]
+    check("find an order by its client id (a timed-out create may still have placed it)",
+          lambda: b._find_by_client_id(listed["product_id"], listed.get("client_order_id"), tries=1),
+          lambda o: o == listed["order_id"])
 
     HEADER["X-Sandbox"] = "PostOrder_insufficient_fund"
     check("place with insufficient funds -> rejected with the error text",

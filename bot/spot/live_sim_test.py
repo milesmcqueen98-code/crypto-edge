@@ -4,7 +4,8 @@
 The fake exchange keeps real balances and holds:
 - It rejects post-only orders that would cross, and orders the cash can't cover.
 - It fills resting orders from the candles (one-tick trade-through, half the volume beyond the price).
-- It injects faults: 5% of cancels go unconfirmed and 15% of market sells fill only half.
+- It injects faults: 5% of cancels go unconfirmed, 15% of market sells fill only half, 10% of market sells execute
+  with an outcome that cannot be read for two minutes, and 5% of take-profit placements fail with a server error.
 - Entry bids are good-til-date; the fake exchange expires them and demands at least 400 s (the bot must adapt).
 - The server "dies" for 20 minutes in the middle of the crash (--death): every bid must have expired by itself, and a
   fresh process must pick up the state, book what filled meanwhile and run the overdue exits.
@@ -57,14 +58,16 @@ class FakeExchange:
     TERMINAL = E.LiveBroker.TERMINAL
     increment = staticmethod(E.LiveBroker.increment)
 
-    def __init__(self, mkt, clock, usd, capture=0.5, p_cancel_fail=0.05, p_partial=0.15, seed=7, min_gtd_s=400):
+    def __init__(self, mkt, clock, usd, capture=0.5, p_cancel_fail=0.05, p_partial=0.15, seed=7, min_gtd_s=400,
+                 p_sell_unknown=0.10, p_tp_error=0.05):
         self.mkt, self.clock, self.usd, self.coin, self.orders = mkt, clock, usd, {}, {}
         self.capture, self.pcf, self.pp = capture, p_cancel_fail, p_partial
         self.fm, self.ft = 6e-4, 12.5e-4
         self.rng = random.Random(seed)
         self.min_gtd = pd.Timedelta(seconds=min_gtd_s)
+        self.p_sell_unknown, self.p_tp_error, self.unreadable = p_sell_unknown, p_tp_error, {}
         self.n = dict(cancel_unconfirmed=0, partial_sell=0, post_only_reject=0, funds_reject=0, fills=0, expired=0,
-                      duration_reject=0)
+                      duration_reject=0, sell_unknown=0, tp_error=0)
 
     # ---- matching
     def _advance(self):
@@ -128,6 +131,9 @@ class FakeExchange:
             self.n["duration_reject"] += 1
             return None, '{"error": "INVALID_END_TIME", "preview_failure_reason": "DURATION_TOO_SMALL"}'
         c = spec.product.split("-")[0]
+        if side == "SELL" and self.rng.random() < self.p_tp_error:          # a transient server error, nothing placed
+            self.n["tp_error"] += 1
+            return None, 'HTTPError("503 Server Error: Service Unavailable")'
         last = self.mkt.last(c)
         if post_only and ((side == "BUY" and px >= last) or (side == "SELL" and px <= last)):
             self.n["post_only_reject"] += 1
@@ -144,6 +150,9 @@ class FakeExchange:
 
     def status(self, oid):
         self._advance()
+        if self.unreadable.get(oid, 0) > 0:                 # a market sell whose status can't be read yet
+            self.unreadable[oid] -= 1
+            raise RuntimeError("HTTP 503 get_order")
         o = self.orders[oid]
         return dict(filled=o["filled"], avg=o["value"] / o["filled"] if o["filled"] else 0.0, fees=o["fees"],
                     status=o["status"], last_fill=None)
@@ -190,6 +199,14 @@ class FakeExchange:
         fee = q * px * self.ft
         self.usd += q * px - fee
         self.coin[c] -= q
+        if self.rng.random() < self.p_sell_unknown:        # executed, but the outcome can't be read for ~2 minutes
+            self.n["sell_unknown"] += 1
+            oid = uuid.uuid4().hex
+            self.orders[oid] = dict(coin=c, side="SELL", px=px, size=size, filled=q, value=q * px, fees=fee,
+                                    status="FILLED" if q >= size * 0.999 else "CANCELLED", next=self.clock().floor("min"),
+                                    client_order_id=f"{E.ORDER_TAG}-{oid[:8]}", expires=None, market=True)
+            self.unreadable[oid] = 2
+            return None, None, 0.0, {"pending_order": oid, "status": None}
         return px, fee, q, (None if q >= size * 0.999 else f"partial: {q} of {size}")
 
     def cash(self):

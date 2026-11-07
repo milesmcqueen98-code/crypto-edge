@@ -152,6 +152,15 @@ wickctl log               # follow the events (Ctrl-C stops watching; the bot ke
 - If the server goes quiet for 5 minutes, the healthchecks.io heartbeat alerts your phone.
 - Tested: a 20-minute server death in the middle of the Oct 10, 2025 crash left no bids behind. The restarted bot booked
   everything correctly (`live_sim_test.py --death`).
+- **Error recovery** (fixed Nov 7 after an independent code review):
+  - A market sell whose outcome can't be read is resolved before any new sell, so coins are never sold twice.
+  - A take-profit lost to a server error, or cancelled by Coinbase, is placed again.
+  - A cancel that Coinbase confirms late is no longer mistaken for an expiry, so a rung is never bought twice.
+  - A deeper bid rejected on renewal goes back to the queue. No bid is renewed after its window closes or while the
+    bot is halted.
+  - API calls time out after 10 s. An order whose create call timed out is found by its client id.
+  - If candles or cash can't be fetched, exits and take-profits still run; only new bids pause.
+  - The STOP file also stops the deeper bids that 1-second detection would place.
 
 ## Go live in stages (rules fixed before any results)
 
@@ -214,7 +223,11 @@ Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
 - **Live code paths:** `python bot/spot/live_sim_test.py "2025-10-10 20:00" "2025-10-11 02:00"` runs the engine in live
   mode against a fake exchange.
   - The fake exchange has real balances and holds, post-only rejections and cash checks.
-  - It injects faults: 5% of cancels go unconfirmed and 15% of market sells fill only half.
+  - It injects faults:
+    - 5% of cancels go unconfirmed;
+    - 15% of market sells fill only half;
+    - 10% of market sells execute with an outcome that can't be read for two minutes;
+    - 5% of take-profit placements fail with a server error.
   - It checks that no orders are orphaned, that coin balances return to zero, and that the bot's equity equals the
     exchange's USD balance.
 - Results (Nov 6):

@@ -125,6 +125,20 @@ eras (26 / 5 / 22 bp gross vs ~50).
 - Practical rule: run the bot at $250–500K and keep the rest in T-bills. Mixing in T-bills keeps the bot's own Sharpe.
 - At $250K, resting bids hold about 64% of the cash (paper heartbeats).
 
+**Independent code review of the live path (Nov 7): 7 bugs, all in error recovery, all fixed.**
+- Normal fill booking was correct.
+- The bugs:
+  - A market sell with an unknown outcome was re-sent every minute.
+  - A take-profit lost to one server error was never re-placed.
+  - API calls had no timeout.
+  - A late-confirmed cancel looked like an expiry, which could buy a rung twice.
+  - A failed renewal lost the deeper bid, and a bid could be renewed after its window closed.
+  - Exits stopped when candles couldn't be fetched.
+  - The STOP file didn't stop the 1-second deeper bids.
+- Each bug was reproduced by a probe before the fix and rechecked after it.
+- The fake-exchange test now also injects unreadable market sells and take-profit server errors.
+- Parity is unchanged (128 of 128 rungs). README "Safety built in" has the details.
+
 **Live broker against Coinbase's sandbox:** 17 of 17 checks pass (bot/spot/sandbox_test.py).
 - The sandbox gives static responses in the production format.
 - Checks cover accounts, good-til-date and GTC post-only orders, get order, cancel, list orders, list fills, preview and
