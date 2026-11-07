@@ -30,6 +30,10 @@ Research simulator, 17 coins, θ = 0.5 (we get half the volume that trades throu
 - The simulator's fill sizes were checked against Coinbase's trade-by-trade data (wick v4, addendum C1). The volume it
   assumes trades below our bids matches the trades (ratio 1.01), and the fill dollars agree to within 4–5%.
 - At θ = 0.25, $250K live: Sharpe 2.15 (selection), 2.54 (check), 2.02 (2022–23).
+- **Bigger isn't better past ~$500K.** At $1M the 0.2% volume cap stops positions from growing, so most of the cash
+  sits idle.
+  - Return falls to 6–21% a year, and Sharpe after the 3.6–4% T-bill rate falls to 1.0–2.4.
+  - Run $250–500K here and keep the rest in T-bills.
 - Marked drawdown about −18%, intraday, on the Oct 10, 2025 crash. Realized P&L that day was −2.8%.
 - About 3 rung fills a day at $250K.
 - Net per dollar bought is about 40 bp. One rung's result has a standard deviation of about 180 bp, so judge results over

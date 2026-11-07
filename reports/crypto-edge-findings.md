@@ -110,6 +110,16 @@ eras (26 / 5 / 22 bp gross vs ~50).
   14.0% / 2.28. At θ 0.25, live: 2.15 / 2.54 / 2.02.
 - $1M, live: 2.41 / 1.55 / 1.21 (reports/wick_v4/spot_only.csv).
 
+**Why $1M scores lower: the trading is steady, but most of the money sits idle.**
+- At $1M, paper, spot only, the return is 19.2% / 8.1% / 6.0% a year (selection / check / 2022–23). Volatility is
+  only 6.2% / 2.9% / 2.4%.
+- Sharpe before the cash hurdle is 3.08 / 2.80 / 2.53. After subtracting the 3.6–4.0% T-bill rate it is 2.43 / 1.54 /
+  1.02 (reports/wick_v4/cash_hurdle.txt).
+- The 0.2% ADV cap stops positions from growing with capital, so idle cash pays the hurdle and earns nothing at
+  Coinbase.
+- Practical rule: run the bot at $250–500K and keep the rest in T-bills. Mixing in T-bills keeps the bot's own Sharpe.
+- At $250K, resting bids hold about 64% of the cash (paper heartbeats).
+
 **Live broker against Coinbase's sandbox:** 17 of 17 checks pass (bot/spot/sandbox_test.py).
 - The sandbox gives static responses in the production format.
 - Checks cover accounts, good-til-date and GTC post-only orders, get order, cancel, list orders, list fills, preview and
