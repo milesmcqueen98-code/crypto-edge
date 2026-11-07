@@ -1,0 +1,21 @@
+{
+ "fetched_utc": "2026-11-07T04:24:43Z",
+ "n_products": 846,
+ "n_usd": 496,
+ "status_counts": {
+  "online": 517,
+  "delisted": 329
+ },
+ "n_secondary": 191,
+ "n_eligible": 191,
+ "eligible_by_quote": {
+  "USDT": 116,
+  "BTC": 67,
+  "ETH": 8
+ },
+ "eligible_by_status": {
+  "delisted": 148,
+  "online": 43
+ },
+ "ineligible": []
+}
