@@ -1,68 +1,68 @@
 {
  "positions": {},
  "orders": {
-  "BCH": {
-   "id": "paper-67de6ac540",
-   "side": "BUY",
-   "px": 257.15000000000003,
-   "contracts": 9,
-   "kind": "entry",
-   "active_from": "2026-11-06T20:19:00"
-  },
   "AAVE": {
-   "id": "paper-6a4cf6b988",
+   "id": "paper-e8eb817cb9",
    "side": "BUY",
-   "px": 127.08,
+   "px": 125.65,
    "contracts": 3,
    "kind": "entry",
-   "active_from": "2026-11-06T20:20:00"
+   "active_from": "2026-11-07T04:30:00"
   },
   "NEAR": {
-   "id": "paper-ef6b1ae647",
+   "id": "paper-8d21261fcd",
    "side": "BUY",
-   "px": 3.6187,
+   "px": 3.6153,
    "contracts": 1,
    "kind": "entry",
-   "active_from": "2026-11-06T20:20:00"
+   "active_from": "2026-11-07T04:30:00"
   },
   "PEPE": {
-   "id": "paper-dedddb2ad5",
+   "id": "paper-95765e10b8",
    "side": "BUY",
-   "px": 0.004854,
+   "px": 0.004803,
    "contracts": 5,
    "kind": "entry",
-   "active_from": "2026-11-06T20:20:00"
+   "active_from": "2026-11-07T04:30:00"
+  },
+  "BCH": {
+   "id": "paper-387c6fd818",
+   "side": "BUY",
+   "px": 254.0,
+   "contracts": 9,
+   "kind": "entry",
+   "active_from": "2026-11-07T04:30:00"
   },
   "HYPE": {
-   "id": "paper-a757f3166d",
+   "id": "paper-68864f870f",
    "side": "BUY",
-   "px": 76.32000000000001,
+   "px": 77.42,
    "contracts": 3,
    "kind": "entry",
-   "active_from": "2026-11-06T20:20:00"
+   "active_from": "2026-11-07T04:30:00"
   },
   "ZEC": {
-   "id": "paper-07d9e0840a",
+   "id": "paper-1abd6449c6",
    "side": "BUY",
-   "px": 1283.6000000000001,
+   "px": 1272.3000000000002,
    "contracts": 1,
    "kind": "entry",
-   "active_from": "2026-11-06T20:20:00"
+   "active_from": "2026-11-07T04:30:00"
   }
  },
  "equity": 10000,
- "day": "2026-11-06",
+ "day": "2026-11-07",
  "day_start_equity": 10000,
  "halted_day": null,
- "last_minute": "2026-11-06T20:20:00",
+ "last_minute": "2026-11-07T04:30:00",
  "pending_sig": {
-  "ENA": 0.009480033265746726,
-  "NEAR": 0.007893576829636985,
-  "PEPE": 0.009635732121619967,
-  "AAVE": 0.007201029262750959,
-  "ZEC": 0.011110559511586989,
-  "BCH": 0.007382974944777143,
-  "HYPE": 0.006450357329427347,
+  "ENA": 0.008877158563836411,
+  "NEAR": 0.007815947545580657,
+  "PEPE": 0.009564704194604838,
+  "AAVE": 0.007185300756729428,
+  "ZEC": 0.011315558875912388,
+  "BCH": 0.007421598345968313,
+  "HYPE": 0.006042608602554793,
   "SUI": 0.00541593027792238,
   "ONDO": 0.0057355899526968426,
   "XRP": 0.004272449364712957,
