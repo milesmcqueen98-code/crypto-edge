@@ -1,0 +1,163 @@
+# H2 (FR): buying the end of forced deleveraging in BTC/ETH/SOL/XRP on Coinbase perps
+
+**Verdict: FAILS.** The frozen variant fails G1–G4 at 2× costs and passes only G5. All 13 DEV trials had a negative DEV
+alpha t. The gross rebound after a cascade is real but small: 5–27 bp per trade (DEV, best variants). That is less than
+2× perp taker costs (about 22–40 bp round trip), and less than 1× costs on the non-AI variants.
+
+## Mechanism
+A long-liquidation cascade forces sales until the forced flow is exhausted. Then the price overshoots and partly snaps
+back. We take the other side with a perp taker order at the first sign of exhaustion. The counterparty is leveraged
+longs who are being liquidated.
+
+## Data used
+- **Signals:** Coinbase spot 1-minute candles, 2021-01-01 → 2026-11-05.
+  - minute_early to 2023; minute from 2024.
+  - XRP has no data from 2021-03 to 2023-07: the hole is kept as NaN, so no events fall in it.
+  - DEV builds loaded data only up to 2026-05-31.
+- **Execution:** data/cfm perp 1-minute candles, from the first full UTC day of each perp: BTC/ETH 2025-07-19, SOL/XRP
+  2025-08-16.
+  - Before that, trades are spot-priced with the perp cost model.
+  - 2022 contract values follow the prereg's $150 rule. ETH (2022Q4) and SOL (2022Q4–2023Q3) are skipped when below it.
+- **Perp prints:** common.TradeFetcher on Actions (run 42344649166) for all 63 post-launch trades of the frozen
+  configuration: 53 in the portfolio, 0 fetch errors.
+- **Events at W60 k6:** 740 cascade events on scored days. They became 130 portfolio trades after the exhaustion rule,
+  the trade filters, the AI filter and the two-coin limit.
+  - DEV: 117 trades on 87 trade days. HOLD: 13.
+
+| Events | 2022 | 2023 | 2025 | 2026 |
+|---|---|---|---|---|
+| BTC | 42 | 91 | 39 | 33 |
+| ETH | 35 | 82 | 50 | 36 |
+| SOL | 36 | 62 | 40 | 31 |
+| XRP | – | 68 | 59 | 36 |
+
+## Trials (13 of the 24 budget; all logged with gates.log_trial)
+Sleeve: $30K at 2× costs, θ = 0.5. "t" is the DEV alpha t on the incumbent at $70K. "Book" is the DEV book Sharpe at
+a = 0.7; the incumbent's DEV Sharpe is 2.35.
+
+| Variant | Trades | Sleeve SR 2× | SR 1× | t | Gross bp | Net 2× bp | Book |
+|---|---|---|---|---|---|---|---|
+| W15 k4 φ.3 H60 | 2031 | −7.64 | −4.59 | −14.58 | −2.3 | −32.4 | −4.47 |
+| W15 k4 φ.5 H240 | 2341 | −6.06 | −3.79 | −11.29 | −6.8 | −38.7 | −4.63 |
+| W15 k6 φ.3 H60 | 644 | −3.98 | −2.24 | −7.26 | 0.5 | −32.0 | −0.79 |
+| W15 k6 φ.5 H240 | 800 | −3.48 | −2.26 | −6.25 | −9.3 | −43.2 | −1.67 |
+| W60 k4 φ.3 H60 | 973 | −5.06 | −3.25 | −9.20 | −6.6 | −37.6 | −2.32 |
+| W60 k4 φ.5 H240 | 999 | −3.38 | −2.29 | −6.07 | −12.8 | −45.3 | −2.01 |
+| W60 k6 φ.3 H60 | 327 | −2.13 | −1.13 | −4.11 | 3.5 | −28.7 | 0.45 |
+| W60 k6 φ.5 H240 (best core) | 365 | −1.74 | −1.04 | −3.51 | −3.1 | −37.0 | 0.00 |
+| + immediate entry | 358 | −0.99 | −0.32 | −2.41 | 12.9 | −21.1 | 0.47 |
+| + stop at trough − 1σ | 410 | −2.38 | −1.63 | −5.39 | −9.8 | −42.9 | −0.39 |
+| + BTC only | 162 | −1.93 | −1.32 | −3.89 | −6.2 | −34.0 | 0.96 |
+| AI on W60 k6 φ.5 H240 | 146 | −0.36 | 0.00 | −1.36 | 22.4 | −4.1 | 1.37 |
+| **AI on W60 k6 φ.3 H60 (frozen)** | **117** | **−0.31** | **0.18** | **−0.95** | **27.0** | **+3.8** | **1.82** |
+
+- **AI interpretation (fixed before results):** the "+2" AI trials are the walk-forward filter on each of the two best
+  core trials.
+  - LightGBM huber model, quarters from 2022Q3, trained on trades that exited before the test quarter (2024
+    included).
+  - A trade is taken if its prediction is above the median of the training predictions.
+- **Signs:** every neighbouring setting agrees in sign, and all are negative.
+
+## Frozen variant (freeze commit c2c9149; code f05368e)
+- **Event:** W = 60 minutes, k = 6σ, volume ≥ 3× the trailing median.
+- **Entry:** exhaustion entry (first up-close minute within 30 minutes), next-minute open.
+- **Exits:** take-profit at trough + 0.3 × drop; time exit at 60 minutes; no stop.
+- **AI filter:** LightGBM, as above.
+- **Size:** 1× sleeve notional, at most 2 coins.
+
+## Gates (Path B, sleeve at 2× costs; gates.json)
+| | Value | Gate |
+|---|---|---|
+| a chosen on DEV | 0.7 | |
+| **G1** full alpha t | −1.22 | **FAIL** (need ≥ 3) |
+| **G2** HOLD alpha t / Sharpe gain | −1.40 / −0.98 (book 2.66 vs incumbent 3.64) | **FAIL** |
+| **G3** full Sharpe gain | −0.56 (book 1.91 vs 2.47) | **FAIL** |
+| **G4** DSR | 0.00 (N = 3,050; ledger v_z = 9.33, SR0 = 5.5) | **FAIL** (0.49 with the v_z floor; still a fail) |
+| **G5** book calendar years | 2022 +6.6%, 2023 +13.9%, 2025 +29.5%, 2026 +13.4% | PASS |
+
+- **Sleeve Sharpe at 2×:** −0.35 over all days, −0.31 DEV, −0.65 HOLD.
+- **Sleeve years at 2× ($30K):** 2022 −7.4%, 2023 +1.1%, 2025 +9.1%, 2026 +0.4%. The sleeve itself loses in 2022.
+- **At 1× (information only):** G1 t = −0.41; full gain −0.39; HOLD gain −0.79; sleeve Sharpe +0.13.
+- **θ = 0.25:** full t −1.24.
+- **Fee sensitivity at 2× (descriptive):**
+  - $0.12/contract: full t −0.74, sleeve Sharpe −0.07.
+  - $0.30/contract: full t −1.79, sleeve Sharpe −0.71.
+- **Path A:** does not apply. The sleeve is far below the incumbent.
+
+## Checks
+- **Net bp at 2× by year:**
+
+  | Year | Trades | Net 2× bp |
+  |---|---|---|
+  | 2022 | 6 | −123 |
+  | 2023 | 15 | +7 |
+  | 2025 | 79 | +12 |
+  | 2026 | 30 | +1 |
+
+  - DEV: +3.8 bp over 117 trades. HOLD: −7.5 bp over 13 trades (hit rate 46%; TP filled share 27%).
+- **Spot- vs perp-priced:**
+  - Spot-priced (pre-launch): 77 trades, gross +38 bp, net 2× +14 bp.
+  - Perp-priced: 53 trades, gross +9 bp, net 2× −13 bp.
+  - Re-pricing the 53 perp trades on spot gives gross +8 bp and net 2× −14 bp, so the venue is not the cause. The edge
+    is weaker in 2025–26 (diag.json).
+- **Perp prints vs candles (63 post-launch trades):**
+  - Entry: the first print ≥ 2 s after the decision was 0.0 bp median and −1.4 bp mean (favourable) against the
+    next-minute open. The 90th percentile was 7.2 bp adverse, against the 1.0–3.4 bp spread allowance.
+  - Market exits: 0.0 bp median, +1.1 bp mean.
+  - The median entry delay was 3 s. In 2 trades there was no print for 37 minutes and 3.8 hours.
+  - Take-profits: prints traded through the level in 62% of portfolio trades. Prints imply a 58% TP fill share, against
+    44% in the candle model, so the candle model is conservative.
+  - There was no trade where the candle model filled and the prints did not.
+- **R2-08 overlap:**
+  - The incumbent was active on 93% of our trade days (base rate 32%).
+  - 34% of our trade days were among its top-10% |P&L| days (base rate 3%).
+  - Daily correlation was 0.08.
+  - On the incumbent's worst 5% of days the sleeve made −21% in total. Same cascades, same direction, so it does not
+    diversify.
+- **Top-3 days:** they make 367% of total sleeve P&L. The total is only +3.2% over 1,404 days.
+- **Drawdown:**
+  - Daily max drawdown −12.6% at 2×.
+  - Worst intratrade adverse excursion −2,062 bp (ETH, 2025-02-03), at 1× notional.
+- **Capacity at $30K:**
+  - Notional is 0.99× capital.
+  - Entry-minute perp volume is 14× our size (median) and 3× at p10. At $100K that becomes 4× and 0.9×.
+  - The θ = 0.5 TP share is 59%; at θ = 0.25 it is 56%.
+- **By ET hour (4 pm margin cutoff; R3):**
+
+  | ET block | Events | Trades | Net 2× bp |
+  |---|---|---|---|
+  | 00–08 | 146 | 13 | +65 |
+  | 08–12 | 179 | 50 | −1 |
+  | 12–15:30 | 105 | 22 | −54 |
+  | 15:30–16:30 | 20 | 0 | – |
+  | 16:30–17 | 22 | 5 | −14 |
+  | 17–18 | 61 | 11 | −51 |
+  | 18–24 | 207 | 29 | +47 |
+
+  - Over all 632 standalone trades, the 15:30–16:30 block made −58 bp (31 trades).
+  - There is no sign that the 4 pm cutoff creates a better rebound. Descriptive only.
+
+## Deviations
+1. **R3 venue facts applied before any result** (coordinator):
+   - Friday 5–6 pm ET halt.
+   - 2-minute halts on ±10% moves from the hourly reference, emulated before launch.
+   - Fair Value Limit ±5% on the take-profit: it delayed 1 trade.
+   - Fee sensitivity at $0.12 and $0.30.
+   - 4 pm ET table.
+2. **Perp launch** is the first full UTC day of prints.
+3. **The take-profit is translated by the perp/spot basis** at the decision minute. It is never placed at or below
+   entry.
+4. **No HOLD statistic was computed before the freeze push.** After the HOLD read, only descriptive scripts were added:
+   prints.py and diag.py.
+5. **Interpretation:** a trade is skipped when the decision close is already at or above the take-profit.
+
+## Weaknesses
+- The cost-free gross edge is about 15–30 bp, under the 2× cost of 22–40 bp round trip.
+- The AI filter turns a −4.1 t into −0.95 on DEV. That is selection noise around zero, not an edge.
+- 2022 contracts made BTC 2× costs 40–50 bp.
+- The perp era (Jul 2025 on) is short: 53 trades.
+
+## Shared-code note
+G4's v_z is the variance of z across all ledger trials. Large negative trials, such as h2fr's (z down to −8.6), inflate
+it from the 1.126 floor to 7.7–9.3. That makes SR0 about 5.5 for every idea, and G4 then fails for everyone. This was
+reported to the coordinator. It does not change h2fr's verdict.

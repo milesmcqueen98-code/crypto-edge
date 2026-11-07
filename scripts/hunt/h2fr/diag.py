@@ -78,6 +78,14 @@ def main():
     all_tr["blk"] = blk(all_tr.dec_ts)
     out["et_blocks_all_standalone_trades_net2x_bp"] = all_tr.groupby("blk", observed=False)[f"bp_2x@{TAG}"].agg(
         ["count", "mean"]).round(2).to_dict("index")
+    # sleeve calendar years (2x and 1x, $30K / $50K, theta 0.5) and a snapshot of the ledger's z dispersion (G4)
+    D = pd.read_parquet(os.path.join(OUT, "daily.parquet"))
+    out["sleeve_years"] = {c: {int(k): float(v) for k, v in full.gates.years(D[c]).items()} for c in D.columns}
+    L = pd.read_csv(full.gates.LEDGER)
+    z = (L.daily_sr * np.sqrt(L.n_days)).replace([np.inf, -np.inf], np.nan)
+    out["ledger_vz_snapshot"] = dict(rows=int(len(L)), vz_all=float(np.var(z.dropna(), ddof=1)),
+                                     vz_without_h2fr=float(np.var(z[L.idea != "h2fr"].dropna(), ddof=1)),
+                                     h2fr_z_min=float(z[L.idea == "h2fr"].min()), h2fr_z_max=float(z[L.idea == "h2fr"].max()))
     json.dump(full.rnd(out), open(os.path.join(OUT, "diag.json"), "w"), indent=1, default=str)
     print(json.dumps(full.rnd(out), indent=1, default=str))
 
