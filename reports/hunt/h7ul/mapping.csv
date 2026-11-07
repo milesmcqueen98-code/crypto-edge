@@ -1,0 +1,24 @@
+coin,protocol,gecko_id,note
+BTC,bitcoin,bitcoin,mining emission only
+ETH,ethereum,,EF section = realised outflows (excluded); rest emission/linear
+SOL,solana,solana,
+DOGE,dogecoin,dogecoin,mining emission only
+LTC,litecoin,litecoin,mining emission only
+AVAX,avalanche,avalanche-2,quarterly schedule; seed/private dates = latest described (DefiLlama note)
+LINK,chainlink,chainlink,only unlock section is realised transfers (excluded) -> no events
+SUI,sui-foundation,sui,approximated from Sui's token schedule chart (DefiLlama note)
+HBAR,hedera,hedera-hashgraph,quarterly treasury schedule
+NEAR,near-protocol,near,
+AAVE,aave,aave,
+HYPE,hyperliquid,hyperliquid,Core Contributors = realised transfers from HyperLabs (excluded)
+ENA,ethena,ethena,schedule from Ethena CSV (May 2024); cliffs linearised over a month
+ONDO,ondo-finance,ondo-finance,annual Jan-18 cliffs
+DOT,polkadot-treasury,polkadot,
+BNB,binance-smart-chain,binancecoin,
+XRP,,,no DefiLlama dataset (escrow releases not in the free CDN; not hand-added: SPEC fixes the data source)
+ADA,,,no DefiLlama dataset
+BCH,,,no DefiLlama dataset
+XLM,,,no DefiLlama dataset
+PEPE,,,no DefiLlama dataset
+ZEC,,,no DefiLlama dataset
+SHIB,,,no DefiLlama dataset
