@@ -51,25 +51,31 @@ def shift1(x):
     return out
 
 
-def load_pair(coin):
-    """Perp and spot 1-minute candles on one full minute grid from the perp's first minute (USD per coin)."""
-    P = common.load_perp(coin)
+def load_pair(coin, end=GRID_END):
+    """Perp and spot 1-minute candles on one full minute grid from the perp's first minute to `end` (exclusive),
+    prices in USD per coin. Perp volume stays in contracts here."""
+    P = pd.read_parquet(os.path.join(common.DATA, "cfm", f"{coin}.parquet")) if coin in common.PERP else None
     S = common.load_minute(coin)
     if P is None or S is None:
+        return None
+    P = P.drop_duplicates("ts").set_index("ts").sort_index()
+    P = P[(P.volume > 0) & (P.index < end)]
+    if not len(P):
         return None
     sc = PX_SCALE.get(coin, 1.0)
     for k in ("open", "high", "low", "close"):
         P[k] = P[k] / sc
     t0 = P.index.min().floor("min")
-    idx = pd.date_range(t0, GRID_END, freq="min", inclusive="left")
+    idx = pd.date_range(t0, end, freq="min", inclusive="left")
     P = P.reindex(idx)
-    S = S[(S.index >= t0 - pd.Timedelta(days=1)) & (S.index < GRID_END)].reindex(idx)
+    S = S[(S.index >= t0 - pd.Timedelta(days=1)) & (S.index < end)].reindex(idx)
     return idx, P, S
 
 
-def stats(coin):
-    """Per-minute fair value and residual sigma (row t = known at t-1), plus the candle arrays."""
-    out = load_pair(coin)
+def stats(coin, end=GRID_END):
+    """Per-minute fair value and residual sigma (row t = known at t-1), plus the candle arrays (perp volume in
+    contracts)."""
+    out = load_pair(coin, end)
     if out is None:
         return None
     idx, P, S = out
@@ -123,6 +129,26 @@ def candidates(st, k=3.0, sync=True):
         lo_c = (st["p_low"] < A2 - 0.5 * tick) & val_ok
         hi_c = (st["p_high"] > Z2 + 0.5 * tick) & val_ok
     return lo_c, hi_c
+
+
+def prefilter(st, rows, p, pprev, k_lo=3.0, k_hi=6.0):
+    """Print-level superset of trigger prints over the whole grid (k in [k_lo, k_hi], both sides, both modes): the
+    level a print can face lies between the levels implied by the lowest and highest spot price the 1-second rule
+    can return (spot close of row-1 and every trade of the row's minute). Long: the print is below the highest
+    k_lo level and the previous print is above the lowest k_hi level. Short mirrored."""
+    tick = common.PERP[st["coin"]][2]
+    b, s = st["bbar"][rows], st["sig"][rows]
+    sp, lo_s, hi_s = st["s_prev"][rows], st["s_low"][rows], st["s_high"][rows]
+    with np.errstate(invalid="ignore"):
+        lo_ref, hi_ref = np.fmin(sp, lo_s), np.fmax(sp, hi_s)
+        hiL = round_down(hi_ref * np.exp(b - k_lo * s), tick)
+        loL = round_down(lo_ref * np.exp(b - k_hi * s), tick)
+        loZ = round_up(lo_ref * np.exp(b + k_lo * s), tick)
+        hiZ = round_up(hi_ref * np.exp(b + k_hi * s), tick)
+        lng = (p < hiL - 0.5 * tick) & (pprev > loL - 0.5 * tick)
+        sht = (p > loZ + 0.5 * tick) & (pprev < hiZ + 0.5 * tick)
+        ok = (s > 0) & np.isfinite(b) & (np.nan_to_num(lo_ref) * common.PERP[st["coin"]][1] >= 0.9 * common.MIN_CONTRACT_USD)
+    return (lng | sht) & ok
 
 
 def coins():
