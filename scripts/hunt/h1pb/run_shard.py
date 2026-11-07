@@ -254,9 +254,9 @@ def main():
     mine = [c for c in chs if c["shard"] == args.shard]
     print(f"plan: {len(chs)} chunks, est. requests per shard {np.round(load).astype(int).tolist()}; this shard "
           f"{len(mine)} chunks ({time.time() - t_start:.0f}s)", flush=True)
-    out_rep = os.path.join(ROOT, "reports", "hunt", "h1pb", args.stage)
+    out_rep = os.path.join(os.environ.get("H1_REP") or os.path.join(ROOT, "reports", "hunt", "h1pb"), args.stage)
     os.makedirs(out_rep, exist_ok=True)
-    out_raw = os.path.join(ROOT, "out")
+    out_raw = os.environ.get("H1_OUT") or os.path.join(ROOT, "out")
     os.makedirs(out_raw, exist_ok=True)
     mock = mock_from_candles if args.mock else None
     E_all, C_all, L_all = [], [], []
