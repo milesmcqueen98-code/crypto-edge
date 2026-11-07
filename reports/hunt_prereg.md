@@ -199,3 +199,15 @@ Sent to builders H1, H2, H3, H7 and H8.
 - The mechanism: secondary-book wicks in Coinbase's BTC-, ETH- and USDT-quoted books, where market makers pull quotes
   first in cascades.
 - Spec: reports/hunt/h10xq/SPEC.md. Same gates, ≤ 24 trials.
+
+**2026-11-07 06:00 UTC: how G4's null dispersion is computed. Decided while no idea was in a state where G4 alone
+would decide pass or fail; the three ideas finished so far (H2, H5, H7) fail G1–G3 either way.**
+- **The problem:** the pre-registered v_z (plain variance of z across the ledger) is dominated by whole strategy
+  families with large, truly negative Sharpes. H2's DEV books reach −4.6. With 66 trials logged, the plain variance is
+  7.65, which puts the null's expected maximum Sharpe at 5.0 over 3.8 years. That measures how different the families
+  are, not sampling noise under the null of no skill.
+- **The fix (binding):** v_z = max(1.126, (1.4826 × MAD of z)²), a robust estimate of the same quantity. It is 1.50 on
+  the current ledger.
+- **Reported alongside:** the pre-registered plain-variance version, in every gate table.
+- **When G4 is computed:** once, centrally, at the end, with the final ledger (N = 3,000 + every trial of every
+  wave), since N keeps growing while builders run. Builder-time DSR values are provisional.

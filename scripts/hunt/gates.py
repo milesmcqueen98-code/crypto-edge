@@ -156,13 +156,21 @@ def log_trial(idea, variant, r, note="", stage="dev", **extra):
     return row
 
 
-def n_trials():
-    """N = 3000 prior + every trial in the ledger; vz = max(lab floor, variance of z across ledger trials)."""
+def n_trials(robust=True):
+    """N = 3000 prior + every trial in the ledger.
+    vz (binding, deviation of 2026-11-07 06:00 UTC): max(lab floor, (1.4826 x MAD of z)^2) across ledger trials, a
+    robust estimate of the null dispersion. robust=False gives the pre-registered plain variance, reported alongside:
+    it is dominated by strategy families with large true negative Sharpes."""
     if not os.path.exists(LEDGER):
         return N_PRIOR, VZ_FLOOR
     L = pd.read_csv(LEDGER)
     z = (L.daily_sr * np.sqrt(L.n_days)).replace([np.inf, -np.inf], np.nan).dropna().to_numpy()
-    vz = float(np.var(z, ddof=1)) if len(z) > 2 else VZ_FLOOR
+    if len(z) <= 2:
+        return N_PRIOR + len(L), VZ_FLOOR
+    if robust:
+        vz = float((1.4826 * np.median(np.abs(z - np.median(z)))) ** 2)
+    else:
+        vz = float(np.var(z, ddof=1))
     return N_PRIOR + len(L), max(vz, VZ_FLOOR)
 
 
