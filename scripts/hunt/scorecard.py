@@ -56,6 +56,17 @@ def auto_scores(i):
                 break
         if G.get("full_t_alpha") is None:
             G = None
+    # the central recompute (scripts/hunt/central_gates.py, final ledger) is authoritative for every gate value
+    cj = os.path.join(ROOT, "reports", "hunt", "central_gates.json")
+    if G is not None and os.path.exists(cj):
+        C = {r["idea"]: r for r in json.load(open(cj))}.get(i)
+        if C and C.get("evaluated"):
+            G = dict(G)
+            for k in ("a", "full_t_alpha", "hold_t_alpha", "full_gain", "hold_gain", "full_book_sharpe",
+                      "full_sleeve_sharpe", "G1", "G2", "G3", "G5"):
+                G[k] = C.get(k, G.get(k))
+            G["dsr"], G["G4"] = C["dsr_robust"], C["G4_robust"]
+            out["notes"].append("gate values from central_gates.json")
     if G is None:
         out["notes"].append("no gates.json (stopped before HOLD)")
     else:
@@ -66,7 +77,7 @@ def auto_scores(i):
                        (10 if dsr >= 0.95 else 6 if dsr >= 0.8 else 3 if dsr >= 0.5 else 0)
         out.update({k: G.get(k) for k in ("a", "full_t_alpha", "hold_t_alpha", "full_gain", "hold_gain", "dsr",
                                           "full_book_sharpe", "full_sleeve_sharpe", "G1", "G2", "G3", "G4", "G5")})
-    if dp and os.path.exists(dp):
+    if G is not None and dp and os.path.exists(dp):            # an idea stopped before HOLD gets no daily-based score
         D = pd.read_parquet(dp)
         D.index = pd.to_datetime(D.index)
         s = D["s30_2x"].astype(float)
