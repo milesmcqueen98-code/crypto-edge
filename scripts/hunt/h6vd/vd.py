@@ -8,6 +8,7 @@ Fixed spec: reports/hunt/h6vd/SPEC.md; rules: reports/hunt_prereg.md and reports
   python scripts/hunt/h6vd/vd.py select        selection rule -> frozen.json (LOCAL; commit + push = the freeze)
   python scripts/hunt/h6vd/vd.py final         the frozen variant (frozen.json) over every scored day; Actions
   python scripts/hunt/h6vd/vd.py prints I N    trade-print check of a 25% sample of the frozen fills (shard I of N)
+  python scripts/hunt/h6vd/vd.py printsum      aggregate the trade-print shards (LOCAL)
   python scripts/hunt/h6vd/vd.py gates         gates.path_b on daily.parquet (LOCAL: needs the shared ledger)
 
 Bid (coin c, minute t, information through t-1):
@@ -848,6 +849,50 @@ def prints(shard, n_shards):
     print("done", len(rows), "requests", f.n_req)
 
 
+def print_summary():
+    """LOCAL: aggregate the trade-print shards (reports/hunt/h6vd/prints/*.csv) into prints_summary.json.
+    Informational (the gates use the pre-registered candle simulation)."""
+    import glob
+    fz = json.load(open(os.path.join(OUT, "frozen.json")))
+    H, theta = fz["params"]["H"], 0.5
+    P = pd.concat([pd.read_csv(f) for f in sorted(glob.glob(os.path.join(OUT, "prints", "prints_*.csv")))],
+                  ignore_index=True)
+    P["ts"] = pd.to_datetime(P.ts)
+    err = P["error"].notna() if "error" in P else pd.Series(False, index=P.index)
+    Q = P[~err].copy()
+    Q["confirmed"] = Q.traded_through.astype(bool)
+    later = (Q.thr_usd - Q.thr_m0).clip(lower=0.0)
+    Q["size_print"] = np.where(Q.confirmed, np.minimum(Q["size"], theta * (Q.thr_m0_trades_strict + later)), 0.0)
+    out = dict(sampled=int(len(P)), errors=int(err.sum()), checked=int(len(Q)),
+               fill_confirmed_share=float(Q.confirmed.mean()),
+               fill_confirmed_share_usd=float(Q["size"][Q.confirmed].sum() / Q["size"].sum()),
+               through_usd_trades_vs_candle_m0_median=float((Q.thr_m0_trades_strict / Q.thr_m0.where(Q.thr_m0 > 0)).median()),
+               through_usd_trades_all_vs_candle_m0_median=float((Q.thr_m0_trades_all / Q.thr_m0.where(Q.thr_m0 > 0)).median()),
+               size_supported_share_usd=float(Q.size_print.sum() / Q["size"].sum()),
+               maker_buy_share_below_bid=float(Q.maker_buy_share.mean()),
+               first_live_trade_above_bid_share=float((Q.first_live_px > Q.L).mean()))
+    if "tp_through" in Q:
+        t = Q[Q.tp_size > 0]
+        out["tp_checked"] = int(t.tp_through.notna().sum())
+        out["tp_confirmed_share"] = float(t.tp_through.astype(float).mean()) if len(t) else None
+    if "exit_first_trade_2s" in Q:
+        x = Q[Q.exit_first_trade_2s.notna()]
+        slip = np.log(x.exit_first_trade_2s / x.exit_open_candle) * 1e4
+        out["exit_checked"] = int(len(x))
+        out["exit_first_trade_2s_vs_open_bp_mean"] = float(slip.mean()) if len(x) else None
+        out["exit_first_trade_2s_vs_open_bp_median"] = float(slip.median()) if len(x) else None
+    # print-adjusted P&L on the sample: unconfirmed fills dropped, sizes cut to print-supported capacity
+    k = Q["size_print"] / Q["size"]
+    out["sample_pnl2_usd"] = float(Q.pnl2.sum())
+    out["sample_pnl2_print_adjusted_usd"] = float((Q.pnl2 * k).sum())
+    out["sample_net_bp_2x"] = float(Q.pnl2.sum() / Q["size"].sum() * 1e4)
+    out["sample_net_bp_2x_print_adjusted"] = float((Q.pnl2 * k).sum() / max(Q.size_print.sum(), 1e-9) * 1e4)
+    Q["year"] = Q.ts.dt.year
+    out["by_year"] = Q.groupby("year").agg(n=("confirmed", "size"), confirmed=("confirmed", "mean")).round(3).to_dict("index")
+    json.dump(out, open(os.path.join(OUT, "prints_summary.json"), "w"), indent=1, default=str)
+    print(json.dumps(out, indent=1, default=str))
+
+
 def select():
     """LOCAL, after `log`: apply the selection rule to every DEV trial and write frozen.json (the freeze)."""
     S = pd.read_csv(os.path.join(DEV_OUT, "summary_dev.csv"))
@@ -904,6 +949,8 @@ if __name__ == "__main__":
         prints(int(sys.argv[2]), int(sys.argv[3]))
     elif mode == "select":
         select()
+    elif mode == "printsum":
+        print_summary()
     elif mode == "gates":
         gate_run()
     else:
