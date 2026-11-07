@@ -39,7 +39,9 @@ AI trials (fixed before any run; the SPEC's two AI slots): walk-forward LightGBM
   3 seeds averaged) by quarter from 2022Q3; features known at placement (sigma, the coin's 24-hour and 7-day spot
   moves, BTC's 4-hour spot move, UTC hour, coin); label = net bp at 2x costs of fills at least 1 day before the
   quarter starts (2024 fills train but are never scored); keep a bid if its prediction exceeds the median of the
-  training predictions; a quarter with fewer than 100 training fills keeps every bid. AIa trains on the best core
+  training predictions; a quarter with fewer than 200 training fills (too few to split at min_data_in_leaf 60), or a
+  model whose training predictions are constant, keeps every bid (fixed after a 2024 smoke test showed a constant
+  model drops every bid, before any DEV run). AIa trains on the best core
   trial's own book fills; AIb trains on its unit fills (every hour's bid simulated alone at unit size), the SPEC's
   "fills" read both ways.
 Selection (prereg): the highest DEV alpha t (sleeve $30K at 2x on the incumbent at $70K) among trials with >= 40
@@ -75,8 +77,9 @@ TRAIN = ("2024-01-08", "2024-12-31")             # AI training rows only, never 
 HOLD0 = pd.Timestamp("2026-06-01")
 SWITCH_GAP = 300
 CAPS = ((30000, 0.5), (50000, 0.5), (30000, 0.25), (50000, 0.25))
-AI_MIN_ROWS = 100
+AI_MIN_ROWS = 200                                   # enough rows to split at min_data_in_leaf 60, bagging 0.8
 AI_Q0 = "2022Q3"
+AI_QEND = "2026Q2"                                  # DEV: the last quarter with DEV hours
 FEATS = ["sigma", "ret24_bp", "ret7d_bp", "btc4h_bp", "hour", "coin_id"]
 LGB_PARAMS = dict(objective="huber", alpha=60.0, learning_rate=0.03, num_leaves=7, min_data_in_leaf=60,
                   feature_fraction=0.7, bagging_fraction=0.8, bagging_freq=1, lambda_l2=5.0, verbose=-1)
@@ -505,7 +508,11 @@ def walk_forward(Ht, L, q_end):
                           num_boost_round=LGB_ROUNDS)
             ptr.append(m.predict(tr[FEATS]))
             pte.append(m.predict(Xte))
-        thr = float(np.median(np.mean(ptr, axis=0)))
+        ptr_m = np.mean(ptr, axis=0)
+        thr = float(np.median(ptr_m))
+        if np.ptp(ptr_m) <= 1e-9:                    # no split was possible: a constant model keeps every bid
+            info.append(dict(q=str(per), n_train=int(len(tr)), model=False, keep_rate=1.0, constant=True))
+            continue
         kk = np.mean(pte, axis=0) > thr
         keep[te] = kk
         info.append(dict(q=str(per), n_train=int(len(tr)), model=True, thr_bp=round(thr, 2),
@@ -598,7 +605,8 @@ def run_dev(outdir=None, coins=COINS, select=True):
             nm = tname(k, H, u)
             tstat[nm] = gates.alpha_test(cols[f"{nm}|30000|0.5|2x"], inc70)["t_alpha"]
         elig = [c for c in CORE if n_tr[tname(*c)] >= 40]
-        best = max(elig, key=lambda c: tstat[tname(*c)]) if elig else CORE[0]
+        key = lambda c: tstat[tname(*c)] if np.isfinite(tstat[tname(*c)]) else -np.inf  # noqa: E731
+        best = max(elig, key=key) if elig else CORE[0]
     else:
         best = CORE[0]
     kb, Hb, ub = best
@@ -617,13 +625,14 @@ def run_dev(outdir=None, coins=COINS, select=True):
     masks, ai_info = {}, {}
     for kind, src in (("a", best_trades), ("b", U)):
         L = ai_labels(kind, best_trades if kind == "a" else None, U if kind == "b" else None, Hall)
-        keep, info = walk_forward(Hb_rows, L, "2026Q2")
+        keep, info = walk_forward(Hb_rows, L, AI_QEND)
         masks[kind] = Hb_rows.assign(keep=keep).set_index(["coin", "era", "h"]).keep
         ai_info[kind] = dict(n_labels=int(len(L)), quarters=info)
     meta["ai"] = ai_info
     st2 = {"k9": {}, "a": {}, "b": {}}
     for coin, era, D, Ht in coin_eras(list(UNIV[ub]), HOLD0):
         B, spec = make_bids(Ht, D, K_VAR)
+        meta["clamp_share"][f"k{int(K_VAR)}|{coin}|{era}"] = float(B["capped"].mean()) if len(B["h"]) else None
         for cap in CAPS:
             st2["k9"].setdefault(coin, {}).setdefault(cap, []).append(trades_table(D, B, spec, Hb, *cap))
         for kind in ("a", "b"):
@@ -663,6 +672,7 @@ def run_full():
     coins = list(UNIV[u])
     days = scored_days()
     caps = CAPS + ((100000, 0.5),)
+    os.makedirs(os.path.join(OUT, "full"), exist_ok=True)
     store = {}
     hours = []
     units = {}
@@ -821,11 +831,12 @@ def run_prints(coin):
 
 def run_smoke(outdir):
     """2024 only (never scored, not DEV): exercises the dev code path; prints counts only."""
-    global SCORED_DAYS, TRAIN_DAYS, ERAS, AI_MIN_ROWS, AI_Q0
-    ERAS = {"main": ("2024-01-01", "2024-04-01", "minute")}
-    SCORED_DAYS = day_set((("2024-02-15", "2024-03-31"),))
-    TRAIN_DAYS = day_set((("2024-01-08", "2024-02-14"),))
-    AI_MIN_ROWS, AI_Q0 = 5, "2024Q1"
+    global SCORED_DAYS, TRAIN_DAYS, ERAS, AI_MIN_ROWS, AI_Q0, AI_QEND
+    ERAS = {"main": ("2024-01-01", "2024-07-01", "minute")}
+    SCORED_DAYS = day_set((("2024-04-01", "2024-06-30"),))
+    TRAIN_DAYS = day_set((("2024-01-08", "2024-03-31"),))
+    AI_MIN_ROWS, AI_Q0, AI_QEND = 20, "2024Q2", "2024Q2"
+    LGB_PARAMS["min_data_in_leaf"] = 5
     import gates
     gates.incumbent = lambda cap, theta=0.5, variant="instant", days=None: pd.Series(0.0, index=days)
     run_dev(outdir=outdir, coins=["BTC", "ETH"], select=False)
