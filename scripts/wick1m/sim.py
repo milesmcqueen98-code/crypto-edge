@@ -229,12 +229,16 @@ def perp_cost():
 
 
 def evaluate(P, kappa=None, ladder=False, exit_rule="E0", trade_list="bot", theta=0.5, C=1e6, gross_cap=1.0,
-             per_trade=0.25, days=None, tiers=SPOT_TIERS, drop_same_minute=False, use_bitstamp=True, mtm=False):
+             per_trade=0.25, days=None, tiers=SPOT_TIERS, drop_same_minute=False, use_bitstamp=True, mtm=False,
+             weights=None):
     """Per-tranche USD P&L, daily returns (P&L booked on the exit day) and, with mtm=True, minute-level equity."""
     if exit_rule != "E0":
         raise ValueError("version 2 implements the market exit (E0) only")
     fee_perp, hs_perp = perp_cost()
     Q = P[P.filled].copy()
+    if weights is not None:                                    # wick v4: rung weights {k: share of the signal}
+        ladder = True
+        Q = Q[Q.k.isin(list(weights))]
     if not ladder:
         Q = Q[Q.k == LADDER[0]]
     if trade_list == "bot":
@@ -249,6 +253,9 @@ def evaluate(P, kappa=None, ladder=False, exit_rule="E0", trade_list="bot", thet
     if kappa is not None:
         want_tot = np.minimum(want_tot, kappa * Q.adv.fillna(0.0).to_numpy())
     want = want_tot / nk
+    if weights is not None:
+        wsum = float(sum(weights.values()))
+        want = want_tot * Q.k.map({k: w / wsum for k, w in weights.items()}).to_numpy()
     cap_in = {v: theta * Q[f"in_{v}"].to_numpy() for v in venues}
     cap_tp = {v: theta * Q[f"tp_{v}"].to_numpy() for v in venues}
     fill_v = {v: np.zeros(len(Q)) for v in venues}
