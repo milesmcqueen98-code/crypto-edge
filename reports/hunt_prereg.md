@@ -246,3 +246,20 @@ failed, H11 is frozen with its HOLD unread, and H1, H8 and H10 are still running
   - EF (ETF fixing): in-kind creations since 2025 shrink the flow.
   - TW (TWAP footprints): heavy data, prior 3.
   - Blocked: HL position history, Binance/Bybit live feeds, Upbit.
+
+**2026-11-07 09:30 UTC: independent audit of all 13 ideas (reports/hunt/AUDIT.md), after every hold-out was read.**
+A separate agent recomputed every gate with its own code. It matches central_gates.csv to 7e-12, and no verdict
+changes. Its material findings are recorded here, not acted on, because none can change a verdict:
+- **M1, H12 hold-out breach.** An Actions run on pre-freeze code committed H12's HOLD trade lists, with per-trade
+  P&L, 34 s before its freeze commit. The frozen variant is still the mechanical pick of its DEV-only rule (alpha t
+  1.74 vs 0.78), and H12 fails anyway.
+- **M2, stale builder DSRs.** Ten worktrees kept the pre-deviation gates.py, so the builders' G4 values are
+  superseded by central_gates.csv. H5's own file says DSR 0.956; the binding central value is 0.935.
+- **M3, unstable null dispersion.** The within-idea vz (1.218) sits above the 1.126 floor only because of H1's 21
+  trials. Every idea fails G4 under all three rules, so no verdict depends on it.
+- **M4, idle cash.** The pre-registered convention charges T-bills on idle sleeve cash. It decides G1 for H5, H1 and
+  H4. With idle cash credited at T-bills, none would clear G1–G3 together: H4 fails G3, H1 fails G2, and H5 fails G2
+  and G3.
+- **Scorecard corrections applied:**
+  - Diversification no longer gives 1.5 points for correlations of 0.2–0.4, which the rubric does not allow.
+  - Hand scores now follow their own rules: H5 neighbours 5; capacity 3 for H10 and H11 and 2 for H4 and H8.

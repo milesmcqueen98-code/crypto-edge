@@ -1,5 +1,5 @@
 {
- "_rules": "Hand-scored parts of the pre-registered scorecard (reports/hunt_prereg.md). rob_neigh (5): 5 if the frozen variant's DEV alpha is positive and its one-step neighbours share the sign, 2-3 if mixed, 0 if the frozen result is negative. realism (15): trade-verified fills 6, live-speed latency 3, volume-capped capacity 3, costs checked against published fees 3 (perp all-in fee is unverified: 2 of 3 at most). mechanism (10): named forced or eager counterparty 4, evidence it persists 3, capacity-limited so big funds pass 3. implement (10): inputs live in the US 4, Coinbase API order types 3, low operational complexity 3. capacity (5): whole allocation deployed at theta 0.25 = 5, partly 1-3. Scored by the coordinator from each builder's REPORT and gates.json.",
+ "_rules": "Hand-scored parts of the pre-registered scorecard (reports/hunt_prereg.md). rob_neigh (5): 5 if the frozen variant's DEV alpha is positive and its one-step neighbours share the sign, 2-3 if mixed, 0 if the frozen result is negative. realism (15): trade-verified fills 6, live-speed latency 3, volume-capped capacity 3, costs checked against published fees 3 (perp all-in fee is unverified: 2 of 3 at most). mechanism (10): named forced or eager counterparty 4, evidence it persists 3, capacity-limited so big funds pass 3. implement (10): inputs live in the US 4, Coinbase API order types 3, low operational complexity 3. capacity (5): whole allocation deployed at theta 0.25 = 5, partly 1-3. Scored by the coordinator from each builder's REPORT and gates.json. Audit corrections (2026-11-07): capacity uses only 5 or the 2-3 partial band; neighbours follow the sign rule only.",
  "h2fr": {
   "rob_neigh": 0,
   "realism": 10,
@@ -21,16 +21,16 @@
   "realism": 8,
   "mechanism": 9,
   "implement": 9,
-  "capacity": 1,
-  "why": "Neighbours mixed: k3 days 0-7 variants positive (alpha t 0.6-1.1), k4/k6 and days 0-30 mostly negative. Realism: candle fills with a 25% print sample that showed candle capacity overstated about 3x (fills 2), resting bids at t-1 (3), theta-capped but overstated (1), spot VIP 1 fees with a 5 bp half-spread (2). Mechanism: airdrop and early-holder dumps into empty books (4), sleeve positive every year but the edge sits on day 0 (2), tiny per-listing capacity big funds skip (3). Implement: live listing data and post-only bids (9). Capacity: peak cash $3.6K of $30K (1)."
+  "capacity": 2,
+  "why": "Neighbours mixed: k3 days 0-7 variants positive (alpha t 0.6-1.1), k4/k6 and days 0-30 mostly negative. Realism: candle fills with a 25% print sample that showed candle capacity overstated about 3x (fills 2), resting bids at t-1 (3), theta-capped but overstated (1), spot VIP 1 fees with a 5 bp half-spread (2). Mechanism: airdrop and early-holder dumps into empty books (4), sleeve positive every year but the edge sits on day 0 (2), tiny per-listing capacity big funds skip (3). Implement: live listing data and post-only bids (9). Capacity: peak cash $3.6K of $30K (2)."
  },
  "h5an": {
-  "rob_neigh": 4,
+  "rob_neigh": 5,
   "realism": 9,
   "mechanism": 9,
   "implement": 7,
   "capacity": 2,
-  "why": "Neighbours: holds at 5-30 minute horizons and on spot-listing subsets at 2 s latency; at 10 s it shrinks to t 0.3, at 30 s it turns negative (4). Realism: every entry and exit priced on prints (6) but a worst-print bound flips the sign, so fills 4; 2 s latency is unproven for a public poller (1); our size is about 0.9x all aggressive buying in the next 10 s, impact not modelled (1); spot VIP 1 fees and measured spreads (3). Mechanism: Binance-driven eager buyers (4), drift present in DEV and HOLD but HOLD weak (2), small capacity (3). Implement: Binance CMS reachable with a plain client (3), market orders (3), a sub-2-second poller (1). Capacity: mean trade $3.9K, idle most days (2)."
+  "why": "Neighbours: holds at 5-30 minute horizons and on spot-listing subsets at 2 s latency; at 10 s it shrinks to t 0.3, at 30 s it turns negative; the one-step neighbours are all positive (5). Realism: every entry and exit priced on prints (6) but a worst-print bound flips the sign, so fills 4; 2 s latency is unproven for a public poller (1); our size is about 0.9x all aggressive buying in the next 10 s, impact not modelled (1); spot VIP 1 fees and measured spreads (3). Mechanism: Binance-driven eager buyers (4), drift present in DEV and HOLD but HOLD weak (2), small capacity (3). Implement: Binance CMS reachable with a plain client (3), market orders (3), a sub-2-second poller (1). Capacity: mean trade $3.9K, idle most days (2)."
  },
  "h6vd": {
   "rob_neigh": 0,
@@ -53,8 +53,8 @@
   "realism": 13,
   "mechanism": 6,
   "implement": 10,
-  "capacity": 1,
-  "why": "Neighbours: frozen alpha t +1.90 and the next variant +1.89; the other six trials -4.9 to -12.7 (2). Realism: prints cover 100% of candidate minutes (6), resting bids (3), theta-capped (3), stable-pair fees from a third-party source, unverified (1). Mechanism: panic redemptions are a named forced flow (4), but about three independent stress events in the history, and the DEV edge was cbETH in 2022-23, which reversed (1); stablecoin books are deep, big funds compete (1). Implement: live, post-only bids, simple (10). Capacity: ladder deployed 3.1% of the time (1)."
+  "capacity": 2,
+  "why": "Neighbours: frozen alpha t +1.90 and the next variant +1.89; the other six trials -4.9 to -12.7 (2). Realism: prints cover 100% of candidate minutes (6), resting bids (3), theta-capped (3), stable-pair fees from a third-party source, unverified (1). Mechanism: panic redemptions are a named forced flow (4), but about three independent stress events in the history, and the DEV edge was cbETH in 2022-23, which reversed (1); stablecoin books are deep, big funds compete (1). Implement: live, post-only bids, simple (10). Capacity: ladder deployed 3.1% of the time (2)."
  },
  "h9mc": {
   "rob_neigh": 0,
@@ -69,16 +69,16 @@
   "realism": 10,
   "mechanism": 4,
   "implement": 10,
-  "capacity": 4,
-  "why": "Neighbours: k7 H60 and H240 on all four coins positive, BTC+ETH and BTC-only negative, k5 negative; the frozen k9 sits at the grid's edge (3). Realism: prints confirm 66 of 68 post-launch fills, but 190 of 256 trades are spot-priced before launch (3); hourly resting bids (3); prints support a median 69% of candle size (2); perp fee unverified (2). Mechanism: forced selling on the majors (3), money concentrated in 2025 SOL/XRP and 2023 loses at 2x (1), majors are big-fund markets (0). Implement (10). Capacity: 80% of trades at the full $30K (4)."
+  "capacity": 3,
+  "why": "Neighbours: k7 H60 and H240 on all four coins positive, BTC+ETH and BTC-only negative, k5 negative; the frozen k9 sits at the grid's edge (3). Realism: prints confirm 66 of 68 post-launch fills, but 190 of 256 trades are spot-priced before launch (3); hourly resting bids (3); prints support a median 69% of candle size (2); perp fee unverified (2). Mechanism: forced selling on the majors (3), money concentrated in 2025 SOL/XRP and 2023 loses at 2x (1), majors are big-fund markets (0). Implement (10). Capacity: 80% of trades at the full $30K (3)."
  },
  "h10xq": {
   "rob_neigh": 0,
   "realism": 8,
   "mechanism": 5,
   "implement": 8,
-  "capacity": 4,
-  "why": "All 13 trials lose heavily at 1x and 2x (0). Realism: scored on candles; a print sample shows candles optimistic (81.7% of fills confirm, through-volume a median 28% of the candle estimate), so fills 2; the fair value is up to a minute stale (latency 2); theta-capped but overstated (1); common.py spot costs (3). Mechanism: makers pulling secondary books in cascades is a named story (3), but fills are stale-quote pick-offs locking +1.7 bp against 35-70 bp of costs (0); small books (2). Implement: live data and post-only bids, but a cross-book hedge adds complexity (8). Capacity: 60% of fills at the full $5K (4)."
+  "capacity": 3,
+  "why": "All 13 trials lose heavily at 1x and 2x (0). Realism: scored on candles; a print sample shows candles optimistic (81.7% of fills confirm, through-volume a median 28% of the candle estimate), so fills 2; the fair value is up to a minute stale (latency 2); theta-capped but overstated (1); common.py spot costs (3). Mechanism: makers pulling secondary books in cascades is a named story (3), but fills are stale-quote pick-offs locking +1.7 bp against 35-70 bp of costs (0); small books (2). Implement: live data and post-only bids, but a cross-book hedge adds complexity (8). Capacity: 60% of fills at the full $5K (3)."
  },
  "h13ps": {
   "rob_neigh": 0,

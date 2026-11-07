@@ -94,7 +94,7 @@ def auto_scores(i):
         worst = ri.sort_values().head(10).index
         on_worst = float(s.reindex(worst).mean())
         out["corr_incumbent"], out["mean_on_inc_worst10"] = c, on_worst
-        out["divers"] = (3 if c < 0.2 else 1.5 if c < 0.4 else 0) + (2 if on_worst > 0 else 0)
+        out["divers"] = (3 if c < 0.2 else 0) + (2 if on_worst > 0 else 0)      # rubric: < 0.2 (3); worst days (2)
     return out
 
 
