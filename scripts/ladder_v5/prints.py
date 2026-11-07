@@ -53,7 +53,7 @@ def main(art):
         lvl = float(r.lvl)
         t = ((g.time - r.ts).dt.total_seconds()).to_numpy()
         px = g.price.to_numpy(np.float64)
-        sz = g.size.to_numpy(np.float64)
+        sz = g["size"].to_numpy(np.float64)
         usd = px * sz
         side = g.side.to_numpy()
         m0 = t < 60
@@ -81,7 +81,6 @@ def main(art):
                 f = sw.loc[first_t]
                 rec.update(first_sweep_usd=float(f.usd), first_sweep_levels=int(f.n),
                            first_sweep_depth_bp=float(1e4 * np.log(lvl / f.lo)))
-            sig = float(np.exp(r.lvl) * 0 + 1)  # placeholder (sigma from the trade list below)
             for L in LAGS:
                 b = np.nonzero(t <= s4 + L)[0]
                 rec[f"mo_{L}s"] = float(1e4 * np.log(px[b[-1]] / lvl)) if len(b) else np.nan
