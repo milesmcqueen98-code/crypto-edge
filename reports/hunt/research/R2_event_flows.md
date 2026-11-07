@@ -17,16 +17,16 @@ The best fits are Coinbase's own new listings, and unlock/delisting calendars us
 
 | # | Idea | Who is forced or eager, and why | Why a small trader is paid | Evidence (effect, source) | Backtest data | CB spot / US perp | Events/yr (tradable) | Capacity at $100K | Red flags |
 |---|---|---|---|---|---|---|---|---|---|
-| E1 | Binance listing or perp-launch notice → follow on CB spot (H5) | Binance users and arbitrage bots buy at once | Only if CB alt books reprice seconds late | Move lands inside the announcement minute: Bithumb n=8, mean peak +13.8%, +8.6% at 10 min (self-reported) [S5]. Binance effect fading [S2]. New-perp median gain-to-max ~1% [S7]. | Binance CMS catalog 48: 2,292 articles, ms stamps, free, reachable from US (wave-1 probe). CB trades, free. | Spot, long only | est. 50–100 | $5–20K per event | Pure latency race (vendors claim µs [S32]); CDN cache ~1 s [S31]; title-parse errors |
+| E1 | Binance listing or perp-launch notice → follow on CB spot (H5) | Binance users and arbitrage bots buy at once | Only if CB alt books reprice seconds late | Move lands inside the announcement minute: Bithumb n=8, mean peak +13.8%, +8.6% at 10 min (self-reported) [S5]. Listing premium now mostly pre-listing; reverts in ~2 weeks [S2]. New-perp median gain-to-max ~1% [S7]. | Binance CMS catalog 48: 2,292 articles, ms stamps, free, reachable from US (wave-1 probe). CB trades, free. | Spot, long only | est. 50–100 | $5–20K per event | Pure latency race (vendors claim µs [S32]); CDN cache ~1 s [S31]; title-parse errors |
 | E2 | Upbit/Bithumb KRW listing → follow on CB spot | Korean retail; capital controls slow arbitrage | Same as E1 | CAP +34.5% within 1 min on Bithumb, ~+14% four hours later [S6]. Upbit n=28 on Bybit spot: mean peak +1.2%, +0.1% at 10 min [S5]. Upbit median day-1 +42% fell to +10% after mid-June 2026 [S1]. | Upbit notice feed needs an API key, no history [S8]. Public Telegram channel used by an open-source sniper [S5]. Tardis Upbit trades since 2021 (paid) [S33]. | Spot, long only | est. 30–50 (~100 KRW listings/yr [S1]) | $5–20K | Latency; feed access for a US person (unverified); the big pump is inside Upbit |
 | E3 | Robinhood listing → follow on CB | US retail buyers; RH's market makers hedge on US venues | US-hours flow may lag offshore bots | Anecdote only: SHIB +35% the day RH listed it (headline only) [S9] | RH notices (blog/X; vendor feeds cover RH [S32]); CB trades | Spot | est. 10–20 | $10–30K | Tiny n; no study |
 | E4 | New CB listing: deep resting bids, days 0–30 (H4) | Airdrop recipients and early holders sell into books with no market-maker inventory | Liquidity to forced sellers; snap-back | Of 42 Binance/CB listings (2024), ~80% rose >10% at some point, but only 12 later held above the listing price; 22 fell >45% [S10]. 88% of 62 airdrops fell, mostly within 15 days [S11]. | CB candles incl. 91 delisted pairs, `new_at` 2023+ (free, wave-1 probe). Status-page phase timestamps [S12]. | Spot, post-only bids | est. 50–100 | $2–10K per listing-day | Persistent downtrend (falling knives); candle fills optimistic |
 | E5 | Phase switch: limit-only → full trading | App/market-order buyers arrive only at full trading, 14–24 h after the open | Public timestamp; hold inventory into the switch | **Untested.** SUI: auction→limit-only 13 min, then 24 h to full trading. SPK: 35 min / 21.7 h. BIGTIME: 16 min / 14.6 h [S12]. | Status-page incidents (free; history depth unverified) + CB trades | Spot | as E4 | $2–10K | No prior evidence |
 | E6 | Fade listing pumps with US perps | Late FOMO buyers; pumps revert | Shorting thin alts is hard | For >40% Upbit pumps, the day-7 close was 20–65% under the day-1 high (median 45%) [S1]. Premium reverts within ~2 weeks [S2]. 41–71% of new perps peak on day 1 [S7]. | As E1/E2 + CB perp trades | US perp (23 coins) | est. 0–5 | $10–30K | Big perp coins rarely get new listings; squeezes |
-| E7 | Unlock pre-drift short on US perps (H7) | Teams and investors sell or pre-hedge before cliffs | Most holders can't short thin alts | Pre-event 1-month median −14.7% vs BTC (p<0.001, n=164). After: −4.85% median vs matched peers (n=221) [S13]. ~90% negative; drift from −30 d; team cliffs ~−25% [S3]. Matters at ≥5% of float, mostly priced in [S14]. | DefiLlama dataset CDN, 373 protocols, free (wave-1 probe). Tokenomist/CryptoRank web views; APIs paid [S34]. | US perp short | est. 3–10 cliffs ≥5% of float | $20–50K | Tiny n; schedule revisions (look-ahead); liquid tokens show no significant effect [S13] |
+| E7 | Unlock pre-drift short on US perps (H7) | Teams and investors sell or pre-hedge before cliffs | Most holders can't short thin alts | Pre-event 1-month median −14.7% (p<0.001, n=164; benchmark not stated). After: −4.85% median vs matched peers (n=221) [S13]. ~90% negative; drift from −30 d; team unlocks worst, down to ~−25% [S3]. Matters at ≥5% of float, mostly priced in [S14]. | DefiLlama dataset CDN, 373 protocols, free (wave-1 probe). Tokenomist/CryptoRank web views; APIs paid [S34]. | US perp short | est. 3–10 cliffs ≥5% of float | $20–50K | Tiny n; schedule revisions (look-ahead); liquid tokens show no significant effect [S13] |
 | E8 | Scheduled treasury release seen on-chain (e.g., LINK quarterly) | Issuer moves ~19M LINK to Binance each quarter | Known seller, visible in real time | Headlines only: $165–262M per release [S15] | Etherscan (free); CB LINK perp | US perp | ~4 | $50K+ | n=4/yr; may sell OTC |
-| E9 | Delisting notices: dump, then sometimes a squeeze | Holders forced out before suspension; market makers pull; later, shorts forced to cover | Liquidity provision, or riding the squeeze | Binance Apr 2025 batch: −7% to −28% within minutes [S16]. Sep batch: −7% to −25%, then +62% to +344% a week before delisting [S17]. CB MOVE −20%; book went limit-only at once, suspension ~2 weeks later [S18]. | Binance CMS, CB notices and status page, candles for 91 delisted pairs (free) | Spot bids | est. 10–20 (batched) | $5–15K | Information, not just flow; batches correlate; pump groups |
-| E10 | Index rebalances (COIN50 quarterly, Bitwise 10 monthly at 4 pm ET, GDLC quarterly) | Index funds forced to trade at the 4 pm ET reference | Liquidity at the fix | No price-pressure study found. Flows are small: BITW ~$1.3B, HYPE added at ~0.95% [S19, S20]. | 10-K/8-K filings, MarketVector monthlies, Grayscale releases (free) | Spot/perp | ~5–10 add/drops | n/a | Flows ≪ daily volume; pre-announced |
+| E9 | Delisting notices: dump, then sometimes a squeeze | Holders forced out before suspension; market makers pull; later, shorts forced to cover | Liquidity provision, or riding the squeeze | Binance Apr 2025 batch: up to −28% within minutes [S16]. Sep batch: −7% to −25%, then +62% to +344% a week before delisting [S17]. CB MOVE −20%; book went limit-only at once, suspension ~2 weeks later [S18]. | Binance CMS, CB notices and status page, candles for 91 delisted pairs (free) | Spot bids | est. 10–20 (batched) | $5–15K | Information, not just flow; batches correlate; pump groups |
+| E10 | Index rebalances (COIN50 quarterly, Bitwise 10 monthly at 4 pm ET, GDLC quarterly) | Index funds forced to trade at the 4 pm ET reference | Liquidity at the fix | No price-pressure study found. Flows are small: BITW ~$1.3B (non-affiliate value, Jun 2025), HYPE added at ~0.95% [S19, S20]. | 10-K/8-K filings, MarketVector monthlies, Grayscale releases (free) | Spot/perp | ~5–10 add/drops | n/a | Flows ≪ daily volume; pre-announced |
 | E11 | ETF 3–4 pm ET fixing flow, conditional on that day's flow sign | APs and issuers trade into the BRRNY window | Only if the flow can be nowcast before 3 pm | That hour was >6.7% of BTC volume in Q1 2024; ~$220M on CB [S21]. In-kind allowed since Jul 29, 2025 [S22]. No return evidence. | Farside daily flows (free, 2024+), CB 1-min (free) | Spot/perp BTC/ETH | ~250 days | Large | Unconditional hour effects already dead; big desks own it; median-based fix |
 | E12 | Expiry windows (CME last Friday 4 pm London; Deribit Friday 08:00 UTC) | Rollers, delta hedgers | Pin or settlement pressure | Pre-2021 expiry pattern reversed after BITO [S23]. Pinning: media claims only. | CME calendar (free); Deribit OI (paid) | Perp | 12 / 52 | Large | Calendar effects already dead |
 | E13 | Government/estate coin sales (US Marshals, Germany, Mt Gox) | Known sellers move coins on-chain first | Front-run visible transfers | Germany sold ~50k BTC as BTC fell 65k→55.8k, but its largest exchange transfers came after the drop [S24] | Arkham (free web, paid API) | Perp BTC | 2–6 | Large | Few events; everyone watches |
@@ -61,7 +61,8 @@ with weekly price change, and are disclosed after execution [S24b].
   - Bithumb n=8: mean peak +13.8%, +8.6% at 10 min; the pump lands inside the announcement minute.
   - Upbit n=28: mean peak +1.2%, +0.1% at 10 min.
 - **S6** [BigGo (CAP)](https://finance.biggo.com/news/e5663b55-0efb-49b8-9fd7-1cb7db04d3cd): +34.5% within one minute
-  of an Upbit notice; about 15% off the peak four hours later. A buyer one minute late lost money.
+  of an Upbit notice; about 15% off the peak four hours later. A buyer at that one-minute high was ~15% down four
+  hours later.
 - **S7** [BitMEX Q1 2025](https://www.bitmex.com/blog/2025q1-derivatives-report): for new perps, median
   gain-to-maximum is ~1% (Binance) and 0% (OKX), against means of 25–31%; 41–71% peak on day 1.
 - **S8** [Upbit changelog](https://docs.upbit.com/kr/changelog/websocket-announcement): an `announcement` stream on
@@ -69,7 +70,8 @@ with weekly price change, and are disclosed after execution [S24b].
 - **S31** [Binance CMS](https://gist.github.com/hungdoansy/b4eb018d5dece90642f632510192e9a4): catalog 48 served via
   CloudFront, with ~1 s cache age observed. The
   [Binance announcements WebSocket](https://developers.binance.com/en/docs/products/announcements/general-info) needs
-  a signed Binance API key, which a US person can't hold.
+  a signed Binance API key, which a US person can't hold. That page doesn't name the announcement topic
+  (unverified).
 - **S32** [Vendors](https://newlistings.pro/upbit-websocket-listings) (also
   [cryptolisting.ws](https://cryptolisting.ws/best-crypto-listing-alert-services/)):
   - Detection-to-publish of ~190 µs; price moves "can begin within milliseconds".
@@ -104,8 +106,8 @@ with weekly price change, and are disclosed after execution [S24b].
   listings on top exchanges are below their debut price after a year.
 
 **Unlocks**
-- **S3** [Keyrock](https://keyrock.com/from-locked-to-liquidity-what-16000-token-unlocks-teach-us/): 16k events, but
-  only 40 tokens and mostly linear, so the effective n is small.
+- **S3** [Keyrock](https://keyrock.com/from-locked-to-liquidity-what-16000-token-unlocks-teach-us/): 16k events across
+  only 40 tokens. My inference: most are small linear releases, so the effective n is small.
   - Price suppression starts ~30 days out; large unlocks settle within ~14 days.
   - Investor unlocks (n=106) show slow, small declines, consistent with OTC, TWAP and options hedging.
   - Ecosystem unlocks average +1.2%.
@@ -119,7 +121,7 @@ with weekly price change, and are disclosed after execution [S24b].
 - **S34** Data access:
   - [DefiLlama](https://docs.llama.fi/pro-api): unlocks are in the $300/month API tier, but wave 1 found the dataset
     CDN free.
-  - [Tokenomist](https://docs.tokenomist.ai/tier-overviews): the free tier is web-only.
+  - [Tokenomist](https://docs.tokenomist.ai/tier-overviews): the free tier is the web app; API terms not stated.
 - **S15** Headlines only:
   [LINK quarterly unlock → Binance](https://rallies.ai/news/chainlink-drops-as-165m-quarterly-link-unlock-drives-large-binance-inflows).
 
