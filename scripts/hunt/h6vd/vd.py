@@ -197,7 +197,8 @@ class Lev:
         D = pd.DataFrame(dict(coin=self.c, i0=cand, ts=idx[cand], k=k, L=Lc, F=F, TP=TP, tick=tc,
                               sig_bp=self.sig[cand] * 1e4, z=self.z[cand], thr_usd=thr, thr_m0=thr0, V0=self.V[cand],
                               cb_m1=at(lc, -1) - np.log(Lc), cb_m6=at(lc, -6) - np.log(Lc),
-                              cb_m16=at(lc, -16) - np.log(Lc), rf_m1=at(lr, -1), rf_m6=at(lr, -6), rf_m16=at(lr, -16)))
+                              cb_m16=at(lc, -16) - np.log(Lc), rf_0=at(lr, 0), rf_m1=at(lr, -1), rf_m6=at(lr, -6),
+                              rf_m16=at(lr, -16)))
         for h, H in enumerate(HS):
             D[f"i_tp{H}"] = i_tp[:, h]
             D[f"tp_usd{H}"] = tp_usd[:, h]
@@ -346,29 +347,39 @@ def run_book(C, Z, lo, hi, theta, H, quiet=None, allow=None):
 def pnl(F, H, mult):
     cm, ct = cost(mult)
     rem = F["size"] - F["tp_size"]
-    return F["tp_size"] * (F[f"ret_tp{H}"] - cm) + rem * (F[f"ret_x{H}"] - ct) - F["size"] * cm
+    return F["tp_size"] * (F[f"ret_tp{H}"] - cm) + rem * (F[f"ret_x{H}"].fillna(0.0) - ct) - F["size"] * cm
 
 
 def daily(F, H, mult, capital, idx, days):
+    """Daily return on capital: the take-profit part booked on its fill day, the rest on the time-exit day."""
     if len(F) == 0:
         return pd.Series(0.0, index=days)
-    p = pnl(F, H, mult).to_numpy()
-    d = pd.Series(p, index=idx[F["end"].to_numpy()].floor("D")).groupby(level=0).sum()
+    cm, ct = cost(mult)
+    tp, rem = F["tp_size"].to_numpy(), (F["size"] - F["tp_size"]).to_numpy()
+    p_tp = tp * (F[f"ret_tp{H}"].to_numpy() - 2 * cm)
+    p_rem = rem * (np.nan_to_num(F[f"ret_x{H}"].to_numpy()) - ct - cm)
+    i_tp = np.where(tp > 0, F[f"i_tp{H}"].to_numpy(), F["end"].to_numpy())
+    d = pd.concat([pd.Series(p_tp, index=idx[i_tp].floor("D")),
+                   pd.Series(p_rem, index=idx[F["end"].to_numpy()].floor("D"))]).groupby(level=0).sum()
     return d.reindex(days, fill_value=0.0) / capital
 
 
 # ------------------------------------------------------------------------------------------------ diagnostics
 def venue_led(F, H):
-    """Who opened the gap in the 5 minutes before the fill: Coinbase falling to the bid, or the reference rising."""
+    """Who opened the gap over the 6 minutes to the fill: Coinbase falling to the bid (close t-6 -> the bid) or the
+    reference rising (close t-6 -> close t). Coinbase-led when Coinbase's fall is the larger part."""
     d_cb = -F["cb_m6"]                                            # log(L) - log(CB close at t-6)
-    d_rf = F["rf_m1"] - F["rf_m6"]
+    d_rf = F["rf_0"] - F["rf_m6"]
     down, up = np.maximum(0.0, -d_cb), np.maximum(0.0, d_rf)
     tot = down + up
     share = np.where(tot > 0, down / tot.where(tot > 0, 1.0), 0.5)
     cl_cb = np.log1p(F[f"ret_x{H}"].fillna(0.0))                  # Coinbase from the bid to the time exit
-    cl_rf = F[f"rf_x{H}"] - F["rf_m1"]                            # reference over the same hold
+    cl_rf = F[f"rf_x{H}"] - F["rf_0"]                             # reference over the same hold
+    up_cb, dn_rf = np.maximum(0.0, cl_cb), np.maximum(0.0, -cl_rf)
+    tc = up_cb + dn_rf
+    close_ref = np.where(tc > 0, dn_rf / np.where(tc > 0, tc, 1.0), 0.5)
     return pd.DataFrame(dict(cb_share_open=share, cb_led=share > 0.5, cb_after_bp=cl_cb * 1e4,
-                             ref_after_bp=cl_rf * 1e4), index=F.index)
+                             ref_after_bp=cl_rf * 1e4, ref_share_close=close_ref), index=F.index)
 
 
 def overlap(F, inc):
@@ -401,17 +412,15 @@ def trade_stats(F, H):
 
 
 # ------------------------------------------------------------------------------------------------ AI filter
-def ai_frame(levs_fn, coins, idx, end, btc, k, U, cand_keys):
-    """Features (t-1) for every eligible coin at the minutes U; rows that are candidate fills carry their key."""
-    rows = []
+def ai_frame(levs_fn, coins, idx, btc, k, C):
+    """Features known at t-1 for every candidate fill row of C (same row order as C)."""
+    parts = []
     for ci, c in enumerate(coins):
+        rows = np.nonzero(C.coin_id.to_numpy() == ci)[0]
+        if len(rows) == 0:
+            continue
         lv = levs_fn(c)
-        if not lv.ok:
-            continue
-        el = lv.elig[U]
-        u = U[el]
-        if len(u) == 0:
-            continue
+        u = C.i0.to_numpy()[rows]
         lc = np.log(pd.Series(lv.Cl).ffill(limit=30).to_numpy())
         lb = btc["lb"]
         beta = rbeta(np.diff(lc, prepend=np.nan), np.diff(lb, prepend=np.nan))
@@ -423,22 +432,23 @@ def ai_frame(levs_fn, coins, idx, end, btc, k, U, cand_keys):
             v15 = pd.Series(v).rolling(15, min_periods=1).sum()
             avg = v15.rolling(4320, min_periods=1440).mean()
             f[nm] = shift((v15 / avg.where(avg > 0)).to_numpy(), 1)[u]
-        D = pd.DataFrame(f)
+        D = pd.DataFrame(f, index=rows)
         D["zgap"] = lv.z[u]
         D["depth_bp"] = k * lv.sig[u] * 1e4
         for L in (5, 15, 60):
             D[f"btc_z{L}"] = btc[f"btc_z{L}"][u]
         ts = idx[u]
-        D["hour_utc"] = ts.hour
-        D["weekend"] = (ts.dayofweek >= 5).astype(int)
+        D["hour_utc"] = np.asarray(ts.hour)
+        D["weekend"] = (np.asarray(ts.dayofweek) >= 5).astype(int)
         D["coin_id"] = ci
         D["t"] = u
         D["ts"] = ts
-        rows.append(D.astype({x: np.float32 for x in AI_FEATS if x not in ("coin_id", "hour_utc", "weekend")}))
-        del lv
-    X = pd.concat(rows, ignore_index=True)
-    key = pd.Series(np.arange(len(cand_keys)), index=pd.MultiIndex.from_tuples(cand_keys))
-    X["cand_row"] = key.reindex(pd.MultiIndex.from_arrays([X.t.to_numpy(), X.coin_id.to_numpy()])).to_numpy()
+        parts.append(D)
+        del lv, lc, beta
+    X = pd.concat(parts).sort_index()
+    for x in AI_FEATS:
+        if x not in ("coin_id", "hour_utc", "weekend"):
+            X[x] = X[x].astype(np.float32)
     return X
 
 
@@ -452,32 +462,32 @@ def ai_labels(C, H, theta=0.5, mult=2.0):
     return y.to_numpy()
 
 
-def ai_walk_forward(X, y_c, q_last):
-    """LightGBM (edge.wick.PARAMS, 3 seeds), trained on candidate rows before each test quarter (expanding window,
-    1-day embargo), from 2025Q2. Returns predictions and the in-sample median threshold per row (NaN = no model)."""
+def ai_walk_forward(X, y, q_last):
+    """LightGBM (edge.wick.PARAMS, 3 seeds, episode weights), trained on candidate rows before each test quarter
+    (expanding window, 1-day embargo), from 2025Q2, only with >= 6 months of candidate history before the quarter.
+    Returns predictions and the in-sample median threshold per row (NaN = no model: the filter is off)."""
     import lightgbm as lgb
     from edge import wick
     pred = np.full(len(X), np.nan)
     thr50 = np.full(len(X), np.nan)
-    has = X.cand_row.notna().to_numpy()
-    y = np.full(len(X), np.nan)
-    y[has] = y_c[X.cand_row[has].astype(int).to_numpy()]
-    feats = AI_FEATS
-    t_first = X.ts[has].min() if has.any() else pd.Timestamp("2100-01-01")
+    t_first = X.ts.min()
+    ts = X.ts.to_numpy()
+    ep = X.groupby("coin_id").t.transform(lambda z: np.cumsum(np.r_[1, np.diff(z.to_numpy()) > 1])).to_numpy()
     for per in pd.period_range("2025Q2", q_last, freq="Q"):
-        tr = has & np.isfinite(y) & (X.ts < per.start_time - pd.Timedelta(days=1)).to_numpy()
-        te = ((X.ts >= per.start_time) & (X.ts <= per.end_time)).to_numpy()
+        tr = np.isfinite(y) & (ts < np.datetime64(per.start_time - pd.Timedelta(days=1)))
+        te = (ts >= np.datetime64(per.start_time)) & (ts <= np.datetime64(per.end_time))
         if tr.sum() < 200 or not te.any() or t_first > per.start_time - pd.Timedelta(days=182):
+            print(f"    AI {per}: no model (train rows {int(tr.sum())})", flush=True)
             continue
         T_ = X.loc[tr]
-        ep = T_.groupby("coin_id").t.transform(lambda s: np.cumsum(np.r_[1, np.diff(s.to_numpy()) > 1]))
-        w = 1.0 / T_.assign(ep=ep).groupby(["coin_id", "ep"]).t.transform("size").to_numpy()
+        w = 1.0 / pd.Series(1, index=pd.MultiIndex.from_arrays([T_.coin_id.to_numpy(), ep[tr]])).groupby(level=[0, 1]).transform("size").to_numpy()
         pt, pi = [], []
-        for s in (7, 11, 23):
-            m = lgb.train(wick.PARAMS | {"seed": s}, lgb.Dataset(T_[feats], y[tr], weight=w, categorical_feature=["coin_id"]),
+        for sd in (7, 11, 23):
+            m = lgb.train(wick.PARAMS | {"seed": sd, "num_threads": 4},
+                          lgb.Dataset(T_[AI_FEATS], y[tr], weight=w, categorical_feature=["coin_id"]),
                           num_boost_round=wick.ROUNDS)
-            pt.append(m.predict(X.loc[te, feats]))
-            pi.append(m.predict(T_[feats]))
+            pt.append(m.predict(X.loc[te, AI_FEATS]))
+            pi.append(m.predict(T_[AI_FEATS]))
         pred[te] = np.mean(pt, axis=0)
         thr50[te] = float(np.median(np.mean(pi, axis=0)))
         print(f"    AI {per}: train {int(tr.sum())} test rows {int(te.sum())}", flush=True)
@@ -535,22 +545,22 @@ class Run:
                         quiet=self.btc["quiet_bad"] if v.get("quiet") else None, allow=allow)
 
     def ai_allow(self, v, q_last):
-        """Permission matrix at the candidate minutes of variant v (AI threshold mode v['ai'])."""
+        """AI permission for the candidate rows of variant v (both threshold modes). Non-candidate bids stay allowed
+        (they only take a slot), which can only cost fills."""
         C = self.C[(v["ref"], v["k"])]
-        U = np.unique(C.i0.to_numpy())
-        keys = list(zip(C.i0.to_numpy(), C.coin_id.to_numpy()))
-        X = ai_frame(lambda c: self.lev(c, v["ref"]), self.coins, self.idx, self.end, self.btc, v["k"], U, keys)
+        X = ai_frame(lambda c: self.lev(c, v["ref"]), self.coins, self.idx, self.btc, v["k"], C)
         y = ai_labels(C, v["H"])
         pred, thr50 = ai_walk_forward(X, y, q_last)
+        U = np.unique(C.i0.to_numpy())
         out = {}
         for mode in ("pos", "q50"):
             okr = np.ones(len(X), bool)
             m = np.isfinite(pred)
             okr[m] = pred[m] > 0.0 if mode == "pos" else pred[m] >= thr50[m]
-            A = np.zeros((len(U), len(self.coins)), bool)
+            A = np.ones((len(U), len(self.coins)), bool)
             A[np.searchsorted(U, X.t.to_numpy()), X.coin_id.to_numpy()] = okr
             out[mode] = (U, A)
-        P = X[["t", "coin_id", "ts"]].assign(pred=pred, thr50=thr50, cand_row=X.cand_row)
+        P = pd.DataFrame(dict(ts=X.ts.to_numpy(), coin_id=X.coin_id.to_numpy(), pred=pred, thr50=thr50, y=y))
         return out, P
 
 
@@ -595,6 +605,7 @@ def evaluate(R, v, F, last, inc_tr):
         p2 = pnl(F, v["H"], 2.0)
         st["net_bp_2x_cbled"] = float(p2[vl.cb_led].sum() / F["size"][vl.cb_led].sum() * 1e4) if vl.cb_led.any() else np.nan
         st["net_bp_2x_refled"] = float(p2[~vl.cb_led].sum() / F["size"][~vl.cb_led].sum() * 1e4) if (~vl.cb_led).any() else np.nan
+        st["ref_share_close_med"] = float(vl.ref_share_close.median())
         st.update({f"overlap_{a}": b for a, b in overlap(F, inc_tr).items()})
         d = s2 * 30e3
         top = d.sort_values(ascending=False)
@@ -623,7 +634,8 @@ def dev():
         cols[(st["variant"], "s30_2x")] = s2
         cols[(st["variant"], "s30_1x")] = s1
         if len(F):
-            fills.append(F.assign(variant=st["variant"], pnl2=pnl(F, v["H"], 2.0), pnl1=pnl(F, v["H"], 1.0)))
+            a = F.assign(p2=pnl(F, v["H"], 2.0)).groupby("coin").agg(n=("size", "size"), usd=("size", "sum"), pnl2=("p2", "sum"))
+            fills.append(a.assign(variant=st["variant"]).reset_index())
         if SMOKE:
             print(f"  {st['variant']}: trades {st.get('trades')}, fill $M {st.get('fill_musd', 0):.3f}, "
                   f"cb-led {st.get('cb_led_share', float('nan')):.2f}, overlap5 {st.get('overlap_within5', float('nan')):.2f}",
@@ -644,7 +656,7 @@ def dev():
     sb = [s for v, s in core if v == best][0]
     base = vq if (sq.get("trades", 0) >= MIN_TRADES and sq["t_alpha70"] > sb["t_alpha70"]) else best
     allows, P = R.ai_allow(base, "2026Q2")
-    P[(P.ts < gates.HOLD0) & P.cand_row.notna()].to_parquet(os.path.join(DEV_OUT, "ai_pred_dev.parquet"))
+    P[P.ts < gates.HOLD0].to_parquet(os.path.join(DEV_OUT, "ai_pred_dev.parquet"))
     for mode in ("pos", "q50"):
         do(dict(base, ai=mode), allow=allows[mode])
     S = pd.DataFrame(stats)
@@ -653,10 +665,7 @@ def dev():
     D.index.name = "day"
     D.to_parquet(os.path.join(DEV_OUT, "daily_dev.parquet"))
     if fills:
-        Fa = pd.concat(fills, ignore_index=True)
-        keep = ["variant", "coin", "ts", "k", "L", "F", "TP", "sig_bp", "z", "thr_usd", "thr_m0", "size", "tp_size",
-                "pnl2", "pnl1", "slots", "n_elig"]
-        Fa[keep].to_parquet(os.path.join(DEV_OUT, "fills_dev.parquet"))
+        pd.concat(fills, ignore_index=True).to_csv(os.path.join(DEV_OUT, "by_coin_dev.csv"), index=False)
     # net bp by k over every candidate (no book), DEV scored days, H = 60 and 30, 2x costs
     rows = []
     for (ref, k), C in R.C.items():
@@ -709,7 +718,6 @@ def final():
     if v.get("ai"):
         allows, P = R.ai_allow(v, "2026Q4")
         allow = allows[v["ai"]]
-        P.to_parquet(os.path.join(OUT, "ai_pred.parquet"))
     last = gates.END
     days = pd.date_range(SCORE0[v["ref"]], last, freq="D")
     cols, out = {}, {}
@@ -731,6 +739,8 @@ def final():
                 st[f"{nm}_trades"] = int(msk.sum())
                 st[f"{nm}_overlap"] = overlap(F[msk], inc_tr)
                 st[f"{nm}_net_bp_2x"] = float(F.pnl2[msk].sum() / F["size"][msk].sum() * 1e4) if msk.any() else np.nan
+            st["ref_share_close_med"] = float(F.ref_share_close.median())
+            st["closed_by_ref_share"] = float((F.ref_share_close > 0.5).mean())
             for nm, msk in (("cb_led", F.cb_led), ("ref_led", ~F.cb_led)):
                 st[f"{nm}_trades"] = int(msk.sum())
                 st[f"{nm}_net_bp_2x"] = float(F.pnl2[msk].sum() / F["size"][msk].sum() * 1e4) if msk.any() else np.nan
@@ -740,8 +750,16 @@ def final():
             st["by_year_trades"] = F.groupby(F.ts.dt.year).size().to_dict()
             st["mae_bp_p05"] = float(np.percentile(F[f"mae{v['H']}"], 5) * 1e4)
         out[f"theta{theta}"] = st
-        if theta == 0.5:
-            F.to_parquet(os.path.join(OUT, "fills.parquet"))
+        if theta == 0.5 and len(F):
+            H = v["H"]
+            keep = ["coin", "ts", "i0", "k", "L", "F", "TP", "tick", "sig_bp", "z", "thr_usd", "thr_m0", "size", "tp_size",
+                    "end", f"i_tp{H}", f"i_x{H}", f"ret_tp{H}", f"ret_x{H}", f"mae{H}", "pnl2", "pnl1", "cb_share_open",
+                    "cb_led", "cb_after_bp", "ref_after_bp", "ref_share_close", "slots", "n_elig"]
+            G = F[keep].copy()
+            for c_ in G.columns:
+                if G[c_].dtype == np.float64 and c_ not in ("L", "F", "TP", "tick"):
+                    G[c_] = G[c_].astype(np.float32)
+            G.to_parquet(os.path.join(OUT, "fills.parquet"))
     D = pd.DataFrame(cols)
     D.index.name = "day"
     D.to_parquet(os.path.join(OUT, "daily.parquet"))
@@ -752,7 +770,8 @@ def final():
 
 def prints(shard, n_shards):
     """Trade-print check (GitHub Actions): for a 25% sample of the frozen variant's fills, fetch Coinbase spot trades
-    around the fill, the take-profit and the time exit, and compare with the candle-based fill and capacity."""
+    in the fill minute, the take-profit minute and the first 30 s of the exit minute, and compare with the candles.
+    The bid is live from 1 s into its minute (decided on the previous candle)."""
     F = pd.read_parquet(os.path.join(OUT, "fills.parquet"))
     fz = json.load(open(os.path.join(OUT, "frozen.json")))
     H = fz["params"]["H"]
@@ -764,50 +783,41 @@ def prints(shard, n_shards):
     for r in S.itertuples():
         pid = f"{r.coin}-USD"
         t0 = r.ts
-        rec = dict(coin=r.coin, ts=t0, L=r.L, TP=r.TP, size=r.size, thr_usd=r.thr_usd, tp_size=r.tp_size)
+        half = 0.5 * r.tick
+        rec = dict(coin=r.coin, ts=t0, L=r.L, TP=r.TP, tick=r.tick, size=r.size, thr_usd=r.thr_usd, thr_m0=r.thr_m0,
+                   tp_size=r.tp_size, pnl2=r.pnl2)
         try:
-            w = f.window(pid, t0 - pd.Timedelta(seconds=5), t0 + pd.Timedelta(minutes=SCAN_MIN + 1))
-            live = w[w.time >= t0 + pd.Timedelta(seconds=1)]                # the bid is live 1 s into the minute
-            in_min = live[live.time < t0 + pd.Timedelta(minutes=1)]
-            rec["n_trades_min"] = int(len(in_min))
-            rec["first_px_gt_L"] = bool(len(in_min) and in_min.price.iloc[0] > r.L)
-            below = in_min.price < r.L - 0.5 * r.tick
+            w = f.window(pid, t0, t0 + pd.Timedelta(minutes=1))
+            live = w[w.time >= t0 + pd.Timedelta(seconds=1)]
+            rec["n_trades_min"] = int(len(w))
+            rec["first_live_px"] = float(live.price.iloc[0]) if len(live) else np.nan
+            below = (live.price < r.L - half).to_numpy()
             rec["traded_through"] = bool(below.any())
-            # trade-based through-volume: trades strictly below L from the first one while the price stays below
             usd_strict = 0.0
-            usd_scan = 0.0
             if below.any():
-                j0 = int(np.argmax(below.to_numpy()))
-                seg = live.iloc[live.index.get_loc(in_min.index[j0]):]
-                bl = (seg.price < r.L - 0.5 * r.tick).to_numpy()
-                stop = np.argmin(bl) if (~bl).any() else len(bl)
+                j0 = int(np.argmax(below))
+                seg = live.iloc[j0:]
+                bl = (seg.price < r.L - half).to_numpy()
+                stop = int(np.argmin(bl)) if (~bl).any() else len(bl)
                 usd_strict = float((seg.price * seg["size"]).iloc[:stop].sum())
-                mins = seg.time.dt.floor("min")
-                for m_, g_ in seg.groupby(mins):
-                    b_ = g_.price < r.L - 0.5 * r.tick
-                    if not b_.any():
-                        break
-                    usd_scan += float((g_.price * g_["size"])[b_].sum())
-            rec["thr_usd_trades_strict"] = usd_strict
-            rec["thr_usd_trades_scan"] = usd_scan
-            rec["maker_buy_share"] = float((in_min.side[below] == "BUY").mean()) if below.any() else np.nan
+            rec["thr_m0_trades_all"] = float((live.price * live["size"])[live.price < r.L - half].sum())
+            rec["thr_m0_trades_strict"] = usd_strict
+            rec["maker_buy_share"] = float((live.side[live.price < r.L - half] == "BUY").mean()) if below.any() else np.nan
             if r.tp_size > 0:
-                ttp = r.ts + pd.Timedelta(minutes=int(getattr(r, f"i_tp{H}") - r.i0))
+                ttp = t0 + pd.Timedelta(minutes=int(getattr(r, f"i_tp{H}") - r.i0))
                 wt = f.window(pid, ttp, ttp + pd.Timedelta(minutes=1))
-                rec["tp_through"] = bool((wt.price > r.TP + 0.5 * r.tick).any())
-                rec["tp_usd_trades"] = float((wt.price * wt["size"])[wt.price > r.TP + 0.5 * r.tick].sum())
+                rec["tp_through"] = bool((wt.price > r.TP + half).any())
+                rec["tp_usd_trades"] = float((wt.price * wt["size"])[wt.price > r.TP + half].sum())
             if r.size - r.tp_size > 1e-9:
-                ix = int(getattr(r, f"i_x{H}"))
-                tx = r.ts + pd.Timedelta(minutes=ix - int(r.i0))
-                wx = f.window(pid, tx - pd.Timedelta(seconds=2), tx + pd.Timedelta(seconds=30))
+                tx = t0 + pd.Timedelta(minutes=int(getattr(r, f"i_x{H}") - r.i0))
+                wx = f.window(pid, tx, tx + pd.Timedelta(seconds=30))
                 wx2 = wx[wx.time >= tx + pd.Timedelta(seconds=2)]
-                cand_open = (1.0 + float(getattr(r, f"ret_x{H}"))) * r.L
-                rec["exit_open_candle"] = cand_open
+                rec["exit_open_candle"] = float((1.0 + float(getattr(r, f"ret_x{H}"))) * r.L)
                 rec["exit_first_trade_2s"] = float(wx2.price.iloc[0]) if len(wx2) else np.nan
         except Exception as err:  # noqa: BLE001
             rec["error"] = str(err)[:200]
         rows.append(rec)
-        if len(rows) % 25 == 0:
+        if len(rows) % 50 == 0:
             print(f"  {len(rows)}/{len(S)} fills, {f.n_req} requests, {time.time() - t_start:.0f}s", flush=True)
     os.makedirs(os.path.join(OUT, "prints"), exist_ok=True)
     pd.DataFrame(rows).to_csv(os.path.join(OUT, "prints", f"prints_{shard}.csv"), index=False)
