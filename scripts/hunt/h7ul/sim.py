@@ -305,7 +305,7 @@ def select(T):
     """Pre-registered: highest DEV alpha t (sleeve 2x on the incumbent at $70K) among variants with >= 20 events;
     ties go to the simpler variant (no hedge, d2 = 0, smaller d1, cat = all)."""
     e = T[T.events >= 20].copy()
-    e["simple"] = e.hedge.astype(int) * 4 + (e.d2 > 0) * 2 + (e.d1 > 7) * 1 + (e.cat != "all") * 8
+    e["simple"] = e.hedge.astype(int) * 4 + (e.d2 > 0) * 2 + (e.d1 > 7) * 1 + (e["cat"] != "all") * 8
     e = e.sort_values(["t_alpha_70k", "simple"], ascending=[False, True])
     return e.iloc[0]
 

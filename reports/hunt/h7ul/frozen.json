@@ -1,0 +1,36 @@
+{
+ "idea": "h7ul",
+ "variant": "d1=7,d2=0,X=1%,hedge=none,cat=all",
+ "params": {
+  "d1": 7,
+  "d2": 0,
+  "X": 0.01,
+  "hedge": false,
+  "cat": "all",
+  "size_per_event": 0.5,
+  "gross_cap": 2.0,
+  "overnight_margin_cap": 1.0,
+  "entry": "16:00 UTC on U-d1, taker",
+  "exit": "16:00 UTC on U+d2, taker",
+  "beta": "n/a (no hedge)",
+  "hypothetical_carry_per_yr": 0.1,
+  "perp_fee_usd": 0.2,
+  "costs": "common.py at 2x for gates"
+ },
+ "code_commit": "1f574031f89d0deb637747a09bba3013936fa315",
+ "selection": "highest DEV alpha t (sleeve 2x on incumbent $70K) among variants with >= 20 events",
+ "dev": {
+  "events_scored": 38,
+  "sleeve_sharpe_2x": 0.8933019738101377,
+  "t_alpha_70k": 1.941320764411732,
+  "t_alpha_100k": 1.943605421644484,
+  "corr_incumbent": -0.028435954035114352,
+  "active_days": 275,
+  "dev_book_sharpe_a07": 2.2025546024187874,
+  "dev_incumbent_sharpe_100k": 2.346886936279795,
+  "hypothetical_shortability_share_of_active_days": 0.8472727272727273,
+  "n_dev_trials": 17
+ },
+ "pre_freeze_disclosure": "Schedule-only scan (no prices) before the freeze: under the committed rule no mapped coin has an eligible unlock >= 1% of supply with U in the HOLD window (2026-06-01..11-05); SUI monthly steps fell to ~0.5%. Realised-transfer sections (LINK node operators 2026-06-19, 2026-10-09; HYPE core contributors 2026-10-07) are excluded by the rule committed in 42c0121 before any price was read.",
+ "code_commit_note": "code_commit = the simulator commit; sim.py select() ties fix (column access) is cosmetic and included in the freeze commit"
+}
