@@ -1,0 +1,415 @@
+{
+ "idea": "h11mj",
+ "frozen": {
+  "idea": "h11mj",
+  "variant": "k9_H60_ALL",
+  "params": {
+   "k": 9.0,
+   "H": 60,
+   "universe": "ALL",
+   "ai": ""
+  },
+  "rule": "highest DEV alpha t (sleeve $30K at 2x on the incumbent at $70K) among trials with >= 40 trades",
+  "code_commit": "cb073ebeb3e09121ac79828affc06ff8b3b953a1",
+  "dev": {
+   "t_alpha_inc70": 1.9269711599795933,
+   "t_alpha_inc100": 2.0022149869920796,
+   "trades": 238,
+   "sleeve_sharpe_2x": 1.7817981435558092,
+   "book_sharpe_a07": 2.5255832844064963,
+   "corr": 0.19572578935000431,
+   "ret_yr_2x": 0.3639626551321103,
+   "ret_yr_1x": 0.46036721355607263
+  },
+  "best_core": "k7_H60_ALL",
+  "n_trials_logged": 12,
+  "gate_series": "candle fills before each perp launch; perp prints for every post-launch trade (mj.py docstring, fixed before the DEV run)",
+  "written": "2026-11-07T06:33:52Z"
+ },
+ "freeze_commit": "dc1a462ccc9a167de3d8c362ba767dc553c27b07",
+ "path_b_2x": {
+  "path": "B",
+  "a": 0.7,
+  "full_t_alpha": 1.2739850100702983,
+  "full_appraisal": 0.8664387426117307,
+  "full_beta": 0.3073370481735868,
+  "full_book_sharpe": 2.3946728340336842,
+  "full_inc_sharpe": 2.4662030074244012,
+  "full_gain": -0.07153017339071699,
+  "full_sleeve_sharpe": 1.2497010855289707,
+  "dev_t_alpha": 1.2311183604489317,
+  "dev_appraisal": 0.8875462408314359,
+  "dev_beta": 0.33081696797351534,
+  "dev_book_sharpe": 2.276038971950048,
+  "dev_inc_sharpe": 2.346886936279795,
+  "dev_gain": -0.07084796432974727,
+  "dev_sleeve_sharpe": 1.2568494001878887,
+  "hold_t_alpha": 1.2413222797596208,
+  "hold_appraisal": 1.773715415833163,
+  "hold_beta": 0.05820170928804348,
+  "hold_book_sharpe": 4.018898209847784,
+  "hold_inc_sharpe": 3.6425920222450707,
+  "hold_gain": 0.37630618760271295,
+  "hold_sleeve_sharpe": 2.1063717881999526,
+  "dsr": 0.15294725688129668,
+  "sr0_ann": 2.882150848846206,
+  "n_trials": 3137,
+  "years": {
+   "2022": 0.0952,
+   "2023": 0.1139,
+   "2025": 0.4953,
+   "2026": 0.1807
+  },
+  "G1": false,
+  "G2": false,
+  "G3": false,
+  "G4": false,
+  "G5": true,
+  "pass_G1_G5": false,
+  "a_grid": [
+   {
+    "a": 1.0,
+    "dev_book_sharpe": 2.346886936279795
+   },
+   {
+    "a": 0.7,
+    "dev_book_sharpe": 2.276038971950048
+   },
+   {
+    "a": 0.5,
+    "dev_book_sharpe": 1.8560378386728538
+   }
+  ],
+  "dsr_plain_variance": 0.0,
+  "sr0_plain_variance": 21.97361990667901,
+  "vz_robust": 2.5110529449338976,
+  "vz_plain": 145.95724943266885
+ },
+ "path_b_1x_info": {
+  "path": "B",
+  "a": 0.7,
+  "full_t_alpha": 1.9857088316091367,
+  "full_appraisal": 1.382324190194905,
+  "full_beta": 0.3181666782818423,
+  "full_book_sharpe": 2.6790072446005126,
+  "full_inc_sharpe": 2.4662030074244012,
+  "full_gain": 0.2128042371761114,
+  "full_sleeve_sharpe": 1.7616011836962946,
+  "dev_t_alpha": 1.9326955827929662,
+  "dev_appraisal": 1.4273181030351678,
+  "dev_beta": 0.34291866871204996,
+  "dev_book_sharpe": 2.580420420643027,
+  "dev_inc_sharpe": 2.346886936279795,
+  "dev_gain": 0.23353348436323174,
+  "dev_sleeve_sharpe": 1.7922896804221695,
+  "hold_t_alpha": 1.3487587839216508,
+  "hold_appraisal": 1.9565645658625492,
+  "hold_beta": 0.058164747599310805,
+  "hold_book_sharpe": 4.090073525145248,
+  "hold_inc_sharpe": 3.6425920222450707,
+  "hold_gain": 0.44748150290017685,
+  "hold_sleeve_sharpe": 2.2533299351826006,
+  "dsr": 0.32979374739041867,
+  "sr0_ann": 2.882150848846206,
+  "n_trials": 3137,
+  "years": {
+   "2022": 0.1337,
+   "2023": 0.1442,
+   "2025": 0.5152,
+   "2026": 0.1884
+  },
+  "G1": false,
+  "G2": false,
+  "G3": false,
+  "G4": false,
+  "G5": true,
+  "pass_G1_G5": false,
+  "a_grid": [
+   {
+    "a": 1.0,
+    "dev_book_sharpe": 2.346886936279795
+   },
+   {
+    "a": 0.7,
+    "dev_book_sharpe": 2.580420420643027
+   },
+   {
+    "a": 0.5,
+    "dev_book_sharpe": 2.2939821811449876
+   }
+  ]
+ },
+ "path_b_2x_theta025_info": {
+  "path": "B",
+  "a": 0.7,
+  "full_t_alpha": 1.0437982283369902,
+  "full_appraisal": 0.6607181241023499,
+  "full_beta": 0.2863289367975441,
+  "full_book_sharpe": 2.281807626528011,
+  "full_inc_sharpe": 2.4662030074244012,
+  "full_gain": -0.1843953808963903,
+  "full_sleeve_sharpe": 1.0258284923991758,
+  "dev_t_alpha": 0.9743140503035005,
+  "dev_appraisal": 0.6548968463834618,
+  "dev_beta": 0.3100648347860303,
+  "dev_book_sharpe": 2.1460480413921905,
+  "dev_inc_sharpe": 2.346886936279795,
+  "dev_gain": -0.20083889488760454,
+  "dev_sleeve_sharpe": 1.0099696436267027,
+  "hold_t_alpha": 1.2146323090768636,
+  "hold_appraisal": 1.9608863948139466,
+  "hold_beta": 0.03232095720967926,
+  "hold_book_sharpe": 4.089720751624599,
+  "hold_inc_sharpe": 3.6425920222450707,
+  "hold_gain": 0.4471287293795281,
+  "hold_sleeve_sharpe": 2.1281211997982186,
+  "dsr": 0.10510502284137391,
+  "sr0_ann": 2.882150848846206,
+  "n_trials": 3137,
+  "years": {
+   "2022": 0.0823,
+   "2023": 0.0999,
+   "2025": 0.4858,
+   "2026": 0.1757
+  },
+  "G1": false,
+  "G2": false,
+  "G3": false,
+  "G4": false,
+  "G5": true,
+  "pass_G1_G5": false,
+  "a_grid": [
+   {
+    "a": 1.0,
+    "dev_book_sharpe": 2.346886936279795
+   },
+   {
+    "a": 0.7,
+    "dev_book_sharpe": 2.1460480413921905
+   },
+   {
+    "a": 0.5,
+    "dev_book_sharpe": 1.7001665735805493
+   }
+  ]
+ },
+ "path_b_2x_candle_only_info": {
+  "path": "B",
+  "a": 0.7,
+  "full_t_alpha": 2.1538271002725784,
+  "full_appraisal": 1.400133727958635,
+  "full_beta": 0.44913937363472456,
+  "full_book_sharpe": 2.682545348292814,
+  "full_inc_sharpe": 2.4662030074244012,
+  "full_gain": 0.21634234086841264,
+  "full_sleeve_sharpe": 1.8623592962278506,
+  "dev_t_alpha": 1.9269711599795933,
+  "dev_appraisal": 1.3398882523952402,
+  "dev_beta": 0.4710722615162076,
+  "dev_book_sharpe": 2.5255832844064954,
+  "dev_inc_sharpe": 2.346886936279795,
+  "dev_gain": 0.17869634812670032,
+  "dev_sleeve_sharpe": 1.7817981435558092,
+  "hold_t_alpha": 1.8133945580284652,
+  "hold_appraisal": 2.651732157432601,
+  "hold_beta": 0.21237889270657465,
+  "hold_book_sharpe": 4.522382153255048,
+  "hold_inc_sharpe": 3.6425920222450707,
+  "hold_gain": 0.8797901310099774,
+  "hold_sleeve_sharpe": 3.1401234174843977,
+  "dsr": 0.339131311390579,
+  "sr0_ann": 2.882150848846206,
+  "n_trials": 3137,
+  "years": {
+   "2022": 0.0952,
+   "2023": 0.1139,
+   "2025": 0.5524,
+   "2026": 0.2852
+  },
+  "G1": false,
+  "G2": true,
+  "G3": false,
+  "G4": false,
+  "G5": true,
+  "pass_G1_G5": false,
+  "a_grid": [
+   {
+    "a": 1.0,
+    "dev_book_sharpe": 2.346886936279795
+   },
+   {
+    "a": 0.7,
+    "dev_book_sharpe": 2.5255832844064954
+   },
+   {
+    "a": 0.5,
+    "dev_book_sharpe": 2.220716474240427
+   }
+  ]
+ },
+ "fee_sensitivity_2x": {
+  "0.12": {
+   "full_t_alpha": 1.791856616462636,
+   "hold_t_alpha": 1.3234150715726687,
+   "full_gain": 0.13357587021037887,
+   "hold_gain": 0.4306805248269394,
+   "dsr": 0.27183614603780604,
+   "G1": false,
+   "G2": false,
+   "G3": false,
+   "G4": false,
+   "G5": true
+  },
+  "0.30": {
+   "full_t_alpha": 0.5659768252998967,
+   "hold_t_alpha": 1.106562201092646,
+   "full_gain": -0.3403937054600279,
+   "hold_gain": 0.303867028676728,
+   "dsr": 0.06077699769885427,
+   "G1": false,
+   "G2": false,
+   "G3": false,
+   "G4": false,
+   "G5": true
+  }
+ },
+ "path_a": null,
+ "checks": {
+  "fills_by_year_coin": {
+   "2022|BTC": 14,
+   "2022|ETH": 14,
+   "2022|SOL": 43,
+   "2023|BTC": 15,
+   "2023|ETH": 17,
+   "2023|SOL": 12,
+   "2023|XRP": 12,
+   "2025|BTC": 3,
+   "2025|ETH": 23,
+   "2025|SOL": 27,
+   "2025|XRP": 24,
+   "2026|BTC": 3,
+   "2026|ETH": 11,
+   "2026|SOL": 11
+  },
+  "net_bp_by_year_coin": {
+   "2022|BTC": 43.9,
+   "2022|ETH": -77.5,
+   "2022|SOL": 16.8,
+   "2023|BTC": -41.8,
+   "2023|ETH": -46.6,
+   "2023|SOL": 59.4,
+   "2023|XRP": 24.3,
+   "2025|BTC": 101.9,
+   "2025|ETH": 49.7,
+   "2025|SOL": 161.9,
+   "2025|XRP": 137.3,
+   "2026|BTC": 2.3,
+   "2026|ETH": 107.2,
+   "2026|SOL": 197.1
+  },
+  "pnl_by_year_coin_usd": {
+   "2022|BTC": 1846.0,
+   "2022|ETH": -3137.0,
+   "2022|SOL": 1963.0,
+   "2023|BTC": -1869.0,
+   "2023|ETH": -2371.0,
+   "2023|SOL": 1469.0,
+   "2023|XRP": 542.0,
+   "2025|BTC": 894.0,
+   "2025|ETH": 3119.0,
+   "2025|SOL": 9611.0,
+   "2025|XRP": 9164.0,
+   "2026|BTC": 29.0,
+   "2026|ETH": 3526.0,
+   "2026|SOL": 1268.0
+  },
+  "venue": {
+   "spot": {
+    "trades": 190,
+    "net_bp_mean": 37.36652051318563
+   },
+   "perp": {
+    "trades": 39,
+    "net_bp_mean": 133.59615123490178
+   }
+  },
+  "period": {
+   "DEV": {
+    "trades": 222,
+    "net_bp_mean": 51.210008296550896
+   },
+   "HOLD": {
+    "trades": 7,
+    "net_bp_mean": 134.4667076903051
+   }
+  },
+  "print_confirmation": {
+   "rows": 68,
+   "status": {
+    "confirmed": 39,
+    "not_confirmed": 29
+   },
+   "size_ratio_median": 1.0,
+   "exit_px_diff_bp_median": 0.0,
+   "tp_share_candle": 0.6134326200115674,
+   "tp_share_prints": 0.6153846153846154
+  },
+  "cascade_low": {
+   "fill_above_low_bp_median": 134.56111847133025,
+   "within_10bp_share": 0.06986899563318777,
+   "unit_fill_above_low_bp_median": 134.77801268499067
+  },
+  "top3_share": 0.3032037823288593,
+  "corr_incumbent": 0.15884081634615785,
+  "same_day_overlap": {
+   "sleeve_active_days": 131,
+   "share_with_incumbent_active": 0.8396946564885496
+  },
+  "on_incumbent_worst10": {
+   "days": [
+    "2026-01-19",
+    "2025-02-24",
+    "2022-05-11",
+    "2025-01-07",
+    "2022-11-08",
+    "2025-10-17",
+    "2025-04-07",
+    "2025-09-22",
+    "2025-02-12",
+    "2025-02-18"
+   ],
+   "sleeve_sum": 0.02514653307737731,
+   "incumbent_sum": -0.1896472170030582
+  },
+  "capacity": {
+   "median_notional": 29845.800000000003,
+   "mean_notional": 27214.73820960699,
+   "full_size_share": 0.8820960698689956,
+   "theta025_trades": 227,
+   "theta025_mean_notional": 26931.08193832599
+  },
+  "sleeve_years_2x": {
+   "2022": 0.0224,
+   "2023": -0.0743,
+   "2025": 0.7596,
+   "2026": 0.1608
+  },
+  "sleeve_years_1x": {
+   "2022": 0.1508,
+   "2023": 0.0268,
+   "2025": 0.8259,
+   "2026": 0.1866
+  },
+  "clamp_share": {
+   "BTC|early": 0.3179180789337623,
+   "ETH|early": 0.4983663689827924,
+   "SOL|early": 0.9593486677294466,
+   "XRP|early": 0.4660049627791563,
+   "BTC|main": 0.21671336338165428,
+   "ETH|main": 0.5390526529782476,
+   "SOL|main": 0.7910829577293215,
+   "XRP|main": 0.5751817111300606
+  }
+ },
+ "g4_note": "provisional: G4 is recomputed centrally with the final ledger (robust MAD v_z); the pre-registered plain-variance DSR is reported alongside"
+}
