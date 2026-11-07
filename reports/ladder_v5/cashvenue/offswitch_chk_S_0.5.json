@@ -1,0 +1,16 @@
+{
+ "C4_usdc off (rate 0, no USDC mark)": {
+  "era": "chk",
+  "cfg": "S_0.5",
+  "max_abs_daily_diff": 0.0,
+  "days": 219,
+  "seconds": 9
+ },
+ "C5_perp_venue off (perp capacity 0)": {
+  "era": "chk",
+  "cfg": "S_0.5",
+  "max_abs_daily_diff": 0.0,
+  "days": 219,
+  "seconds": 3
+ }
+}
