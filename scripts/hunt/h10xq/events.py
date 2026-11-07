@@ -316,10 +316,12 @@ def pair_events(pair, r, U, store, mode):
     return Ev, D.reset_index(), stats
 
 
-def main(mode, shard, nsh, qset=None):
+def main(mode, shard, nsh, qset=None, pairs=None, otag=None):
     U = pd.read_parquet(os.path.join(DATA, "universe.parquet"))
-    if qset:
+    if qset and qset != "all":
         U = U[U.qset == qset]
+    if pairs:                                      # re-run of a slow shard: only these pairs, one runner each group
+        U = U[U.pair.isin(pairs.split("+"))]
     PR = pd.read_csv(os.path.join(ROOT, "reports", "hunt", "h10xq", "pairs.csv")).set_index("id")
     wt = U.groupby("pair").size().sort_values(ascending=False)
     base = U.groupby("pair").base.first()
@@ -330,6 +332,10 @@ def main(mode, shard, nsh, qset=None):
         assign_b[b] = i
         load[i] += w
     mine = [p for p in wt.index if assign_b[base[p]] == shard]
+    if pairs:
+        mine = [p for p in pairs.split("+") if p in wt.index]
+    if otag:
+        shard = otag
     print(f"{mode} shard {shard}/{nsh}: {len(mine)} pairs, {load[shard]} pair-days: {mine}", flush=True)
     store, t0 = Store(Candles(rate=8.0)), time.time()
     out = os.path.join(DATA, "ev")
@@ -362,4 +368,5 @@ def main(mode, shard, nsh, qset=None):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), sys.argv[4] if len(sys.argv) > 4 else None)
+    a = sys.argv[1:] + [None] * 6
+    main(a[0], int(a[1]), int(a[2]), a[3], a[4], a[5])
