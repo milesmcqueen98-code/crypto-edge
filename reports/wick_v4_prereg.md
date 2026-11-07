@@ -163,7 +163,7 @@ $500K 2.19 vs 2.67; at $1M 1.32 vs 1.73), and better in selection only at $1M an
 - Wick capacity is volume through our price, and Coinbase has the most US spot volume. The signal was also fitted on
   Coinbase's own candles.
 
-## Addendum C1: is the simulator's fill capacity right? (written 2026-11-07 ~00:55 UTC, before running)
+## Addendum C1: is the simulator's fill capacity right? (written 2026-11-07 ~00:45 UTC, commit c19ba14, before running)
 The simulator caps a fill at θ × V̂.
 - V̂ is the dollar volume below our bid, estimated from 1-minute candles: each minute's volume is spread evenly over its
   high–low range (`below_usd`).
@@ -191,7 +191,7 @@ the next one.
 - Either way, the realism and capacity scores are revisited with the result, up or down.
 - The bot itself doesn't change: it sizes by S, and the exchange decides the fills.
 
-### C1 results (2026-11-07 ~01:10 UTC): the simulator's fill capacity is right. Validated, nothing changes.
+### C1 results (2026-11-07 ~00:55 UTC): the simulator's fill capacity is right. Validated, nothing changes.
 reports/wick_v4/capacity_log.txt and capacity_out.csv. All 1,567 parent fills. A first run on the old bot list (1,263)
 gave the same answers.
 

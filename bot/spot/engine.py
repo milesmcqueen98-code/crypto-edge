@@ -338,11 +338,24 @@ class LiveBroker:
     def cancel_ids(self, ids):
         self.c.cancel_orders(order_ids=list(ids))
 
-    def filled_order_ids(self, since):
-        """Order ids with a fill at or after `since` (one request for the whole account; for 1-second detection)."""
+    def filled_order_ids(self, since, max_pages=5):
+        """Order ids with a fill at or after `since` (usually one request for the whole account; for 1-second
+        detection). Follows the cursor for at most max_pages pages of 100 fills (a crash can bring many partial fills)."""
         fn = getattr(self.c, "get_fills", None) or getattr(self.c, "list_fills")
-        r = self._d(fn(start_sequence_timestamp=pd.Timestamp(since).strftime("%Y-%m-%dT%H:%M:%S.%fZ"), limit=100))
-        return {f.get("order_id") for f in r.get("fills", [])}
+        start = pd.Timestamp(since).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        ids, cursor = set(), None
+        for _ in range(max_pages):
+            kw = dict(start_sequence_timestamp=start, limit=100)
+            if cursor:
+                kw["cursor"] = cursor
+            r = self._d(fn(**kw))
+            fills = r.get("fills", []) or []
+            ids |= {f.get("order_id") for f in fills}
+            nxt = r.get("cursor")
+            if len(fills) < 100 or not nxt or nxt == cursor:
+                break
+            cursor = nxt
+        return ids
 
     def fee_tier(self):
         r = self._d(self.c.get_transaction_summary())
