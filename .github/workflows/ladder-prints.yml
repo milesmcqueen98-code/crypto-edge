@@ -1,0 +1,44 @@
+name: ladder-prints
+
+# Ladder v5 (reports/ladder_v5_prereg.md): per-fill print statistics from the wick v4 trade artifacts. Only derived
+# per-event numbers are committed; raw trades stay in the artifacts.
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "fetch-trades run id with trades-* artifacts"
+        required: true
+      script:
+        description: "analysis script"
+        default: "scripts/ladder_v5/prints.py"
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q pandas numpy pyarrow
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pattern: trades-*
+          path: art
+      - name: Analyze
+        run: python ${{ inputs.script }} art 2>&1 | tee reports/ladder_v5/prints_log.txt
+      - name: Commit derived results
+        run: |
+          git config user.name "crypto-edge-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add reports/ladder_v5/prints_*.csv reports/ladder_v5/prints_log.txt
+          git diff --cached --quiet && exit 0
+          git commit -m "Ladder v5: per-fill print statistics (derived; raw trades stay in artifacts)"
+          for i in 1 2 3 4 5; do git pull --rebase origin ${GITHUB_REF_NAME} && git push origin HEAD:${GITHUB_REF_NAME} && break; sleep $((i*5)); done
