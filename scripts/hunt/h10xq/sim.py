@@ -81,12 +81,32 @@ def load_prints():
     return P.set_index(["pair", "k", "ts"])
 
 
+class _Rows:
+    """Column-oriented row store (a list of dicts per fill costs ~10x the memory)."""
+
+    def __init__(self):
+        self.cols, self.n = {}, 0
+
+    def add(self, **kw):
+        for k, v in kw.items():
+            if k not in self.cols:
+                self.cols[k] = [None] * self.n
+            self.cols[k].append(v)
+        self.n += 1
+        for k, c in self.cols.items():
+            if len(c) < self.n:
+                c.append(None)
+
+    def frame(self):
+        return pd.DataFrame(self.cols) if self.n else pd.DataFrame()
+
+
 def run(E, qset, C, theta=0.5, exit_="a", cascade=False, prints=None):
     """Sequence the bids. Returns the trade list (no costs applied)."""
     ranked = {d: list(g.pair) for d, g in universe(qset).groupby("day")}
     pkeys = set(prints.index) if prints is not None else set()
     opened, rel = {}, {}
-    rows = []
+    rows = _Rows()
     nmax = int(C // BID_USD)
     for e in E.itertuples(index=False):
         t = e.ts
@@ -109,13 +129,13 @@ def run(E, qset, C, theta=0.5, exit_="a", cascade=False, prints=None):
             pr = prints.loc[key]
             src = "print"
             if not bool(pr.confirmed):
-                rows.append(dict(pair=e.pair, ts=t, k=e.k, fill=0.0, src="print_reject"))
+                rows.add(pair=e.pair, ts=t, k=e.k, fill=0.0, src="print_reject")
                 continue
             thru_usd = float(pr.thru_q) * e.q_prev
             fill_time = pr.fill_time
         size = min(BID_USD, theta * thru_usd)
         if not np.isfinite(size) or size < MIN_FILL:
-            rows.append(dict(pair=e.pair, ts=t, k=e.k, fill=0.0, src=src + "_small"))
+            rows.add(pair=e.pair, ts=t, k=e.k, fill=0.0, src=src + "_small")
             continue
         r = dict(pair=e.pair, ts=t, k=e.k, lvl=e.lvl, F=e.F, sig=e.sig, tick=e.tick, fill=size, src=src,
                  q_prev=e.q_prev, disloc=float(np.log(e.lvl / e.F)), fill_time=fill_time)
@@ -126,7 +146,7 @@ def run(E, qset, C, theta=0.5, exit_="a", cascade=False, prints=None):
             tp_usd = min(size, theta * e.tp_vol_q * e.q_at_tp) if tp_ok else 0.0
             rem = size - tp_usd
             if rem > 1e-9 and (pd.isna(e.mx_ts) or not np.isfinite(e.mx_px)):
-                rows.append(dict(pair=e.pair, ts=t, k=e.k, fill=0.0, src="no_exit"))
+                rows.add(pair=e.pair, ts=t, k=e.k, fill=0.0, src="no_exit")
                 continue
             r.update(tp=e.tp, tp_usd=tp_usd, tp_ts=e.tp_ts if tp_usd > 0 else pd.NaT, q_tp=e.q_at_tp,
                      rem=rem, mx_ts=e.mx_ts if rem > 1e-9 else pd.NaT, mx_px=e.mx_px,
@@ -141,7 +161,7 @@ def run(E, qset, C, theta=0.5, exit_="a", cascade=False, prints=None):
                 x_final = max(pr.hx_time, pr.hq_time).floor("min")
             else:
                 if pd.isna(e.hx_ts) or pd.isna(e.hq_ts) or not (np.isfinite(e.hx_px) and np.isfinite(e.hq_px)):
-                    rows.append(dict(pair=e.pair, ts=t, k=e.k, fill=0.0, src="no_hedge"))
+                    rows.add(pair=e.pair, ts=t, k=e.k, fill=0.0, src="no_hedge")
                     continue
                 hx_px, hq_px, hsrc = e.hx_px, e.hq_px, "candle"
                 x_final = max(e.hx_ts, e.hq_ts)
@@ -150,8 +170,8 @@ def run(E, qset, C, theta=0.5, exit_="a", cascade=False, prints=None):
         r["exit_ts"] = x_final
         opened[e.pair] = x_final
         rel[e.pair] = parts
-        rows.append(r)
-    return pd.DataFrame(rows)
+        rows.add(**r)
+    return rows.frame()
 
 
 def half_spreads(prints):
