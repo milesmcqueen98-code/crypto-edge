@@ -79,5 +79,13 @@
   "implement": 8,
   "capacity": 4,
   "why": "All 13 trials lose heavily at 1x and 2x (0). Realism: scored on candles; a print sample shows candles optimistic (81.7% of fills confirm, through-volume a median 28% of the candle estimate), so fills 2; the fair value is up to a minute stale (latency 2); theta-capped but overstated (1); common.py spot costs (3). Mechanism: makers pulling secondary books in cascades is a named story (3), but fills are stale-quote pick-offs locking +1.7 bp against 35-70 bp of costs (0); small books (2). Implement: live data and post-only bids, but a cross-book hedge adds complexity (8). Capacity: 60% of fills at the full $5K (4)."
+ },
+ "h13ps": {
+  "rob_neigh": 0,
+  "realism": 13,
+  "mechanism": 5,
+  "implement": 8,
+  "capacity": 2,
+  "why": "Every trial has a negative DEV alpha t; the frozen variant (-0.04) won only because the rest were worse (0). Realism: every entry and exit priced on prints (6); taker 2 s after the posted switch, though posts lag the real switch by minutes (2); our median trade is 2.5x all aggressive buying in the first minute after the switch, so size versus flow is checked but binding (2); spot fees with measured half-spreads (3). Mechanism: market-order buyers blocked until full trading are a named eager flow (4), but it is a few hundred dollars per listing and the median drift after the switch is negative (0); tiny, so big funds pass (1). Implement: status page and product flags are live (4), market orders (3), a per-listing poller (1). Capacity: mean trade $3.1K, peak $19.6K of $30K (2)."
  }
 }
