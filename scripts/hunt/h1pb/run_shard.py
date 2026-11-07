@@ -122,7 +122,7 @@ def spot_last(st, ssegs_min, st_t, st_p, tq):
     return out
 
 
-def run_chunk(ch, pl, mock, out_dir, tag, modes):
+def run_chunk(ch, pl, mock, out_dir, tag, modes, ks=KS, sides=("long", "short")):
     coin, st = ch["coin"], pl["st"]
     pid, cs, tick = common.PERP[coin]
     sc = LV.PX_SCALE.get(coin, 1.0)
@@ -155,8 +155,8 @@ def run_chunk(ch, pl, mock, out_dir, tag, modes):
     bb, sg = st["bbar"][rowc], st["sig"][rowc]
     ents, conf = [], []
     for mode in modes:
-        for k in KS:
-            for side in ("long", "short"):
+        for k in ks:
+            for side in sides:
                 is_long = side == "long"
                 if mode == "minute":
                     Lrow = LV.level(st, k, side)
@@ -241,6 +241,8 @@ def main():
     ap.add_argument("--mock", action="store_true")
     ap.add_argument("--d0", default="")
     ap.add_argument("--d1", default="")
+    ap.add_argument("--ks", default="3,4,6")
+    ap.add_argument("--sides", default="long,short")
     args = ap.parse_args()
     modes = tuple(args.modes.split(","))
     if args.stage == "dev":
@@ -262,7 +264,8 @@ def main():
     E_all, C_all, L_all = [], [], []
     for n_, ch in enumerate(mine):
         t1 = time.time()
-        E, C, logs = run_chunk(ch, plans[ch["coin"]], mock, out_raw, f"{args.stage}_{args.shard}_{n_}", modes)
+        E, C, logs = run_chunk(ch, plans[ch["coin"]], mock, out_raw, f"{args.stage}_{args.shard}_{n_}", modes,
+                               tuple(float(x) for x in args.ks.split(",")), tuple(args.sides.split(",")))
         E_all.append(E)
         C_all.append(C)
         L_all += [dict(l_, chunk=n_, est_cost=ch["cost"]) for l_ in logs]
