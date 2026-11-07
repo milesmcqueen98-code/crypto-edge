@@ -1,7 +1,8 @@
 name: ladder-fetch
 
-# Ladder v5 (reports/ladder_v5_prereg.md): Coinbase trade-by-trade prints around the 2022-23 parent fills, for the
-# "who sold to us" candidate. Six shards in parallel; raw trades are uploaded as artifacts and never committed.
+# Ladder v5 (reports/ladder_v5_prereg.md): Coinbase trade-by-trade prints. On branch ladder/redteam2 this fetches the
+# windows around R2-08's 60-minute time exits (reports/ladder_v5/redteam2/windows_exit.csv) for the red team's check of
+# the exit cost and passive fill models. Six shards in parallel; raw trades are uploaded as artifacts, never committed.
 on:
   workflow_dispatch:
 
@@ -24,7 +25,7 @@ jobs:
           python-version: "3.12"
       - run: pip install pandas requests pyarrow
       - name: Fetch shard
-        run: python scripts/ladder_v5/fetch_trades_early.py ${{ matrix.shard }} 6
+        run: python scripts/ladder_v5/redteam2/fetch_prints.py ${{ matrix.shard }} 6
       - uses: actions/upload-artifact@v4
         with:
           name: trades-${{ matrix.shard }}
