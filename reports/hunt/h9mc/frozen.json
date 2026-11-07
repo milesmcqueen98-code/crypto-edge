@@ -1,0 +1,30 @@
+{
+ "idea": "h9mc",
+ "variant": "vflow_x2_all",
+ "params": {
+  "fam": "vflow",
+  "x": 2,
+  "exit": "16:45",
+  "uni": "all",
+  "side": 1
+ },
+ "code_commit": "2d39f648942aa99a37810dcd1fa4dc075043fcd4",
+ "step2_py_commit": "bbcf0775566399d92ba05a81cfeaf1b4ccd66262",
+ "selection": "highest DEV alpha t (sleeve $30K, 2x costs, on incumbent $70K) among DEV trials with >= 40 trades; ties to the simpler variant",
+ "dev": {
+  "trades": 54,
+  "dev_alpha_t_inc70": -1.0659,
+  "dev_sleeve_sharpe_2x": -1.1227,
+  "dev_sleeve_sharpe_1x": -0.31815,
+  "dev_book_gain_a07": -0.18779,
+  "mean_bp_2x": 10.833,
+  "mean_bp_1x": 26.675,
+  "corr_incumbent": 0.012112
+ },
+ "runner_up": {
+  "variant": "vafter_z2_x1700_all",
+  "trades": 59,
+  "dev_alpha_t_inc70": -1.5554
+ },
+ "n_trials_logged": 21
+}

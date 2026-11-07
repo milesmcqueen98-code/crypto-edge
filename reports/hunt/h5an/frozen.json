@@ -1,0 +1,42 @@
+{
+ "idea": "h5an",
+ "variant": "core_d2_h5_all",
+ "params": {
+  "delta_s": 2,
+  "hold_min": 5,
+  "event_set": "all classes i-iv",
+  "classes": [
+   "i",
+   "ii",
+   "iii",
+   "iv"
+  ],
+  "entry": "taker buy at the first Coinbase print >= release + delta, x (1 + max(1.5 x half-spread, 2 bp)) + taker fee",
+  "exit": "market sale at the first print >= entry + H, worse by the same half-spread charge, + taker fee",
+  "half_spread": "median |buyer - seller-initiated| / 2 of adjacent opposite-aggressor prints in the 10 min before (fallbacks: 60 min <=10 s gaps, 60 min any gap, 50 bp)",
+  "size": "min($5K, 1% of trailing 30-day median daily USD volume); open notional <= sleeve capital",
+  "universe": "Binance catalog-48 titles classified by scripts/hunt/h5an/events.py (commit c7d89c5); ticker on Coinbase USD spot with trades in the hour before releaseDate"
+ },
+ "code_commit": "c25a963bc9de8a380c30e5d8f015583bf5b56df3",
+ "classifier_commit": "c7d89c5",
+ "dev": {
+  "trades": 184,
+  "events": 184,
+  "sleeve_sharpe_2x": 1.5014316578719413,
+  "sleeve_sharpe_1x": 1.8541038560282328,
+  "t_alpha70_2x": 2.862541229742945,
+  "t_alpha100_2x": 2.860539502642971,
+  "corr_incumbent": -0.018420709761496998,
+  "book_sharpe_a07": 2.578564756001814,
+  "mean_net_2x_bp": 244.26220067464013,
+  "mean_gross_bp": 356.8201936465109,
+  "hit_2x": 0.45652173913043476,
+  "top3_pnl_share": 0.3190052641827839
+ },
+ "selection_rule": "highest DEV alpha t (sleeve $30K at 2x costs on the incumbent at $70K) among trials with >= 20 trades; ties to the simpler variant",
+ "trials_logged": 20,
+ "trial_ledger_rows_h5an": 20,
+ "fade_variant": "not run: 0 DEV events had a Coinbase perp live at releaseDate (needs >= 20)",
+ "frozen_utc": "2026-11-07T05:27:04Z",
+ "hold_read": false
+}

@@ -1,0 +1,38 @@
+{
+ "idea": "h4nl",
+ "variant": "k3_d7_all_H30_aimed",
+ "params": {
+  "k": 3.0,
+  "win": 7,
+  "liq": false,
+  "H": 30,
+  "ai": "med",
+  "theta": 0.5,
+  "order_usd": 3000,
+  "max_positions": 6,
+  "warmup_min": 120,
+  "fair_value": "VWAP of the last 60 minutes, known at t-1",
+  "sigma": "std of 1-min log returns over trailing min(1440, minutes since t0), x sqrt(60), known at t-1",
+  "tp": "post-only at 60% of the way back to F",
+  "time_exit": "market at the open of the first traded minute after t+30",
+  "ai_filter": "walk-forward LightGBM (edge.wick.PARAMS, 250 rounds, seeds 7/11/23) by quarter from 2022Q3, trained on candidates before quarter start - 1 day incl. 2024 listings; label = net bp at 2x costs of min($3K, 0.5 x through-volume); keep if prediction > median training prediction; features: days since listing, drawdown from first-day VWAP, 24h volume vs day 1, BTC 60-min move, sigma, k-depth bp",
+  "half_spread_bp_1x": 5.0,
+  "half_spread_bp_2x": 10.0
+ },
+ "code_commit": "0e5aa3b6fcb30f3ba16b8d7b99f2a119cff00ea3",
+ "selection": "highest DEV alpha t among trials with >= 40 trades (reports/hunt/h4nl/trials_dev.csv, 15 trials)",
+ "dev": {
+  "trades": 114,
+  "listings": 81,
+  "sleeve_sharpe_30k_2x": 0.6518854415902241,
+  "t_alpha": 1.2110307696389366,
+  "corr": -0.0224923503571678,
+  "dev_book_sharpe_a07": 2.225827580602345,
+  "dev_inc_sharpe": 2.346886936279795,
+  "pnl_usd_30k_2x": 5644.499191395366,
+  "pnl_usd_30k_1x": 6083.380275170558,
+  "net_bp": 246.3133308278988
+ },
+ "n_trials": 15,
+ "frozen_utc": "2026-11-07T06:13:08Z"
+}

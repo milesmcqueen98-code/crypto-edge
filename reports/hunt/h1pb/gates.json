@@ -1,0 +1,172 @@
+{
+ "gates_2x": {
+  "path": "B",
+  "a": 0.5,
+  "full_t_alpha": 2.0700470534726354,
+  "full_appraisal": 1.9310924841945374,
+  "full_beta": -0.10201948207416961,
+  "full_book_sharpe": 3.225451225524181,
+  "full_inc_sharpe": 2.7985928866895047,
+  "full_gain": 0.4268583388346765,
+  "full_sleeve_sharpe": 0.8562151952457733,
+  "dev_t_alpha": 2.4242381855505934,
+  "dev_appraisal": 2.557554644705248,
+  "dev_beta": -0.12483717518435167,
+  "dev_book_sharpe": 3.1807783819325017,
+  "dev_inc_sharpe": 2.622457032429016,
+  "dev_gain": 0.5583213495034856,
+  "dev_sleeve_sharpe": 1.1967373943233046,
+  "hold_t_alpha": -0.15750065881534098,
+  "hold_appraisal": -0.2856063434911638,
+  "hold_beta": 0.01937639354922096,
+  "hold_book_sharpe": 3.4684787832190986,
+  "hold_inc_sharpe": 3.6425920222450707,
+  "hold_gain": -0.1741132390259721,
+  "hold_sleeve_sharpe": -0.06768929246457484,
+  "dsr": 0.0,
+  "sr0_ann": 39.58944802183168,
+  "n_trials": 3188,
+  "years": {
+   "2025": 0.1207,
+   "2026": 0.1398
+  },
+  "G1": false,
+  "G2": false,
+  "G3": false,
+  "G4": false,
+  "G5": true,
+  "pass_G1_G5": false,
+  "a_grid": [
+   {
+    "a": 1.0,
+    "dev_book_sharpe": 2.622457032429016
+   },
+   {
+    "a": 0.7,
+    "dev_book_sharpe": 3.1513543974574394
+   },
+   {
+    "a": 0.5,
+    "dev_book_sharpe": 3.1807783819325017
+   }
+  ]
+ },
+ "gates_1x_info": {
+  "path": "B",
+  "a": 0.5,
+  "full_t_alpha": 5.589666446290126,
+  "full_appraisal": 5.5339678208944205,
+  "full_beta": -0.09253783814580112,
+  "full_book_sharpe": 4.35093656856905,
+  "full_inc_sharpe": 2.7985928866895047,
+  "full_gain": 1.5523436818795457,
+  "full_sleeve_sharpe": 4.442523634952404,
+  "dev_t_alpha": 4.928350757896943,
+  "dev_appraisal": 5.772716975856942,
+  "dev_beta": -0.11241381030417139,
+  "dev_book_sharpe": 4.15386889018119,
+  "dev_inc_sharpe": 2.622457032429016,
+  "dev_gain": 1.531411857752174,
+  "dev_sleeve_sharpe": 4.371683054927302,
+  "hold_t_alpha": 2.5701628288939014,
+  "hold_appraisal": 4.64032573368294,
+  "hold_beta": 0.013295422205991878,
+  "hold_book_sharpe": 5.082958058921077,
+  "hold_inc_sharpe": 3.6425920222450707,
+  "hold_gain": 1.4403660366760067,
+  "hold_sleeve_sharpe": 4.75974814585187,
+  "dsr": 0.0,
+  "sr0_ann": 39.58944802183168,
+  "n_trials": 3188,
+  "years": {
+   "2025": 0.1367,
+   "2026": 0.2019
+  },
+  "G1": true,
+  "G2": true,
+  "G3": true,
+  "G4": false,
+  "G5": true,
+  "pass_G1_G5": false,
+  "a_grid": [
+   {
+    "a": 1.0,
+    "dev_book_sharpe": 2.622457032429016
+   },
+   {
+    "a": 0.7,
+    "dev_book_sharpe": 3.875604234368818
+   },
+   {
+    "a": 0.5,
+    "dev_book_sharpe": 4.15386889018119
+   }
+  ]
+ },
+ "info": {
+  "frozen": {
+   "name": "sync_k6_long_H60_onlymaint",
+   "mode": "sync",
+   "k": 6.0,
+   "side": "long",
+   "H": 60,
+   "tod": "only_maint",
+   "theta": 0.5,
+   "target_usd": 10000,
+   "take_profit": 0.6,
+   "max_open": 6,
+   "gross_cap": "3x sleeve capital",
+   "stop_loss": null
+  },
+  "freeze_commit": "649038b83f91b50828eff684caaf9ea6cd73689c",
+  "days": [
+   "2025-07-19",
+   "2026-11-05",
+   475
+  ],
+  "trades_total": 1414,
+  "trades_dev": 910,
+  "trades_hold": 504,
+  "sleeve_sharpe_2x": {
+   "dev": 1.633746584473517,
+   "hold": 0.5186865129055157,
+   "full": 1.327165089157746
+  },
+  "sleeve_years_2x_30k": {
+   "2025": 0.0011821390349153772,
+   "2026": 0.13920804674353193
+  },
+  "pnl_usd_2x": {
+   "dev": 3461.325322699632,
+   "hold": 750.3802506537878
+  },
+  "theta025_2x": {
+   "trades": 1252,
+   "sharpe_full": -0.2979334421372799,
+   "sharpe_dev": 0.26878016817090117,
+   "sharpe_hold": -2.117645000371833,
+   "pnl_usd": 963.3860805567963
+  },
+  "fee_0.12_2x": {
+   "sharpe_full": 4.102556422655502,
+   "sharpe_dev": 4.112784393322087,
+   "sharpe_hold": 4.20316916120122,
+   "pnl_usd": 10226.425573353421
+  },
+  "fee_0.12_1x": {
+   "sharpe_full": 6.048705740254011,
+   "pnl_usd": 15028.83778667669
+  },
+  "fee_0.30_2x": {
+   "sharpe_full": -2.2227025590977063,
+   "sharpe_dev": -1.533850905245862,
+   "sharpe_hold": -4.2294626694486,
+   "pnl_usd": -3306.694426646579
+  },
+  "fee_0.30_1x": {
+   "sharpe_full": 3.2622633910390926,
+   "pnl_usd": 8262.27778667669
+  }
+ },
+ "provisional_note": "G4 here uses the worktree gates.py ledger dispersion; the coordinator recomputes G4 centrally."
+}

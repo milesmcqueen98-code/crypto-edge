@@ -1,0 +1,32 @@
+{
+ "idea": "h1pb",
+ "variant": {
+  "name": "sync_k6_long_H60_onlymaint",
+  "mode": "sync",
+  "k": 6.0,
+  "side": "long",
+  "H": 60,
+  "tod": "only_maint",
+  "theta": 0.5,
+  "target_usd": 10000,
+  "take_profit": 0.6,
+  "max_open": 6,
+  "gross_cap": "3x sleeve capital",
+  "stop_loss": null
+ },
+ "rule": "highest DEV alpha t (sleeve $30K at 2x on incumbent $70K) among trials with >= 40 trades; ties simpler",
+ "start": "2025-07-19",
+ "dev": {
+  "trades": 910,
+  "sleeve_sharpe_2x": 1.633746584473517,
+  "t_alpha70": 2.8854126231703243,
+  "t_alpha100": 2.9306894429351105,
+  "dev_book_sharpe": 3.151354397457439,
+  "dev_inc70_sharpe": 2.567249271148916,
+  "pnl_usd_30k_2x": 3461.325322699632,
+  "net_bp": 9.623070525802634
+ },
+ "n_dev_trials": 21,
+ "code_commit": "369d3eb449edd1e90ea50546f42f3572d08f81ca",
+ "eligible": true
+}

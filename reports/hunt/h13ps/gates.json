@@ -1,0 +1,314 @@
+{
+ "idea": "h13ps",
+ "frozen": {
+  "idea": "h13ps",
+  "variant": "m2_d2_H120",
+  "params": {
+   "mode": 2,
+   "H": 120,
+   "delta": 2,
+   "ai": false,
+   "theta": 0.5,
+   "size_cap_usd": 5000.0,
+   "vol_frac": 0.05,
+   "hs_mult": 1.5,
+   "hs_min_bp": 2.0,
+   "hs_default_bp": 50.0
+  },
+  "code_commit": "a560365cb9f3a7da19b8f0555187b404903734be",
+  "events_commit": "65ca6c9e9d980e04bce8a38016305c3af066f0a6",
+  "selection_rule": "highest DEV alpha t (sleeve $30K at 2x vs incumbent $70K, HAC 5 lags) among trials with >= 40 DEV trades; ties to the simpler variant",
+  "dev": {
+   "n_trades": 199.0,
+   "t_alpha70": -0.0413268701574447,
+   "t_alpha100": -0.0236190298639017,
+   "sleeve_sharpe_2x": -0.0562267441876419,
+   "dev_book_sharpe": 1.8255592516482704,
+   "inc_sharpe": 2.346886936279795,
+   "mean_net_bp_2x": -21.80054627940084,
+   "median_net_bp_2x": -139.55080425943845,
+   "pnl_2x": 3122.9758186042427,
+   "corr": -0.0184016163745447
+  },
+  "trials": [
+   {
+    "variant": "m1_H5",
+    "n_trades": 178,
+    "t_alpha70": -1.504142786611648,
+    "sleeve_sharpe_2x": -0.7750675831017662,
+    "dev_book_sharpe": 0.4408924053432779
+   },
+   {
+    "variant": "m1_H30",
+    "n_trades": 178,
+    "t_alpha70": -1.3360325457997193,
+    "sleeve_sharpe_2x": -0.6781697092318099,
+    "dev_book_sharpe": 0.5318266555458949
+   },
+   {
+    "variant": "m1_H120",
+    "n_trades": 178,
+    "t_alpha70": -0.802653513141223,
+    "sleeve_sharpe_2x": -0.3930259878542607,
+    "dev_book_sharpe": 0.673733818607623
+   },
+   {
+    "variant": "m2_d2_H5",
+    "n_trades": 195,
+    "t_alpha70": -7.659725649198839,
+    "sleeve_sharpe_2x": -4.297146845976413,
+    "dev_book_sharpe": 1.6924162881698197
+   },
+   {
+    "variant": "m2_d2_H30",
+    "n_trades": 199,
+    "t_alpha70": -3.3425920727616245,
+    "sleeve_sharpe_2x": -1.5896252660950845,
+    "dev_book_sharpe": 1.7548061558894903
+   },
+   {
+    "variant": "m2_d2_H120",
+    "n_trades": 199,
+    "t_alpha70": -0.0413268701574447,
+    "sleeve_sharpe_2x": -0.0562267441876419,
+    "dev_book_sharpe": 1.8255592516482704
+   },
+   {
+    "variant": "m2_d60_H5",
+    "n_trades": 192,
+    "t_alpha70": -8.440724482305834,
+    "sleeve_sharpe_2x": -4.707898037704926,
+    "dev_book_sharpe": 1.6405572435388058
+   },
+   {
+    "variant": "m2_d60_H30",
+    "n_trades": 199,
+    "t_alpha70": -3.967479246819662,
+    "sleeve_sharpe_2x": -1.901814997097241,
+    "dev_book_sharpe": 1.7043195521208936
+   },
+   {
+    "variant": "m2_d60_H120",
+    "n_trades": 199,
+    "t_alpha70": -0.2114256063093944,
+    "sleeve_sharpe_2x": -0.1455368850562607,
+    "dev_book_sharpe": 1.7825797995307462
+   },
+   {
+    "variant": "m2_d2_H120_ai",
+    "n_trades": 58,
+    "t_alpha70": -1.0037464340501283,
+    "sleeve_sharpe_2x": -0.5473136024063413,
+    "dev_book_sharpe": 1.932712622293849
+   }
+  ],
+  "frozen_at": "2026-11-07T08:06:26Z"
+ },
+ "gates_2x": {
+  "path": "B",
+  "a": 0.7,
+  "full_t_alpha": -0.19808503684700338,
+  "full_appraisal": -0.10233278474306554,
+  "full_beta": -0.02112879996406036,
+  "full_book_sharpe": 1.9280367056478651,
+  "full_inc_sharpe": 2.4662030074244012,
+  "full_gain": -0.5381663017765361,
+  "full_sleeve_sharpe": -0.13785227150003412,
+  "dev_t_alpha": -0.04132687015744475,
+  "dev_appraisal": -0.022753894742835012,
+  "dev_beta": -0.02190235197858428,
+  "dev_book_sharpe": 1.8255592516482706,
+  "dev_inc_sharpe": 2.346886936279795,
+  "dev_gain": -0.5213276846315245,
+  "dev_sleeve_sharpe": -0.05622674418764198,
+  "hold_t_alpha": -1.240652974637943,
+  "hold_appraisal": -1.4491215910748048,
+  "hold_beta": -0.009638476031309124,
+  "hold_book_sharpe": 3.0186930200865927,
+  "hold_inc_sharpe": 3.6425920222450707,
+  "hold_gain": -0.623899002158478,
+  "hold_sleeve_sharpe": -1.488716365991288,
+  "dsr": 0.49802253357838117,
+  "sr0_ann": 1.9308722860066592,
+  "n_trials": 3162,
+  "years": {
+   "2022": 0.0881,
+   "2023": 0.1436,
+   "2025": 0.2385,
+   "2026": 0.1788
+  },
+  "G1": false,
+  "G2": false,
+  "G3": false,
+  "G4": false,
+  "G5": true,
+  "pass_G1_G5": false,
+  "a_grid": [
+   {
+    "a": 1.0,
+    "dev_book_sharpe": 2.346886936279795
+   },
+   {
+    "a": 0.7,
+    "dev_book_sharpe": 1.8255592516482706
+   },
+   {
+    "a": 0.5,
+    "dev_book_sharpe": 1.5151719448893406
+   }
+  ]
+ },
+ "gates_1x_info": {
+  "path": "B",
+  "a": 0.7,
+  "full_t_alpha": 0.3761413308374944,
+  "full_appraisal": 0.19443821485155943,
+  "full_beta": -0.018798674738947103,
+  "full_book_sharpe": 2.0700441233458573,
+  "full_inc_sharpe": 2.4662030074244012,
+  "full_gain": -0.39615888407854394,
+  "full_sleeve_sharpe": 0.16336178601821125,
+  "dev_t_alpha": 0.4986702869127986,
+  "dev_appraisal": 0.2745942183213623,
+  "dev_beta": -0.019225384063624725,
+  "dev_book_sharpe": 1.9718064677879286,
+  "dev_inc_sharpe": 2.346886936279795,
+  "dev_gain": -0.3750804684918665,
+  "dev_sleeve_sharpe": 0.24570413339058456,
+  "hold_t_alpha": -0.9587036705214509,
+  "hold_appraisal": -1.1219157317067117,
+  "hold_beta": -0.010378869076975761,
+  "hold_book_sharpe": 3.1339426702257076,
+  "hold_inc_sharpe": 3.6425920222450707,
+  "hold_gain": -0.5086493520193631,
+  "hold_sleeve_sharpe": -1.166569077664827,
+  "dsr": 0.6282432602824658,
+  "sr0_ann": 1.9308722860066592,
+  "n_trials": 3162,
+  "years": {
+   "2022": 0.0954,
+   "2023": 0.1482,
+   "2025": 0.2585,
+   "2026": 0.1876
+  },
+  "G1": false,
+  "G2": false,
+  "G3": false,
+  "G4": false,
+  "G5": true,
+  "pass_G1_G5": false,
+  "a_grid": [
+   {
+    "a": 1.0,
+    "dev_book_sharpe": 2.346886936279795
+   },
+   {
+    "a": 0.7,
+    "dev_book_sharpe": 1.9718064677879286
+   },
+   {
+    "a": 0.5,
+    "dev_book_sharpe": 1.6949523552287549
+   }
+  ]
+ },
+ "gates_theta025_2x_info": {
+  "path": "B",
+  "a": 0.7,
+  "full_t_alpha": -0.19808503684700338,
+  "full_appraisal": -0.10233278474306554,
+  "full_beta": -0.02112879996406036,
+  "full_book_sharpe": 1.9280367056478651,
+  "full_inc_sharpe": 2.4662030074244012,
+  "full_gain": -0.5381663017765361,
+  "full_sleeve_sharpe": -0.13785227150003412,
+  "dev_t_alpha": -0.04132687015744475,
+  "dev_appraisal": -0.022753894742835012,
+  "dev_beta": -0.02190235197858428,
+  "dev_book_sharpe": 1.8255592516482706,
+  "dev_inc_sharpe": 2.346886936279795,
+  "dev_gain": -0.5213276846315245,
+  "dev_sleeve_sharpe": -0.05622674418764198,
+  "hold_t_alpha": -1.240652974637943,
+  "hold_appraisal": -1.4491215910748048,
+  "hold_beta": -0.009638476031309124,
+  "hold_book_sharpe": 3.0186930200865927,
+  "hold_inc_sharpe": 3.6425920222450707,
+  "hold_gain": -0.623899002158478,
+  "hold_sleeve_sharpe": -1.488716365991288,
+  "dsr": 0.49802253357838117,
+  "sr0_ann": 1.9308722860066592,
+  "n_trials": 3162,
+  "years": {
+   "2022": 0.0881,
+   "2023": 0.1436,
+   "2025": 0.2385,
+   "2026": 0.1788
+  },
+  "G1": false,
+  "G2": false,
+  "G3": false,
+  "G4": false,
+  "G5": true,
+  "pass_G1_G5": false,
+  "a_grid": [
+   {
+    "a": 1.0,
+    "dev_book_sharpe": 2.346886936279795
+   },
+   {
+    "a": 0.7,
+    "dev_book_sharpe": 1.8255592516482706
+   },
+   {
+    "a": 0.5,
+    "dev_book_sharpe": 1.5151719448893406
+   }
+  ]
+ },
+ "g4_variants": {
+  "within": {
+   "N": 3162,
+   "vz": 1.1257,
+   "dsr": 0.49802253357838117
+  },
+  "pooled": {
+   "N": 3162,
+   "vz": 4.1165649493703524,
+   "dsr": 2.3626323423238346e-05
+  },
+  "plain": {
+   "N": 3162,
+   "vz": 167.51698972697915,
+   "dsr": 0.0
+  },
+  "floor": {
+   "N": 3162,
+   "vz": 1.1257,
+   "dsr": 0.49802253357838117
+  }
+ },
+ "n_trades": {
+  "all": 220,
+  "dev": 199,
+  "hold": 21
+ },
+ "mean_net_bp_2x": {
+  "dev": -21.800546279400837,
+  "hold": -129.87725926859684
+ },
+ "sleeve_30k_2x": {
+  "sharpe_full": -0.13785227150003412,
+  "sharpe_dev": -0.05622674418764198,
+  "sharpe_hold": -1.488716365991288,
+  "years": {
+   "2022": -0.0011484455088185686,
+   "2023": 0.0247928142550464,
+   "2025": -0.09646766157268405,
+   "2026": 0.15453889873252996
+  },
+  "ann_return": 0.021243729455638835
+ },
+ "corr_with_incumbent": -0.01799065458388457,
+ "path_a_applies": false
+}

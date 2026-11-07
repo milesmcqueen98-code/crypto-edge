@@ -1,0 +1,107 @@
+{
+ "idea": "h10xq",
+ "variant": "k6_b_BTCETH",
+ "k": 6.0,
+ "exit": "b",
+ "qset": "BTCETH",
+ "H": 60,
+ "cascade": false,
+ "theta": 0.5,
+ "bid_usd": 5000,
+ "max_open": 6,
+ "tp_frac": 0.6,
+ "scoring_basis": "candles for every fill; costs exactly common.py; 2x for gates",
+ "code_commit": "f780d48e51df89e14acab7c93a66a9a4b213d51c",
+ "frozen_utc": "2026-11-07T07:21:03Z",
+ "selection_rule": "highest DEV alpha t (sleeve 2x on incumbent $70K) among trials with >= 40 trades",
+ "dev": {
+  "trades": 21759,
+  "alpha_t_70k": -10.902822904339114,
+  "alpha_yr_70k": -5.697557101382767,
+  "sleeve_sharpe_2x": -10.426645300309668,
+  "sleeve_sharpe_1x": -10.08918744207587,
+  "dev_book_sharpe": -9.602842118321378,
+  "inc70_sharpe": 2.150913815596056
+ },
+ "n_trials": 13,
+ "trials": [
+  {
+   "variant": "k3_a_USDT_H60",
+   "trades": 170548,
+   "dev_alpha_t_70k": -16.137,
+   "dev_sleeve_sharpe_2x": -17.3201
+  },
+  {
+   "variant": "k4_a_USDT_H60",
+   "trades": 112823,
+   "dev_alpha_t_70k": -13.8816,
+   "dev_sleeve_sharpe_2x": -14.5532
+  },
+  {
+   "variant": "k6_a_USDT_H60",
+   "trades": 51536,
+   "dev_alpha_t_70k": -13.0402,
+   "dev_sleeve_sharpe_2x": -12.3293
+  },
+  {
+   "variant": "k3_b_USDT",
+   "trades": 428096,
+   "dev_alpha_t_70k": -20.3344,
+   "dev_sleeve_sharpe_2x": -20.6248
+  },
+  {
+   "variant": "k4_b_USDT",
+   "trades": 256139,
+   "dev_alpha_t_70k": -18.4794,
+   "dev_sleeve_sharpe_2x": -18.0723
+  },
+  {
+   "variant": "k6_b_USDT",
+   "trades": 100301,
+   "dev_alpha_t_70k": -16.2145,
+   "dev_sleeve_sharpe_2x": -14.9179
+  },
+  {
+   "variant": "k3_a_BTCETH_H60",
+   "trades": 54997,
+   "dev_alpha_t_70k": -14.7652,
+   "dev_sleeve_sharpe_2x": -14.8089
+  },
+  {
+   "variant": "k4_a_BTCETH_H60",
+   "trades": 33359,
+   "dev_alpha_t_70k": -14.1479,
+   "dev_sleeve_sharpe_2x": -13.585
+  },
+  {
+   "variant": "k6_a_BTCETH_H60",
+   "trades": 14145,
+   "dev_alpha_t_70k": -13.8155,
+   "dev_sleeve_sharpe_2x": -11.8378
+  },
+  {
+   "variant": "k3_b_BTCETH",
+   "trades": 105639,
+   "dev_alpha_t_70k": -11.4766,
+   "dev_sleeve_sharpe_2x": -12.7135
+  },
+  {
+   "variant": "k4_b_BTCETH",
+   "trades": 58490,
+   "dev_alpha_t_70k": -11.043,
+   "dev_sleeve_sharpe_2x": -11.6343
+  },
+  {
+   "variant": "k6_b_BTCETH",
+   "trades": 21759,
+   "dev_alpha_t_70k": -10.9028,
+   "dev_sleeve_sharpe_2x": -10.4266
+  },
+  {
+   "variant": "k6_b_BTCETH_casc",
+   "trades": 4261,
+   "dev_alpha_t_70k": -12.3629,
+   "dev_sleeve_sharpe_2x": -9.288
+  }
+ ]
+}

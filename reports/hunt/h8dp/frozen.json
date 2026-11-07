@@ -1,0 +1,43 @@
+{
+ "idea": "h8dp",
+ "variant": "all|deep|tp",
+ "universe": "all",
+ "ladder": "deep",
+ "exit": "tp",
+ "depths_bp": [
+  50,
+  100,
+  200
+ ],
+ "tp_bp_below_par": 5.0,
+ "timeout_days": null,
+ "pairs": [
+  "USDT-USD",
+  "DAI-USD",
+  "PYUSD-USD",
+  "GUSD-USD",
+  "USDS-USD",
+  "CBETH-USD"
+ ],
+ "theta": 0.5,
+ "cost_mult_for_gates": 2.0,
+ "fees": {
+  "fx_stablecoin_pairs": "0% maker / 0.45 bp taker (R3 memo, third-party Aug 2026, unverified)",
+  "usdt_and_cbeth": "VIP 1: 0.06% maker / 0.125% taker (common.py)"
+ },
+ "code_commit": "0b8bb8f75b205caa5597a11e953ae80eca52d7db",
+ "selection": "highest DEV alpha t among trials with >= 20 fills; ties to simpler",
+ "n_dev_trials": 8,
+ "eligible": 8,
+ "dev": {
+  "t_alpha": 1.9003390707685517,
+  "sleeve_sharpe": 0.7021872325033263,
+  "dev_book_sharpe": 2.3738345230441005,
+  "fills": 3325,
+  "lots": 19555,
+  "pnl_usd_30k": 7673.629850431458,
+  "sleeve_ret_per_yr": 0.0749297724828111,
+  "alpha_yr": 0.0594089435416845
+ },
+ "frozen_utc": "2026-11-07T06:37:12Z"
+}
