@@ -27,14 +27,22 @@ SCAN = 16
 
 
 def check(tr, ts, lvl, tick, tp, tp_ts, tr_tp):
-    m0 = tr[(tr.time >= ts) & (tr.time < ts + pd.Timedelta(minutes=1))]
-    out = dict(n_min=len(m0), confirmed=False, thru_q=0.0, first_px=np.nan, min_px=np.nan, tp_ok=np.nan)
+    """The bid (from candles through t-1) rests from ts + 1 s (latency rule for trade-level checks): the last print
+    before ts + 1 s (else the first print after it) must be above the level (a post-only bid would not cross), and a
+    print at or below lvl - tick must follow inside the minute."""
+    t1 = ts + pd.Timedelta(seconds=1)
+    pre = tr[(tr.time >= ts - pd.Timedelta(minutes=1)) & (tr.time < t1)]
+    m0 = tr[(tr.time >= t1) & (tr.time < ts + pd.Timedelta(minutes=1))]
+    out = dict(n_min=len(m0), confirmed=False, thru_q=0.0, first_px=np.nan, min_px=np.nan, tp_ok=np.nan,
+               fill_time=pd.NaT)
     if len(m0):
-        out["first_px"] = float(m0.price.iloc[0])
+        ref = float(pre.price.iloc[-1]) if len(pre) else float(m0.price.iloc[0])
+        out["first_px"] = ref
         out["min_px"] = float(m0.price.min())
         below = m0.price <= lvl - 0.5 * tick
-        out["confirmed"] = bool(below.any()) and out["first_px"] > lvl + 0.5 * tick
+        out["confirmed"] = bool(below.any()) and ref > lvl + 0.5 * tick
         if below.any():
+            out["fill_time"] = m0.time.iloc[int(np.flatnonzero(below.to_numpy())[0])]
             i0 = int(np.flatnonzero(below.to_numpy())[0])
             seq = tr[tr.time >= m0.time.iloc[i0]]
             seq = seq[seq.time < ts + pd.Timedelta(minutes=SCAN)]
@@ -70,7 +78,7 @@ def main(tag, shard, nsh):
     out, t0, nfail = [], time.time(), 0
     for n, ((pair, ts), g) in enumerate(R.groupby(["pair", "ts"], sort=True)):
         try:
-            tr = F.window(pair, ts, ts + pd.Timedelta(minutes=SCAN))
+            tr = F.window(pair, ts - pd.Timedelta(minutes=1), ts + pd.Timedelta(minutes=SCAN))
         except Exception as err:  # noqa: BLE001
             nfail += 1
             for r in g.itertuples():
