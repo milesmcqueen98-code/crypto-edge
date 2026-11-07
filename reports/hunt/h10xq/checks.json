@@ -1,0 +1,411 @@
+{
+ "mech_dev": {
+  "trades": 21759,
+  "fill_musd": 79.5982,
+  "bid_below_F_bp_median": -27.8694,
+  "locked_bp_mean": 1.7048,
+  "locked_bp_median": 1.001,
+  "locked_share_positive": 0.5387,
+  "locked_bp_p90": 26.5847,
+  "cost_bp_2x": 70.0,
+  "pnl_bp_2x_mean": -68.1893,
+  "share_trades_locked_above_2x_cost": 0.0192
+ },
+ "mech_hold": {
+  "trades": 472,
+  "fill_musd": 1.5663,
+  "bid_below_F_bp_median": -23.6486,
+  "locked_bp_mean": 2.9669,
+  "locked_bp_median": 3.5961,
+  "locked_share_positive": 0.6038,
+  "locked_bp_p90": 27.9668,
+  "cost_bp_2x": 70.0,
+  "pnl_bp_2x_mean": -66.8531,
+  "share_trades_locked_above_2x_cost": 0.0254
+ },
+ "by_pair": [
+  {
+   "pair": "ETH-BTC",
+   "trades": 10687,
+   "fill_musd": 44.04,
+   "locked_bp": 0.66,
+   "pnl_usd": -312196.04
+  },
+  {
+   "pair": "SOL-BTC",
+   "trades": 5578,
+   "fill_musd": 18.91,
+   "locked_bp": 2.53,
+   "pnl_usd": -138663.5
+  },
+  {
+   "pair": "LTC-BTC",
+   "trades": 1341,
+   "fill_musd": 4.36,
+   "locked_bp": 0.09,
+   "pnl_usd": -33641.07
+  },
+  {
+   "pair": "ADA-BTC",
+   "trades": 949,
+   "fill_musd": 3.55,
+   "locked_bp": 1.64,
+   "pnl_usd": -26177.2
+  },
+  {
+   "pair": "LINK-BTC",
+   "trades": 889,
+   "fill_musd": 2.6,
+   "locked_bp": -2.42,
+   "pnl_usd": -19835.4
+  },
+  {
+   "pair": "AAVE-BTC",
+   "trades": 725,
+   "fill_musd": 1.86,
+   "locked_bp": 0.74,
+   "pnl_usd": -14859.16
+  },
+  {
+   "pair": "MATIC-BTC",
+   "trades": 351,
+   "fill_musd": 1.04,
+   "locked_bp": 3.6,
+   "pnl_usd": -7701.34
+  },
+  {
+   "pair": "AVAX-BTC",
+   "trades": 331,
+   "fill_musd": 0.84,
+   "locked_bp": 14.51,
+   "pnl_usd": -5570.98
+  },
+  {
+   "pair": "ICP-BTC",
+   "trades": 299,
+   "fill_musd": 1.09,
+   "locked_bp": -1.86,
+   "pnl_usd": -8382.67
+  },
+  {
+   "pair": "SOL-ETH",
+   "trades": 295,
+   "fill_musd": 0.89,
+   "locked_bp": 36.35,
+   "pnl_usd": -2866.1
+  },
+  {
+   "pair": "BCH-BTC",
+   "trades": 226,
+   "fill_musd": 0.46,
+   "locked_bp": -1.46,
+   "pnl_usd": -4519.66
+  },
+  {
+   "pair": "DOGE-BTC",
+   "trades": 163,
+   "fill_musd": 0.6,
+   "locked_bp": -5.03,
+   "pnl_usd": -5726.06
+  },
+  {
+   "pair": "UNI-BTC",
+   "trades": 87,
+   "fill_musd": 0.14,
+   "locked_bp": 11.87,
+   "pnl_usd": -930.75
+  },
+  {
+   "pair": "ATOM-BTC",
+   "trades": 79,
+   "fill_musd": 0.16,
+   "locked_bp": 5.84,
+   "pnl_usd": -1215.04
+  },
+  {
+   "pair": "LINK-ETH",
+   "trades": 64,
+   "fill_musd": 0.11,
+   "locked_bp": 2.74,
+   "pnl_usd": -948.52
+  },
+  {
+   "pair": "EOS-BTC",
+   "trades": 52,
+   "fill_musd": 0.17,
+   "locked_bp": -6.94,
+   "pnl_usd": -1693.12
+  },
+  {
+   "pair": "DOT-BTC",
+   "trades": 31,
+   "fill_musd": 0.07,
+   "locked_bp": 7.85,
+   "pnl_usd": -456.55
+  },
+  {
+   "pair": "FIL-BTC",
+   "trades": 29,
+   "fill_musd": 0.08,
+   "locked_bp": 9.3,
+   "pnl_usd": -542.56
+  },
+  {
+   "pair": "CBETH-ETH",
+   "trades": 26,
+   "fill_musd": 0.1,
+   "locked_bp": 1.14,
+   "pnl_usd": -649.52
+  },
+  {
+   "pair": "CRV-BTC",
+   "trades": 22,
+   "fill_musd": 0.06,
+   "locked_bp": 22.34,
+   "pnl_usd": -332.88
+  },
+  {
+   "pair": "ADA-ETH",
+   "trades": 6,
+   "fill_musd": 0.03,
+   "locked_bp": -27.22,
+   "pnl_usd": -247.85
+  },
+  {
+   "pair": "XLM-BTC",
+   "trades": 1,
+   "fill_musd": 0.0,
+   "locked_bp": 7.57,
+   "pnl_usd": -3.31
+  }
+ ],
+ "by_year": [
+  {
+   "ts": 2022,
+   "trades": 9768,
+   "locked_bp": 1.0,
+   "pnl_usd": -265492.03
+  },
+  {
+   "ts": 2023,
+   "trades": 3530,
+   "locked_bp": 5.83,
+   "pnl_usd": -86440.15
+  },
+  {
+   "ts": 2025,
+   "trades": 6836,
+   "locked_bp": 0.79,
+   "pnl_usd": -180002.81
+  },
+  {
+   "ts": 2026,
+   "trades": 2097,
+   "locked_bp": 1.29,
+   "pnl_usd": -55224.29
+  }
+ ],
+ "deep_fills_100bp": {
+  "trades": 547,
+  "locked_bp_mean": 35.34,
+  "pnl_usd": -10100.3733,
+  "share_positive": 0.3601
+ },
+ "largest_dislocations": [
+  {
+   "day": "2022-05-12",
+   "pair": "WLUNA-USDT",
+   "dev_pct": -82.0,
+   "min_z": -34.18,
+   "ts_min": "2022-05-12 18:57:00"
+  },
+  {
+   "day": "2022-05-13",
+   "pair": "WLUNA-USDT",
+   "dev_pct": -67.19,
+   "min_z": -22.65,
+   "ts_min": "2022-05-13 01:23:00"
+  },
+  {
+   "day": "2025-10-10",
+   "pair": "HBAR-USDT",
+   "dev_pct": -55.33,
+   "min_z": -486.81,
+   "ts_min": "2025-10-10 21:24:00"
+  },
+  {
+   "day": "2025-10-10",
+   "pair": "XRP-USDT",
+   "dev_pct": -38.57,
+   "min_z": -269.65,
+   "ts_min": "2025-10-10 21:27:00"
+  },
+  {
+   "day": "2022-05-11",
+   "pair": "WLUNA-USDT",
+   "dev_pct": -37.32,
+   "min_z": -46.67,
+   "ts_min": "2022-05-11 14:32:00"
+  },
+  {
+   "day": "2025-10-10",
+   "pair": "DOT-USDT",
+   "dev_pct": -35.53,
+   "min_z": -37.19,
+   "ts_min": "2025-10-10 21:41:00"
+  },
+  {
+   "day": "2025-10-10",
+   "pair": "DOGE-USDT",
+   "dev_pct": -32.85,
+   "min_z": -213.86,
+   "ts_min": "2025-10-10 21:23:00"
+  },
+  {
+   "day": "2025-10-10",
+   "pair": "DOGE-BTC",
+   "dev_pct": -27.93,
+   "min_z": -25.63,
+   "ts_min": "2025-10-10 21:20:00"
+  },
+  {
+   "day": "2025-10-10",
+   "pair": "AVAX-USDT",
+   "dev_pct": -27.21,
+   "min_z": -70.28,
+   "ts_min": "2025-10-10 21:26:00"
+  },
+  {
+   "day": "2025-10-10",
+   "pair": "ADA-BTC",
+   "dev_pct": -22.69,
+   "min_z": -16.04,
+   "ts_min": "2025-10-10 21:29:00"
+  },
+  {
+   "day": "2025-10-10",
+   "pair": "ADA-USDT",
+   "dev_pct": -21.64,
+   "min_z": -27.96,
+   "ts_min": "2025-10-10 22:31:00"
+  },
+  {
+   "day": "2022-05-14",
+   "pair": "WLUNA-USDT",
+   "dev_pct": -21.12,
+   "min_z": -2.2,
+   "ts_min": "2022-05-14 08:55:00"
+  },
+  {
+   "day": "2022-05-15",
+   "pair": "WLUNA-USDT",
+   "dev_pct": -20.94,
+   "min_z": -2.21,
+   "ts_min": "2022-05-15 05:38:00"
+  },
+  {
+   "day": "2025-10-10",
+   "pair": "LINK-BTC",
+   "dev_pct": -17.5,
+   "min_z": -24.24,
+   "ts_min": "2025-10-10 21:22:00"
+  },
+  {
+   "day": "2022-05-22",
+   "pair": "WLUNA-USDT",
+   "dev_pct": -17.2,
+   "min_z": -56.81,
+   "ts_min": "2022-05-22 08:04:00"
+  }
+ ],
+ "dislocation_days": {
+  "2022-05-12": -82.0,
+  "2022-05-13": -67.19,
+  "2025-10-10": -55.33,
+  "2022-05-11": -37.32,
+  "2022-05-14": -21.12,
+  "2022-05-15": -20.94,
+  "2022-05-22": -17.2,
+  "2022-05-26": -16.96,
+  "2022-05-10": -16.07,
+  "2025-03-02": -15.5
+ },
+ "overlap": {
+  "sleeve_trade_days": 1316,
+  "share_sleeve_days_with_incumbent_fill": 0.3313,
+  "share_sleeve_trades_same_day_same_coin": 0.2288,
+  "pnl_on_incumbent_fill_days": -326816.7412,
+  "pnl_other_days": -260342.5381
+ },
+ "concentration": {
+  "best3_days": [
+   [
+    "2023-11-12",
+    0.0178
+   ],
+   [
+    "2023-08-09",
+    0.0007
+   ],
+   [
+    "2023-12-10",
+    0.0
+   ]
+  ],
+  "worst3_days": [
+   [
+    "2022-01-22",
+    -0.5487
+   ],
+   [
+    "2022-01-21",
+    -0.3375
+   ],
+   [
+    "2025-02-03",
+    -0.2434
+   ]
+  ],
+  "worst3_share_of_losses": 0.0551,
+  "positive_days_share": 0.0021
+ },
+ "capacity": {
+  "s30_2x": {
+   "trades": 22231,
+   "fill_musd": 81.1646
+  },
+  "s30_2x_t025": {
+   "trades": 21516,
+   "fill_musd": 70.2113
+  },
+  "s50_2x": {
+   "trades": 27090,
+   "fill_musd": 95.0137
+  },
+  "s50_2x_t025": {
+   "trades": 26022,
+   "fill_musd": 81.11
+  },
+  "fill_ratio_t025_vs_t05_30k": 0.865,
+  "avg_fill_usd_30k": 3650.9631,
+  "share_full_5k": 0.5955
+ },
+ "by_quote_set": [
+  {
+   "qset": "BTCETH",
+   "trials": 7,
+   "best_alpha_t": -10.903,
+   "best_sleeve_sharpe_2x": -9.288,
+   "best_sleeve_sharpe_1x": -8.695,
+   "total_trades": 292650
+  },
+  {
+   "qset": "USDT",
+   "trials": 6,
+   "best_alpha_t": -13.04,
+   "best_sleeve_sharpe_2x": -12.329,
+   "best_sleeve_sharpe_1x": -11.55,
+   "total_trades": 1119443
+  }
+ ]
+}
