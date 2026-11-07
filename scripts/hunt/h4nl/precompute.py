@@ -81,8 +81,13 @@ def scans(cand, lvl, tp, o, h, lo, v, tick, H, n):
 
 
 def btc_close():
-    parts = [common.load_minute("BTC", "minute_early", start="2021-12-25"), common.load_minute("BTC", "minute")]
-    c = pd.concat([p["close"] for p in parts if p is not None]).astype(np.float64)
+    """BTC 1-minute close (minutes with trades, as common.load_minute), only the columns needed (memory)."""
+    parts = []
+    for src in ("minute_early", "minute"):
+        d = pd.read_parquet(os.path.join(common.DATA, src, "BTC.parquet"), columns=["ts", "close", "volume"])
+        d = d[(d.volume > 0) & (d.ts >= pd.Timestamp("2021-12-25"))].drop_duplicates("ts").set_index("ts")["close"]
+        parts.append(d)
+    c = pd.concat(parts).astype(np.float64)
     c = c[~c.index.duplicated()].sort_index()
     idx = pd.date_range(c.index.min(), c.index.max(), freq="min")
     return c.reindex(idx).ffill()
