@@ -241,6 +241,7 @@ def main():
     ap.add_argument("--mock", action="store_true")
     ap.add_argument("--d0", default="")
     ap.add_argument("--d1", default="")
+    ap.add_argument("--sub", default="")              # "j/m": only chunk j, j+m, ... of this shard (split a slow shard)
     ap.add_argument("--ks", default="3,4,6")
     ap.add_argument("--sides", default="long,short")
     args = ap.parse_args()
@@ -254,6 +255,11 @@ def main():
     t_start = time.time()
     chs, plans, load = PL.make(coins, d0, d1, args.n_shards, modes, verbose=(args.shard == 0))
     mine = [c for c in chs if c["shard"] == args.shard]
+    tag = str(args.shard)
+    if args.sub:
+        j, m = (int(x) for x in args.sub.split("/"))
+        mine = [c for i, c in enumerate(mine) if i % m == j]
+        tag = f"{args.shard}_{j}of{m}"
     print(f"plan: {len(chs)} chunks, est. requests per shard {np.round(load).astype(int).tolist()}; this shard "
           f"{len(mine)} chunks ({time.time() - t_start:.0f}s)", flush=True)
     out_rep = os.path.join(os.environ.get("H1_REP") or os.path.join(ROOT, "reports", "hunt", "h1pb"), args.stage)
@@ -264,7 +270,7 @@ def main():
     E_all, C_all, L_all = [], [], []
     for n_, ch in enumerate(mine):
         t1 = time.time()
-        E, C, logs = run_chunk(ch, plans[ch["coin"]], mock, out_raw, f"{args.stage}_{args.shard}_{n_}", modes,
+        E, C, logs = run_chunk(ch, plans[ch["coin"]], mock, out_raw, f"{args.stage}_{tag}_{n_}", modes,
                                tuple(float(x) for x in args.ks.split(",")), tuple(args.sides.split(",")))
         E_all.append(E)
         C_all.append(C)
@@ -273,9 +279,9 @@ def main():
               f"{len(C)} candle rows, {time.time() - t1:.0f}s (total {time.time() - t_start:.0f}s)", flush=True)
     E = pd.concat(E_all, ignore_index=True) if E_all else pd.DataFrame()
     C = pd.concat(C_all, ignore_index=True) if C_all else pd.DataFrame()
-    E.to_parquet(os.path.join(out_rep, f"entries_{args.shard}.parquet"), index=False)
-    C.to_parquet(os.path.join(out_rep, f"confirm_{args.shard}.parquet"), index=False)
-    pd.DataFrame(L_all).to_csv(os.path.join(out_rep, f"fetchlog_{args.shard}.csv"), index=False)
+    E.to_parquet(os.path.join(out_rep, f"entries_{tag}.parquet"), index=False)
+    C.to_parquet(os.path.join(out_rep, f"confirm_{tag}.parquet"), index=False)
+    pd.DataFrame(L_all).to_csv(os.path.join(out_rep, f"fetchlog_{tag}.csv"), index=False)
     print(f"done: {len(E)} trigger rows, {len(C)} candle rows, {time.time() - t_start:.0f}s", flush=True)
 
 
