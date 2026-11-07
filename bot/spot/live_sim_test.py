@@ -109,6 +109,7 @@ class FakeExchange:
         else:
             self.usd += q * px - fee
             self.coin[c] -= q
+        o["last_fill"] = m
         if o["filled"] >= o["size"] - 1e-12:
             o["status"] = "FILLED"
 
@@ -167,6 +168,11 @@ class FakeExchange:
                 return self.increment(order, self.status(order["id"])), False
             o["status"] = "CANCELLED"
         return self.increment(order, self.status(order["id"])), True
+
+    def filled_order_ids(self, since):
+        self._advance()
+        cut = pd.Timestamp(since).floor("min") - pd.Timedelta(minutes=1)
+        return {k for k, o in self.orders.items() if o.get("last_fill") is not None and o["last_fill"] >= cut}
 
     def cancel_ids(self, ids):
         for i in ids:

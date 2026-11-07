@@ -10,12 +10,17 @@
   "half_spread_bp": 2.0,
   "impact_y": 0.7,
   "paper_capture": 0.5,
-  "fast_poll_s": 5,
+  "fast_poll_s": 1,
   "usd_reserve": 500,
   "count_usdc_as_cash": false,
   "coins_disabled": [],
   "log_book": true,
   "max_consecutive_errors": 5,
   "reconcile_tol_usd": 25,
-  "bid_ttl_s": 300
+  "bid_ttl_s": 300,
+  "rung_weights": {
+    "4": 1,
+    "6": 1,
+    "8": 1
+  }
 }

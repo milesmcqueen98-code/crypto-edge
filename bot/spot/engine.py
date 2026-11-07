@@ -338,6 +338,12 @@ class LiveBroker:
     def cancel_ids(self, ids):
         self.c.cancel_orders(order_ids=list(ids))
 
+    def filled_order_ids(self, since):
+        """Order ids with a fill at or after `since` (one request for the whole account; for 1-second detection)."""
+        fn = getattr(self.c, "get_fills", None) or getattr(self.c, "list_fills")
+        r = self._d(fn(start_sequence_timestamp=pd.Timestamp(since).strftime("%Y-%m-%dT%H:%M:%S.%fZ"), limit=100))
+        return {f.get("order_id") for f in r.get("fills", [])}
+
     def fee_tier(self):
         r = self._d(self.c.get_transaction_summary())
         ft = r.get("fee_tier") or {}
@@ -383,6 +389,9 @@ class Engine:
         self._tp_dirty = set()
         # entry bids expire on their own after ttl seconds (0: good-til-cancelled); the bot re-places them while alive
         self.ttl = int(self.state.get("gtd_ttl_s") or self.cfg.get("bid_ttl_s", 300) or 0)
+        # share of each signal per rung (default: thirds); e.g. {"4": 1, "6": 1, "8": 2} is the wick v4 W2 challenger
+        w = {str(k): float(v) for k, v in (self.cfg.get("rung_weights") or {"4": 1, "6": 1, "8": 1}).items()}
+        self.rung_w = {k: w.get(k, 0.0) / sum(w.values()) for k in ("4",) + DEEP}
 
     # ---------- state
     def _load_state(self):
@@ -799,7 +808,7 @@ class Engine:
                 keep.append(k)
                 self.count("deep_deferred_market")
                 continue
-            usd, free = lad["S"] / 3.0 - lad["tranches"].get(k, {}).get("cost", 0.0), self.free_cash()
+            usd, free = lad["S"] * self.rung_w[k] - lad["tranches"].get(k, {}).get("cost", 0.0), self.free_cash()
             if usd < sp.min_usd:
                 continue
             if usd * (1 + self.fee_m()) > free:
@@ -849,7 +858,7 @@ class Engine:
         free = self.free_cash() + sum(self.hold_usd(l["orders"]["e4"]) for l in armed.values() if "e4" in l["orders"])
         alloc = {}
         for pred, c in cands:
-            want = self.signal_usd(c) / 3.0                # order notional; its hold adds the maker fee
+            want = self.signal_usd(c) * self.rung_w["4"]   # order notional; its hold adds the maker fee
             need = want * (1 + self.fee_m())
             if need <= free:
                 alloc[c], free = want, free - need
@@ -1012,13 +1021,24 @@ class Engine:
             self.log("error", t=t, error=f"reconcile failed: {err!r}"[:300])
 
     def fast_poll(self):
-        """Live: check resting 4-sigma bids between minute steps, so the deeper rungs and the take-profit go out within
-        seconds of a fill instead of at the next minute."""
+        """Live, between minute steps (every fast_poll_s seconds): find 4-sigma fills and place the deeper rungs and the
+        take-profit at once, and retry deeper rungs the market had already passed. Trade-by-trade data (wick v4, S1):
+        reacting within 1 s catches 87% of the deeper fills that come in the parent's own minute, 74% at 5 s, 0% at a
+        minute."""
         t = self.clock()
-        for lad in self.ladders():
-            if lad["status"] != "armed" or "e4" not in lad["orders"]:
-                continue
+        armed = [lad for lad in self.ladders() if lad["status"] == "armed" and "e4" in lad["orders"]]
+        since = getattr(self, "_fills_since", None) or (t - pd.Timedelta(seconds=90))
+        ids = None
+        if armed and hasattr(self.broker, "filled_order_ids"):
+            try:
+                ids = self.broker.filled_order_ids(since - pd.Timedelta(seconds=5))
+                self._fills_since = t
+            except Exception:
+                ids = None                                 # fall back to checking each bid (slower)
+        for lad in armed:
             o = lad["orders"]["e4"]
+            if ids is not None and o["id"] not in ids:
+                continue
             for _, q, px, fee, done in self.broker.fills(lad["coin"], [("e4", o)], {}, t, 0.0):
                 if q > 0:
                     o["filled"] += q
@@ -1031,6 +1051,13 @@ class Engine:
                 self._refresh_tps(t.floor("min"))
                 self._place_pending(lad, t.floor("min"))
                 self.save()
+        for lad in self.ladders():                         # deeper rungs waiting for the market to come back above them
+            if lad["status"] == "open" and lad["pending"] and not lad.get("tp4_touched") \
+                    and t < pd.Timestamp(lad["cancel_at"]) and not self._halted(t):
+                before = list(lad["pending"])
+                self._place_pending(lad, t.floor("min"))
+                if lad["pending"] != before:
+                    self.save()
 
     def cancel_all(self, flatten=False):
         """Cancel every bot order; with flatten=True also sell every open rung at market."""
@@ -1065,7 +1092,7 @@ class Engine:
         self._hc("/start")
         self.start()
         stop = time.time() + 60 * minutes
-        poll = float(self.cfg.get("fast_poll_s", 5)) if self.broker.live else 0.0
+        poll = float(self.cfg.get("fast_poll_s", 1)) if self.broker.live else 0.0
         errors = 0
         while time.time() < stop:
             nxt = (math.floor(time.time() / 60) + 1) * 60 + 6       # 6 s after each minute closes

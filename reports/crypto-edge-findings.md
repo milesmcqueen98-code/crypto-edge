@@ -1,8 +1,13 @@
-# Crypto edge: findings and live rules (updated Nov 6, 2026, spot bot)
+# Crypto edge: findings and live rules (updated Nov 7, 2026, wick v4)
 
 Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly signals, paper-trading bot)
 
 ## Status at a glance
+- **Wick v4 (Nov 7): no signal change passed; reacting within a second does matter (section below).**
+  - 9 candidates were pre-registered: rung weights, a 10σ rung, a BTC-synchronised bid, 31 coins, and venue.
+  - Trade-by-trade Coinbase data (4.3M trades) shows a 1-second reaction catches 87% of the deeper fills that a
+    once-a-minute bot misses. That adds about 2 points a year at $250K, with Sharpe about flat. It is now in the bot.
+  - Coinbase stays the venue. Self-score 12.5/20; the missing points need live data (scorecard in the section).
 - **Live (real money):** BTC+ETH trend filter (below). Unchanged.
 - **Paper trading since Nov 6, 2026:** "wick catcher" — AI-filtered resting dip bids on Coinbase US perps (Execution round
   below). Out-of-sample Sharpe 2.95 (t = 4.0) on spot-priced simulation, Jan 2025 – Nov 2026, 2.25 with high costs.
@@ -17,7 +22,7 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   Mar 2026, short of the 25% bar. The efficient size is $250–500K (18–23% a year at Sharpe 2.7–3.2 in the check
   period); dollar profit stops growing near $1M (section below).
   - **Spot bot built (bot/spot/), $250K paper run started Nov 6.** It passed parity and fake-exchange tests. The live
-    steps are compliance, then a $25K pilot, then $250K, with gates fixed in advance (bot/spot/README.md).
+    steps are compliance, then a $10K pilot, then $250K, with gates fixed in advance (bot/spot/README.md).
 - **Medallion round (Nov 6): nothing adopted; C3 stays.** Every strategy family the book describes Renaissance trying, in
   crypto versions (lunar placebo, sentiment and positioning, hidden Markov regimes, nearest-neighbour patterns,
   seasonality, pairs, factor stat-arb, alternative data, short volatility, one AI model), pre-registered with a
@@ -47,6 +52,60 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   (section below).
 - **Maker round (Nov 6): rejected.** Two-sided quoting at the touch loses 0.7–0.9 bp per dollar before fees in all 36 setups.
 - **C3 upgrade round (Nov 6):** turnover cuts tie on Sharpe; C3 unchanged, still a paper-trade candidate.
+
+## Wick v4 (Nov 7): what's left to improve, tested without overfitting
+Pre-registered in reports/wick_v4_prereg.md before any test. Every era had already shaped some choice, so the rules
+demanded consistency across all three (selection Jan 2025 – Mar 2026, check Apr – Nov 2026, fresh 2022–23), with
+few, mechanism-led candidates. Code: scripts/wick_v4/. Results: reports/wick_v4/.
+
+**Not adopted:**
+- **Rung weights** (W1–W4: deeper-weighted, or a 10σ rung). Up to +0.25 Sharpe in selection, but every paired t is
+  ≤ 1.2. The selection pick (W4) matched the incumbent's 2022–23 return exactly. W2 (¼, ¼, ½) looked better post hoc,
+  so it now runs as a second paper book (paper_spot_w2) and forward data will decide it.
+- **BTC-synchronised bid** (re-price every 5 s with BTC's live price). Fill outcomes don't depend on BTC's same-minute
+  move: correlation +0.06 / +0.02 / −0.01. Lowering the bid in BTC-led cascades would skip good fills.
+- **31 coins.** Worse than 17 in the check period at every size, including $500K (2.19 vs 2.67).
+- **Fast take-profit** inside the fill minute: under 1 bp per fill.
+
+**Adopted: 1-second fill detection.**
+- When the 4σ bid fills, the price usually reaches the deeper rung 9 s later (median). The share of those same-minute
+  deeper fills still caught: 87% reacting in 1 s, 74% in 5 s, 0% once a minute.
+- At $250K, θ 0.5, return / Sharpe:
+
+| Detection | Selection | Check | 2022–23 |
+|---|---|---|---|
+| Once a minute (paper) | 27.6% / 2.37 | 19.6% / 3.10 | 12.2% / 2.02 |
+| 1-second (live bot) | 29.8% / 2.27 | 21.5% / 3.06 | 14.0% / 2.28 |
+
+- The live bot now reads the account's fill list every second (one request) and retries skipped deeper rungs every
+  second. Paper still steps once a minute, so it understates live by about 2 points a year.
+- Trade data agrees with the 1-minute candles on 98.4% of fills.
+
+**Venue: Coinbase.**
+- Gemini's fee schedule is identical, but its volume in these alts is far smaller.
+- Bitstamp's fees eat the edge at our volume.
+- Kraken and Crypto.com don't serve New York.
+
+**Post-hoc lead (forward test only):** fills when BTC is flat (coin-specific selling) are the weakest, in all three
+eras (26 / 5 / 22 bp gross vs ~50).
+
+**Scorecard (rubric fixed in the pre-registration), 12.5 / 20:**
+
+| Criterion | Max | Score | Why |
+|---|---|---|---|
+| Out-of-sample edge | 4 | 4 | With 1-second detection, Sharpe ≥ 2 in all three eras at θ 0.5 (2.27 / 3.06 / 2.28) and θ 0.25 (2.15 / 2.82 / 2.02) |
+| Robustness / no overfitting | 4 | 3 | This round: pre-registered, nothing adopted on noise, the one change is measured not fitted. But R2-08 was the best of 130 (deflated Sharpe 0.77 < 0.95) |
+| Realism of the simulation | 4 | 2.5 | Fills and timing now checked against trade-by-trade data. The capture share and queue position need live fills |
+| Capacity | 2 | 0.5 | Sharpe at $1M 2.43 / 1.76 / 1.21: market-limited, and nothing tested raised it |
+| Implementation and risk | 3 | 2.5 | Parity, fault and server-death tests pass. Not yet run against the real Coinbase API |
+| Live validation | 3 | 0 | Paper started Nov 6; no live fills yet |
+
+- The 7.5 missing points can't come from more backtesting, which would only overfit. They come from:
+  - live validation (3): months of paper and live consistent with the backtest;
+  - realism (1.5): the measured capture share;
+  - robustness (1): forward out-of-sample data, which the deflated Sharpe needs;
+  - implementation (0.5): the pilot running cleanly on the real API;
+  - capacity (1.5): more market volume, or judging capacity at the efficient size ($250–500K) instead of $1M.
 
 ## Wick catcher at $1M (Nov 6): best at $250–500K; about 10–20% a year at $1M
 Goal set by Miles: get the wick catcher (R2-08) to work with $1M. Pre-registered in reports/wick1m_prereg.md. The bar,
@@ -151,11 +210,11 @@ Run it at $250–500K and put the rest in C3.
   - Result: no orphaned orders, no leftover coins, and the bot's books equal the exchange's to $0.00001 after 540
     minutes. That run had 192 unconfirmed cancels and 6 partial sells.
   - Fixed on the way: sizing orders to the exact free cash ignored the maker-fee part of Coinbase's hold.
-  - Not tested against the real Coinbase API, which this environment can't reach. The preflight command and the $25K
+  - Not tested against the real Coinbase API, which this environment can't reach. The preflight command and the $10K
     pilot cover that.
 - **What it gives up vs the simulator:**
-  - Deeper fills inside the parent's own minute. The bot learns of the 4σ fill a minute later; live, it checks every
-    5 seconds. On the Oct 10 crash hours the simulator would have taken 32 such fills.
+  - Deeper fills inside the parent's own minute. The paper bot learns of the 4σ fill a minute later; live, it reads the
+    fill list every second (wick v4: catches ~87% of them). On the Oct 10 crash hours the simulator would have taken 32 such fills.
   - Without them, at $250K and θ = 0.5: 27.6% / Sharpe 2.37 in selection and 19.6% / 3.10 in the check period. With
     them it was 31.8% / 2.38 and 22.7% / 3.23.
   - At $500K: 23.4% / 2.46 and 14.5% / 2.67.
@@ -168,7 +227,7 @@ Run it at $250–500K and put the rest in C3.
   - Plan on about half.
 - **Forward rules (fixed before any paper trade):**
   - A. Paper for ≥ 3 weeks and ≥ 60 rungs. Pass: no unexplained errors, and mean net per dollar above 0.
-  - B. $25K live pilot for ≥ 3 weeks and ≥ 50 rungs. Pass:
+  - B. $10K live pilot for ≥ 3 weeks and ≥ 50 rungs. Pass:
     - live fills on ≥ 70% of the paper bot's fills (same coin and minute);
     - mean live net within 25 bp of paper;
     - no balance warnings.
@@ -183,8 +242,8 @@ Run it at $250–500K and put the rest in C3.
   - Resting bids pulled after 5 failed minutes.
   - An orphan-order and balance sweep every 15 minutes.
 - **Fees:**
-  - A $25K pilot trades about $0.3–0.4M a month, below VIP 1 ($500K of 30-day volume), so expect about 10 bp less net
-    per rung.
+  - A $10K pilot trades about $140K a month, below VIP 1 ($500K of 30-day volume). Its fees eat the edge for the
+    first weeks, so it is judged before fees (README).
   - At $250K the book passes the Intro and Advanced tiers in about a week. That ramp costs a few hundred dollars.
 - **Cash:** the bot counts only USD. Resting bids hold a large share of the cash at any time. Whether USDC can fund -USD
   orders, and earn rewards while idle, is unverified.

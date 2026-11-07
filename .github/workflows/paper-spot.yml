@@ -30,21 +30,27 @@ jobs:
             edge
             reports
             paper_spot
+            paper_spot_w2
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install pandas numpy lightgbm requests pyarrow
-      - name: Paper trade the spot bot ($1M rules, $250K paper capital)
+      - name: Paper trade the spot bot ($1M rules, $250K) and the W2 rung-weight challenger side by side
         run: |
-          python bot/spot/run.py paper --minutes ${{ inputs.minutes || '345' }} > spot.out 2>&1 || true
-          grep -E '"kind": "(fill_entry|fill_exit|halt|error|warning|catch_up)"' spot.out | tail -n 40 || true
-          python bot/spot/run.py report | tail -n 40
+          M=${{ inputs.minutes || '345' }}
+          python bot/spot/run.py paper --minutes $M > spot.out 2>&1 &
+          # wick v4 W2 challenger (1/4, 1/4, 1/2): failed the pre-registered rule, looked better post hoc; forward A/B
+          python bot/spot/run.py paper --minutes $M --config bot/spot/config.w2.json --state-dir paper_spot_w2 > w2.out 2>&1 &
+          wait
+          grep -E '"kind": "(fill_entry|fill_exit|halt|error|warning|catch_up)"' spot.out | tail -n 30 || true
+          python bot/spot/run.py report | tail -n 30
+          python bot/spot/run.py report --state-dir paper_spot_w2 | tail -n 30
       - name: Commit paper log
         if: always()
         run: |
           git config user.name "crypto-edge-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add paper_spot
+          git add paper_spot paper_spot_w2 2>/dev/null || git add paper_spot
           git diff --cached --quiet && exit 0
           git commit -m "Spot paper log $(date -u +%Y-%m-%dT%H:%MZ)"
           for i in 1 2 3 4 5; do git pull --rebase origin main && git push && break; sleep $((i*5)); done

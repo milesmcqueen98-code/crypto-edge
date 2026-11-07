@@ -38,6 +38,14 @@ Research simulator, 17 coins, θ = 0.5 (we get half the volume that trades throu
   In the check period, the best 3 days made about half the P&L.
 - Gains are short-term and taxed as ordinary income (federal + New York State + New York City).
 
+**Live vs paper (wick v4, trade-by-trade data):**
+- When the 4σ bid fills, the price usually reaches the deeper rung 9 seconds later.
+- The live bot reads the account's fill list every second, so it catches about 87% of those same-minute deeper fills.
+  A once-a-minute bot catches none.
+- At $250K, θ 0.5, live with 1-second detection: 29.8% / Sharpe 2.27 (selection), 21.5% / 3.06 (check), 14.0% / 2.28
+  (2022–23). That's about 2 points a year more than the table above.
+- The paper run steps once a minute, so it understates live by about that much.
+
 Known differences from the research simulation:
 - The deeper bids go out once the 4σ fill is seen, so deeper fills inside the parent's own minute are mostly missed.
   This costs 3–4 points a year at $250K and is already in the table.
@@ -183,7 +191,8 @@ wickctl log               # follow the events (Ctrl-C stops watching; the bot ke
   Use its tax export or crypto tax software, and ask a CPA how the wash-sale rule treats crypto for you.
 
 ## Paper run
-`.github/workflows/paper-spot.yml` runs `python bot/spot/run.py paper` every 6 hours on GitHub Actions:
+`.github/workflows/paper-spot.yml` runs two paper books every 6 hours on GitHub Actions: the incumbent (`paper_spot/`) and
+the wick v4 W2 challenger (rungs ¼, ¼, ½; `paper_spot_w2/`, config `config.w2.json`). Both use:
 - $250K paper capital, θ = 0.5 capture, VIP-1 fees;
 - live public Coinbase data, no keys;
 - it commits `paper_spot/` back to the repo.
@@ -204,5 +213,5 @@ Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
   - Parity: rung for rung identical on Oct 10–12 2025 (156 of 156) and Jun 1–3 2026 (33 of 33).
   - Live paths: books equal the fake exchange's to $0.0002 after 540 crash minutes with injected faults, with no
     orphaned orders and no leftover coins.
-- Neither test reaches the real Coinbase API. The preflight and the $25K pilot are where real API surprises would
+- Neither test reaches the real Coinbase API. The preflight and the $10K pilot are where real API surprises would
   show up.
