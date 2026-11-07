@@ -168,16 +168,20 @@ wickctl log               # follow the events (Ctrl-C stops watching; the bot ke
 |---|---|---|---|
 | A. Paper on GitHub Actions (running since Nov 6) | $250K paper | ≥ 3 weeks and ≥ 60 rungs | No unexplained errors. Every rung closes by its rule. 1–6 rung fills a day. Mean net per $ above 0. |
 | B. Live pilot | $10K | ≥ 3 weeks and ≥ 50 rungs | Live fills on ≥ 70% of the paper bot's fills (same coin and minute). Mean live result before fees within 25 bp of paper. No balance warnings. |
-| C. Live | $250K | 6–8 weeks | Capture share ≥ 0.25 (`wickctl report`). Mean net above 0 after 150 rungs. |
+| C. Live | $100K (up to $250K) | 6–8 weeks | Capture share ≥ 0.25 (`wickctl report`). Mean net above 0 after 150 rungs. |
 | D. Live (optional) | $500K | — | Same rules, and only once alt volumes are back near the research level. |
 
 - Paper and the pilot run side by side. At $10K, the pilot is a test of the machinery, not of the profits.
 - **Standing stop rule:** stop and review if, after 150 rungs, the mean net per $ bought is below 0.
-- **Pilot fees are higher.** A $10K book trades about $140K a month.
-  - The first ~2 weeks sit in Coinbase's Intro and Advanced 1 tiers, where fees eat the edge. That costs roughly $80
-    in total.
-  - After that it reaches Advanced 2 (0.125% maker / 0.25% taker). Expect about 0.25% net per dollar bought, against
-    about 0.40% at VIP 1.
+- **Pilot fees are higher** (simulator at $10K, spot only, Coinbase's US tiers in `scripts/wick1m/sim.py`).
+  - A $10K book trades about $120–160K a month (buys plus sells).
+  - **First ~11 days:** under $50K of 30-day volume, at 0.35% maker / 0.75% taker (0.50% / 0.90% for the first day or
+    two). The strategy loses money at these fees. Expect about −$100 to −$120 in total.
+  - **After that:** the $50K–250K tier, 0.15% / 0.30%. The backtest nets 0.11–0.29% per dollar bought, against about
+    0.40% at VIP 1. That's 8–20% a year on $10K ($830–2,000), with Sharpe about 0.7–1.4.
+  - With the edge halved as planned, the pilot runs about breakeven after the ramp.
+  - $100K reaches VIP 1 (0.06% / 0.125%) within about two weeks, so the pilot's fees say nothing about the full-size
+    book.
   - Compare the pilot with paper before fees. The preflight and each start's `fee_tier` log line show your real tier.
 - At $250K the book reaches VIP 1 ($500K of 30-day volume) in about a week.
 
