@@ -124,8 +124,11 @@ def infer_ticks(d, idx):
     out = {}
     for m in np.unique(mc):
         p = px[mc == m].ravel()
+        p = p[np.isfinite(p) & (p > 0)]
         best = TICKS[0]
         for t in TICKS:
+            if t > 0.02 * np.median(p):                           # a tick is far below the price (else the test is void)
+                break
             q = p / t
             if np.mean(np.abs(q - np.round(q)) < 0.05) >= 0.99:
                 best = t
@@ -177,6 +180,17 @@ class Lev:
         self.elig = fresh & np.isfinite(self.gbar) & np.isfinite(self.sig) & (self.sig > 0) & np.isfinite(self.lfair)
         self.key = np.where(self.elig, np.where(np.isfinite(self.z), self.z, 1e9), np.nan).astype(np.float32)
         self.g = g
+
+    def leadlag(self, i0):
+        """Correlations of 1-minute log returns from minute i0 on (both closes forward-filled <= 5 minutes):
+        same minute, Coinbase leading (CB at t vs ref at t+1) and the reference leading (ref at t vs CB at t+1)."""
+        a = np.diff(np.log(pd.Series(self.Cl[i0:]).ffill(limit=5).to_numpy()))
+        b = np.diff(np.log(pd.Series(self.rc[i0:]).ffill(limit=5).to_numpy()))
+        def c_(x, y):
+            m = np.isfinite(x) & np.isfinite(y)
+            return float(np.corrcoef(x[m], y[m])[0, 1]) if m.sum() > 1000 else np.nan
+        return dict(coin=self.c, ref=self.ref, n=int(np.isfinite(a).sum()), corr0=c_(a, b), cb_leads=c_(a[:-1], b[1:]),
+                    ref_leads=c_(b[:-1], a[1:]), ref_traded_share=float(np.isfinite(self.rc[i0:]).mean()))
 
     def cands(self, k, idx):
         """Candidate fills of the k-sigma bid (every minute the bid would fill if it rested), with exits."""
@@ -298,11 +312,10 @@ def btc_series(idx, end):
 # ------------------------------------------------------------------------------------------------ the book
 def run_book(C, Z, lo, hi, theta, H, quiet=None, allow=None):
     """Sequential book over candidate minutes in [lo, hi). C: candidates of one (ref, k), Z: (T, n_coins) ranking key
-    (NaN = no bid possible). allow: optional bool array over C's rows (AI permission). The bid slots are assigned
-    from the t-1 ranking alone; a bid the AI blocks keeps its slot (whether a coin is a candidate is minute-t
-    information, so freeing the slot would look ahead). Returns the fills."""
+    (NaN = no bid possible). allow: optional (U, A): A[j, coin] = the AI lets coin bid in minute U[j] (decided on t-1
+    features, every eligible coin). Bids go to the allowed free coins with the most negative gap z at t-1. Only
+    minutes with a candidate fill need simulating: elsewhere no allocation of the bids fills. Returns the fills."""
     sub = C[(C.i0 >= lo) & (C.i0 < hi)].sort_values(["i0", "coin_id"])
-    al = None if allow is None else np.asarray(allow)[sub.index.to_numpy()]
     i0 = sub.i0.to_numpy()
     coin = sub.coin_id.to_numpy()
     thr = sub.thr_usd.to_numpy()
@@ -321,11 +334,15 @@ def run_book(C, Z, lo, hi, theta, H, quiet=None, allow=None):
             continue
         free = busy < t
         slots = MAX_OPEN - int((~free).sum())
-        if slots <= 0:
-            n_noslot += e - s
-            continue
         z = Z[t]
         ok = free & ~np.isnan(z)
+        if allow is not None:
+            U, A = allow
+            p = int(np.searchsorted(U, t))
+            ok &= A[p] if (p < len(U) and U[p] == t) else True
+        if slots <= 0:
+            n_noslot += int(ok[coin[s:e]].sum())
+            continue
         ids = np.nonzero(ok)[0]
         if len(ids) > slots:
             ids = ids[np.argsort(z[ids], kind="stable")[:slots]]
@@ -333,10 +350,8 @@ def run_book(C, Z, lo, hi, theta, H, quiet=None, allow=None):
         for r in range(s, e):
             c = coin[r]
             if c not in bid:
-                if busy[c] < t:
-                    n_noslot += 1
-                continue
-            if al is not None and not al[r]:
+                if ok[c]:
+                    n_noslot += 1                                # would have filled but had no bid slot
                 continue
             size = min(ORDER_USD, theta * thr[r])
             if size <= 1.0:
@@ -428,15 +443,16 @@ def trade_stats(F, H):
 
 
 # ------------------------------------------------------------------------------------------------ AI filter
-def ai_frame(levs_fn, coins, idx, btc, k, C):
-    """Features known at t-1 for every candidate fill row of C (same row order as C)."""
+def ai_frame(levs_fn, coins, idx, btc, U):
+    """Features known at t-1 for every eligible coin in the minutes U (minutes with any candidate fill)."""
     parts = []
     for ci, c in enumerate(coins):
-        rows = np.nonzero(C.coin_id.to_numpy() == ci)[0]
-        if len(rows) == 0:
-            continue
         lv = levs_fn(c)
-        u = C.i0.to_numpy()[rows]
+        if not lv.ok:
+            continue
+        u = U[lv.elig[U]]
+        if len(u) == 0:
+            continue
         lc = np.log(pd.Series(lv.Cl).ffill(limit=30).to_numpy())
         lb = btc["lb"]
         beta = rbeta(np.diff(lc, prepend=np.nan), np.diff(lb, prepend=np.nan))
@@ -448,22 +464,19 @@ def ai_frame(levs_fn, coins, idx, btc, k, C):
             v15 = pd.Series(v).rolling(15, min_periods=1).sum()
             avg = v15.rolling(4320, min_periods=1440).mean()
             f[nm] = shift((v15 / avg.where(avg > 0)).to_numpy(), 1)[u]
-        D = pd.DataFrame(f, index=rows)
-        D["zgap"] = lv.z[u]
+        f["zgap"] = lv.z[u]
         for L in (5, 15, 60):
-            D[f"btc_z{L}"] = btc[f"btc_z{L}"][u]
+            f[f"btc_z{L}"] = btc[f"btc_z{L}"][u]
+        D = pd.DataFrame({k_: np.asarray(v_, np.float32) for k_, v_ in f.items()})
         ts = idx[u]
-        D["hour_utc"] = np.asarray(ts.hour)
-        D["weekend"] = (np.asarray(ts.dayofweek) >= 5).astype(int)
-        D["coin_id"] = ci
-        D["t"] = u
-        D["ts"] = ts
+        D["hour_utc"] = np.asarray(ts.hour, np.int8)
+        D["weekend"] = (np.asarray(ts.dayofweek) >= 5).astype(np.int8)
+        D["coin_id"] = np.int16(ci)
+        D["t"] = u.astype(np.int64)
         parts.append(D)
-        del lv, lc, beta
-    X = pd.concat(parts).sort_index()
-    for x in AI_FEATS:
-        if x not in ("coin_id", "hour_utc", "weekend"):
-            X[x] = X[x].astype(np.float32)
+        del lv, lc, beta, f
+    X = pd.concat(parts, ignore_index=True)
+    X["ts"] = idx[X.t.to_numpy()]
     return X
 
 
@@ -478,34 +491,41 @@ def ai_labels(C, H, theta=0.5, mult=2.0):
 
 
 def ai_walk_forward(X, y, q_last):
-    """LightGBM (edge.wick.PARAMS, 3 seeds, episode weights), trained on candidate rows before each test quarter
-    (expanding window, 1-day embargo), from 2025Q2, only with >= 6 months of candidate history before the quarter.
-    Returns predictions and the in-sample median threshold per row (NaN = no model: the filter is off)."""
+    """LightGBM (edge.wick.PARAMS, 3 seeds, episode weights), trained on candidate rows (finite y) before each test
+    quarter (expanding window, 1-day embargo), from 2025Q2, only with >= 6 months of candidate history before the
+    quarter. Predicts every row of the quarter. Returns predictions and the in-sample median threshold (NaN = no
+    model: the filter is off)."""
     import lightgbm as lgb
     from edge import wick
-    pred = np.full(len(X), np.nan)
-    thr50 = np.full(len(X), np.nan)
-    t_first = X.ts.min()
+    pred = np.full(len(X), np.nan, np.float32)
+    thr50 = np.full(len(X), np.nan, np.float32)
+    lab = np.isfinite(y)
     ts = X.ts.to_numpy()
-    ep = X.groupby("coin_id").t.transform(lambda z: np.cumsum(np.r_[1, np.diff(z.to_numpy()) > 1])).to_numpy()
+    t_first = ts[lab].min() if lab.any() else np.datetime64("2100-01-01")
     for per in pd.period_range("2025Q2", q_last, freq="Q"):
-        tr = np.isfinite(y) & (ts < np.datetime64(per.start_time - pd.Timedelta(days=1)))
+        tr = lab & (ts < np.datetime64(per.start_time - pd.Timedelta(days=1)))
         te = (ts >= np.datetime64(per.start_time)) & (ts <= np.datetime64(per.end_time))
-        if tr.sum() < 200 or not te.any() or t_first > per.start_time - pd.Timedelta(days=182):
+        if tr.sum() < 200 or not te.any() or t_first > np.datetime64(per.start_time - pd.Timedelta(days=182)):
             print(f"    AI {per}: no model (train rows {int(tr.sum())})", flush=True)
             continue
         T_ = X.loc[tr]
-        w = 1.0 / pd.Series(1, index=pd.MultiIndex.from_arrays([T_.coin_id.to_numpy(), ep[tr]])).groupby(level=[0, 1]).transform("size").to_numpy()
+        tt, cc = T_.t.to_numpy(), T_.coin_id.to_numpy()
+        o = np.lexsort((tt, cc))
+        new_ep = np.r_[True, (np.diff(cc[o]) != 0) | (np.diff(tt[o]) > 1)]
+        ep = np.empty(len(o), np.int64)
+        ep[o] = np.cumsum(new_ep)
+        w = 1.0 / np.bincount(ep)[ep]
         pt, pi = [], []
         for sd in (7, 11, 23):
             m = lgb.train(wick.PARAMS | {"seed": sd, "num_threads": 4},
                           lgb.Dataset(T_[AI_FEATS], y[tr], weight=w, categorical_feature=["coin_id"]),
                           num_boost_round=wick.ROUNDS)
-            pt.append(m.predict(X.loc[te, AI_FEATS]))
-            pi.append(m.predict(T_[AI_FEATS]))
+            pt.append(m.predict(X.loc[te, AI_FEATS], num_threads=4))
+            pi.append(m.predict(T_[AI_FEATS], num_threads=4))
         pred[te] = np.mean(pt, axis=0)
         thr50[te] = float(np.median(np.mean(pi, axis=0)))
         print(f"    AI {per}: train {int(tr.sum())} test rows {int(te.sum())}", flush=True)
+        del T_, pt, pi
     return pred, thr50
 
 
@@ -517,7 +537,7 @@ class Run:
         self.coins = all_coins()
         self.cid = {c: i for i, c in enumerate(self.coins)}
         self.btc = btc_series(self.idx, end)
-        self.C, self.Z, self.ticks = {}, {}, {}
+        self.C, self.Z, self.ticks, self.ll = {}, {}, {}, []
 
     def lev(self, c, ref):
         return Lev(c, ref, self.idx, self.end)
@@ -534,6 +554,7 @@ class Run:
                 continue
             Z[:, self.cid[c]] = lv.key
             self.ticks[(ref, c)] = lv.tick_map
+            self.ll.append(lv.leadlag(int(self.idx.get_indexer([SCORE0[ref]])[0])))
             for k in ks:
                 D = lv.cands(k, self.idx)
                 if D is not None:
@@ -560,20 +581,32 @@ class Run:
                         quiet=self.btc["quiet_bad"] if v.get("quiet") else None, allow=allow)
 
     def ai_allow(self, v, q_last):
-        """AI permission for the candidate rows of variant v (both threshold modes). Non-candidate bids stay allowed
-        (they only take a slot), which can only cost fills."""
+        """AI permission (U, A) for variant v, both threshold modes; and the candidate-row predictions."""
         C = self.C[(v["ref"], v["k"])]
-        X = ai_frame(lambda c: self.lev(c, v["ref"]), self.coins, self.idx, self.btc, v["k"], C)
-        y = ai_labels(C, v["H"])
+        U = np.unique(C.i0.to_numpy())
+        X = ai_frame(lambda c: self.lev(c, v["ref"]), self.coins, self.idx, self.btc, U)
+        y_c = ai_labels(C, v["H"])
+        kx = X.t.to_numpy() * 64 + X.coin_id.to_numpy().astype(np.int64)
+        kc = C.i0.to_numpy() * 64 + C.coin_id.to_numpy().astype(np.int64)
+        o = np.argsort(kx)
+        pos = o[np.searchsorted(kx, kc, sorter=o)]
+        assert (kx[pos] == kc).all()                              # every candidate row is an eligible coin-minute
+        y = np.full(len(X), np.nan)
+        y[pos] = y_c
         pred, thr50 = ai_walk_forward(X, y, q_last)
-        assert len(X) == len(C) and (X.index.to_numpy() == np.arange(len(C))).all()
         out = {}
+        ju = np.searchsorted(U, X.t.to_numpy())
         for mode in ("pos", "q50"):
             okr = np.ones(len(X), bool)                          # no model yet: the filter is off
             m = np.isfinite(pred)
             okr[m] = pred[m] > 0.0 if mode == "pos" else pred[m] >= thr50[m]
-            out[mode] = okr
-        P = pd.DataFrame(dict(ts=X.ts.to_numpy(), coin_id=X.coin_id.to_numpy(), pred=pred, thr50=thr50, y=y))
+            A = np.ones((len(U), len(self.coins)), bool)
+            A[ju, X.coin_id.to_numpy()] = okr
+            out[mode] = (U, A)
+        P = pd.DataFrame(dict(ts=C.ts.to_numpy(), coin_id=C.coin_id.to_numpy(), pred=pred[pos], thr50=thr50[pos], y=y_c))
+        P.attrs["rows_all"] = int(len(X))
+        P.attrs["share_allowed_pos"] = float(np.mean(out["pos"][1][ju, X.coin_id.to_numpy()]))
+        del X
         return out, P
 
 
@@ -665,11 +698,11 @@ def dev():
             for H in HS:
                 v = dict(ref=ref, k=k, H=H)
                 core.append((v, do(v)))
-    best = pick(core)
+    best = core[0][0] if SMOKE else pick(core)                    # smoke runs never apply the selection rule
     vq = dict(best, quiet=True)
     sq = do(vq)
     sb = [s for v, s in core if v == best][0]
-    base = vq if (sq.get("trades", 0) >= MIN_TRADES and sq["t_alpha70"] > sb["t_alpha70"]) else best
+    base = vq if (not SMOKE and sq.get("trades", 0) >= MIN_TRADES and sq["t_alpha70"] > sb["t_alpha70"]) else best
     allows, P = R.ai_allow(base, "2026Q2")
     P[P.ts < gates.HOLD0].to_parquet(os.path.join(DEV_OUT, "ai_pred_dev.parquet"))
     for mode in ("pos", "q50"):
@@ -692,6 +725,7 @@ def dev():
             rows.append(dict(ref=ref, k=k, H=H, cands=int(len(C)), cand_net_bp_2x_mean=float(np.nanmean(y)),
                              cand_net_bp_2x_med=float(np.nanmedian(y))))
     pd.DataFrame(rows).to_csv(os.path.join(DEV_OUT, "cands_by_k_dev.csv"), index=False)
+    pd.DataFrame(R.ll).to_csv(os.path.join(DEV_OUT, "leadlag_dev.csv"), index=False)
     tk = {f"{r}|{c}": {str(m): t for m, t in v.items()} for (r, c), v in R.ticks.items() if r == "bitstamp"}
     json.dump(dict(best_core=vname(best), quiet=vname(vq), ai_base=vname(base), ticks=tk),
               open(os.path.join(DEV_OUT, "selection_dev.json"), "w"), indent=1, default=str)
