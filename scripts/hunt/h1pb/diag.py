@@ -20,8 +20,16 @@ def confirmation(stage, cutoff=None):
     """Candle-implied minute-mode fills (perp minute opened beyond the level and traded >= 1 tick through it) vs prints.
     price_conf: a print in the order's live window [u + 1 s, u + 61 s) crossed the level from the resting side;
     size_conf: theta = 0.5 x through-volume of that first crossing gives >= 1 contract; full: >= the $10K target."""
-    C = pd.concat([pd.read_parquet(f) for f in sorted(glob.glob(os.path.join(B.REP, stage, "confirm_*.parquet")))],
-                  ignore_index=True)
+    if stage == "devc":                     # corrected statistics: alts from dev2; majors from dev minus delta rows + dev2
+        C1 = pd.concat([pd.read_parquet(f) for f in sorted(glob.glob(os.path.join(B.REP, "dev", "confirm_*.parquet")))])
+        C2 = pd.concat([pd.read_parquet(f) for f in sorted(glob.glob(os.path.join(B.REP, "dev2", "confirm_*.parquet")))])
+        dr = pd.read_parquet(os.path.join(B.REP, "delta_rows.parquet"))
+        key = set(zip(dr.coin, dr.row.astype(np.int64)))
+        keep = C1.coin.isin(B.MAJORS).to_numpy() & ~np.array([(c, int(r)) in key for c, r in zip(C1.coin, C1.row)])
+        C = pd.concat([C1[keep], C2], ignore_index=True)
+    else:
+        C = pd.concat([pd.read_parquet(f) for f in sorted(glob.glob(os.path.join(B.REP, stage, "confirm_*.parquet")))],
+                      ignore_index=True)
     C = C.drop_duplicates(["coin", "k", "side", "row"])
     C["grp"] = np.where(C.coin.isin(MAJORS), "majors", "alts")
     C["size_conf"] = C.n50_first >= 1

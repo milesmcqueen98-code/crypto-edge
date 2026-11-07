@@ -174,6 +174,8 @@ def run_chunk(ch, pl, mock, out_dir, tag, modes, ks=KS, sides=("long", "short"))
                         ok &= np.isfinite(L) & (sg > 0) & okr
                     L = np.where(ok, L, np.nan)
                 L[SYN] = np.nan
+                if pl.get("delta_mask") is not None:          # delta run: only triggers on changed rows
+                    L[~pl["delta_mask"][rowc]] = np.nan
                 r = kernel.entries(T, P, Q, SYN, SEG, L, F, is_long, tick, cs, TARGET_USD, THETAS, HS, keep_lo, keep_hi)
                 ii, run, ntg, tp, nn, tpn, gross, tclose, remnot, chours, valid = r
                 E = pd.DataFrame({"coin": coin, "mode": mode, "k": k, "side": 1 if is_long else -1,
@@ -190,7 +192,10 @@ def run_chunk(ch, pl, mock, out_dir, tag, modes, ks=KS, sides=("long", "short"))
                 for b_, hh in enumerate(("60", "15")):
                     E[f"valid{hh}"] = valid[:, b_]
                 if mode == "minute":
-                    conf.append(confirm(st, ch, k, side, Lrow, E, cs, tick))
+                    cf = confirm(st, ch, k, side, Lrow, E, cs, tick)
+                    if pl.get("delta_mask") is not None:
+                        cf = cf[pl["delta_mask"][cf.row.to_numpy()]]
+                    conf.append(cf)
                 logs.append(dict(coin=coin, kind=f"triggers_{mode}_{k}_{side}", trades=len(E),
                                  requests=int((E.n50 >= 1).sum()), a=str(idx[ch["a"]])))
                 E = E[E.n50 >= 1]
@@ -233,7 +238,7 @@ def confirm(st, ch, k, side, Lrow, E, cs, tick):
 # ------------------------------------------------------------------ main
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["dev", "hold"])
+    ap.add_argument("stage", choices=["dev", "dev2", "hold"])
     ap.add_argument("shard", type=int)
     ap.add_argument("n_shards", type=int)
     ap.add_argument("--modes", default="minute,sync")
@@ -241,25 +246,31 @@ def main():
     ap.add_argument("--mock", action="store_true")
     ap.add_argument("--d0", default="")
     ap.add_argument("--d1", default="")
+    ap.add_argument("--delta", action="store_true")      # only rows in reports/hunt/h1pb/delta_rows.parquet
     ap.add_argument("--sub", default="")              # "j/m": only chunk j, j+m, ... of this shard (split a slow shard)
     ap.add_argument("--ks", default="3,4,6")
     ap.add_argument("--sides", default="long,short")
     args = ap.parse_args()
     modes = tuple(args.modes.split(","))
-    if args.stage == "dev":
+    if args.stage in ("dev", "dev2"):
         d0, d1 = pd.Timestamp(args.d0 or "2025-07-01"), pd.Timestamp(args.d1 or HOLD0)
         assert d1 <= HOLD0, "dev stage must end before HOLD"
     else:
         d0, d1 = pd.Timestamp(args.d0 or "2026-05-31 10:00"), pd.Timestamp(args.d1 or LV.GRID_END)
     coins = args.coins.split(",") if args.coins else LV.coins()
     t_start = time.time()
-    chs, plans, load = PL.make(coins, d0, d1, args.n_shards, modes, verbose=(args.shard == 0))
+    deltas = None
+    if args.delta:
+        D = pd.read_parquet(os.path.join(ROOT, "reports", "hunt", "h1pb", "delta_rows.parquet"))
+        deltas = {c: np.sort(g.row.to_numpy(np.int64)) for c, g in D.groupby("coin")}
+        coins = [c for c in coins if c in deltas]
+    chs, plans, load = PL.make(coins, d0, d1, args.n_shards, modes, verbose=(args.shard == 0), deltas=deltas)
     mine = [c for c in chs if c["shard"] == args.shard]
-    tag = str(args.shard)
+    tag = ("delta" if args.delta else "") + str(args.shard)
     if args.sub:
         j, m = (int(x) for x in args.sub.split("/"))
         mine = [c for i, c in enumerate(mine) if i % m == j]
-        tag = f"{args.shard}_{j}of{m}"
+        tag = f"{tag}_{j}of{m}"
     print(f"plan: {len(chs)} chunks, est. requests per shard {np.round(load).astype(int).tolist()}; this shard "
           f"{len(mine)} chunks ({time.time() - t_start:.0f}s)", flush=True)
     out_rep = os.path.join(os.environ.get("H1_REP") or os.path.join(ROOT, "reports", "hunt", "h1pb"), args.stage)

@@ -30,8 +30,12 @@ import common  # noqa: E402
 
 PX_SCALE = {"PEPE": 1000.0, "SHIB": 1000.0}        # perp quoted per 1000 coins
 KS = (3.0, 4.0, 6.0)
-MED_WIN, MED_MINP = "24h", 60                      # 24-hour median of the basis (>= 60 both-traded minutes)
-SIG_WIN, SIG_MINP = "3D", 720                      # 3-day std of the residual (>= 720 both-traded minutes)
+MED_WIN, SIG_WIN = "24h", "3D"
+# Minimum both-traded minutes in each trailing window. v1 (first DEV fetch): 60 / 720, with statistics forward-filled
+# over windows that were too thin (a stale value; bug). v2 (deviation, fixed before any DEV P&L was computed): 20 / 100,
+# and a statistic is that of the last both-traded minute's own trailing window, NaN when that window is too thin.
+STATS_VERSION = int(os.environ.get("H1_STATS", "2"))
+MINP = {1: (60, 720), 2: (20, 100)}
 SPOT_FFILL = 10                                    # spot close carried at most 10 minutes
 FVL = 0.05                                         # Coinbase Derivatives Fair Value Limit: orders > 5% from spot rejected
 GRID_END = pd.Timestamp("2026-11-06 02:00")
@@ -72,9 +76,11 @@ def load_pair(coin, end=GRID_END):
     return idx, P, S
 
 
-def stats(coin, end=GRID_END):
+def stats(coin, end=GRID_END, version=None):
     """Per-minute fair value and residual sigma (row t = known at t-1), plus the candle arrays (perp volume in
     contracts)."""
+    version = version or STATS_VERSION
+    MED_MINP, SIG_MINP = MINP[version]
     out = load_pair(coin, end)
     if out is None:
         return None
@@ -85,8 +91,19 @@ def stats(coin, end=GRID_END):
     med = b.rolling(MED_WIN, min_periods=MED_MINP).median()
     e = b - med.shift(1)
     sig = e.rolling(SIG_WIN, min_periods=SIG_MINP).std()
-    med_g = med.reindex(idx).ffill().to_numpy()
-    sig_g = sig.reindex(idx).ffill().to_numpy()
+    if version == 1:
+        med_g = med.reindex(idx).ffill().to_numpy()
+        sig_g = sig.reindex(idx).ffill().to_numpy()
+    else:                                          # value at the last both-traded minute <= t (NaN stays NaN)
+        last = pd.Series(np.where(both, np.arange(len(idx)), np.nan)).ffill().to_numpy()
+        okl = np.isfinite(last)
+        li = np.where(okl, last, 0).astype(np.int64)
+        med_b = np.full(len(idx), np.nan)
+        sig_b = np.full(len(idx), np.nan)
+        med_b[both] = med.to_numpy()
+        sig_b[both] = sig.to_numpy()
+        med_g = np.where(okl, med_b[li], np.nan)
+        sig_g = np.where(okl, sig_b[li], np.nan)
     s_cf = S["close"].ffill(limit=SPOT_FFILL).to_numpy()
     st = dict(idx=idx, coin=coin,
               bbar=shift1(med_g), sig=shift1(sig_g), s_prev=shift1(s_cf),

@@ -47,6 +47,23 @@ def load(stage, H=60, theta=0.5, mode=None, files=None):
     return E.drop_duplicates(["coin", "mode", "k", "side", "t_fill"]).reset_index(drop=True)
 
 
+MAJORS = ("BTC", "ETH", "SOL", "XRP")
+
+
+def load_devc(H=60, theta=0.5, mode=None):
+    """DEV entries with the corrected statistics (levels v2): every alt from the dev2 rerun; the majors from the first
+    DEV fetch on all rows whose inputs did not change, plus the dev2 delta run on the rows that did."""
+    D1 = load("dev", H, theta, mode)
+    D2 = load("dev2", H, theta, mode)
+    dr = pd.read_parquet(os.path.join(REP, "delta_rows.parquet"))
+    key = set(zip(dr.coin, dr.row.astype(np.int64)))
+    m1 = D1.coin.isin(MAJORS).to_numpy()
+    if key:
+        m1 &= ~np.array([(c, int(r)) in key for c, r in zip(D1.coin, D1.row)])
+    out = pd.concat([D1[m1], D2], ignore_index=True)
+    return out.drop_duplicates(["coin", "mode", "k", "side", "t_fill"]).reset_index(drop=True)
+
+
 def et_minute(t_ns):
     t = pd.to_datetime(t_ns).tz_localize("UTC").tz_convert("America/New_York")
     return t.hour * 60 + t.minute

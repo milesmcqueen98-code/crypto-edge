@@ -36,7 +36,8 @@ def _segments(mask):
     return list(zip(np.nonzero(d == 1)[0], np.nonzero(d == -1)[0]))
 
 
-def coin_plan(coin, d0, d1, modes=("minute", "sync")):
+def coin_plan(coin, d0, d1, modes=("minute", "sync"), delta=None):
+    """delta: optional sorted array of rows; then only candle minutes t with row t or t-1 in delta are candidates."""
     st = LV.stats(coin, end=d1)
     if st is None:
         return None
@@ -44,6 +45,11 @@ def coin_plan(coin, d0, d1, modes=("minute", "sync")):
     n = len(idx)
     lo, hi = LV.candidates(st, 3.0, sync=("sync" in modes))
     cand = (lo | hi) & (idx >= d0) & (idx < d1)
+    dm = None
+    if delta is not None:
+        dm = np.zeros(n, bool)
+        dm[np.asarray(delta, np.int64)[np.asarray(delta) < n]] = True
+        cand &= dm | np.r_[False, dm[:-1]]
     ci = np.nonzero(cand)[0]
     traded = np.isfinite(st["p_close"])
     nxt = np.full(n + 1, n, np.int64)                           # next traded minute index (n = none)
@@ -69,7 +75,7 @@ def coin_plan(coin, d0, d1, modes=("minute", "sync")):
     s_usd = (S["volume"].fillna(0.0) * S["close"].fillna(0.0)).to_numpy()
     s_prints = s_usd / SPOT_TRADE_USD.get(coin, 600.0)
     return dict(coin=coin, st=st, idx=idx, cand=ci, w_end=w_end, perp_need=perp_need, spot_need=spot_need,
-                p_prints=p_prints, s_prints=s_prints)
+                p_prints=p_prints, s_prints=s_prints, delta_mask=dm)
 
 
 def _cost(pl, a, b):
@@ -115,12 +121,12 @@ def chunks(pl, target):
     return out
 
 
-def make(coins, d0, d1, n_shards, modes=("minute", "sync"), per_shard_chunks=4, verbose=False):
+def make(coins, d0, d1, n_shards, modes=("minute", "sync"), per_shard_chunks=4, verbose=False, deltas=None):
     """Deterministic plan: list of chunk dicts with a 'shard' field."""
     plans, all_chunks = {}, []
     rough = {}
     for c in coins:
-        pl = coin_plan(c, d0, d1, modes)
+        pl = coin_plan(c, d0, d1, modes, None if deltas is None else deltas.get(c, np.zeros(0, np.int64)))
         if pl is None or not len(pl["cand"]):
             continue
         rough[c] = float((pl["p_prints"][pl["perp_need"]].sum() + pl["s_prints"][pl["spot_need"]].sum()) / 1000)
