@@ -180,4 +180,13 @@ each with its own fixed spec in reports/hunt/<id>/SPEC.md before it runs:
   Each is written before its build starts.
 
 ## Deviation log
-- (none yet)
+**2026-11-07 03:55 UTC: venue rules from research memo R3, applied to every perp build before any result existed.**
+Sent to builders H1, H2, H3, H7 and H8.
+- Coinbase Derivatives' Fair Value Limit rejects orders priced more than ±5% from spot fair value. A level beyond 5%
+  cannot rest.
+- A ±10% move from the hourly reference price triggers a 2-minute halt with no matching.
+- 24x7 crypto perps halt only on Fridays, 5–6 pm ET.
+- The all-in perp fee is unverified. Gates keep the pre-registered $0.20 per contract per side; $0.12 and $0.30 are
+  reported for information.
+- Stable pairs other than USDT pay 0% maker and ≤ 0.45 bp taker (third-party source). USDT pays standard fees.
+- These are venue facts, not design choices; no trial grid changed.
