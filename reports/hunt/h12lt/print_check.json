@@ -1,0 +1,19 @@
+{
+ "sampled": 300,
+ "with_prints": 299,
+ "fetch_failed": 0,
+ "no_prints": 1,
+ "confirm_rate": 0.8862876254180602,
+ "touch_rate": 0.8896321070234113,
+ "confirm_rate_parent": 0.8663366336633663,
+ "confirm_rate_deeper": 0.9278350515463918,
+ "print_vs_candle_through_median": 0.290852291489702,
+ "print_vs_candle_through_sum": 0.2887207630292823,
+ "fill_within_half_print_through": 0.6755852842809364,
+ "fill_usd_confirmed_share": 0.9316494138845866,
+ "half_spread_bp_median": 5.555114673438639,
+ "half_spread_bp_mean_of_medians": 16.747135913471492,
+ "half_spread_bp_p75": 15.462720033269642,
+ "tick_bp_median": 2.7870680044593086,
+ "coins": 34
+}
