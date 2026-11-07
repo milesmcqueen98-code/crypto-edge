@@ -43,3 +43,10 @@
 {"ts": "2026-11-06T23:30:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 151273, "free": 98727, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XRP", "ZEC"], "open": [], "counts": {"arm": 19, "reprice": 275, "disarm": 5}}
 {"ts": "2026-11-06T23:41:00", "kind": "arm", "coin": "XLM", "ladder": "XLM-38", "px": 0.151385, "usd": 7008, "pred": 37.9, "sigma_bp": 46.9, "usd_bids_ahead": null}
 {"ts": "2026-11-06T23:48:00", "kind": "arm", "coin": "XLM", "ladder": "XLM-39", "px": 0.151313, "usd": 7008, "pred": 38.5, "sigma_bp": 47.0, "usd_bids_ahead": null}
+{"ts": "2026-11-06T23:52:00", "kind": "backfill", "minutes": 15840, "coins": 18}
+{"ts": "2026-11-06T23:57:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-40", "px": 51.848, "usd": 4856, "pred": 30.4, "sigma_bp": 40.3, "usd_bids_ahead": null}
+{"ts": "2026-11-06T23:59:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-41", "px": 51.719, "usd": 4856, "pred": 30.5, "sigma_bp": 40.3, "usd_bids_ahead": null}
+{"ts": "2026-11-07T00:00:00", "kind": "adv", "adv_musd": {"ETH": 286.8, "SOL": 75.1, "XRP": 103.8, "DOGE": 7.7, "LTC": 7.3, "LINK": 9.2, "BCH": 3.5, "SUI": 17.0, "XLM": 10.4, "HBAR": 7.8, "NEAR": 83.8, "AAVE": 4.2, "HYPE": 28.0, "ENA": 10.5, "PEPE": 5.9, "ONDO": 7.3, "ZEC": 144.8}}
+{"ts": "2026-11-07T00:00:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 162663, "free": 87337, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"reprice": 71, "arm": 2, "disarm": 1}}
+{"ts": "2026-11-07T00:05:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-42", "px": 51.719, "usd": 4856, "pred": 30.8, "sigma_bp": 40.3, "usd_bids_ahead": null}
+{"ts": "2026-11-07T00:30:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 157804, "free": 92196, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"reprice": 411, "disarm": 2, "arm": 1}}
