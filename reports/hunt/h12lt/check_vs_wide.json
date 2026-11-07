@@ -1,0 +1,15 @@
+{
+ "orig": 2141,
+ "mine": 2141,
+ "common": 2141,
+ "only_orig": 0,
+ "only_mine": 0,
+ "maxdiff_px": 0.0,
+ "maxdiff_gross": 1.3216094885137863e-11,
+ "maxdiff_net_real": 1.3216094885137863e-11,
+ "maxdiff_pred": 5.684341886080802e-14,
+ "maxdiff_thr": 0.0,
+ "maxdiff_sig": 5.950101522600448e-16,
+ "maxdiff_beta": 1.3766765505351941e-14,
+ "exit_same": 1.0
+}
