@@ -87,5 +87,13 @@
   "implement": 8,
   "capacity": 2,
   "why": "Every trial has a negative DEV alpha t; the frozen variant (-0.04) won only because the rest were worse (0). Realism: every entry and exit priced on prints (6); taker 2 s after the posted switch, though posts lag the real switch by minutes (2); our median trade is 2.5x all aggressive buying in the first minute after the switch, so size versus flow is checked but binding (2); spot fees with measured half-spreads (3). Mechanism: market-order buyers blocked until full trading are a named eager flow (4), but it is a few hundred dollars per listing and the median drift after the switch is negative (0); tiny, so big funds pass (1). Implement: status page and product flags are live (4), market orders (3), a per-listing poller (1). Capacity: mean trade $3.1K, peak $19.6K of $30K (2)."
+ },
+ "h12lt": {
+  "rob_neigh": 3,
+  "realism": 7,
+  "mechanism": 9,
+  "implement": 10,
+  "capacity": 3,
+  "why": "Neighbours: base (alpha t 0.52) and kappa 0.1% (0.78) positive, the $1M floor and no-ladder variants slightly negative (3). Realism: candle fills; a 300-fill print sample shows prints confirm 88.6%, through-volume is 0.29x the candle estimate and the unconfirmed fills are the profitable ones (fills 2); the instant bound needs same-minute deeper fills, and under the minute bound alpha t falls to 0.90 (latency 2); kappa-capped but candle-overstated (1); spot fees published, realised half-spread 5.6 bp vs 2 bp modelled (2). Mechanism: the incumbent's forced sellers (4), sleeve positive in 2025, 2026 and HOLD (2), a long tail big funds cannot use (3). Implement: the same bot on more coins (10). Capacity: cash fully used on cascade days, but Sharpe 1.75 at $30K falls to 1.32 at $50K (3)."
  }
 }
