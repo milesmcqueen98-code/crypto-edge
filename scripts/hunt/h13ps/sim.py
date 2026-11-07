@@ -61,7 +61,7 @@ def frozen_committed():
         return False
     try:
         subprocess.check_output(["git", "-C", ROOT, "fetch", "-q", "origin", "hunt/h13ps"], stderr=subprocess.DEVNULL)
-        out = subprocess.check_output(["git", "-C", ROOT, "ls-tree", "--name-only", "origin/hunt/h13ps",
+        out = subprocess.check_output(["git", "-C", ROOT, "ls-tree", "--name-only", "FETCH_HEAD",
                                        "reports/hunt/h13ps/frozen.json"], text=True).strip()
         return out != ""
     except Exception:  # noqa: BLE001
