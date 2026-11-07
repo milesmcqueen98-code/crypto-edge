@@ -61,11 +61,14 @@ def day_ranges(days):
 
 
 _LEG = {}
+LEG_START = None                       # hold mode: legs are loaded from this date only (keeps memory small)
+OFFLINE = os.environ.get("H10_OFFLINE") == "1"   # never fetch (local post-freeze run on downloaded data)
 
 
 def local_leg(coin):
     if coin not in _LEG:
-        parts = [common.load_minute(coin, src) for src in ("minute_early", "minute")]
+        srcs = ("minute",) if LEG_START is not None else ("minute_early", "minute")
+        parts = [common.load_minute(coin, src, start=LEG_START) for src in srcs]
         parts = [p.astype(np.float64) for p in parts if p is not None]
         L = pd.concat(parts).sort_index() if parts else None
         _LEG[coin] = L[~L.index.duplicated()] if L is not None else None
@@ -108,6 +111,8 @@ class Store:
                 h["df"].append(d0[d0.ts.dt.floor("D").isin(got)])
                 h["days"] |= set(got)
         new = sorted(set(days) - h["days"])
+        if OFFLINE:
+            new = []
         for a, b in (day_ranges(new) if new else []):
             d = self.C.range(prod, a, b, 60)
             if len(d):
@@ -317,6 +322,9 @@ def pair_events(pair, r, U, store, mode):
 
 
 def main(mode, shard, nsh, qset=None, pairs=None, otag=None):
+    global LEG_START
+    if mode == "hold":
+        LEG_START = HOLD0 - pd.Timedelta(days=WARM + 3)
     U = pd.read_parquet(os.path.join(DATA, "universe.parquet"))
     if qset and qset != "all":
         U = U[U.qset == qset]
