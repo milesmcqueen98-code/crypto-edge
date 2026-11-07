@@ -1,0 +1,97 @@
+{
+ "frozen": "d1=7,d2=0,X=1%,hedge=none,cat=all",
+ "gates_2x": {
+  "path": "B",
+  "a": 0.7,
+  "full_t_alpha": 1.8988949263767032,
+  "full_appraisal": 0.8899925047627177,
+  "full_beta": -0.06587922764979573,
+  "full_book_sharpe": 2.279617957244781,
+  "full_inc_sharpe": 2.4662030074244012,
+  "full_gain": -0.18658505017962046,
+  "full_sleeve_sharpe": 0.8190320927816508,
+  "dev_t_alpha": 1.9413207644117316,
+  "dev_appraisal": 0.9621128295717758,
+  "dev_beta": -0.07122323550243365,
+  "dev_book_sharpe": 2.2025546024187874,
+  "dev_inc_sharpe": 2.346886936279795,
+  "dev_gain": -0.14433233386100763,
+  "dev_sleeve_sharpe": 0.8933019738101377,
+  "hold_t_alpha": -1062.0029371774406,
+  "hold_appraisal": -3710.5380942395723,
+  "hold_beta": -1.3614575418130626e-05,
+  "hold_book_sharpe": 3.4821740556271976,
+  "hold_inc_sharpe": 3.6425920222450707,
+  "hold_gain": -0.1604179666178731,
+  "hold_sleeve_sharpe": -3680.0759693088617,
+  "dsr": 1.2569153453231968e-11,
+  "sr0_ann": 5.545047086071403,
+  "n_trials": 3050,
+  "years": {
+   "2022": 0.203,
+   "2023": 0.1455,
+   "2025": 0.3156,
+   "2026": 0.1759
+  },
+  "G1": false,
+  "G2": false,
+  "G3": false,
+  "G4": false,
+  "G5": true,
+  "pass_G1_G5": false,
+  "a_grid": [
+   {
+    "a": 1.0,
+    "dev_book_sharpe": 2.346886936279795
+   },
+   {
+    "a": 0.7,
+    "dev_book_sharpe": 2.2025546024187874
+   },
+   {
+    "a": 0.5,
+    "dev_book_sharpe": 1.7289159106835752
+   }
+  ]
+ },
+ "info_1x": {
+  "path": "B",
+  "a": 0.7,
+  "full_t_alpha": 2.182803417822743,
+  "full_appraisal": 1.02929076375769,
+  "full_beta": -0.06666152755828028,
+  "full_book_sharpe": 2.374737043715258,
+  "full_inc_sharpe": 2.4662030074244012,
+  "full_gain": -0.09146596370914306,
+  "full_sleeve_sharpe": 0.957490587607182,
+  "dev_t_alpha": 2.22659249776334,
+  "dev_appraisal": 1.1098702593678798,
+  "dev_beta": -0.07197353406712177,
+  "dev_book_sharpe": 2.3060839917084204,
+  "dev_inc_sharpe": 2.346886936279795,
+  "dev_gain": -0.04080294457137468,
+  "dev_sleeve_sharpe": 1.0403117050920259,
+  "hold_t_alpha": -1062.0029371774406,
+  "hold_appraisal": -3710.5380942395723,
+  "hold_beta": -1.3614575418130626e-05,
+  "hold_book_sharpe": 3.4821740556271976,
+  "hold_inc_sharpe": 3.6425920222450707,
+  "hold_gain": -0.1604179666178731,
+  "hold_sleeve_sharpe": -3680.0759693088617,
+  "dsr": 4.364142973722568e-11,
+  "sr0_ann": 5.545047086071403,
+  "n_trials": 3050,
+  "years": {
+   "2022": 0.2077,
+   "2023": 0.1572,
+   "2025": 0.3249,
+   "2026": 0.1798
+  },
+  "G1": false,
+  "G2": false,
+  "G3": false,
+  "G4": false,
+  "G5": true,
+  "pass_G1_G5": false
+ }
+}
