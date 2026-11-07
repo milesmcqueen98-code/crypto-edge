@@ -217,3 +217,17 @@ frozen.
 - The mechanism is deep, hourly-refreshed bids on the BTC/ETH/SOL/XRP perps. It comes from H3's DEV-only
   observation: random-depth bids made money even though the liquidation estimate added nothing.
 - Spec: reports/hunt/h11mj/SPEC.md, ≤ 12 trials, the same gates. Its HOLD has never been computed in any form.
+
+**2026-11-07 06:35 UTC: G4's null dispersion is estimated within each idea. Decided before H1, H8, H10 or H11 had
+read its hold-out. Every finished idea (H2–H7, H9) fails G1–G3, so no verdict depends on this choice.**
+- **The problem with the 06:00 rule:** ledger trials are DEV books (0.7 × incumbent + 0.3 × sleeve), each over its
+  own idea's DEV days. Their z = daily Sharpe × √days carries the incumbent's true Sharpe, which grows with √days.
+  - Ideas scored on all 1,246 DEV days sit near z = 3.7; perp-era ideas scored on 318 days sit near z = 2.
+  - So the pooled MAD (vz 2.5–3.3 as perp-era ideas joined) measures record length, not selection noise. It would put
+    the null's expected maximum at about 3.1 annualized over all days and 5.4 over the perp era.
+- **The fix (binding):** subtract each idea's median z, then vz = max(1.126, (1.4826 × MAD)²). On the current ledger
+  the within-idea value is about 0.5, so the lab floor of 1.126 binds.
+- **Reported alongside:** the pooled robust value (06:00 rule) and the plain variance (pre-registered), in
+  reports/hunt/central_gates.csv.
+- **Scored days:** the central recompute uses each idea's own scored days (the index of its daily.parquet), as the
+  builder guide told builders to do. It reproduced every builder's t, gain and a to within 0.01.

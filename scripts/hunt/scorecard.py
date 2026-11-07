@@ -49,6 +49,13 @@ def auto_scores(i):
     gj = os.path.join(d, "gates.json") if d else None
     dp = os.path.join(d, "daily.parquet") if d else None
     G = json.load(open(gj)) if gj and os.path.exists(gj) else None
+    if G is not None:
+        for k in ("gates_2x", "path_b_2x", "2x"):
+            if isinstance(G.get(k), dict) and "full_t_alpha" in G[k]:
+                G = G[k]
+                break
+        if G.get("full_t_alpha") is None:
+            G = None
     if G is None:
         out["notes"].append("no gates.json (stopped before HOLD)")
     else:

@@ -157,21 +157,31 @@ def log_trial(idea, variant, r, note="", stage="dev", **extra):
 
 
 def n_trials(robust=True):
-    """N = 3000 prior + every trial in the ledger.
-    vz (binding, deviation of 2026-11-07 06:00 UTC): max(lab floor, (1.4826 x MAD of z)^2) across ledger trials, a
-    robust estimate of the null dispersion. robust=False gives the pre-registered plain variance, reported alongside:
-    it is dominated by strategy families with large true negative Sharpes."""
+    """N = 3000 prior + every trial in the ledger, and the null dispersion vz of the trials' z = daily SR x sqrt(days).
+
+    robust=True / "within" (binding, deviation of 2026-11-07 06:35 UTC): z is demeaned within each idea (minus the
+      idea's median), then vz = max(lab floor, (1.4826 x MAD)^2). Ledger trials are DEV books that contain the
+      incumbent, whose true Sharpe makes z scale with sqrt(days); pooling ideas scored on different day counts measures
+      record length, not selection noise.
+    "pooled": the 06:00 UTC rule, MAD of z pooled across ideas (reported alongside).
+    robust=False / "plain": the pre-registered plain variance (reported alongside)."""
+    mode = {True: "within", False: "plain"}.get(robust, robust)
     if not os.path.exists(LEDGER):
         return N_PRIOR, VZ_FLOOR
     L = pd.read_csv(LEDGER)
-    z = (L.daily_sr * np.sqrt(L.n_days)).replace([np.inf, -np.inf], np.nan).dropna().to_numpy()
-    if len(z) <= 2:
+    L["z"] = (L.daily_sr * np.sqrt(L.n_days)).replace([np.inf, -np.inf], np.nan)
+    L = L.dropna(subset=["z"])
+    if len(L) <= 2:
         return N_PRIOR + len(L), VZ_FLOOR
-    if robust:
+    z = L.z.to_numpy()
+    if mode == "within":
+        zw = (L.z - L.groupby("idea").z.transform("median")).to_numpy()
+        vz = float((1.4826 * np.median(np.abs(zw))) ** 2)
+    elif mode == "pooled":
         vz = float((1.4826 * np.median(np.abs(z - np.median(z)))) ** 2)
     else:
         vz = float(np.var(z, ddof=1))
-    return N_PRIOR + len(L), max(vz, VZ_FLOOR)
+    return N_PRIOR + len(pd.read_csv(LEDGER)), max(vz, VZ_FLOOR)
 
 
 # ------------------------------------------------------------------ the gates
