@@ -95,5 +95,13 @@
   "implement": 10,
   "capacity": 3,
   "why": "Neighbours: base (alpha t 0.52) and kappa 0.1% (0.78) positive, the $1M floor and no-ladder variants slightly negative (3). Realism: candle fills; a 300-fill print sample shows prints confirm 88.6%, through-volume is 0.29x the candle estimate and the unconfirmed fills are the profitable ones (fills 2); the instant bound needs same-minute deeper fills, and under the minute bound alpha t falls to 0.90 (latency 2); kappa-capped but candle-overstated (1); spot fees published, realised half-spread 5.6 bp vs 2 bp modelled (2). Mechanism: the incumbent's forced sellers (4), sleeve positive in 2025, 2026 and HOLD (2), a long tail big funds cannot use (3). Implement: the same bot on more coins (10). Capacity: cash fully used on cascade days, but Sharpe 1.75 at $30K falls to 1.32 at $50K (3)."
+ },
+ "h1pb": {
+  "rob_neigh": 2,
+  "realism": 13,
+  "mechanism": 7,
+  "implement": 8,
+  "capacity": 2,
+  "why": "Neighbours: the frozen window variant is positive (DEV alpha t 2.89), but its parent (sync k6 long, all hours) is -0.81 and the complement (no orders 4:55-6:05 pm) -2.61, so only one window works (2). Realism: every fill from perp prints (33.5M) with spot prints for the sync rule; 70/70 independently recomputed trades match (6); live-speed rule, order rests 1 s after the previous print, spot at least 1 s old (3); size capped at theta x consecutive through-volume on prints, but theta 0.25 turns the sleeve negative (2); per-contract fee unverified and decisive: $0.12 gives 2x Sharpe 4.1, $0.30 gives -2.2 (2). Mechanism: forced flow sweeping thin perp books is named (4); perp-only fills net +12 bp at 2x, but alt P&L fell from $530-1,140 a month to $16-280 after June 2026 (1); thin alt perps big funds cannot use (2). Implement: live Coinbase spot and perp data, post-only bids, but a spot-synchronous re-pricing loop on 20 perps (8). Capacity: 66% of the $10K target filled on average, and the result needs theta 0.5 (2)."
  }
 }
