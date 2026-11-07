@@ -191,20 +191,32 @@ sizing (no US-accessible history: a forward log below).
 | Capacity | 5 | Sharpe change at $1M (S*): ≥ +0.25 → 5; 0 to +0.25 → 2; < 0 → 0 |
 
 ## Deviation log
-- 2026-11-07 23:40 UTC (after the freeze, no rule change): the second engine check finished. Jan 31 2026, a full
+- 2026-11-07 23:19 UTC (after the freeze, no rule change): the second engine check finished. Jan 31 2026, a full
   cascade day at $250K: parents funded 41 (hsim) vs 39 (engine) of the research's 44; deeper fills 24 vs 24
   (reports/ladder_v5/hsim_check_20260131.csv). With Oct 10 2025 (58 vs 60 of 77; 41 vs 37), hsim tracks the engine.
-- 2026-11-08 00:00 UTC (after the freeze; no rule change). fsim.load reads reports/wick1m/pre_hunt_<tag>.pkl, which
+- 2026-11-07 23:48 UTC (after the freeze; no rule change). fsim.load reads reports/wick1m/pre_hunt_<tag>.pkl, which
   git ignores, so a fresh checkout or Actions runner rebuilds it with sim.precompute instead of reading
   reports/ladder_v5/frozen/. Checked: the rebuilt main and early datasets equal the frozen copies on every column the
   simulators use (only tp_hit's missing-value representation on unfilled rows differs; evaluate never reads it), so the
   C1 run on Actions (no copy step) is unaffected. The builders' runners copy the frozen files into place after checking
   SHA256SUMS.
-- 2026-11-08 00:05 UTC. The subagent harness does not let builders write report files; their reports came back as text
+- 2026-11-07 23:48 UTC. The subagent harness does not let builders write report files; their reports came back as text
   and the coordinator committed them to their branches (reports/ladder_v5/<id>/REPORT.md).
-- 2026-11-08 00:10 UTC. Two variants of one hypothesis passed (C3a, C3b). The pre-registration does not say which one
+- 2026-11-07 23:48 UTC. Two variants of one hypothesis passed (C3a, C3b). The pre-registration does not say which one
   enters the joint re-test. Decided before the joint run and before the red team reports: C3b, the variant with the
   higher pooled t at S* (+7.71 vs +7.08) and at base (+4.16 vs +3.69); C3a's own trial stands. A reading the
   pre-registration did not spell out: S* doubles the half-spread and impact, which C3 avoids, so for C3 S* is the
   favourable configuration and base the conservative one; its verdict weighs base and the red team's print-based costs.
-
+- 2026-11-07 23:59 UTC. Correction: the four entries above had hand-written times; they now carry their commit
+  times (dbcf9cd, 23:19 UTC; fde5f57, 23:48 UTC). From here on the commit time is the record.
+- 2026-11-07 23:59 UTC (before any joint trial and before the red-team reports). The joint re-test. Components: the
+  candidates that passed G1-G4: C2a, C3b (chosen above) and C4. Logged trials, path "return", the four gate
+  configurations, scripts/ladder_v5/cand_joint.py on branch ladder/joint: J_c2a_c3b_c4 and the three sets that leave
+  one out (J_c3b_c4, J_c2a_c4, J_c2a_c3b). C4's overlay uses the joint book's own positions (the C2a sizes, plus C3's
+  extra minutes while a passive sell rests). The runner first checks that everything off reproduces the incumbent and
+  that each component alone reproduces its logged trial, and stops otherwise. Rule: the set put forward is the
+  components their red team confirms. It is adopted if (a) it passes G1-G4 against the incumbent and (b) each
+  component adds within it: the daily difference between the set and the set without that component, at S* θ 0.5,
+  has pooled t ≥ 1 and a positive mean in every era. A component failing (b) is dropped and the smaller set must pass
+  (a). Whatever the result, C4 goes live only after the pre-registered USDC verification, and every adopted change
+  runs in paper_spot_v5 before the live bot changes.
