@@ -139,7 +139,7 @@ eras (26 / 5 / 22 bp gross vs ~50).
 - The fake-exchange test now also injects unreadable market sells and take-profit server errors.
 - Parity is unchanged (128 of 128 rungs). README "Safety built in" has the details.
 
-**Live broker against Coinbase's sandbox:** 17 of 17 checks pass (bot/spot/sandbox_test.py).
+**Live broker against Coinbase's sandbox:** 18 of 18 checks pass (bot/spot/sandbox_test.py).
 - The sandbox gives static responses in the production format.
 - Checks cover accounts, good-til-date and GTC post-only orders, get order, cancel, list orders, list fills, preview and
   market sell, plus simulated insufficient funds and a failed cancel.

@@ -240,7 +240,7 @@ Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
   - Calls covered: accounts, good-til-date and GTC post-only orders, get order, batch cancel, list orders, list fills,
     preview and market sell.
   - It also simulates insufficient funds and a failed cancel.
-  - Nov 7: 17 of 17 checks pass.
+  - Nov 7: 18 of 18 checks pass.
 - The sandbox's responses are static, so it can't show:
   - real order validation (post-only, the good-til-date minimum);
   - key permissions;
