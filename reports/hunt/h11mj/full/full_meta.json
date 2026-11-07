@@ -1,0 +1,38 @@
+{
+ "clamp": {
+  "BTC|early": 0.3179180789337623,
+  "ETH|early": 0.4983663689827924,
+  "SOL|early": 0.9593486677294466,
+  "XRP|early": 0.4660049627791563,
+  "BTC|main": 0.21671336338165428,
+  "ETH|main": 0.5390526529782476,
+  "SOL|main": 0.7910829577293215,
+  "XRP|main": 0.5751817111300606
+ },
+ "frozen": {
+  "idea": "h11mj",
+  "variant": "k9_H60_ALL",
+  "params": {
+   "k": 9.0,
+   "H": 60,
+   "universe": "ALL",
+   "ai": ""
+  },
+  "rule": "highest DEV alpha t (sleeve $30K at 2x on the incumbent at $70K) among trials with >= 40 trades",
+  "code_commit": "cb073ebeb3e09121ac79828affc06ff8b3b953a1",
+  "dev": {
+   "t_alpha_inc70": 1.9269711599795933,
+   "t_alpha_inc100": 2.0022149869920796,
+   "trades": 238,
+   "sleeve_sharpe_2x": 1.7817981435558092,
+   "book_sharpe_a07": 2.5255832844064963,
+   "corr": 0.19572578935000431,
+   "ret_yr_2x": 0.3639626551321103,
+   "ret_yr_1x": 0.46036721355607263
+  },
+  "best_core": "k7_H60_ALL",
+  "n_trials_logged": 12,
+  "gate_series": "candle fills before each perp launch; perp prints for every post-launch trade (mj.py docstring, fixed before the DEV run)",
+  "written": "2026-11-07T06:33:52Z"
+ }
+}
