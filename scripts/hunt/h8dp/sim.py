@@ -110,7 +110,9 @@ def build(pid, end):
         okc = (o >= Lj - 0.5 * tick) & (l <= Lj - 0.5 * tick)
         frac = np.where(rng > 0, np.clip((Lj - l) / np.where(rng > 0, rng, 1), 0, 1), 1.0)
         E[:, j] = np.where(okc, v * frac, 0.0)
-    okx = (o <= tp + 0.5 * tick) & (h >= tp + 0.5 * tick)
+    # take-profit ask (placed after the fill): candle minutes whose high trades a tick above it, volume above the ask
+    # spread evenly over the range (as the wick simulators' first_touch / above_usd; no open condition for exits)
+    okx = h >= tp + 0.5 * tick
     fx = np.where(rng > 0, np.clip((h - tp) / np.where(rng > 0, rng, 1), 0, 1), 1.0)
     X = np.where(okx, v * fx, 0.0)
     n_cand_unc = int(((E[:, 0] > 0) & ~cov).sum())
@@ -202,6 +204,16 @@ def sim_pair(P, depths, theta, timeout_days, mult, budget_at, delisted):
                 cum += q
         for s in range(k):
             inv[s] = max(0.0, inv[s] - freed[s])
+    # timeouts that fall after the last active minute: market sale at the first minute at or after the deadline
+    if lots and tmo is not None:
+        keep = []
+        for lot in lots:
+            if lot[4] <= ts[-1]:
+                ix = int(np.searchsorted(ts, lot[4]))
+                close_lot(lot, lot[2], mkt(ix), ix, "timeout")
+            else:
+                keep.append(lot)
+        lots = keep
     # end: delisted pairs and the end of the full run sell at the last close; a DEV run leaves open lots unbooked
     if lots and (delisted or P.get("final", False)):
         i = len(ts) - 1
@@ -291,5 +303,93 @@ def mode_dev():
     print(f"done in {time.time() - t0:.0f}s")
 
 
+def episodes(end=HOLD0, pids=LV.UNIVERSE_ALL + ("UST-USD", "BUSD-USD"), thr=0.005, gap_h=24):
+    """Depeg episodes from candles: minutes whose low is >= thr below par, merged when < gap_h apart.
+    depth = worst low vs par; minutes_below = minutes with a low below thr; recovery = first close >= par - 5 bp after
+    the last minute below thr (hours from the episode start)."""
+    rows = []
+    for p in pids:
+        C = LV.load_candles(p, end=end)
+        if p == "CBETH-USD":
+            par = LV.cbeth_par(C, LV.load_eth(end))
+        else:
+            par = pd.Series(1.0, index=C.index)
+        rel_low = (C["low"] / par).to_numpy()
+        rel_close = (C["close"] / par).to_numpy()
+        usd = (C["volume"] * C["close"]).to_numpy()
+        idx = np.nonzero(rel_low <= 1 - thr)[0]
+        if not len(idx):
+            continue
+        t = C.index[idx]
+        brk = np.r_[0, np.nonzero(np.diff(t.values).astype("timedelta64[m]").astype(int) > gap_h * 60)[0] + 1, len(idx)]
+        for a, b in zip(brk[:-1], brk[1:]):
+            ii = idx[a:b]
+            i_last = ii[-1]
+            rec = np.nonzero(rel_close[i_last:] >= 1 - LV.TP_BP * 1e-4)[0]
+            t_rec = C.index[i_last + rec[0]] if len(rec) else pd.NaT
+            j = ii[np.argmin(rel_low[ii])]
+            rows.append(dict(pid=p, start=C.index[ii[0]], end=C.index[i_last], worst_at=C.index[j],
+                             depth_bp=round((1 - rel_low[j]) * 1e4, 1), minutes_below=len(ii),
+                             below_100bp=int((rel_low[ii] <= 0.99).sum()), below_200bp=int((rel_low[ii] <= 0.98).sum()),
+                             usd_vol_below=round(float(usd[ii].sum())),
+                             hours_to_recover=round((t_rec - C.index[ii[0]]).total_seconds() / 3600, 1)
+                             if pd.notna(t_rec) else None))
+    return pd.DataFrame(rows)
+
+
+def mode_episodes():
+    E = episodes()
+    os.makedirs(OUT, exist_ok=True)
+    E.to_csv(os.path.join(OUT, "episodes_dev.csv"), index=False)
+    pd.set_option("display.width", 250)
+    print(E.to_string())
+
+
+def mode_mech():
+    """Mechanics check on UST-USD (not in any variant's universe): accounting identities only."""
+    P = build("UST-USD", HOLD0)
+    P["final"] = True
+    R, ol = sim_pair(P, LADDERS["deep"], 0.5, 7, 2.0, lambda t: 10e3, True)
+    R = pd.DataFrame(R, columns=["pid", "slot", "episode", "t_fill", "t_exit", "qty", "px_in", "px_out_net", "pnl", "kind"])
+    print(R.groupby("kind").size().to_dict(), "open", len(ol), "max cost per slot",
+          R.assign(c=R.qty * R.px_in).groupby(["slot", "episode"]).c.sum().max().round(2))
+    print((R.t_exit >= R.t_fill).all())
+
+
+def frozen_variant():
+    return json.load(open(os.path.join(OUT, "frozen.json")))
+
+
+def mode_hold():
+    """After the freeze commit: the frozen variant over every scored day (HOLD read once)."""
+    F = frozen_variant()
+    u, ld, ex = F["universe"], F["ladder"], F["exit"]
+    series, trades, info_all = {}, {}, {}
+    for theta in (0.5, 0.25):
+        for mult in (2.0, 1.0):
+            for cap in (30e3, 50e3):
+                _CACHE.clear() if False else None
+                R, daily, opens, info = run(u, ld, ex, theta=theta, mult=mult, capital=cap, end=END_ALL)
+                key = f"s{int(cap / 1e3)}_{int(mult)}x" + ("" if theta == 0.5 else "_th025")
+                series[key] = pd.Series(daily, dtype=float).reindex(gates.ERA_DAYS).fillna(0.0)
+                trades[key] = R
+                info_all[key] = dict(open_lots_at_end=len(opens), **{k: v for k, v in info.items()})
+    D = pd.DataFrame(series)
+    D.index.name = "day"
+    D[["s30_2x", "s50_2x", "s30_1x", "s50_1x"]].to_parquet(os.path.join(OUT, "daily.parquet"))
+    D.to_parquet(os.path.join(OUT, "daily_all_variants.parquet"))
+    G = gates.path_b({30000: D["s30_2x"], 50000: D["s50_2x"]}, days=gates.ERA_DAYS)
+    G1x = gates.path_b({30000: D["s30_1x"], 50000: D["s50_1x"]}, days=gates.ERA_DAYS)
+    G025 = gates.path_b({30000: D["s30_2x_th025"], 50000: D["s50_2x_th025"]}, days=gates.ERA_DAYS)
+    R = trades["s30_2x"]
+    R.to_csv(os.path.join(OUT, "lots_s30_2x.csv"), index=False)
+    out = dict(frozen=F, path_b_2x=G, path_b_1x_info=G1x, path_b_2x_theta025_info=G025,
+               fills_rung_episodes=n_fills(R), lots=len(R), info=info_all,
+               note="G4 is provisional: the coordinator recomputes the deflated Sharpe centrally with the final ledger.")
+    with open(os.path.join(OUT, "gates.json"), "w") as f:
+        json.dump(out, f, indent=1, default=str)
+    print(json.dumps({k: G[k] for k in G if k != "a_grid"}, default=str, indent=0))
+
+
 if __name__ == "__main__":
-    {"dev": mode_dev}[sys.argv[1]]()
+    {"dev": mode_dev, "episodes": mode_episodes, "mech": mode_mech, "hold": mode_hold}[sys.argv[1]]()
