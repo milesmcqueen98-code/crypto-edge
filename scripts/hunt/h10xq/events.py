@@ -77,12 +77,36 @@ def local_cover(coin, d):
                for src, (a, b) in LOCAL.items())
 
 
+_RAW = {}
+
+
+def raw_frame(prod):
+    """Candles already downloaded by fetch_raw.py (HOLD days + warm-up), with the days they cover."""
+    if prod not in _RAW:
+        import glob
+        fs = sorted(glob.glob(os.path.join(DATA, "raw", f"{prod}__*.parquet")))
+        if fs:
+            d = pd.concat([pd.read_parquet(f) for f in fs]).drop_duplicates("ts").sort_values("ts")
+            cover = set(pd.date_range("2026-05-28", "2026-11-05"))
+            _RAW[prod] = (d, cover)
+        else:
+            _RAW[prod] = None
+    return _RAW[prod]
+
+
 class Store:
     def __init__(self, C):
         self.C, self.have = C, {}
 
     def get(self, prod, days):
         h = self.have.setdefault(prod, {"days": set(), "df": []})
+        rf = raw_frame(prod)
+        if rf is not None:
+            d0, cover = rf
+            got = sorted((set(days) & cover) - h["days"])
+            if got:
+                h["df"].append(d0[d0.ts.dt.floor("D").isin(got)])
+                h["days"] |= set(got)
         new = sorted(set(days) - h["days"])
         for a, b in (day_ranges(new) if new else []):
             d = self.C.range(prod, a, b, 60)
