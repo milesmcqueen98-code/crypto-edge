@@ -1,0 +1,20 @@
+{
+ "time": "2026-11-07T06:26:24Z",
+ "variants": [
+  "bi_k3_H30",
+  "bi_k3_H60",
+  "bi_k4_H30",
+  "bi_k4_H60",
+  "bi_k6_H30",
+  "bi_k6_H60",
+  "pe_k3_H30",
+  "pe_k3_H60",
+  "pe_k4_H30",
+  "pe_k4_H60",
+  "pe_k6_H30",
+  "pe_k6_H60",
+  "pe_k6_H30_quiet",
+  "pe_k6_H30_quiet_aipos",
+  "pe_k6_H30_quiet_aiq50"
+ ]
+}
