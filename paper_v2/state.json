@@ -1,70 +1,71 @@
 {
  "positions": {},
  "orders": {
-  "NEAR": {
-   "id": "paper-dc42491d23",
+  "XLM": {
+   "id": "paper-3d156f2bc1",
    "side": "BUY",
-   "px": 3.6139,
+   "px": 0.14932,
+   "contracts": 3,
+   "kind": "entry",
+   "active_from": "2026-11-07T18:07:00"
+  },
+  "NEAR": {
+   "id": "paper-c576f16ef7",
+   "side": "BUY",
+   "px": 3.551,
    "contracts": 1,
    "kind": "entry",
-   "active_from": "2026-11-07T04:30:00"
-  },
-  "PEPE": {
-   "id": "paper-7ff841abf9",
-   "side": "BUY",
-   "px": 0.004804,
-   "contracts": 5,
-   "kind": "entry",
-   "active_from": "2026-11-07T04:30:00"
+   "active_from": "2026-11-07T18:08:00"
   },
   "HYPE": {
-   "id": "paper-5d5100e4b9",
+   "id": "paper-bcd68f56d0",
    "side": "BUY",
-   "px": 77.39,
+   "px": 75.7,
    "contracts": 3,
    "kind": "entry",
-   "active_from": "2026-11-07T04:30:00"
+   "active_from": "2026-11-07T18:08:00"
   },
-  "BCH": {
-   "id": "paper-601dd5d2fa",
+  "PEPE": {
+   "id": "paper-fbc0fe366f",
    "side": "BUY",
-   "px": 254.05,
-   "contracts": 9,
-   "kind": "entry",
-   "active_from": "2026-11-07T04:30:00"
-  },
-  "SUI": {
-   "id": "paper-560ae36965",
-   "side": "BUY",
-   "px": 0.8449000000000001,
+   "px": 0.0047009999999999994,
    "contracts": 5,
    "kind": "entry",
-   "active_from": "2026-11-07T04:30:00"
+   "active_from": "2026-11-07T18:08:00"
   },
-  "XLM": {
-   "id": "paper-effe025e25",
+  "SUI": {
+   "id": "paper-adcdbe8625",
    "side": "BUY",
-   "px": 0.14911000000000002,
-   "contracts": 3,
+   "px": 0.8414,
+   "contracts": 5,
    "kind": "entry",
-   "active_from": "2026-11-07T04:30:00"
+   "active_from": "2026-11-07T18:08:00"
+  },
+  "XRP": {
+   "id": "paper-ed18f77798",
+   "side": "BUY",
+   "px": 1.1394,
+   "contracts": 4,
+   "kind": "entry",
+   "active_from": "2026-11-07T18:08:00"
   }
  },
  "equity": 10000,
  "day": "2026-11-07",
  "day_start_equity": 10000,
  "halted_day": null,
- "last_minute": "2026-11-07T04:30:00",
+ "last_minute": "2026-11-07T18:08:00",
  "pending_sig": {
-  "NEAR": 0.007899211928984368,
-  "HYPE": 0.006139479014306888,
-  "PEPE": 0.00950294733556163,
-  "BCH": 0.007418403677462583,
-  "XRP": 0.0043333569704592486,
-  "SUI": 0.0052602458793749645,
-  "XLM": 0.004783412076658137,
-  "AAVE": 0.007001087968524808,
-  "ENA": 0.008838726414710367,
-  "ONDO": 0.0055908832149669935
+  "NEAR": 0.006882238833132521,
+  "HYPE": 0.004952000831367697,
+  "PEPE": 0.00848481551008682,
+  "BCH": 0.007416335909187745,
+  "XRP": 0.004329806326168366,
+  "SUI": 0.004940114187581265,
+  "XLM": 0.0043876344615259395,
+  "AAVE": 0.006912595480879585,
+  "ENA": 0.008179276442411482,
+  "ONDO": 0.005400436919650978,
+  "ZEC": 0.010897073032465733
  }
 }
