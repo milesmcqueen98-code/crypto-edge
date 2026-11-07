@@ -32,12 +32,14 @@ notional 1x sleeve capital, gross <= 2x. Costs from scripts/hunt/common.py (1x /
 
 Mechanism test (pre-committed before any run): for each config, every (coin, hour) with a density bid is an event;
 the control bid in the same hour sits at a depth drawn by a fixed-seed permutation of the density bids' depths in
-sigma units (sigma = 1-hour spot sigma from 1-minute returns over the trailing 3 days), i.e. the same depth
-distribution in sigma units at a random bucket inside R. Each event is simulated alone (unit notional, no capacity
-cap, 2x costs); net bp = 0 when the bid does not fill. Test statistic: paired t of (density - control) per-event net
-bp with errors clustered by UTC day (daily sums of the paired differences, Newey-West 5 lags, over DEV days with
-events), which is the honest version of the event-level t for overlapping hourly events; the naive event-level t is
-reported too. A config passes when its clustered t >= 2. The idea continues only with configs that pass.
+sigma units (sigma = 1-hour spot sigma from 1-minute returns over the trailing 3 days), permuted within blocks of 25
+events of adjacent sigma rank (coin x era x config), i.e. the same depth distribution in sigma units (and in percent)
+at a random bucket inside R (clipped to R; the clip rate is reported). Each event is simulated alone (unit notional, no capacity cap, 2x costs); net bp = 0
+when the bid does not fill. Statistics: (a) the SPEC's paired t of (density - control) per-event net bp over all
+events; (b) the same mean with errors clustered by UTC day (daily sums of the paired differences, Newey-West 5 lags,
+over DEV days with events), because hourly events on one cascade day are not independent. A config passes the
+mechanism test only if both (a) and (b) are >= 2. Only configs that pass may be selected; if none passes, the idea
+stops at the screen and HOLD is never read.
 """
 import json
 import math
@@ -77,6 +79,7 @@ ERAS = {"early": ("2021-12-01", "2024-01-01", "minute_early"), "main": ("2024-12
 SCORED = {"early": ("2022-01-01", "2023-12-31"), "main": ("2025-01-01", "2026-11-05")}
 HOLD0 = pd.Timestamp("2026-06-01")
 SEED = 20261107
+PERM_BLOCK = 25
 SWITCH_GAP = 300                                 # no bids in the 5 hours before the spot -> perp venue switch
 
 
@@ -350,8 +353,7 @@ def halt_mask(idx, V):
     et = idx.tz_localize("UTC").tz_convert("America/New_York")
     fri = np.asarray((et.dayofweek == 4) & (et.hour == 17))
     hour_key = np.asarray(idx.floor("h").asi8)
-    ref = pd.Series(V["open"]).groupby(hour_key).transform(lambda x: x.dropna().iloc[0] if x.notna().any() else np.nan)
-    ref = ref.to_numpy()
+    ref = pd.Series(V["open"]).groupby(hour_key).transform("first").to_numpy()      # first traded open of the hour
     with np.errstate(invalid="ignore"):
         trig = (V["low"] <= (1 - HALT_PCT) * ref) | (V["high"] >= (1 + HALT_PCT) * ref)
     halt = fri.copy()
@@ -417,7 +419,8 @@ def prepare(coin, era, end, Ns):
                              D_UNION[0], D_UNION[1], NB)
         H[N] = (hist, bmin)
     halt, fri = halt_mask(D["idx"], D["V"])
-    D.update(hrs=hrs, p0=p0, lp0=lp0, sig=sig, vpx=vpx, H=H, halt=halt, fri=fri, n_entries=len(es))
+    cnt = np.concatenate([[0], np.cumsum(np.isfinite(D["S"]["close"]))])
+    D.update(hrs=hrs, p0=p0, lp0=lp0, sig=sig, vpx=vpx, H=H, halt=halt, fri=fri, n_entries=len(es), cnt=cnt)
     D["secs_prep"] = time.time() - t0
     return D
 
@@ -444,8 +447,13 @@ def bids_for(D, N, R, coin_i, era_i, cfg_i):
     sw = D["sw"]
     vpx = D["vpx"]
     basis = vpx / D["p0"]
-    okc = np.array([common.contract_ok(coin, p) if np.isfinite(p) else False for p in vpx])
+    with np.errstate(invalid="ignore"):
+        okc = np.nan_to_num(vpx * size) >= common.MIN_CONTRACT_USD          # perp universe rule (>= $150 contract)
     valid = has & np.isfinite(lp0) & np.isfinite(sig) & (sig > 0) & np.isfinite(basis) & okc
+    cnt = D["cnt"]                                                          # a full N-day history (XRP relisting):
+    a0 = np.clip(hrs - N * 1440, 0, len(cnt) - 1)                           # spot trades in the first day of the
+    a1 = np.clip(hrs - N * 1440 + 1440, 0, len(cnt) - 1)                    # trailing window
+    valid &= (hrs - N * 1440 >= 0) & (cnt[a1] - cnt[a0] > 0)
     valid &= ~D["fri"][hrs]
     valid &= ~((hrs >= sw - SWITCH_GAP) & (hrs < sw))
     j = np.nonzero(valid)[0]
@@ -454,8 +462,14 @@ def bids_for(D, N, R, coin_i, era_i, cfg_i):
     dep_d = lp0[j] - lbid_d
     z = dep_d / sig[j]
     rng = np.random.default_rng([SEED, coin_i, era_i, cfg_i])
-    zc = z[rng.permutation(len(z))]
-    dep_c = np.clip(zc * sig[j], d_lo + DELTA, d_hi + DELTA)
+    zc = np.empty_like(z)
+    order = np.argsort(sig[j], kind="stable")                   # permute within blocks of PERM_BLOCK events of
+    for a in range(0, len(order), PERM_BLOCK):                  # adjacent sigma rank: the control matches the
+        ii = order[a:a + PERM_BLOCK]                            # density depths in sigma units and in percent
+        zc[ii] = z[ii[rng.permutation(len(ii))]]
+    raw_c = zc * sig[j]
+    dep_c = np.clip(raw_c, d_lo + DELTA, d_hi + DELTA)
+    clip_rate = float(np.mean((raw_c < d_lo + DELTA) | (raw_c > d_hi + DELTA))) if len(z) else float("nan")
     bb = np.round((lp0[j] - dep_c) / DELTA - 0.5)
     bb = np.where(lp0[j] - (bb + 0.5) * DELTA > d_hi + DELTA + 1e-12, bb + 1, bb)
     bb = np.where(lp0[j] - (bb + 0.5) * DELTA < d_lo + DELTA - 1e-12, bb - 1, bb)
@@ -465,6 +479,7 @@ def bids_for(D, N, R, coin_i, era_i, cfg_i):
     for name, lb, le in (("dens", lbid_d, ledge_d), ("ctrl", lbid_c, ledge_c)):
         bs = np.exp(lb) * basis[j]
         bid = np.floor(bs / tick + 1e-9) * tick
+        bid = np.maximum(bid, np.ceil(0.95 * D["p0"][j] / tick - 1e-9) * tick)     # R3 Fair Value Limit (5%)
         edge = np.exp(le) * basis[j]
         tp = bid + 0.5 * (vpx[j] - bid)
         tp = np.floor(tp / tick + 1e-9) * tick
@@ -476,7 +491,16 @@ def bids_for(D, N, R, coin_i, era_i, cfg_i):
     for name in out:
         m = np.isin(out[name]["h"], common_h)
         out[name] = {k: v[m] for k, v in out[name].items()}
-    return out, dict(size=size, tick=tick)
+    return out, dict(size=size, tick=tick, clip_rate=clip_rate)
+
+
+def _ts(idx, a):
+    """Timestamps for minute positions a (NaT where a < 0)."""
+    a = np.asarray(a, np.int64)
+    v = idx.values.astype("datetime64[ns]")[np.maximum(a, 0)].copy() if len(a) else np.array([], "datetime64[ns]")
+    if len(a):
+        v[a < 0] = np.datetime64("NaT", "ns")
+    return pd.DatetimeIndex(v)
 
 
 def unit_table(D, B, spec, H, mult=2.0):
@@ -493,9 +517,14 @@ def unit_table(D, B, spec, H, mult=2.0):
         c_out = np.where(typ == 1, common.perp_cost_bp(coin, np.where(filled, xp, e), taker=False, mult=mult),
                          common.perp_cost_bp(coin, np.where(filled, xp, e), taker=True, mult=mult))
     net = np.where(filled, g - c_in - c_out - common.perp_funding_bp(hours, mult), 0.0)
-    T = pd.DataFrame(dict(h=B["h"], ts=D["idx"][B["h"]], filled=filled, incomplete=tf == -2, tp=typ == 1,
+    cf = D["S"]["cf"]
+    h = B["h"]
+    h_end = np.minimum(h + 59, len(cf) - 1)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        hr_ret = np.log(cf[h_end] / cf[h - 1]) * 1e4                     # spot return over the bid's hour (bp)
+    T = pd.DataFrame(dict(h=h, ts=D["idx"][h], filled=filled, incomplete=tf == -2, tp=typ == 1,
                           cancel=canc.astype(bool), gross=g, net=net, depth=B["depth"], sig=B["sig"],
-                          low_dist_bp=np.where(filled, (e / clow - 1) * 1e4, np.nan)))
+                          hr_ret_bp=hr_ret, low_dist_bp=np.where(filled, (e / clow - 1) * 1e4, np.nan)))
     return T[~T.incomplete]
 
 
@@ -504,11 +533,10 @@ def trades_table(D, B, spec, H, C, theta):
     ev, tf, q, qtp, ttp, tx, xpx, inu, clw = book(V["open"], V["high"], V["low"], V["vol"], halt, B["h"], B["bid"],
                                                   B["edge"], B["tp"], spec["tick"], H, float(C), theta, spec["size"])
     idx = D["idx"]
-    T = pd.DataFrame(dict(coin=D["coin"], h_ts=idx[B["h"][ev]], fill_ts=idx[tf], bid=B["bid"][ev], tp=B["tp"][ev],
-                          vpx=B["vpx"][ev], depth=B["depth"][ev], sig=B["sig"][ev], qty=q, q_tp=qtp,
-                          tp_ts=pd.DatetimeIndex(np.where(ttp >= 0, idx[np.maximum(ttp, 0)], pd.NaT)),
-                          x_ts=pd.DatetimeIndex(np.where(tx >= 0, idx[np.maximum(tx, 0)], pd.NaT)), x_px=xpx,
-                          in_usd=inu, low=clw, venue=np.where(tf >= D["sw"], "perp", "spot")))
+    T = pd.DataFrame(dict(coin=D["coin"], h_ts=_ts(idx, B["h"][ev]), fill_ts=_ts(idx, tf), bid=B["bid"][ev],
+                          tp=B["tp"][ev], vpx=B["vpx"][ev], depth=B["depth"][ev], sig=B["sig"][ev], qty=q, q_tp=qtp,
+                          tp_ts=_ts(idx, ttp), x_ts=_ts(idx, tx), x_px=xpx, in_usd=inu, low=clw,
+                          venue=np.where(tf >= D["sw"], "perp", "spot")))
     T["tp_ts"] = T.tp_ts.where(T.q_tp > 0)
     T["notional"] = T.qty * T.bid
     return T
@@ -568,14 +596,17 @@ def gross_cap(T, C, cap=2.0):
         if want > room:
             scale[i] = room / want if room > 0.1 * want else 0.0
         open_.append((close[i], want * scale[i]))
-    for k in ("qty", "q_tp", "notional"):
-        T[k] = T[k] * scale
-    return T[scale > 0].reset_index(drop=True)
+    csize = T.coin.map({c: common.PERP[c][1] for c in T.coin.unique()}).to_numpy()
+    q_new = np.floor(T.qty.to_numpy() * scale / csize + 1e-9) * csize
+    T["q_tp"] = np.minimum(T.q_tp.to_numpy() * scale, q_new)
+    T["qty"] = q_new
+    T["notional"] = T.qty * T.bid
+    return T[T.qty > 0].reset_index(drop=True)
 
 
 # ------------------------------------------------------------------------------------------------ modes
 def scored_days(end=None):
-    d = pd.DatetimeIndex(list(pd.date_range(*SCORED["early"], freq="D")) + list(pd.date_range(*SCORED["main"], freq="D")))
+    d = pd.DatetimeIndex(sorted(set().union(*[set(pd.date_range(a, b, freq="D")) for a, b in SCORED.values()])))
     return d if end is None else d[d < pd.Timestamp(end)]
 
 
@@ -591,16 +622,18 @@ def nw_t(x, lags=5):
     return float(x.mean() / math.sqrt(v / n)) if v > 0 else float("nan")
 
 
-def run_dev():
-    os.makedirs(os.path.join(OUT, "dev"), exist_ok=True)
+def run_dev(outdir=None, coins=COINS, quiet=False):
+    outdir = outdir or os.path.join(OUT, "dev")
+    os.makedirs(outdir, exist_ok=True)
     days = scored_days(HOLD0)
     cfgs = grid()
     caps = ((30000, 0.5), (50000, 0.5), (30000, 0.25))
     trades = {(ci, arm, C, th): [] for ci in range(len(cfgs)) for arm in ("dens", "ctrl") for C, th in caps}
     units = []
     meta = {}
-    for ci_coin, coin in enumerate(COINS):
-        for ei, era in enumerate(("early", "main")):
+    clips = {}
+    for ci_coin, coin in enumerate(coins):
+        for ei, era in enumerate(ERAS):
             D = prepare(coin, era, HOLD0, GRID_N)
             if D is None:
                 continue
@@ -611,6 +644,7 @@ def run_dev():
             print(f"{coin} {era}: prep {D['secs_prep']:.1f}s, {len(D['hrs'])} hours, {D['n_entries']} entries", flush=True)
             for ci, (N, R, H) in enumerate(cfgs):
                 B, spec = bids_for(D, N, R, ci_coin, ei, ci)
+                clips.setdefault(cfg_name(N, R, H), []).append((len(B["dens"]["h"]), spec["clip_rate"]))
                 for arm in ("dens", "ctrl"):
                     U = unit_table(D, B[arm], spec, H)
                     U["coin"], U["cfg"], U["arm"] = coin, cfg_name(N, R, H), arm
@@ -624,6 +658,7 @@ def run_dev():
     cols = {}
     T_all = []
     mech = {}
+    pooled = {}
     for ci, (N, R, H) in enumerate(cfgs):
         name = cfg_name(N, R, H)
         for arm in ("dens", "ctrl"):
@@ -646,6 +681,7 @@ def run_dev():
         dif = (a.net - b.net).to_numpy()
         day = a.ts.dt.floor("D").to_numpy()
         daily = pd.Series(dif).groupby(day).sum()
+        pooled[name] = daily
         naive = float(dif.mean() / (dif.std(ddof=1) / math.sqrt(len(dif)))) if dif.std() > 0 else float("nan")
         mech[name] = dict(n_events=int(len(dif)), n_days=int(len(daily)), dens_fills=int(a.filled.sum()),
                           ctrl_fills=int(b.filled.sum()), dens_net_mean_bp=float(a.net.mean()),
@@ -660,19 +696,25 @@ def run_dev():
                           dens_depth_bp_median=float(a.depth.median() * 1e4),
                           ctrl_depth_bp_median=float(b.depth.median() * 1e4),
                           dens_cancel=int(a.cancel.sum()), ctrl_cancel=int(b.cancel.sum()))
-        mech[name]["pass"] = bool(mech[name]["t_day_cluster"] >= 2.0)
-        print(name, json.dumps({k_: (round(v, 3) if isinstance(v, float) else v) for k_, v in mech[name].items()}),
-              flush=True)
-    pd.DataFrame(cols).to_parquet(os.path.join(OUT, "dev", "dev_daily.parquet"))
-    pd.concat(T_all, ignore_index=True).to_parquet(os.path.join(OUT, "dev", "dev_trades.parquet"))
-    Uf = U[U.filled].drop(columns=["incomplete"])
-    Uf.to_parquet(os.path.join(OUT, "dev", "dev_unit_fills.parquet"))
+        cr = clips.get(name, [])
+        mech[name]["ctrl_clip_rate"] = float(sum(n_ * r_ for n_, r_ in cr if r_ == r_) / max(1, sum(n_ for n_, _ in cr)))
+        mech[name]["pass"] = bool(mech[name]["t_naive"] >= 2.0 and mech[name]["t_day_cluster"] >= 2.0)
+        if not quiet:
+            print(name, json.dumps({k_: (round(v, 3) if isinstance(v, float) else v) for k_, v in mech[name].items()}),
+                  flush=True)
+    # descriptive only: the 8 configs' daily paired differences averaged, Newey-West t
+    pool = pd.concat([v for v in pooled.values()], axis=1).fillna(0.0).mean(axis=1)
+    mech_pooled = dict(n_days=int(len(pool)), mean_daily_diff_bp=float(pool.mean()), t_day_cluster=nw_t(pool.to_numpy()))
+    pd.DataFrame(cols).to_parquet(os.path.join(outdir, "dev_daily.parquet"))
+    pd.concat(T_all, ignore_index=True).to_parquet(os.path.join(outdir, "dev_trades.parquet"))
+    Uf = U[U.filled | U.cancel].drop(columns=["incomplete"])            # fills and cluster crossings (OI check)
+    Uf.to_parquet(os.path.join(outdir, "dev_unit_cross.parquet"))
     cnt = U.groupby(["cfg", "arm", "coin"]).agg(events=("h", "size"), fills=("filled", "sum"),
                                                 cancels=("cancel", "sum")).reset_index()
-    cnt.to_csv(os.path.join(OUT, "dev", "dev_event_counts.csv"), index=False)
-    json.dump(dict(mech=mech, meta=meta, configs=[cfg_name(*c) for c in cfgs], end=str(HOLD0),
+    cnt.to_csv(os.path.join(outdir, "dev_event_counts.csv"), index=False)
+    json.dump(dict(mech=mech, pooled=mech_pooled, meta=meta, configs=[cfg_name(*c) for c in cfgs], end=str(HOLD0),
                    generated=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())),
-              open(os.path.join(OUT, "dev", "dev_mech.json"), "w"), indent=1)
+              open(os.path.join(outdir, "dev_mech.json"), "w"), indent=1)
     print("done", flush=True)
 
 
@@ -717,24 +759,20 @@ def run_full():
     print("done", flush=True)
 
 
-def run_smoke(coin):
-    """2024 only (never scored): mechanics and timing, no P&L."""
-    global SCORED
-    SCORED = {"main": ("2024-03-01", "2024-04-30")}
-    ERAS["main"] = ("2024-02-01", "2024-05-01", "minute")
+def run_smoke(outdir):
+    """2024 only (never scored, not DEV): exercises the dev code path; prints shapes and counts, no statistics."""
+    global SCORED, ERAS
+    SCORED = {"main": ("2024-03-01", "2024-03-31")}
+    ERAS = {"main": ("2024-02-01", "2024-04-01", "minute")}
     t0 = time.time()
-    D = prepare(coin, "main", None, (7,))
-    print("prep secs", round(time.time() - t0, 1), "hours", len(D["hrs"]), "entries", D["n_entries"],
-          "halted minutes", int(D["halt"].sum()))
-    for R in GRID_R:
-        B, spec = bids_for(D, 7, R, 0, 0, 0)
-        for arm in ("dens", "ctrl"):
-            U = unit_table(D, B[arm], spec, 60)
-            T = trades_table(D, B[arm], spec, 60, 30000, 0.5)
-            print(R, arm, "events", len(U), "fills", int(U.filled.sum()), "cancels", int(U.cancel.sum()),
-                  "depth bp median", round(float(U.depth.median() * 1e4), 1), "depth/sig median",
-                  round(float((U.depth / U.sig).median()), 2), "book trades", len(T),
-                  "median notional", round(float(T.notional.median()), 0) if len(T) else None)
+    run_dev(outdir=outdir, coins=["SOL", "XRP"], quiet=True)
+    d = pd.read_parquet(os.path.join(outdir, "dev_daily.parquet"))
+    t = pd.read_parquet(os.path.join(outdir, "dev_trades.parquet"))
+    c = pd.read_csv(os.path.join(outdir, "dev_event_counts.csv"))
+    print("secs", round(time.time() - t0, 1), "daily", d.shape, "trades", t.shape, "nonzero cols",
+          int((d != 0).any().sum()))
+    print(c.groupby("arm")[["events", "fills", "cancels"]].sum().to_string())
+    print(t.groupby("variant").size().head(4).to_string())
 
 
 if __name__ == "__main__":
@@ -744,4 +782,4 @@ if __name__ == "__main__":
     elif mode == "full":
         run_full()
     elif mode == "smoke":
-        run_smoke(sys.argv[2] if len(sys.argv) > 2 else "BTC")
+        run_smoke(sys.argv[2])
