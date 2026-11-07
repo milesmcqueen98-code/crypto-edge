@@ -1,0 +1,42 @@
+[main] BTC stress: 800 of 970560 panel minutes have no value (x1.0)
+[early] BTC stress: 380 of 1051200 panel minutes have no value (x1.0)
+C2 cutoffs per quarter (margin = pred - thr; NaN = fewer than 60 earlier fills, x1.0):
+  tag quarter  n_prior_fills     lo     hi
+ main  2025Q1              0    NaN    NaN
+ main  2025Q2            307 18.105 54.354
+ main  2025Q3            516 15.139 43.183
+ main  2025Q4            646 14.048 38.678
+ main  2026Q1            953 12.349 36.717
+ main  2026Q2           1155 12.559 37.357
+ main  2026Q3           1297 11.497 34.347
+ main  2026Q4           1402 11.365 33.025
+early  2022Q1              0    NaN    NaN
+early  2022Q2             78 12.330 36.769
+early  2022Q3            201 14.271 43.519
+early  2022Q4            253 12.476 38.433
+early  2023Q1            347 13.366 43.092
+early  2023Q2            449 10.889 35.750
+early  2023Q3            526 10.448 31.389
+early  2023Q4            596  9.229 28.362
+
+Shares by era (arm_* = share of armed coin-minutes; par_* = share of parent fills; stress = BTC stress >= 2):
+                                     0        1        2
+era                                sel      chk    early
+minutes                         655200   315360  1051200
+armed_coin_minutes             8390369  3998154   979866
+arm_x1_lt60                     0.2072   0.0000   0.0174
+arm_bottom                      0.3775   0.3744   0.7059
+arm_middle                      0.3903   0.5732   0.2013
+arm_top                         0.0250   0.0524   0.0754
+minutes_stress                  0.0337   0.0360   0.0360
+minutes_stress_nan                 379      421      380
+arm_stress                      0.0317   0.0320   0.1476
+parents                           1155      412      744
+par_x1_lt60                     0.2658   0.0000   0.1048
+par_bottom                      0.2996   0.4442   0.3737
+par_middle                      0.2433   0.3883   0.2917
+par_top                         0.1913   0.1675   0.2298
+par_stress                      0.3931   0.3034   0.5430
+par_stress_nan                       0        0        0
+par_margin_maxdiff_tradelist    0.0000   0.0000   0.0000
+par_bucket_disagree_tradelist        0        0        0
