@@ -1,0 +1,5 @@
+win,grp,candle_fills,price_conf,size_conf,full,frac
+False,alts,18213,0.995,0.928,0.377,0.563
+False,majors,284126,0.999,0.95,0.649,0.761
+True,alts,1556,0.985,0.893,0.282,0.476
+True,majors,14749,0.995,0.936,0.584,0.713

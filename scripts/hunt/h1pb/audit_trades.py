@@ -22,13 +22,15 @@ NS = 10**9
 
 def recompute(tp_df, e, cs, tick):
     t, p, q, syn, seg = (tp_df[c].to_numpy() for c in ("t", "p", "q", "syn", "seg"))
-    i = int(np.nonzero(t == e.t_fill)[0][0])
-    assert i >= 1, "no print before the trigger in the window"
     long_ = e.side > 0
     L, TP = round(float(e.L) / tick) * tick, round(float(e.TP) / tick) * tick     # stored as float32: snap to the grid
     beyond_L = (lambda x: x <= L - tick * 0.999) if long_ else (lambda x: x >= L + tick * 0.999)
     inside_L = (lambda x: x >= L - tick * 0.001) if long_ else (lambda x: x <= L + tick * 0.001)
-    assert beyond_L(p[i]) and inside_L(p[i - 1]) and seg[i - 1] == seg[i], "trigger condition"
+    # one aggressive order sweeping several levels prints several trades with the same timestamp: the trigger is the
+    # first of them that is strictly through L with the previous print at or inside L
+    cand = [j for j in np.nonzero(t == e.t_fill)[0] if j >= 1 and beyond_L(p[j]) and inside_L(p[j - 1])]
+    assert cand, "trigger condition"
+    i = int(cand[0])
     run, j = 0.0, i
     while j < len(t) and seg[j] == seg[i] and not syn[j] and beyond_L(p[j]):
         run += q[j]

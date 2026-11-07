@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Independent fill audit of the frozen variant (runs on Actions): for a sample of its trades (random DEV and HOLD trades
-plus the 5 biggest wins and losses), re-fetch the perp prints in a fresh window [fill - 30 min, close + 5 s] with the
+plus the 5 biggest wins and losses), re-fetch the perp prints in a fresh window [fill - 3 h, close + 5 s] with the
 shared common.TradeFetcher, and recompute trigger, size, take-profit fills and exit with audit_trades.recompute (plain
 Python, not the numba kernel). Writes reports/hunt/h1pb/audit_prints.csv."""
 import os
@@ -33,7 +33,7 @@ def main():
     for e in S.itertuples():
         pid, cs, tick = common.PERP[e.coin]
         sc = LV.PX_SCALE.get(e.coin, 1.0)
-        a = pd.Timestamp(e.t_fill) - pd.Timedelta(minutes=30)
+        a = pd.Timestamp(e.t_fill) - pd.Timedelta(hours=3)
         b = pd.Timestamp(e.t_close) + pd.Timedelta(seconds=5)
         d = f.window(pid, a, b)
         t = pd.to_datetime(d["time"]).to_numpy("datetime64[ns]").astype(np.int64)
