@@ -437,6 +437,13 @@ def trade_stats(F, H):
     for m in (1.0, 2.0):
         out[f"net_bp_{int(m)}x"] = float(pnl(F, H, m).sum() / w.sum() * 1e4)
     out["gross_bp"] = float(pnl(F, H, 0.0).sum() / w.sum() * 1e4)
+    # fills whose bid sat at or above Coinbase's last trade when placed (a post-only bid could have been rejected)
+    hi_bid = (F["cb_m1"] <= 0).to_numpy()
+    out["bid_at_or_above_last_share"] = float(hi_bid.mean())
+    p2 = pnl(F, H, 2.0)
+    out["net_bp_2x_bid_below_last"] = float(p2[~hi_bid].sum() / w[~hi_bid].sum() * 1e4) if (~hi_bid).any() else np.nan
+    out["net_bp_2x_bid_at_or_above_last"] = float(p2[hi_bid].sum() / w[hi_bid].sum() * 1e4) if hi_bid.any() else np.nan
+    out["tp_hit_share"] = float((F["tp_size"] > 0).mean())
     out["sig_bp_med"] = float(F.sig_bp.median())
     out["depth_bp_med"] = float((np.log(F.F / F.L) * 1e4).median())
     return out
@@ -808,7 +815,7 @@ def final():
         out[f"theta{theta}"] = st
         if theta == 0.5 and len(F):
             H = v["H"]
-            keep = ["coin", "ts", "i0", "k", "L", "F", "TP", "tick", "sig_bp", "z", "thr_usd", "thr_m0", "size", "tp_size",
+            keep = ["coin", "ts", "i0", "k", "L", "F", "TP", "tick", "sig_bp", "z", "cb_m1", "thr_usd", "thr_m0", "size", "tp_size",
                     "end", f"i_tp{H}", f"i_x{H}", f"ret_tp{H}", f"ret_x{H}", f"mae{H}", "pnl2", "pnl1", "cb_share_open",
                     "lead", "cb_led", "cb_after_bp", "ref_after_bp", "ref_share_close", "slots", "n_elig"]
             G = F[keep].copy()
