@@ -1,0 +1,4 @@
+coin,perp_windows,perp_prints,perp_req,perp_lost,perp_secs,print_contracts,candle_contracts,cand_minutes,spot_segments,spot_prints,spot_req,spot_lost,spot_secs,triggers,triggers_base,secs
+ETH,476,942118,1186,0,149,19889599.0,19881998.0,2999,1214,2109773,2755,0,333,3496,433,487
+PEPE,252,16187,252,0,30,53899.0,53899.0,76,44,5984,45,0,6,115,18,36
+AAVE,251,14753,251,0,30,39767.0,39767.0,83,67,11674,69,0,8,107,17,40
