@@ -1,0 +1,497 @@
+pid,coin,name,status,quote_increment,vol2024,n_days,reason,first_day,last_day
+BTC-USD,BTC,Bitcoin,online,0.01,710618093.4823343,366,BTC,2024-01-01,2024-12-31
+ETH-USD,ETH,Ether,online,0.01,270136202.81135106,366,wide-set coin,2024-01-01,2024-12-31
+USDT-USD,USDT,Tether,online,1e-05,253838290.041408,366,stable/fiat/asset-backed (list),2024-01-01,2024-12-31
+SOL-USD,SOL,Solana,online,0.01,139206311.4436991,366,wide-set coin,2024-01-01,2024-12-31
+PEPE-USD,PEPE,Pepe,online,1e-08,58730179.05031542,49,wide-set coin,2024-11-13,2024-12-31
+DOGE-USD,DOGE,Dogecoin,online,1e-05,43715208.295662,366,wide-set coin,2024-01-01,2024-12-31
+BONK-USD,BONK,Bonk,online,1e-08,35840890.98761684,366,2024 median volume >= $3M,2024-01-01,2024-12-31
+XRP-USD,XRP,XRP,online,0.0001,32888829.611900438,366,wide-set coin,2024-01-01,2024-12-31
+SHIB-USD,SHIB,Shiba Inu,online,1e-08,28199656.115243968,366,2024 median volume >= $3M,2024-01-01,2024-12-31
+AVAX-USD,AVAX,Avalanche,online,0.001,20449202.540012076,366,wide-set coin,2024-01-01,2024-12-31
+LINK-USD,LINK,Chainlink,online,0.001,20053107.104805,366,wide-set coin,2024-01-01,2024-12-31
+MOVE-USD,MOVE,Movement,delisted,0.0001,17528158.5276,23,2024 median volume >= $3M,2024-12-09,2024-12-31
+SUI-USD,SUI,Sui,online,0.0001,16715634.528194997,366,wide-set coin,2024-01-01,2024-12-31
+FET-USD,FET,Fetch.ai,online,1e-05,16481629.93241,366,wide-set coin,2024-01-01,2024-12-31
+ONDO-USD,ONDO,Ondo Finance,online,1e-05,16475001.221822398,345,wide-set coin,2024-01-22,2024-12-31
+RNDR-USD,RNDR,Render Token,delisted,0.0001,14307837.448193,366,2024 median volume >= $3M,2024-01-01,2024-12-31
+WIF-USD,WIF,Dogwifhat,online,1e-05,13716683.595499998,49,2024 median volume >= $3M,2024-11-13,2024-12-31
+JASMY-USD,JASMY,JasmyCoin,online,1e-05,12991775.83992,366,2024 median volume >= $3M,2024-01-01,2024-12-31
+LTC-USD,LTC,Litecoin,online,0.001,11923362.885662708,366,wide-set coin,2024-01-01,2024-12-31
+INJ-USD,INJ,Injective Protocol,online,0.001,10350379.362824999,366,wide-set coin,2024-01-01,2024-12-31
+SEI-USD,SEI,Sei,online,1e-05,9568213.503870001,366,wide-set coin,2024-01-01,2024-12-31
+ADA-USD,ADA,Cardano,online,1e-05,8886717.08256936,366,wide-set coin,2024-01-01,2024-12-31
+TIA-USD,TIA,Celestia,online,0.0001,8413805.992305,366,wide-set coin,2024-01-01,2024-12-31
+ICP-USD,ICP,Internet Computer,online,0.0001,8134542.6803921,366,wide-set coin,2024-01-01,2024-12-31
+STX-USD,STX,Stacks,online,0.0001,8119249.0018205,366,wide-set coin,2024-01-01,2024-12-31
+NEAR-USD,NEAR,Near Protocol,online,0.0001,8058295.2428089995,366,wide-set coin,2024-01-01,2024-12-31
+AERO-USD,AERO,Aerodrome Finance,online,1e-05,7992552.2931820005,330,wide-set coin,2024-02-06,2024-12-31
+BCH-USD,BCH,Bitcoin Cash,online,0.01,7542471.04783107,366,wide-set coin,2024-01-01,2024-12-31
+OP-USD,OP,Optimism,online,1e-05,7496143.958924999,366,2024 median volume >= $3M,2024-01-01,2024-12-31
+FLOKI-USD,FLOKI,Floki,online,1e-08,7237705.969773401,41,2024 median volume >= $3M,2024-11-21,2024-12-31
+HBAR-USD,HBAR,Hedera,online,1e-05,6978219.102855001,366,wide-set coin,2024-01-01,2024-12-31
+DOT-USD,DOT,Polkadot,online,0.0001,6549685.372816186,366,wide-set coin,2024-01-01,2024-12-31
+XLM-USD,XLM,Stellar,online,1e-06,6508950.941757598,366,wide-set coin,2024-01-01,2024-12-31
+AAVE-USD,AAVE,Aave,online,0.01,5776867.58955,366,wide-set coin,2024-01-01,2024-12-31
+ARB-USD,ARB,Arbitrum,online,1e-05,5681893.352965,366,wide-set coin,2024-01-01,2024-12-31
+TURBO-USD,TURBO,Turbo,online,1e-07,5650799.661863,21,2024 median volume >= $3M,2024-12-11,2024-12-31
+JTO-USD,JTO,Jito,online,0.0001,5568042.167915001,366,wide-set coin,2024-01-01,2024-12-31
+UNI-USD,UNI,Uniswap,online,0.0001,5273286.128032118,366,wide-set coin,2024-01-01,2024-12-31
+LDO-USD,LDO,Lido DAO,online,1e-05,5044962.66015,366,2024 median volume >= $3M,2024-01-01,2024-12-31
+APT-USD,APT,Aptos,online,0.0001,4971879.802725,366,2024 median volume >= $3M,2024-01-01,2024-12-31
+MATIC-USD,MATIC,Polygon,delisted,0.0001,4949978.678400001,366,2024 median volume >= $3M,2024-01-01,2024-12-31
+DEGEN-USD,DEGEN,Degen,online,1e-06,4749402.239767,78,2024 median volume >= $3M,2024-10-15,2024-12-31
+GIGA-USD,GIGA,Gigachad,online,1e-07,4060036.4075439996,21,2024 median volume >= $3M,2024-12-11,2024-12-31
+FIL-USD,FIL,Filecoin,online,0.0001,3998712.4496925,366,wide-set coin,2024-01-01,2024-12-31
+GRT-USD,GRT,The Graph,online,1e-06,3746835.80277,366,2024 median volume >= $3M,2024-01-01,2024-12-31
+ME-USD,ME,Magic Eden,online,1e-05,3668240.316365,22,2024 median volume >= $3M,2024-12-10,2024-12-31
+WELL-USD,WELL,Moonwell,online,1e-06,3462048.3791394997,98,2024 median volume >= $3M,2024-09-25,2024-12-31
+MKR-USD,MKR,Maker,delisted,0.01,3442287.030421365,366,2024 median volume >= $3M,2024-01-01,2024-12-31
+MOG-USD,MOG,Mog Coin,online,1e-08,3434687.16968146,27,2024 median volume >= $3M,2024-12-05,2024-12-31
+MOODENG-USD,MOODENG,Moo Deng,online,1e-06,3131015.691408,28,2024 median volume >= $3M,2024-12-04,2024-12-31
+SWELL-USD,SWELL,Swell,online,1e-07,2976261.5374,55,,2024-11-07,2024-12-31
+ETC-USD,ETC,Ether Classic,online,0.001,2781562.0099447174,366,,2024-01-01,2024-12-31
+SUPER-USD,SUPER,SuperVerse,online,1e-05,2716114.7157358,366,,2024-01-01,2024-12-31
+RENDER-USD,RENDER,Render Network,online,0.0001,2680964.48256,321,,2024-02-15,2024-12-31
+IMX-USD,IMX,ImmutableX,online,1e-05,2554903.112842,366,,2024-01-01,2024-12-31
+ENS-USD,ENS,Ethereum Name Service,online,0.001,2436763.6290700003,366,,2024-01-01,2024-12-31
+EIGEN-USD,EIGEN,Eigenlayer,online,1e-05,2295830.15517,92,,2024-10-01,2024-12-31
+TRB-USD,TRB,Tellor,online,0.01,2275788.75076,366,,2024-01-01,2024-12-31
+POL-USD,POL,Polygon Ecosystem Token,online,1e-05,2079106.2862360002,119,,2024-09-04,2024-12-31
+ATOM-USD,ATOM,Cosmos,online,0.0001,2045794.5625500004,366,,2024-01-01,2024-12-31
+HNT-USD,HNT,Helium,online,0.0001,1946710.874725,366,,2024-01-01,2024-12-31
+PRIME-USD,PRIME,Prime,online,1e-05,1941854.4005,366,,2024-01-01,2024-12-31
+AIOZ-USD,AIOZ,Aioz Network,online,1e-05,1862207.6600000001,366,,2024-01-01,2024-12-31
+ALEO-USD,ALEO,Aleo,online,1e-06,1740495.04902,105,,2024-09-18,2024-12-31
+BIGTIME-USD,BIGTIME,Big Time,online,1e-06,1703948.0347850001,366,,2024-01-01,2024-12-31
+ALGO-USD,ALGO,Algorand,online,1e-05,1646142.4536700002,366,,2024-01-01,2024-12-31
+ROSE-USD,ROSE,Oasis Network,online,1e-06,1600114.095741,366,,2024-01-01,2024-12-31
+QNT-USD,QNT,Quant,online,0.01,1537320.79514,366,,2024-01-01,2024-12-31
+CRV-USD,CRV,Curve DAO Token,online,0.0001,1505267.389519,366,,2024-01-01,2024-12-31
+SUSHI-USD,SUSHI,SushiSwap,online,0.0001,1492979.575988,366,,2024-01-01,2024-12-31
+SKL-USD,SKL,SKALE,online,1e-06,1489243.7075,366,,2024-01-01,2024-12-31
+ZRO-USD,ZRO,Layerzero,online,0.0001,1357816.8779300002,195,,2024-06-20,2024-12-31
+APE-USD,APE,ApeCoin,online,1e-05,1310990.620815,366,,2024-01-01,2024-12-31
+ZETA-USD,ZETA,Zetachain,online,1e-06,1234509.0677399999,335,,2024-02-01,2024-12-31
+AKT-USD,AKT,Akash,online,0.0001,1229867.01321,288,,2024-03-19,2024-12-31
+VET-USD,VET,VeChain,online,1e-06,1203332.008845,366,,2024-01-01,2024-12-31
+KARRAT-USD,KARRAT,Karrat,online,1e-05,1179368.5066109998,254,,2024-04-22,2024-12-31
+AMP-USD,AMP,Amp,online,1e-07,1172964.89009,366,,2024-01-01,2024-12-31
+VELO-USD,VELO,Velodrome Finance,delisted,1e-05,1163607.4112510001,330,,2024-02-06,2024-12-31
+AXL-USD,AXL,Axelar,online,0.0001,1121451.622525,366,,2024-01-01,2024-12-31
+ACH-USD,ACH,Alchemy Pay,online,1e-06,996585.0386701,366,,2024-01-01,2024-12-31
+ABT-USD,ABT,Arcblock,online,0.0001,974746.1274,366,,2024-01-01,2024-12-31
+CBETH-USD,CBETH,Coinbase Wrapped Staked ETH,online,0.01,947016.7510989,366,wrapped/staked (list),2024-01-01,2024-12-31
+LRC-USD,LRC,Loopring,delisted,0.0001,936836.730667168,366,,2024-01-01,2024-12-31
+MINA-USD,MINA,Mina,online,0.0001,927653.2762565,366,,2024-01-01,2024-12-31
+IO-USD,IO,Io.Net,online,1e-05,927438.9521949999,84,,2024-10-09,2024-12-31
+ORCA-USD,ORCA,Orca,online,0.0001,924238.3667365,366,,2024-01-01,2024-12-31
+BLUR-USD,BLUR,Blur,online,1e-06,905641.202055,366,,2024-01-01,2024-12-31
+TRU-USD,TRU,TrueFi,delisted,0.0001,884018.23844,366,,2024-01-01,2024-12-31
+LCX-USD,LCX,LCX Token,online,0.0001,853516.86708,366,,2024-01-01,2024-12-31
+CRO-USD,CRO,Crypto.com Coin,online,1e-05,810402.6372100001,366,,2024-01-01,2024-12-31
+MOBILE-USD,MOBILE,Helium Mobile,delisted,1e-06,781778.84815,314,,2024-02-22,2024-12-31
+FLR-USD,FLR,Flare,online,1e-06,780711.89081,366,,2024-01-01,2024-12-31
+SNX-USD,SNX,Synthetix,online,1e-05,766288.4908700001,366,,2024-01-01,2024-12-31
+SYN-USD,SYN,Synapse,delisted,0.001,764622.932505,366,,2024-01-01,2024-12-31
+COMP-USD,COMP,Compound,online,0.01,750896.66246,366,,2024-01-01,2024-12-31
+DRIFT-USD,DRIFT,Drift Protocol,online,1e-05,739643.9566200001,229,,2024-05-17,2024-12-31
+XTZ-USD,XTZ,Tezos,online,0.0001,711667.84167,366,,2024-01-01,2024-12-31
+STRK-USD,STRK,Starknet,online,1e-05,702042.1395999999,315,,2024-02-21,2024-12-31
+COTI-USD,COTI,COTI,online,1e-06,697756.224995,366,,2024-01-01,2024-12-31
+ZEC-USD,ZEC,Zcash,online,0.01,693559.9604719381,366,wide-set coin,2024-01-01,2024-12-31
+YFI-USD,YFI,yearn.finance,online,0.01,687621.937556375,366,,2024-01-01,2024-12-31
+ARKM-USD,ARKM,Arkham,online,1e-05,655949.4540050001,274,,2024-04-02,2024-12-31
+ZRX-USD,ZRX,0x,online,1e-06,642080.8519571087,366,,2024-01-01,2024-12-31
+DAI-USD,DAI,Dai,delisted,0.0001,641943.9531136211,366,stable/fiat/asset-backed (list),2024-01-01,2024-12-31
+GFI-USD,GFI,Goldfinch,online,0.0001,638942.3138245,366,,2024-01-01,2024-12-31
+LPT-USD,LPT,Livepeer,online,0.0001,625340.469825,366,,2024-01-01,2024-12-31
+OCEAN-USD,OCEAN,Ocean Protocol,online,0.0001,617949.38334,366,,2024-01-01,2024-12-31
+METIS-USD,METIS,MetisDAO,online,0.0001,603826.590475,366,,2024-01-01,2024-12-31
+UMA-USD,UMA,UMA,online,1e-05,589939.3415215,366,,2024-01-01,2024-12-31
+MPL-USD,MPL,Maple,delisted,0.01,583506.53394,366,,2024-01-01,2024-12-31
+EOS-USD,EOS,EOS,delisted,0.0001,583230.595895,366,,2024-01-01,2024-12-31
+HIGH-USD,HIGH,Highstreet,online,1e-05,572877.20218,366,,2024-01-01,2024-12-31
+ASM-USD,ASM,Assemble Protocol,online,1e-05,549249.0656050001,366,,2024-01-01,2024-12-31
+ENJ-USD,ENJ,Enjin Coin,delisted,0.001,533985.90023,166,,2024-01-01,2024-06-14
+PRO-USD,PRO,Propy,online,0.0001,532582.284835,366,,2024-01-01,2024-12-31
+PNG-USD,PNG,Pangolin,online,1e-05,527916.30758,366,,2024-01-01,2024-12-31
+1INCH-USD,1INCH,1Inch,online,1e-05,511758.903435,366,,2024-01-01,2024-12-31
+VARA-USD,VARA,Vara,online,1e-07,506064.09103500005,366,,2024-01-01,2024-12-31
+MANA-USD,MANA,Decentraland,online,0.0001,503679.03028149996,366,,2024-01-01,2024-12-31
+ANKR-USD,ANKR,Ankr,online,1e-07,502243.428435,366,,2024-01-01,2024-12-31
+SAND-USD,SAND,The Sandbox,online,0.0001,499602.39163800003,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+ALEPH-USD,ALEPH,Aleph.im v2,online,1e-05,492294.625375,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+AUCTION-USD,AUCTION,Bounce Token,online,0.0001,484407.46456999995,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+TNSR-USD,TNSR,Tensor,online,1e-05,479501.92263,268,2024 median volume < $0.5M,2024-04-08,2024-12-31
+SWFTC-USD,SWFTC,SwftCoin,online,1e-06,461333.19597,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+API3-USD,API3,API3,online,1e-05,449653.751995,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+SUKU-USD,SUKU,SUKU,online,1e-06,447602.075525,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+HONEY-USD,HONEY,Hivemapper,online,1e-06,447549.55917,350,2024 median volume < $0.5M,2024-01-17,2024-12-31
+BLAST-USD,BLAST,Blast,delisted,1e-08,444536.30933,189,2024 median volume < $0.5M,2024-06-26,2024-12-31
+TRAC-USD,TRAC,OriginTrail,online,0.0001,431085.98751999997,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+SPELL-USD,SPELL,Spell Token,online,1e-07,423250.46091649996,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+GST-USD,GST,Green Satoshi Token,online,1e-06,416542.94167186,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+HFT-USD,HFT,Hashflow,online,1e-05,414403.45021399995,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+ILV-USD,ILV,Illuvium,online,0.0001,405695.0075675,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+MASK-USD,MASK,Mask Network,online,1e-05,395168.6736,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+STORJ-USD,STORJ,Storj,delisted,1e-05,388948.900242,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+MATH-USD,MATH,MATH,online,0.0001,386251.03167,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+CHZ-USD,CHZ,Chiliz,online,1e-06,383080.260175,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+ZK-USD,ZK,zkSync,online,1e-06,380608.854326,98,2024 median volume < $0.5M,2024-09-25,2024-12-31
+RARE-USD,RARE,SuperRare,online,1e-06,376966.32050499995,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+COVAL-USD,COVAL,Circuits of Value,delisted,1e-05,373018.40403000003,201,2024 median volume < $0.5M,2024-01-01,2024-07-19
+NCT-USD,NCT,Polyswarm,online,1e-05,369637.61727,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+CGLD-USD,CGLD,Celo,online,0.0001,367953.15394000005,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+IOTX-USD,IOTX,IoTeX (ERC-20),delisted,1e-05,364357.016105,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+EGLD-USD,EGLD,MultiversX,online,0.0001,358736.47950499994,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+UNFI-USD,UNFI,Unifi Protocol DAO,delisted,0.01,358372.8093,92,2024 median volume < $0.5M,2024-01-01,2024-04-01
+XCN-USD,XCN,Onyxcoin,online,1e-06,356885.784775,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+SHDW-USD,SHDW,Shadow,online,1e-05,338880.21908999997,266,2024 median volume < $0.5M,2024-04-10,2024-12-31
+DESO-USD,DESO,Decentralized Social,delisted,0.01,335378.11311000003,313,2024 median volume < $0.5M,2024-01-01,2024-11-08
+CTSI-USD,CTSI,Cartesi,online,1e-06,322041.08064,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+AXS-USD,AXS,Axie Infinity,online,0.0001,321443.625275,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+NEON-USD,NEON,Neon,online,1e-05,320872.9766576,246,2024 median volume < $0.5M,2024-04-30,2024-12-31
+QI-USD,QI,Benqi,online,1e-06,319960.195936,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+RBN-USD,RBN,Ribbon Finance,delisted,1e-05,318705.79812355,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+PYR-USD,PYR,Vulcan Forged,online,1e-05,315133.440835,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+BLZ-USD,BLZ,Bluzelle,online,1e-05,312367.85287,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+GMT-USD,GMT,STEPN,online,1e-06,311981.46891349996,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+PRQ-USD,PRQ,PARSIQ,delisted,0.0001,309169.07553,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+KSM-USD,KSM,Kusama,online,0.0001,308578.55001350003,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+GODS-USD,GODS,Gods Unchained,online,1e-05,308020.2753512,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+FOX-USD,FOX,ShapeShift FOX Token,online,1e-05,306768.35225,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+WBTC-USD,WBTC,Wrapped Bitcoin,delisted,0.01,305861.744201152,354,wrapped/staked (list),2024-01-01,2024-12-19
+LRDS-USD,LRDS,Blocklords,online,1e-06,304588.442716,161,2024 median volume < $0.5M,2024-07-24,2024-12-31
+SPA-USD,SPA,Sperax,online,1e-06,298435.9271785,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+COW-USD,COW,Cow Protocol,online,0.0001,283366.62282000005,99,2024 median volume < $0.5M,2024-09-24,2024-12-31
+XYO-USD,XYO,XYO,online,1e-05,280672.097677,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+SYLO-USD,SYLO,Sylo,delisted,1e-06,280641.350732,4,2024 median volume < $0.5M,2024-01-01,2024-01-04
+FARM-USD,FARM,Harvest Finance,online,0.001,280167.51704999997,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+RONIN-USD,RONIN,Ronin,delisted,0.0001,277065.23338,286,2024 median volume < $0.5M,2024-03-21,2024-12-31
+OGN-USD,OGN,Origin Token,online,1e-05,276410.4185238,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+DIMO-USD,DIMO,Dimo,online,1e-05,275418.3905715,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+NMR-USD,NMR,Numeraire,online,0.01,275046.06848500005,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+OXT-USD,OXT,Orchid,online,1e-05,270372.81200000003,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+CVX-USD,CVX,Convex Finance,online,0.001,267509.2619285,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+AURORA-USD,AURORA,Aurora,online,1e-06,265865.13138,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+FIDA-USD,FIDA,Bonfida,online,1e-06,252838.539801,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+SEAM-USD,SEAM,Seamless,delisted,0.0001,250039.352925,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+ACX-USD,ACX,Across Protocol,delisted,0.0001,249056.95555999997,133,2024 median volume < $0.5M,2024-08-21,2024-12-31
+RLC-USD,RLC,iExec RLC,online,0.0001,247302.95779299998,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+PIRATE-USD,PIRATE,Pirate Nation,delisted,1e-06,242137.787235,202,2024 median volume < $0.5M,2024-06-13,2024-12-31
+MDT-USD,MDT,Measurable Data Token,online,1e-05,241631.419135,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+CLV-USD,CLV,Clover Finance,delisted,0.0001,241224.659748,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+INDEX-USD,INDEX,Index Cooperative,online,0.0001,231751.347235,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+CVC-USD,CVC,Civic,online,1e-06,230205.14173,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+LQTY-USD,LQTY,Liquity,online,0.0001,226554.82318399998,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+FORT-USD,FORT,Forta,online,1e-06,226146.596676,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+TVK-USD,TVK,The Virtua Kolect,delisted,1e-05,224848.443905,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+ORN-USD,ORN,Orion Protocol,delisted,0.001,217228.721045,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+AUDIO-USD,AUDIO,Audius,online,1e-06,216154.49876,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+SHPING-USD,SHPING,Shping,online,1e-06,214738.793875,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+DNT-USD,DNT,district0x,online,1e-06,212440.105455,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+OSMO-USD,OSMO,Osmosis,online,1e-06,211360.8660945,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+SD-USD,SD,Stader,online,0.0001,211086.883313,155,2024 median volume < $0.5M,2024-07-30,2024-12-31
+CORECHAIN-USD,CORECHAIN,Core,online,1e-06,208872.198615,194,2024 median volume < $0.5M,2024-06-21,2024-12-31
+BOBA-USD,BOBA,Boba Network,online,0.0001,207207.26852,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+MAGIC-USD,MAGIC,Magic,online,1e-05,204395.726211,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+A8-USD,A8,Ancient8,online,1e-06,199114.00449000002,168,2024 median volume < $0.5M,2024-07-17,2024-12-31
+MNDE-USD,MNDE,Marinade,online,1e-05,198280.270571,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+AVT-USD,AVT,Aventus,online,1e-05,197296.79395000002,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+ALCX-USD,ALCX,Alchemix,online,0.01,192561.37239899999,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+HOPR-USD,HOPR,Hopr Token,online,1e-06,191155.44863499998,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+FLOW-USD,FLOW,Flow,online,1e-05,191034.32967099998,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+RAD-USD,RAD,Radicle,online,0.001,190249.8159,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+PERP-USD,PERP,Perpetual Protocol,online,0.0001,189710.4966886,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+BAT-USD,BAT,Basic Attention Token,online,1e-05,187055.8640113,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+OMNI-USD,OMNI,Omni Network,delisted,0.001,185388.00098,259,2024 median volume < $0.5M,2024-04-17,2024-12-31
+DYP-USD,DYP,DeFi Yield Protocol,delisted,1e-05,182366.79690000002,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+GTC-USD,GTC,Gitcoin,online,0.0001,176368.72100000002,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+WAMPL-USD,WAMPL,Wrapped Ampleforth,delisted,0.01,175892.77804,201,wrapped/staked (list),2024-01-01,2024-07-19
+RARI-USD,RARI,Rarible,online,0.0001,175621.424405,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+VTHO-USD,VTHO,VeThor,online,1e-08,175148.1028575,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+SAFE-USD,SAFE,Safe,online,1e-05,174388.70809300002,253,2024 median volume < $0.5M,2024-04-23,2024-12-31
+ARPA-USD,ARPA,ARPA,online,1e-06,171375.4305,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+BIT-USD,BIT,BitDAO,delisted,0.0001,171272.992678,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+BICO-USD,BICO,Biconomy,online,1e-06,171154.347384,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+DASH-USD,DASH,Dash,online,0.01,168191.19132660626,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+RPL-USD,RPL,Rocket Pool,online,0.0001,166705.24894999998,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+CTX-USD,CTX,Cryptex Finance,online,0.0001,165433.89493,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+MUSE-USD,MUSE,Muse Dao,delisted,0.001,164036.21193550003,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+REQ-USD,REQ,Request,online,0.0001,163569.0378,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+DIA-USD,DIA,DIA,online,1e-05,159075.917509,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+MLN-USD,MLN,Enzyme,online,0.0001,158514.7991,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+EURC-USD,EURC,EURC,delisted,0.001,153478.29218,70,stable/fiat/asset-backed (list),2024-06-21,2024-08-29
+AGLD-USD,AGLD,Adventure Gold,online,0.0001,152513.280195,366,stable/fiat/asset-backed (name),2024-01-01,2024-12-31
+NKN-USD,NKN,NKN,online,1e-06,151739.32671,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+00-USD,00,00 Token,online,1e-08,150940.9168845,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+ZEN-USD,ZEN,Horizen,online,0.001,150784.3483,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+FORTH-USD,FORTH,Ampleforth Governance Token,online,1e-05,144761.662625,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+POLS-USD,POLS,Polkastarter,online,0.0001,143876.11284800002,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+GAL-USD,GAL,Project Galaxy,delisted,0.001,141942.35597049998,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+PRCL-USD,PRCL,Parcl,online,1e-06,139921.25,15,2024 median volume < $0.5M,2024-12-17,2024-12-31
+T-USD,T,Threshold,online,1e-07,137973.56251999998,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+MEDIA-USD,MEDIA,Media Network,delisted,0.01,137621.59433,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+GLM-USD,GLM,Golem Network,online,0.0001,137151.65098,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+ACS-USD,ACS,Access Protocol,online,1e-07,133545.48019084998,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+GNO-USD,GNO,Gnosis,online,0.01,131868.402089,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+WCFG-USD,WCFG,Wrapped Centrifuge,delisted,0.001,131739.14170500002,366,wrapped/staked (list),2024-01-01,2024-12-31
+PLU-USD,PLU,Pluton,online,1e-05,130646.5926,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+POWR-USD,POWR,Power Ledger,online,0.0001,127952.413115,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+BAND-USD,BAND,Band Protocol,online,1e-05,126487.52284,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+MSOL-USD,MSOL,Marinade staked SOL,online,0.01,125534.25092999998,366,wrapped/staked (list),2024-01-01,2024-12-31
+ELA-USD,ELA,Elastos,online,0.001,124732.42941,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+BADGER-USD,BADGER,Badger DAO,delisted,0.0001,124150.005,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+KNC-USD,KNC,Kyber Network,online,0.0001,122003.90424,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+KAVA-USD,KAVA,Kava,online,0.0001,121841.832563,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+AST-USD,AST,AirSwap,online,1e-06,121383.317225,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+CELR-USD,CELR,Celer Network,online,1e-07,117792.69412500001,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+VOXEL-USD,VOXEL,Voxies,online,1e-06,114232.504468,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+BTRST-USD,BTRST,Braintrust,online,1e-05,114044.034265,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+MONA-USD,MONA,Monavale,delisted,0.01,109466.427804,4,2024 median volume < $0.5M,2024-01-01,2024-01-04
+ERN-USD,ERN,Ethernity Chain,delisted,0.0001,107835.51128,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+GHST-USD,GHST,Aavegotchi,online,0.0001,107683.73493,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+PYUSD-USD,PYUSD,Paypal Usd,delisted,1e-05,103445.81395750001,366,stable/fiat/asset-backed (list),2024-01-01,2024-12-31
+INV-USD,INV,Inverse Finance,online,0.01,101828.275296,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+IDEX-USD,IDEX,IDEX,delisted,1e-05,96116.18823,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+POND-USD,POND,Marlin,online,1e-07,94470.30294,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+KRL-USD,KRL,kryll,online,0.0001,93444.25162999998,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+AERGO-USD,AERGO,Aergo,online,1e-06,92596.10217999999,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+WAXL-USD,WAXL,Wrapped Axelar,online,0.0001,83856.8451825,366,wrapped/staked (list),2024-01-01,2024-12-31
+TIME-USD,TIME,Chrono.tech,delisted,0.01,81605.193675,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+ALICE-USD,ALICE,My Neighbor Alice,online,1e-05,79658.8362355,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+MTL-USD,MTL,Metal,delisted,0.001,72544.519975,166,2024 median volume < $0.5M,2024-01-01,2024-06-14
+ZETACHAIN-USD,ZETACHAIN,ZetaChain,online,0.0001,65111.938884,100,2024 median volume < $0.5M,2024-09-23,2024-12-31
+BAL-USD,BAL,Balancer,online,0.0001,61717.35471,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+FX-USD,FX,Function X,delisted,0.0001,60606.60668,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+DAR-USD,DAR,Mines of Dalarnia,delisted,0.001,58673.830975000004,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+C98-USD,C98,Coin98,online,1e-06,58654.489044,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+LOKA-USD,LOKA,League of Kingdoms Arena,delisted,0.0001,56747.91111,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+GUSD-USD,GUSD,Gemini Dollar,delisted,0.001,56444.65796,366,stable/fiat/asset-backed (list),2024-01-01,2024-12-31
+BNT-USD,BNT,Bancor,online,0.0001,52816.2769240032,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+SNT-USD,SNT,Status,delisted,1e-05,49908.449859,54,2024 median volume < $0.5M,2024-01-01,2024-02-23
+G-USD,G,Gravity,online,1e-06,48713.1408,141,2024 median volume < $0.5M,2024-08-13,2024-12-31
+FIS-USD,FIS,Stafi,delisted,1e-06,43621.75379,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+ANT-USD,ANT,Aragon,delisted,0.01,40542.220799999996,5,2024 median volume < $0.5M,2024-01-01,2024-01-05
+PUNDIX-USD,PUNDIX,Pundi X,online,0.0001,40309.109712,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+LIT-USD,LIT,Litentry,delisted,0.0001,34323.136564,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+DEXT-USD,DEXT,DEXTools,online,1e-05,33483.972315000006,366,2024 median volume < $0.5M,2024-01-01,2024-12-31
+STG-USD,STG,Stargate Finance V1,online,0.0001,26810.05054,175,2024 median volume < $0.5M,2024-07-10,2024-12-31
+PLA-USD,PLA,PlayDapp,delisted,0.0001,25531.721820000002,45,2024 median volume < $0.5M,2024-01-01,2024-02-14
+ATA-USD,ATA,Automata Network,delisted,0.0001,19115.642,4,2024 median volume < $0.5M,2024-01-01,2024-01-04
+DREP-USD,DREP,Drep,delisted,0.0001,16749.4014885,4,2024 median volume < $0.5M,2024-01-01,2024-01-04
+GYEN-USD,GYEN,GYEN,delisted,1e-06,8501.515901499999,366,stable/fiat/asset-backed (list),2024-01-01,2024-12-31
+LSETH-USD,LSETH,Liquid Staked ETH,online,0.01,3782.1753164,364,wrapped/staked (list),2024-01-01,2024-12-31
+PAX-USD,PAX,Paxos Standard,online,0.0001,2849.8139674999998,360,stable/fiat/asset-backed (list),2024-01-01,2024-12-31
+RAI-USD,RAI,Rai Reflex Index,delisted,0.01,2254.5861,201,stable/fiat/asset-backed (list),2024-01-01,2024-07-19
+FIGHT-USD,FIGHT,Fight,online,1e-05,,0,no 2024 trading,,
+ESP-USD,ESP,Espresso,online,1e-05,,0,no 2024 trading,,
+KEYCAT-USD,KEYCAT,Keyboard Cat,online,1e-06,,0,no 2024 trading,,
+CLANKER-USD,CLANKER,Tokenbot,online,0.01,,0,no 2024 trading,,
+PYTH-USD,PYTH,Pyth Network,online,1e-05,,0,no 2024 trading,,
+RLY-USD,RLY,Rally,delisted,0.0001,,0,no 2024 trading,,
+LAYER-USD,LAYER,Solayer,online,1e-05,,0,no 2024 trading,,
+WCT-USD,WCT,Walletconnect Token,online,0.0001,,0,no 2024 trading,,
+RECALL-USD,RECALL,Recall Network,online,1e-06,,0,no 2024 trading,,
+DOOD-USD,DOOD,Doodles,online,1e-06,,0,no 2024 trading,,
+RNBW-USD,RNBW,Rainbow,online,1e-05,,0,no 2024 trading,,
+HYPE-USD,HYPE,Hyperliquid,online,0.01,,0,no 2024 trading,,
+KMNO-USD,KMNO,Kamino,online,1e-05,,0,no 2024 trading,,
+GALA-USD,GALA,Gala V1,delisted,1e-05,,0,no 2024 trading,,
+LINEA-USD,LINEA,Linea,online,1e-07,,0,no 2024 trading,,
+FAI-USD,FAI,Freysa Ai,online,1e-07,,0,no 2024 trading,,
+SENT-USD,SENT,Sentient,online,1e-05,,0,no 2024 trading,,
+EDGEX-USD,EDGEX,Edgex,online,0.0001,,0,no 2024 trading,,
+RAVE-USD,RAVE,Ravedao,online,0.0001,,0,no 2024 trading,,
+ELSA-USD,ELSA,Elsa,online,1e-05,,0,no 2024 trading,,
+BARD-USD,BARD,Lombard,online,0.0001,,0,no 2024 trading,,
+TRUMP-USD,TRUMP,Official Trump,online,0.0001,,0,no 2024 trading,,
+MEGA-USD,MEGA,MegaETH,online,1e-05,,0,no 2024 trading,,
+TRUST-USD,TRUST,Intuition,online,1e-05,,0,no 2024 trading,,
+TRIA-USD,TRIA,Tria,online,1e-06,,0,no 2024 trading,,
+WRON-USD,WRON,Wrapped Ronin,online,1e-05,,0,no 2024 trading,,
+O-USD,O,O1.Exchange,online,1e-05,,0,no 2024 trading,,
+FLUID-USD,FLUID,Fluid,online,0.001,,0,no 2024 trading,,
+AZTEC-USD,AZTEC,Aztec,online,1e-05,,0,no 2024 trading,,
+CT-USD,CT,Concrete,online,1e-05,,0,no 2024 trading,,
+NEST-USD,NEST,Nest Protocol,delisted,1e-05,,0,no 2024 trading,,
+LOOM-USD,LOOM,Loom Network,delisted,0.0001,,0,no 2024 trading,,
+BREV-USD,BREV,Brevis,online,0.0001,,0,no 2024 trading,,
+COSMOSDYDX-USD,COSMOSDYDX,dYdX,online,0.0001,,0,no 2024 trading,,
+CHECK-USD,CHECK,Checkmate,online,1e-05,,0,no 2024 trading,,
+ROBO-USD,ROBO,Robo Token,online,1e-05,,0,no 2024 trading,,
+JUP-USD,JUP,Jupiter,delisted,1e-06,,0,no 2024 trading,,
+UST-USD,UST,TerraClassicUSD,delisted,1e-05,,0,no 2024 trading,,
+CP-USD,CP,Cluster Protocol,online,1e-05,,0,no 2024 trading,,
+BILL-USD,BILL,Billions Network,online,1e-05,,0,no 2024 trading,,
+MAMO-USD,MAMO,Mamo,online,1e-06,,0,no 2024 trading,,
+LMTS-USD,LMTS,Limitless,online,1e-05,,0,no 2024 trading,,
+STABLE-USD,STABLE,Stable,online,1e-05,,0,no 2024 trading,,
+OMG-USD,OMG,OMG Network,delisted,0.0001,,0,no 2024 trading,,
+MANTLE-USD,MANTLE,Mantle,online,0.0001,,0,no 2024 trading,,
+KITE-USD,KITE,Kite,online,1e-05,,0,no 2024 trading,,
+NOICE-USD,NOICE,Noice,online,1e-08,,0,no 2024 trading,,
+ATH-USD,ATH,Aethir,online,1e-06,,0,no 2024 trading,,
+MPLX-USD,MPLX,Metaplex,online,1e-05,,0,no 2024 trading,,
+WHUF-USD,WHUF,Ethos,online,0.001,,0,no 2024 trading,,
+SPX-USD,SPX,Spx6900,online,0.0001,,0,no 2024 trading,,
+COOKIE-USD,COOKIE,Cookie Dao,online,1e-06,,0,no 2024 trading,,
+WAL-USD,WAL,Walrus,online,1e-05,,0,no 2024 trading,,
+JITOSOL-USD,JITOSOL,Jito Staked Sol,online,0.01,,0,no 2024 trading,,
+CTR-USD,CTR,Citrea,online,1e-06,,0,no 2024 trading,,
+BASECAT-USD,BASECAT,Basecat,online,1e-05,,0,no 2024 trading,,
+BLEND-USD,BLEND,Fluent,online,0.0001,,0,no 2024 trading,,
+DIEM-USD,DIEM,Diem,online,0.01,,0,no 2024 trading,,
+JUPITER-USD,JUPITER,Jupiter,online,0.0001,,0,no 2024 trading,,
+THQ-USD,THQ,Theoriq,online,1e-05,,0,no 2024 trading,,
+INX-USD,INX,Infinex,online,1e-06,,0,no 2024 trading,,
+OPG-USD,OPG,Opengradient,online,1e-05,,0,no 2024 trading,,
+BOND-USD,BOND,BarnBridge,delisted,0.01,,0,no 2024 trading,,
+XPL-USD,XPL,Plasma,online,1e-05,,0,no 2024 trading,,
+RE-USD,RE,Re,online,0.0001,,0,no 2024 trading,,
+PONS-USD,PONS,Pons,online,0.0001,,0,no 2024 trading,,
+TOSHI-USD,TOSHI,Toshi,online,1e-08,,0,no 2024 trading,,
+WMTX-USD,WMTX,World Mobile Token,online,1e-06,,0,no 2024 trading,,
+RLS-USD,RLS,Rayls,online,1e-07,,0,no 2024 trading,,
+SAPIEN-USD,SAPIEN,Sapien,online,1e-05,,0,no 2024 trading,,
+CFG-USD,CFG,Centrifuge,online,0.0001,,0,no 2024 trading,,
+KAIO-USD,KAIO,Kaio,online,1e-06,,0,no 2024 trading,,
+RAY-USD,RAY,Raydium,online,0.0001,,0,no 2024 trading,,
+GWEI-USD,GWEI,Ethgas,online,1e-06,,0,no 2024 trading,,
+ARX-USD,ARX,Arcium,online,0.0001,,0,no 2024 trading,,
+DRV-USD,DRV,Derive,online,1e-05,,0,no 2024 trading,,
+VVV-USD,VVV,Venice Token,online,0.0001,,0,no 2024 trading,,
+YFII-USD,YFII,DFI.Money,delisted,0.01,,0,no 2024 trading,,
+WLUNA-USD,WLUNA,Wrapped Luna Classic,delisted,1e-08,,0,no 2024 trading,,
+OOKI-USD,OOKI,Ooki Protocol,delisted,1e-06,,0,no 2024 trading,,
+TRIBE-USD,TRIBE,Tribe,delisted,0.0001,,0,no 2024 trading,,
+DATA-USD,DATA,Data Network,online,0.0001,,0,no 2024 trading,,
+IRYS-USD,IRYS,Irys,online,1e-05,,0,no 2024 trading,,
+REP-USD,REP,Augur,delisted,0.01,,0,no 2024 trading,,
+SQD-USD,SQD,Subsquid,online,1e-06,,0,no 2024 trading,,
+USDS-USD,USDS,USDS,online,0.0001,,0,no 2024 trading,,
+GEOD-USD,GEOD,Geodnet,online,0.0001,,0,no 2024 trading,,
+BLUECHIP-USD,BLUECHIP,Blue Chip,online,1e-05,,0,no 2024 trading,,
+PENDLE-USD,PENDLE,Pendle,online,0.0001,,0,no 2024 trading,,
+FUN1-USD,FUN1,Sport.Fun,online,1e-05,,0,no 2024 trading,,
+PENGU-USD,PENGU,Pudgy Penguins,online,1e-06,,0,no 2024 trading,,
+KEEP-USD,KEEP,Keep Network,delisted,0.0001,,0,no 2024 trading,,
+PLUME-USD,PLUME,Plume,online,1e-05,,0,no 2024 trading,,
+NU-USD,NU,NuCypher,delisted,0.0001,,0,no 2024 trading,,
+RSC-USD,RSC,ResearchCoin,online,1e-05,,0,no 2024 trading,,
+2Z-USD,2Z,Doublezero,online,1e-05,,0,no 2024 trading,,
+CAP-USD,CAP,Cap,online,1e-05,,0,no 2024 trading,,
+ZKP-USD,ZKP,Zkpass,online,1e-05,,0,no 2024 trading,,
+EDGE-USD,EDGE,Definitive,online,1e-05,,0,no 2024 trading,,
+POPCAT-USD,POPCAT,Popcat,online,1e-05,,0,no 2024 trading,,
+USD1-USD,USD1,World Liberty Financial Usd,online,0.0001,,0,no 2024 trading,,
+XAN-USD,XAN,Anoma,online,1e-05,,0,no 2024 trading,,
+QUICK-USD,QUICK,QuickSwap,delisted,0.01,,0,no 2024 trading,,
+WET-USD,WET,Humidifi,online,0.0001,,0,no 2024 trading,,
+APR-USD,APR,aPriori,online,0.0001,,0,no 2024 trading,,
+PUMP-USD,PUMP,Pump.fun,online,1e-06,,0,no 2024 trading,,
+LIGHTER-USD,LIGHTER,Lighter,online,0.001,,0,no 2024 trading,,
+WLFI-USD,WLFI,World Liberty Financial,online,1e-05,,0,no 2024 trading,,
+META-USD,META,Metadao,online,0.001,,0,no 2024 trading,,
+MEZO-USD,MEZO,Mezo,online,1e-06,,0,no 2024 trading,,
+GRASS-USD,GRASS,Grass,online,0.0001,,0,no 2024 trading,,
+GROVE-USD,GROVE,Grove,online,1e-05,,0,no 2024 trading,,
+MUSD-USD,MUSD,mStable USD,delisted,0.0001,,0,no 2024 trading,,
+ALT-USD,ALT,Altlayer,online,1e-05,,0,no 2024 trading,,
+CARD-USD,CARD,Collector Crypt,online,1e-05,,0,no 2024 trading,,
+ALIGN-USD,ALIGN,Aligned,online,1e-05,,0,no 2024 trading,,
+ETHFI-USD,ETHFI,Ether.Fi,online,0.001,,0,no 2024 trading,,
+REZ-USD,REZ,Renzo,online,1e-07,,0,no 2024 trading,,
+NEX-USD,NEX,Nexus,online,1e-08,,0,no 2024 trading,,
+BEAM-USD,BEAM,Beam,online,1e-06,,0,no 2024 trading,,
+TOWNS-USD,TOWNS,Towns Protocol,online,1e-07,,0,no 2024 trading,,
+NEWT-USD,NEWT,Newton,online,0.0001,,0,no 2024 trading,,
+RITUAL-USD,RITUAL,Ritual,online,1e-05,,0,no 2024 trading,,
+ZKC-USD,ZKC,Boundless,online,0.0001,,0,no 2024 trading,,
+PRL-USD,PRL,Perle,online,1e-05,,0,no 2024 trading,,
+PNUT-USD,PNUT,Peanut The Squirrel,online,1e-05,,0,no 2024 trading,,
+BOBBOB-USD,BOBBOB,Bob,online,1e-05,,0,no 2024 trading,,
+VIRTUAL-USD,VIRTUAL,Virtuals Protocol,online,0.0001,,0,no 2024 trading,,
+EUL-USD,EUL,Euler,online,0.001,,0,no 2024 trading,,
+MULTI-USD,MULTI,Multichain,delisted,0.001,,0,no 2024 trading,,
+USELESS-USD,USELESS,Useless Coin,online,1e-05,,0,no 2024 trading,,
+TONE-USD,TONE,TE-FOOD,delisted,1e-05,,0,no 2024 trading,,
+SPK-USD,SPK,Spark,online,1e-05,,0,no 2024 trading,,
+SIGN-USD,SIGN,Sign,online,1e-06,,0,no 2024 trading,,
+TON-USD,TON,Toncoin,online,0.0001,,0,no 2024 trading,,
+SKR-USD,SKR,Seeker,online,1e-06,,0,no 2024 trading,,
+PROVE-USD,PROVE,Succinct,online,0.0001,,0,no 2024 trading,,
+RED-USD,RED,Redstone,online,0.0001,,0,no 2024 trading,,
+PROMPT-USD,PROMPT,Prompt,online,1e-05,,0,no 2024 trading,,
+RGT-USD,RGT,Rari Governance Token,delisted,0.01,,0,no 2024 trading,,
+AVNT-USD,AVNT,Avantis,online,1e-05,,0,no 2024 trading,,
+TAO-USD,TAO,Bittensor,online,0.01,,0,no 2024 trading,,
+IMU-USD,IMU,Immunefi,online,1e-06,,0,no 2024 trading,,
+SXT-USD,SXT,Space and Time,online,1e-06,,0,no 2024 trading,,
+BIRB-USD,BIRB,Moonbirds,online,1e-05,,0,no 2024 trading,,
+IP-USD,IP,Story,delisted,1e-05,,0,no 2024 trading,,
+ALLO-USD,ALLO,Allora,online,0.0001,,0,no 2024 trading,,
+RSR-USD,RSR,Reserve Rights,online,1e-06,,0,no 2024 trading,,
+UPI-USD,UPI,Pawtocol,delisted,1e-05,,0,no 2024 trading,,
+MIR-USD,MIR,Mirror Protocol,delisted,0.0001,,0,no 2024 trading,,
+REN-USD,REN,Ren,delisted,0.0001,,0,no 2024 trading,,
+KAITO-USD,KAITO,Kaito,online,0.0001,,0,no 2024 trading,,
+PAXG-USD,PAXG,PAX Gold,online,0.01,,0,no 2024 trading,,
+B3-USD,B3,B3 (Base),online,1e-07,,0,no 2024 trading,,
+CAKE-USD,CAKE,Pancakeswap,online,0.001,,0,no 2024 trading,,
+NOM-USD,NOM,Nomina,online,1e-07,,0,no 2024 trading,,
+FLOCK-USD,FLOCK,Flock,online,1e-06,,0,no 2024 trading,,
+LA-USD,LA,Lagrange,online,1e-05,,0,no 2024 trading,,
+POLY-USD,POLY,Polymath Network,delisted,0.0001,,0,no 2024 trading,,
+DRB-USD,DRB,Debtreliefbot,online,1e-07,,0,no 2024 trading,,
+ZAMA-USD,ZAMA,Zama,online,1e-05,,0,no 2024 trading,,
+ERA-USD,ERA,Caldera,online,0.0001,,0,no 2024 trading,,
+AWE-USD,AWE,Awe,online,1e-05,,0,no 2024 trading,,
+MON-USD,MON,Monad,online,1e-06,,0,no 2024 trading,,
+BERA-USD,BERA,Berachain,online,1e-05,,0,no 2024 trading,,
+CRPT-USD,CRPT,Crypterium,delisted,0.0001,,0,no 2024 trading,,
+BNKR-USD,BNKR,BankrCoin,online,1e-07,,0,no 2024 trading,,
+DEEP-USD,DEEP,Deepbook,online,1e-05,,0,no 2024 trading,,
+HOME-USD,HOME,HOME,online,1e-05,,0,no 2024 trading,,
+DDX-USD,DDX,DerivaDAO,delisted,0.0001,,0,no 2024 trading,,
+SKY-USD,SKY,Sky,online,1e-05,,0,no 2024 trading,,
+KERNEL-USD,KERNEL,Kernel,online,1e-06,,0,no 2024 trading,,
+BIO-USD,BIO,Bio Protocol,online,1e-05,,0,no 2024 trading,,
+AXIS-USD,AXIS,Axis Robotics,online,1e-05,,0,no 2024 trading,,
+MET-USD,MET,Meteora,online,0.0001,,0,no 2024 trading,,
+L3-USD,L3,Layer3,online,1e-05,,0,no 2024 trading,,
+DOGINME-USD,DOGINME,Doginme,online,1e-08,,0,no 2024 trading,,
+OPN-USD,OPN,OPINION,online,0.0001,,0,no 2024 trading,,
+AI-USD,AI,Gensyn,online,1e-05,,0,no 2024 trading,,
+ZORA-USD,ZORA,Zora,online,1e-06,,0,no 2024 trading,,
+MORPHO-USD,MORPHO,Morpho,online,0.0001,,0,no 2024 trading,,
+BASED1-USD,BASED1,Based One,online,1e-05,,0,no 2024 trading,,
+CHIP-USD,CHIP,USD.AI,online,1e-05,,0,no 2024 trading,,
+GRVT-USD,GRVT,Grvt,online,0.0001,,0,no 2024 trading,,
+S-USD,S,Sonic,online,1e-05,,0,no 2024 trading,,
+HYPER-USD,HYPER,Hyperlane,online,0.0001,,0,no 2024 trading,,
+W-USD,W,Wormhole,online,1e-06,,0,no 2024 trading,,
+BUSD-USD,BUSD,Binance USD,delisted,0.001,,0,no 2024 trading,,
+MCO2-USD,MCO2,Moss Carbon Credit,delisted,0.01,,0,no 2024 trading,,
+ENA-USD,ENA,Ethena,online,1e-05,,0,no 2024 trading,,
+VGX-USD,VGX,Voyager Token,delisted,0.0001,,0,no 2024 trading,,
+YB-USD,YB,Yield Basis,online,0.0001,,0,no 2024 trading,,
+ASTER-USD,ASTER,Aster,online,0.0001,,0,no 2024 trading,,
+QSP-USD,QSP,Quantstamp,delisted,1e-05,,0,no 2024 trading,,
+KTA-USD,KTA,Keeta,online,0.0001,,0,no 2024 trading,,
+TROLL-USD,TROLL,Troll,online,1e-05,,0,no 2024 trading,,
+DBR-USD,DBR,Debridge,online,1e-05,,0,no 2024 trading,,
+WLD-USD,WLD,Worldcoin,online,0.0001,,0,no 2024 trading,,
+SUP-USD,SUP,Superfluid,online,1e-06,,0,no 2024 trading,,
+UP-USD,UP,Superform,online,1e-05,,0,no 2024 trading,,
+DOLO-USD,DOLO,Dolomite,online,1e-05,,0,no 2024 trading,,
+PROS-USD,PROS,Pharos,online,0.0001,,0,no 2024 trading,,
+BNB-USD,BNB,BNB,online,0.01,,0,no 2024 trading,,
+SYND-USD,SYND,Syndicate,online,1e-06,,0,no 2024 trading,,
+KAT-USD,KAT,Katana,online,1e-06,,0,no 2024 trading,,
+TREE-USD,TREE,Treehouse,online,1e-05,,0,no 2024 trading,,
+SYRUP-USD,SYRUP,Maple Finance,online,0.0001,,0,no 2024 trading,,
+ICNT-USD,ICNT,Impossible Cloud Network,online,0.0001,,0,no 2024 trading,,
+FARTCOIN-USD,FARTCOIN,Fartcoin,online,1e-05,,0,no 2024 trading,,
+MXC-USD,MXC,MXC,delisted,1e-05,,0,no 2024 trading,,

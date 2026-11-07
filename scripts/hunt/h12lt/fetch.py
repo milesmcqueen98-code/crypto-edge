@@ -166,6 +166,10 @@ def minutes(pid, start=START, end=END, threads=4):
 
 
 def minute_job(shard, n):
+    """For each candidate: H2-2024 candles first. est_tick looks only at H2 2024 when it has >= 10,000 minutes, so a
+    coin whose H2 tick is above 3 bp cannot enter the universe and the rest of its history is not fetched. Otherwise
+    (passing, or too few H2 minutes) the full 2024-01-01 -> 2026-11-06 history is fetched and est_tick is computed on
+    the full file, exactly as scripts/wick1m/trades_wide.py does."""
     shard, n = int(shard), int(n)
     C = pd.read_csv(os.path.join(DATA, "candidates.csv"))
     C = C.sort_values("coin").reset_index(drop=True)
@@ -173,16 +177,28 @@ def minute_job(shard, n):
     print(f"shard {shard}/{n}: {list(C.coin)}", flush=True)
     out = os.path.join(DATA, "minute")
     os.makedirs(out, exist_ok=True)
+    h0, h1 = pd.Timestamp("2024-07-01"), pd.Timestamp("2025-01-01")
     ticks, t0 = [], time.time()
     for r in C.itertuples():
-        d = minutes(r.pid)
-        if d is None or d.empty:
+        h2 = minutes(r.pid, h0, h1)
+        n_h2 = 0 if h2 is None else len(h2)
+        if n_h2 >= 10000:
+            t, bp, nw = est_tick_df(h2)
+            if not (bp <= 3.0):
+                ticks.append(dict(coin=r.coin, pid=r.pid, tick=t, tick_bp=bp, n_tick_rows=nw, n_min=0, fetched="h2"))
+                print(f"  {r.coin}: H2 tick {t} ({bp:.2f} bp) > 3 bp, not fetched further ({time.time() - t0:.0f}s)",
+                      flush=True)
+                continue
+        parts = [x for x in (minutes(r.pid, START, h0), h2, minutes(r.pid, h1, END)) if x is not None and len(x)]
+        if not parts:
+            ticks.append(dict(coin=r.coin, pid=r.pid, tick=np.nan, tick_bp=np.nan, n_tick_rows=0, n_min=0,
+                              fetched="none"))
             print(f"  {r.coin}: no candles", flush=True)
-            ticks.append(dict(coin=r.coin, pid=r.pid, tick=np.nan, tick_bp=np.nan, n_tick_rows=0, n_min=0))
             continue
+        d = pd.concat(parts, ignore_index=True).drop_duplicates("ts").sort_values("ts").reset_index(drop=True)
         d.to_parquet(os.path.join(out, f"{r.coin}.parquet"), index=False, compression="zstd")
         t, bp, nw = est_tick_df(d)
-        ticks.append(dict(coin=r.coin, pid=r.pid, tick=t, tick_bp=bp, n_tick_rows=nw, n_min=len(d),
+        ticks.append(dict(coin=r.coin, pid=r.pid, tick=t, tick_bp=bp, n_tick_rows=nw, n_min=len(d), fetched="full",
                           first=str(d.ts.min()), last=str(d.ts.max())))
         print(f"  {r.coin}: {len(d)} minutes {d.ts.min()} -> {d.ts.max()}, tick {t} ({bp:.2f} bp), "
               f"req={N_REQ[0]} {time.time() - t0:.0f}s", flush=True)
