@@ -197,9 +197,9 @@ def exchange_all(pid):
             print(pid, N_REQ[0], len(rows), js[-1]["time"], flush=True)
     d = pd.DataFrame(rows, columns=["trade_id", "time", "price", "size", "side"]).drop_duplicates("trade_id")
     d["time"] = pd.to_datetime(d["time"], utc=True, format="ISO8601").dt.tz_convert(None)
-    # Exchange /trades `side` is the TAKER side (buy = aggressive buyer); convert to the Advanced/common convention
-    # (MAKER side: "BUY" = a resting bid was hit by an aggressive seller).
-    d["side"] = d["side"].map({"buy": "SELL", "sell": "BUY"})
+    # Exchange /trades `side` is the MAKER side, as on the Advanced endpoint (checked by tick test on GUSD/PYUSD:
+    # "buy" prints are down-ticks). Upper-case it to the common convention ("BUY" = resting bid hit by a seller).
+    d["side"] = d["side"].str.upper()
     d = d.sort_values(["time", "trade_id"]).reset_index(drop=True)
     os.makedirs(os.path.join(OUT, "trades_all"), exist_ok=True)
     d.to_parquet(os.path.join(OUT, "trades_all", f"{pid}.parquet"), index=False, compression="zstd")
