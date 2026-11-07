@@ -1,8 +1,17 @@
-# Crypto edge: findings and live rules (updated Nov 7, 2026, wick v4)
+# Crypto edge: findings and live rules (updated Nov 7, 2026, edge hunt)
 
 Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly signals, paper-trading bot)
 
 ## Status at a glance
+- **Edge hunt (Nov 7): no new sleeve; the book stays R2-08 alone at $100K (section below).**
+  - 48 mechanism-first ideas; 13 built on trade-level data, each pre-registered, frozen, and read once on the Jun–Nov
+    2026 hold-out.
+  - None passes at 2× costs. The bar: alpha t ≥ 3, hold-out t ≥ 1.5 and +0.25, +0.5 book Sharpe, deflated Sharpe at
+    N = 3,188, no losing year.
+  - An independent audit and a red team changed no verdict.
+  - **Closest, H1 (perp-only wicks at 5–6 pm ET):** real at 1× costs. It fails at 2× at any plausible fee, and its edge
+    halved after CME went 24/7 on May 29 2026.
+  - Next: price the perp fee with one order preview. Forward-test H1 only if the fee is ≤ $0.13 a contract.
 - **Wick v4 (Nov 7): no signal change passed; reacting within a second does matter (section below).**
   - 9 candidates were pre-registered: rung weights, a 10σ rung, a BTC-synchronised bid, 31 coins, and venue.
   - Trade-by-trade Coinbase data (4.3M trades) shows a 1-second reaction catches 87% of the deeper fills that a
@@ -56,6 +65,87 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   (section below).
 - **Maker round (Nov 6): rejected.** Two-sided quoting at the touch loses 0.7–0.9 bp per dollar before fees in all 36 setups.
 - **C3 upgrade round (Nov 6):** turnover cuts tie on Sharpe; C3 unchanged, still a paper-trade candidate.
+
+## Edge hunt (Nov 7): 13 mechanism-first ideas against R2-08; none passes at 2× costs
+Goal set by Miles: the highest-Sharpe, AI-aided book for $100K on Coinbase spot and US perps, hunting edges too small
+for big funds. Bar, fixed in reports/hunt_prereg.md before any build: beat R2-08 head-to-head, or add ≥ 0.5 to the
+combined Sharpe, with no losing year. Final report (scorecard, book, build plan): the "Edge Hunt: Final Report" doc (https://claude.ai/artifact/XTiCPiR6esKPoW486Ctse3); repo reports/hunt/.
+
+**Protocol:**
+- 48 ideas from four research memos, each naming who is forced or eager to trade and why we are paid
+  (reports/hunt/ideas.md). 13 were built on trade-level data in three loops. The rest were left out for too few events
+  (t ≥ 3 out of reach) or blocked data.
+- **Path B:** book = a × incumbent + (1 − a) × sleeve, a ∈ {0.7, 0.5} picked on DEV.
+  - Sleeves are charged 2× costs; the incumbent (R2-08 spot bot) is at 1×.
+  - DEV = 2022–23 and Jan 2025 – May 2026; 2024 trains models only. HOLD = Jun 1 – Nov 5 2026, read once after a pushed
+    freeze commit.
+- **Gates:**
+  - G1: alpha t ≥ 3 on the incumbent (Newey-West).
+  - G2: hold-out t ≥ 1.5 and gain ≥ +0.25.
+  - G3: full-period gain ≥ +0.5.
+  - G4: deflated Sharpe ≥ 0.95, with N = 3,188 trials.
+  - G5: no losing year.
+
+**Results (2×; full detail in the report):**
+
+| Idea | Score /100 | Alpha t | Hold-out t / gain | Full gain | Why it fails |
+|---|---|---|---|---|---|
+| H5 Binance announcements → Coinbase spot | 64 | 2.87 | 0.31 / +0.08 | +0.22 | Needs a 2 s entry; gone by 10 s |
+| H4 New Coinbase listings, days 0–30 | 61 | 1.53 | 1.28 / +0.36 | −0.07 | Tiny: peak cash $3.6K of $30K |
+| H7 Short ahead of token unlocks | 56 | 1.90 | no events / −0.16 | −0.19 | 83% of P&L assumes shorts before perps listed |
+| H1 Perp-only wicks, 5–6 pm ET | 53 | 2.07 | −0.16 / −0.17 | +0.43 | The per-contract fee (below) |
+| H12 R2-08 on 36 long-tail coins | 52 | 1.61 | 0.50 / +0.12 | +0.15 | Same cascade days as the incumbent; prints 0.29× candle volume |
+| H11 Deep hourly bids on major perps | 51 | 1.44 | 0.83 / +0.20 | −0.02 | Buys mid-cascade, on the incumbent's days |
+| H8 Depeg bids (stables, cbETH) | 50 | 1.55 | −3.09 / −0.51 | −0.02 | About 3 stress events since 2022 |
+| H9 4 pm ET margin step-up | 37 | −2.18 | −2.08 / −0.64 | −0.27 | 2–3 bp footprint, faded after Oct 2025 |
+| H2 Cascade exhaustion on majors | 32 | −1.22 | −1.40 / −0.98 | −0.55 | Rebound below taker costs |
+| H6 Coinbase vs Bitstamp/perp gaps | 32 | −8.01 | −5.03 / −5.68 | −10.23 | Coinbase leads; the "fair value" is stale |
+| H13 Listing switch to full trading | 31 | −0.20 | −1.24 / −0.62 | −0.54 | The market-order rush is ~$374 a listing |
+| H10 Secondary-book wicks | 27 | −10.87 | −9.31 / −7.67 | −11.49 | Priced off a stale fair value |
+| H3 Liquidation-cluster bids | 24 | DEV screen | — | — | Clusters = random depth (t 0.15) |
+
+**H1, the open lead:**
+- **Variant:** post-only perp bids 6σ under a spot-synchronous fair value, only 4:55–6:05 pm ET.
+- **Fills:** real on trade prints (99.8% of candle fills confirmed at the price; 70/70 trades recomputed independently).
+- **At 1× ($0.20 a contract):** alpha t 5.59, hold-out t 2.57, book Sharpe 4.35 vs 2.80.
+- **At 2×:** it fails.
+- **Fee sensitivity:** at 2× the sleeve Sharpe is 4.1 with a $0.12 fee and −2.2 with $0.30. It goes negative at a
+  quarter capture share.
+- **Decay:** alt P&L fell after June 2026.
+- **Red team (independent agent; reports/hunt/h1pb/REDTEAM.md):**
+  - **The 2× FAIL is confirmed.** It rebuilt all 1,414 trades exactly from 4.18M re-fetched prints.
+  - **Fee:** G1–G3 would need an all-in fee of at most $0.138 a contract. G4 fails at 2× even at the $0.11 regulatory
+    floor (DSR 0.83).
+  - **Source:** the edge comes from a 5:30–5:50 pm ET liquidity gap, Mon–Thu. That gap roughly halved after CME went
+    24/7 on May 29 2026, three days before the hold-out; the CME link is inferred, not proven. Plan on the hold-out
+    level: sleeve Sharpe 5.3 at 1×, 0.5 at 2×.
+  - **Fee components:** the exchange fee ($0.10) and the NFA fee ($0.01) are verified. The FCM commission is not;
+    the estimate is about $0.20 all-in.
+
+**Robustness of "none":**
+- An independent audit agent re-derived every gate with its own code (match to 7e-12) and changed no verdict.
+- One hold-out breach: H12 saved hold-out trades 34 s before its freeze. Its pick is still the DEV rule's, and it
+  fails anyway.
+- Crediting T-bill interest on idle sleeve cash lifts H5, H1 and H4 past G1, but none clears G1–G3.
+- A post-hoc mix of the five positive-DEV sleeves (logged as trials): alpha t 4.1 and +0.41 full, but hold-out t 0.55
+  and +0.23.
+
+**Bugs found and fixed mid-run:**
+- The shared trade fetcher dropped prints at page boundaries (ETH lost 4,865 of 5,709 contracts in one minute).
+- PEPE perp prices are quoted per 1,000 coins.
+- Perp print sizes are in contracts.
+
+**Build plan:**
+1. Run R2-08 as planned: the $10K pilot, then $100K.
+2. Price the perp fee in one day: preview 1-contract orders on alt perps and ETH.
+   - At or below $0.13 a side → forward-test H1 as a new pre-registered idea for 3 months (≥ 300 fills, book logger at
+     4:55–6:05 pm ET).
+   - $0.13–0.25 → paper only, for the data.
+   - Above $0.25 → close it.
+3. Shadow-log unlock and delisting flags on every incumbent fill for 6 months, then test them as a filter.
+4. Collect forward data: Hyperliquid liquidation levels, Binance announcement latency, perp books at 5–6 pm ET.
+
+Code and results: scripts/hunt/, reports/hunt/ (one folder per idea; branches hunt/<id>).
 
 ## Wick v4 (Nov 7): what's left to improve, tested without overfitting
 Pre-registered in reports/wick_v4_prereg.md before any test. Every era had already shaped some choice, so the rules
@@ -1266,6 +1356,7 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
   CI runner.
 
 ## Known gaps
+- Coinbase Financial Markets' own commission on perps is unverified; with it, H1 (edge hunt) passes or fails. One authenticated order preview settles it.
 - Coins delisted from Coinbase are missing (survivorship bias favors the alt strategies).
 - Taxes are excluded.
 - T-bill rates are approximate monthly levels.
