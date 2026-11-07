@@ -1,0 +1,28 @@
+{
+ "url": "https://www.bitstamp.net/api/v2/ohlc/usdcusd/",
+ "user_agent": "crypto-edge-research/1.0",
+ "range": [
+  "2024-09-26",
+  "2026-11-05"
+ ],
+ "requests": [
+  {
+   "params": {
+    "step": 86400,
+    "limit": 1000,
+    "start": 1727308800
+   },
+   "attempt": 0,
+   "utc": "2026-11-07T23:29:36.043273+00:00",
+   "http": 200,
+   "n": 773,
+   "kept": 771
+  }
+ ],
+ "refused": false,
+ "rows": 771,
+ "first": "2024-09-26",
+ "last": "2026-11-05",
+ "missing_days": 0,
+ "missing": []
+}
