@@ -42,7 +42,7 @@ Status key: **W2** = built in wave 2 · **alt** = next in line · **merged** = t
 | 4 | **LM: liquidation-density bids** | Leveraged longs opened at high-volume prices get liquidated at entry × (1 − 1/leverage). Bids beyond dense zones catch the end of the cascade. This is the testable proxy for Hyperliquid's public levels. | Coinbase spot+perp volume-at-price (live); Binance OI as research check | 5 | W2 (H3) |
 | 5 | HL: Hyperliquid public liquidation map | Live positions show where forced selling sits. | No history of positions or levels | 6 | blocked: forward-collect |
 | 6 | SC: reopen after the perp maintenance halt | Stale stops and thin books at the daily/weekly reopen. | Perp trades / Coinbase | 6 | merged (H1, time split) |
-| 7 | MC: intraday-to-overnight margin step-up | If the FCM raises margin at a fixed time, under-margined retail is cut at a known minute. | Perp trades / Coinbase; rules from R1/R3 | 6 | see R1/R3 |
+| 7 | **MC: intraday-to-overnight margin step-up at 4 pm ET** | Opt-in intraday margin ends at 4 pm ET on weekdays. The overnight requirement is 2–4× higher (R3). Under-margined retail must cut at a known minute; the provider is paid by the reversion. | Perp trades / Coinbase | 8 | W2b (H9) |
 | 8 | SR: stop-run reversals at prior lows and round numbers | Clustered retail stops fire together; the sweep reverts. | Spot 1m / Coinbase | 5 | alt |
 | 9 | RN: front-run round-number bid walls | Retail limit orders cluster at round prices. | Spot 1m | 3 | merged (SR) |
 | 10 | CW: cross-venue liquidation feed as a live trigger | Binance/Bybit liquidations lead US prices. | Live feed geo-blocked in the US | 5 | blocked |
