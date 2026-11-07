@@ -263,3 +263,12 @@ changes. Its material findings are recorded here, not acted on, because none can
 - **Scorecard corrections applied:**
   - Diversification no longer gives 1.5 points for correlations of 0.2–0.4, which the rubric does not allow.
   - Hand scores now follow their own rules: H5 neighbours 5; capacity 3 for H10 and H11 and 2 for H4 and H8.
+
+**2026-11-07 10:20 UTC: red team on H1 (reports/hunt/h1pb/REDTEAM.md).** H1 was not a survivor. It was attacked
+anyway because the build plan rests on it.
+- **2x FAIL: confirmed.** The red team rebuilt all 1,414 trades exactly from 4.18M re-fetched prints.
+  - G1–G3 would need an all-in fee of at most $0.138 a contract.
+  - G4 fails at 2x even at the $0.11 regulatory floor (DSR 0.83).
+- **1x edge: real, but halved.** It comes from a 5:30–5:50 pm ET liquidity gap, Mon–Thu, on CDE perps. That gap
+  shrank by about half after CME went 24/7 on 2026-05-29, three days before HOLD began.
+- **No verdict changes.**

@@ -1,0 +1,496 @@
+RED TEAM: h1pb (H1, resting bids on Coinbase US perps that catch perp-only wicks)
+Frozen variant sync_k6_long_H60_onlymaint (spot-synchronous fair value, k = 6, long only, H = 60 min, theta 0.5,
+orders only 4:55-6:05 pm ET). Freeze 649038b, code 369d3eb, HOLD read in 49c1c77. Red team run 2026-11-07, branch
+redteam/h1pb (worktree /home/claude/wt/rt-h1pb), local work /home/claude/redteam/h1pb.
+
+=====================================================================================================================
+VERDICTS
+=====================================================================================================================
+- Reported 2x FAIL: CONFIRMED. Every gate number reproduces to machine precision from daily.parquet with independent
+  code, and daily.parquet itself reproduces exactly from an independent re-fetch of the raw prints and an independent
+  re-simulation (all 1,414 frozen trades identical). No plausible fee rescues a full pass at 2x: G1-G3 need an all-in
+  fee <= $0.138/contract/side, and even at the verified regulatory floor of $0.11 the 2x book fails G4 (DSR 0.83).
+- 1x edge: REAL as a historical, fillable effect, but smaller after 2026-05-29 and of uncertain forward size.
+  - It is not a look-ahead, data or fill-model artefact: the levels, fills, take-profits, exits, costs and slots all
+    reproduce from raw prints. The trigger print is an aggressive sell hitting a resting bid in 92% of fills, and the
+    venue trades continuously in the window on weekdays.
+  - It has an identifiable venue cause: a daily 5:30-5:50 pm ET liquidity gap on CDE perps, with >6-sigma dislocations
+    in both directions. It is visible in the prints and in Tardis quote-update rates.
+  - But the regime changed at the DEV/HOLD boundary. CME moved crypto futures to 24/7 trading on 2026-05-29, removing
+    its daily 5-6 pm ET break. After that the 5:30-5:50 dislocation count roughly halved, and alt gross edge per trade
+    fell from 48 to 31 bp.
+  - The window was also flagged by earlier replays that covered HOLD dates, so the 1x HOLD t of 2.57 is not a clean
+    confirmation.
+- Break-even all-in fee (per contract per side, theta 0.5):
+  - At the gates' 2x stress: $0.176 for full alpha t = 3, $0.193 for full book gain = +0.5, $0.138 for HOLD t = 1.5.
+  - At 1x: $0.361 for t = 3, $0.395 for gain = +0.5.
+  - theta 0.25, 2x: $0.130 and $0.134; 1x: $0.271 and $0.277.
+  - Best estimate of the real fee: about $0.20, range $0.11-0.31.
+    - Verified: the CDE exchange fee of $0.10, plus the NFA fee of $0.01 ($0.02 from 2027-07-01).
+    - Unverified: CFM's own commission. Coinbase advertises "from 0.02%", which is $0.15-0.20 on a nano-BTC contract.
+    - Settle it with one authenticated order preview (R3).
+
+=====================================================================================================================
+FINDINGS, RANKED
+=====================================================================================================================
+DISQUALIFYING: none.
+- No look-ahead.
+- No fictitious fills under the pre-registered fill model.
+- No hold-out breach by the builder.
+- No gate or cost arithmetic error.
+
+MATERIAL
+M1. Regime change at the DEV/HOLD boundary: CME 24/7 from 2026-05-29. The 2x HOLD failure is structural, not noise.
+  - **Where the P&L comes from:** the 5:30-5:50 pm ET slot. It holds 752 of 1,414 trades and +$3,166 of +$4,212 at 2x
+    (+$7,309 of $12,021 at 1x).
+  - **The venue anomaly in my own prints** (Mon-Thu; minutes whose lowest print is >6 sigma below the candle fair value,
+    per 1,000 traded minutes):
+    - 5:30-5:50 pm, before 2026-05-29: alts 128.5, majors 66.7.
+    - Other slots: alts 0-33, majors 7-27.
+    - Up-moves show the same pattern (alts 88.4, majors 64.8), so it is a two-sided liquidity gap, not one-way forced
+      selling.
+    - It is anchored to US Eastern time in both DST and standard time. At 5:30-5:50 pm: alts EST 99 vs EDT 50, majors
+      EST 93 vs EDT 45; other slots 0-44. A UTC-anchored event would move by an hour.
+  - **CME's change:** CME moved its crypto futures and options to 24/7 trading from Friday 2026-05-29, 4:00 pm CT
+    (crowdfundinsider, Feb 2026; CME 24/7 page). Its daily Globex break is now 4:00-4:02 pm CT instead of 4-5 pm CT
+    (5-6 pm ET).
+  - **After that date** (Mon-Thu, from 2025-12-15, absolute counts per coin-day at 5:30-5:50 pm):
+    - Dislocations: alts 0.303 to 0.170 (-44%), majors 1.031 to 0.560 (-46%), while dislocations in other slots rose.
+    - Alt print activity in the slot more than doubled (traded-minute share 0.118 to 0.266).
+  - **Strategy decline after the change:**
+    - Alt gross edge per trade: 48.2 to 30.9 bp.
+    - Alt gross P&L: from about $1,300 a month (Jan-Jun 2026) to about $690 a month (Jul-Oct).
+    - 2x net alt P&L: +$530-1,140 a month to +$16-280 a month.
+    - Majors: 14.8 to 12.7 bp gross; net negative at 2x.
+    - June 2026 was a transition month: the alt dislocation rate per 1,000 traded minutes was 155 in May, 70 in June and
+      22 in July.
+  - **Implication:** DEV describes a market that no longer exists. Base forward-test expectations on post-May-29 data
+    only. That is HOLD:
+    - Sleeve ($30K) Sharpe 0.52 at 2x, 5.30 at 1x.
+    - About $700 a month at 1x and $0.20/contract (alts about $600, majors about $100).
+    - At 2x: alts +$358 a month, majors -$201 a month.
+  - Causality with CME is inferred: the timing is exact and the mechanism plausible, but not proven. The 5:30-5:50
+    concentration, rather than all of 5-6 pm, is not explained by CME alone. It looks like a scheduled
+    market-maker process.
+    - It is still visible after the change: the Tardis quote file for Sunday 2026-11-01 shows top-of-book update rates
+      falling 50-80% at 5:30-5:50 pm ET (ADP 76 to 19 per minute, XPP 95 to 27, DOP 83 to 17), with books two-sided
+      throughout.
+
+M2. Fees decide the sign, and the gate result does not hinge on the unknown FCM commission.
+  - **Break-even table:** see the section below.
+  - **Verified fee components:**
+    - CDE exchange fee: $0.10/contract/side, electronic, for every crypto perp in the universe (BIP, ETP, SLP, XPP, DOP,
+      XLP, ZEC, NER, PEP, HYP and the rest). Market makers pay $0.07; block trades $0.01.
+      - Source: CDE fee schedule, CFTC submission #2026-46, effective trade date 2026-08-17 (text extracted in
+        reports/hunt/h1pb/redteam/doc_cftc_fee_2026_46.txt).
+      - An automated bot is a "Professional Trader": "Non-Professional" excludes "a fully automated order generating
+        computer system". The fee is the same $0.10.
+    - NFA assessment fee: $0.01/side, rising to $0.02 from 2027-07-01 (NFA FAQ).
+    - IBKR passes through exactly $0.10 exchange plus $0.01 regulatory for these product codes.
+  - **Unverified:** CFM's own commission. Kraken's comparison says CFM "uses per-contract commissions on nano and
+    perpetual-style futures"; Coinbase markets "from 0.02%". No help.coinbase.com fee page was reachable.
+  - **Scenarios at 2x** (sleeve Sharpe at $30K, full t, HOLD t, gains, DSR):
+    | All-in fee | Sleeve Sharpe | Full t | HOLD t | Gain full / HOLD | DSR | Result |
+    |---|---|---|---|---|---|---|
+    | $0.11 floor | 4.42 | 5.16 | 2.18 | +1.40 / +1.20 | 0.83 | G1-G3 pass, G4 fails |
+    | $0.15 | 3.10 | 3.91 | 1.19 | +0.97 / +0.59 | 0.66 | G2 fails |
+    | $0.20 (pre-reg) | 1.33 | 2.07 | -0.16 | +0.43 / -0.17 | 0.385 | fail |
+    | 0.02% of notional all-in | 4.71 | 5.60 | 2.63 | +1.57 / +1.48 | 0.88 | G4 fails |
+    | 0.02% + $0.11 pass-through | | 1.93 | -0.20 | | 0.36 | fail |
+  - **Fee load:** at $0.20 and 2x, fees are $15,037 against a gross of $19,831 (76%); spreads $549, funding $33.
+
+M3. Queue share and sizing (theta) and "who traded".
+  - **theta 0.25:**
+    - 2x: sleeve Sharpe -0.30, full t 0.87, HOLD t -1.41.
+    - 1x: full t 4.30, HOLD t 1.24, HOLD gain +0.51.
+  - **Sizing on maker-BUY prints only** (contracts sold aggressively through the level):
+    - 2x: full t 1.68, HOLD t -0.10.
+    - 1x: full t 5.03, HOLD t 2.35.
+  - **The 1x edge** survives both on the full period. At 1x, HOLD is weak at theta 0.25.
+  - **Queue position and competition** at 5:30 pm are unknowable from prints. theta is the only proxy. Bids below our
+    level were present and were hit, so someone else already provides this liquidity.
+
+M4. Latency.
+  - **+1 s** (information 2 s old):
+    - 2x: full t 1.98, HOLD t -0.43.
+    - 1x: full t 5.14, HOLD t 2.02.
+  - **+5 s:**
+    - 2x: full t 0.63, HOLD t -0.83.
+    - 1x: full t 4.22, HOLD t 1.91.
+  - **Trade count rises with latency** (1,414, then 1,437, then 1,539): the level lags spot and fills more on
+    market-wide moves.
+  - **Live demands:** the bot must re-price as spot moves (sync mode) in up to 20 books. Coinbase's private REST limit
+    (about 30 per second, R3) makes the 1 s case optimistic. +5 s removes the 2x result and about a quarter of the 1x
+    P&L.
+
+M5. Hold-out purity of the window. The builder made no error here, but it limits what HOLD can prove.
+  - The 4:55-6:05 pm window was not discovered by the builder:
+    - crypto-edge-findings.md records that the earlier R2-08 perp replays found "the wicks cluster in 5-6 pm ET ... 13%
+      of AI trades, 19% of P&L".
+    - Those replays were run on Dec 2025 - Nov 2026, including HOLD dates.
+    - The live incumbent already blocks new bids 4:55-6:05 pm ET.
+  - The SPEC pre-registered the split as idea #6 (permitted), and the selection followed the rule.
+  - The parent's own DEV hour table already showed it: 5 pm ET +$4,154 against -$5,835 for all other hours.
+  - But "the window matters" was partly informed by HOLD-period data. So the 1x HOLD alpha t of 2.57 is weaker
+    confirmation than it looks. This does not affect the 2x FAIL.
+
+MINOR
+m1. The correlation with the incumbent is a one-day artefact. The reported -0.34 at $50K (builder: -0.39) is all
+    2025-10-10.
+  - That day: the incumbent made +$7,199 at $100K and the sleeve lost -$1,079 at $30K.
+  - Without that day: correlation -0.05 (Spearman over all days +0.03).
+  - The same day also gives the sleeve a beta of -0.10, which adds to its spanning alpha. Without it, full 2x t is 1.70
+    (vs 2.07) and 1x 5.22 (vs 5.59). The FAIL gets stronger.
+  - Scorecard diversification (correlation < 0.2) still holds. "Hedges the incumbent" does not.
+
+m2. 32 frozen trades re-enter a coin within 1 s of that coin's previous close, 15 of them on the same print as the
+    previous take-profit.
+  - A new bid placed on information at least 1 s old cannot exist then.
+  - Net at 2x is -$66, so removing them improves the result slightly. Immaterial.
+
+m3. Level inputs v2 tilted DEV favourably but did not change the selection.
+  - Re-scoring the DEV grid on the v1 entries: sync k6 long onlymaint is still selected (DEV alpha t 2.37 vs 2.89
+    under v2; DEV P&L $2,803 vs $3,461).
+  - v1 HOLD cannot be computed without a re-fetch. Its direction is likely a little worse: v1 blanks thin-alt
+    minutes.
+
+m4. The DEV/HOLD splice at 2026-05-31 10:00 UTC is clean.
+  - The 910 DEV trades in the final file are identical to the DEV trial (P&L $3,461.33 both).
+  - One trade (LTC, 2026-05-31 21:01 UTC) falls in the spliced span; it matches field for field.
+
+m5. The universe is not quite "every perp".
+  - The BNB perp (listed 2026-06-05) and the PAXG perp (2026-02-28) exist but have no data/cfm file. BNB is in
+    common.PERP; PAXG is not.
+  - No delisted CDE perp was found, so I see no survivorship bias. The omission is small and of unknown sign.
+
+m6. The T-bill convention charges rf on the whole sleeve capital.
+  - At a = 0.5 the sleeve has $50K, but deploys $2-58K for minutes a day.
+  - rf averages 3.75%/yr over the scored days, 58% of the 2x sleeve's mean return (6.47%/yr on $50K).
+  - This is binding, applies to every idea, and is not an error. It is why a 2x sleeve with Sharpe 1.33 at $30K shows
+    0.86 at $50K.
+
+m7. Friday modelling details.
+  - Fills 4:55-5:00 pm Friday are carried through the weekly halt to the 6:00 pm reopen: 16 trades, -$436 at 2x.
+  - The no-cancel period from 5:59:30 is not modelled.
+  - Normal Fridays net -$748 at 2x.
+  - Holiday Fridays 2026-04-03 and 2026-07-03, when the halt moved to Thursday, trade through the usual slot: 49 trades,
+    +$373 at 2x, at extreme dislocation rates. Two of the 15 largest wins are 2026-07-03.
+  - The print record handles all of this correctly: no prints means no fills.
+
+m8. The builder's "70/70 independent recomputation" was partly circular. It re-derived fills and exits from stored L
+    and TP but did not recompute L.
+  - I recomputed L from scratch from my own spot prints and statistics: 73/73 audited fills match to the tick.
+  - My full re-simulation reproduces all 1,414 trades. The claim holds.
+
+m9. The Fair Value Limit as filed differs in form but not in effect.
+  - The CFTC certification defines FV as the spot mid. It rejects only buys above +5% and sells below -5%, and nothing
+    executes outside +-5%.
+  - The builder skips bids below 0.95 x the last spot print. That is conservative and equivalent in effect.
+  - Frozen levels sit 7-335 bp under spot (median 33 bp), far inside the 500 bp limit.
+
+=====================================================================================================================
+RECOMPUTED GATES (my code, not gates.py) vs gates.json vs central_gates.csv
+=====================================================================================================================
+How I recomputed them:
+- Daily returns: from daily.parquet. That file reproduces to 5e-13 from my own trade list, cost model and booking.
+- Excess returns: over edge.book.rf_daily, the same T-bill series gates.py uses.
+- Alpha t: OLS of sleeve excess on incumbent excess, Bartlett Newey-West with 5 lags. The incumbent is "instant" at the
+  matching capital ($50K at a = 0.5).
+- Gain: book Sharpe minus incumbent($100K) Sharpe on the same 475 days (2025-07-19 .. 2026-11-05; DEV 317, HOLD 158).
+- The choice of a reproduces:
+  - 2x: DEV book Sharpe 3.151 at a = 0.7 vs 3.181 at a = 0.5, so a = 0.5.
+  - 1x: 3.876 vs 4.154, so a = 0.5.
+
+| 2x (gates) | mine | gates.json | central_gates.csv |
+|---|---|---|---|
+| G1 full alpha t | 2.0700 | 2.0700 | 2.0700 |
+| DEV alpha t | 2.4242 | 2.4242 | - |
+| G2 HOLD alpha t | -0.1575 | -0.1575 | -0.1575 |
+| G2 HOLD book gain | -0.1741 | -0.1741 | -0.1741 |
+| G3 full book gain | +0.4269 | +0.4269 | +0.4269 |
+| full book / incumbent Sharpe | 3.2255 / 2.7986 | same | same |
+| HOLD book / incumbent Sharpe | 3.4685 / 3.6426 | same | - |
+| full sleeve ($50K) Sharpe | 0.8562 | 0.8562 | 0.8562 |
+| G5 years (book) | 2025 +12.07%, 2026 +13.98% | same | same |
+| G4 DSR | 0.385 (robust vz 1.2178, N 3,188, gates.deflated_sharpe) | 0.00 (builder vz) | 0.385 robust; 0.00 plain |
+
+- Gates: G1 fail, G2 fail, G3 fail, G4 fail, G5 pass. FAIL confirmed.
+- Every 2x difference is below 3e-15.
+
+1x (information), mine = gates.json:
+
+| 1x | mine = gates.json |
+|---|---|
+| full t | 5.5897 |
+| DEV t | 4.9284 |
+| HOLD t | 2.5702 |
+| full gain | +1.5523 |
+| HOLD gain | +1.4404 |
+| book Sharpe | 4.3509 |
+| years | 2025 +13.67%, 2026 +20.19% |
+| DSR (robust) | 0.878 |
+
+=====================================================================================================================
+BREAK-EVEN ALL-IN FEE (USD per contract per side; a re-chosen on DEV at each fee; spreads and funding as pre-registered)
+=====================================================================================================================
+| Cost multiplier | theta | full t = 3 | full gain = +0.5 | HOLD t = 1.5 | HOLD gain = +0.25 |
+|---|---|---|---|---|---|
+| 2x (gate convention) | 0.5 | 0.176 | 0.193 | 0.138 | 0.173 |
+| 2x (gate convention) | 0.25 | 0.130 | 0.134 | 0.083 | 0.115 |
+| 1x (no stress) | 0.5 | 0.361 | 0.395 | 0.289 | 0.357 |
+| 1x (no stress) | 0.25 | 0.271 | 0.277 | 0.181 | 0.244 |
+
+- G4 is not met at 2x at any fee >= $0.11 (DSR 0.83 at $0.11, 0.66 at $0.15). At 1x, DSR is 0.960 at $0.11.
+- Fee in bp at trade time (1x, per side, median by coin):
+  - BTC 2.6, ETH 8.0, SOL 3.4, XRP 2.7.
+  - XLM 2.2, NEAR 1.5, ZEC 3.9, ADA 8.1, LTC 7.3, PEPE 5-6.4.
+  - Notional-weighted 4.15 bp per side, so 8.3 bp per round trip at 1x and 16.6 bp at 2x.
+- Real fee estimate: about $0.20, range $0.11-0.31, as set out in M2.
+
+=====================================================================================================================
+VENUE STATE 4:55-6:05 PM ET
+=====================================================================================================================
+Documents:
+- **CDE market-hours page (docs.cdp.coinbase.com):**
+  - 24x7 futures trade from Friday 5:00 pm CT to Friday 4:00 pm CT.
+  - "The Monday-Thursday 4:00-5:00 PM CT break is eliminated."
+  - The trade date rolls Monday-Friday at 4:00 pm CT (5 pm ET).
+  - Weekly maintenance runs Friday 4:00-4:50 pm CT. Pre-open is 4:50, no cancels from 4:59:30, open at 5:00 pm CT.
+    It moves to Thursday if Friday is a holiday.
+  - There are quarterly weekend windows.
+  - Nothing describes a weekday halt, auction, uncross or order cancellation at 5-6 pm ET.
+- **CFTC BIP certification:**
+  - Trading hours Friday 5 pm CT - Friday 4 pm CT.
+  - A 10% hourly-reference price limit triggers a halt (orders accepted, no matching).
+  - The Fair Value Limit is +-5% of spot mid. Hourly cash adjustments are aggregated at mid-day and end-of-day margin
+    runs.
+- **Products API (cfm_products.json):** the FCM session rolls at 22:00 UTC, with open_time equal to the previous
+  close_time. There is no session gap, and maintenance is null on weekdays.
+- **Daily cycles:** the daily settlement is the VWAP of the 60 s before 3:00 pm CT (4 pm ET), before the window. The
+  mid-day and end-of-day margin runs have unpublished times.
+- **Order cancellations:** no documented cancellation of resting GTC orders at the trade-date roll. GTD orders only
+  cannot expire on holidays or weekends.
+- **Conclusion:** on Mon-Thu a resting order can exist and fill at those prints. Only Friday 5-6 pm ET is closed, and the
+  model handles it.
+
+Print record (my fetch, Mon-Thu):
+- **Continuous:** every coin prints through 5-6 pm at lower activity. Candle volume at 5:30 pm is about 15-45% of the
+  4:50 pm level, and the alt traded-minute share about 60%. Activity jumps 2-7x at 6:00 pm.
+- **The anomaly:** >6-sigma dislocations in both directions concentrate at 5:30-5:50 pm, as in M1.
+- **Trigger prints:** maker side BUY in 92% of frozen fills. An aggressive seller hit a resting bid, so resting bids
+  existed and were executed.
+- **Fridays:** there are no prints 5:00-6:00 pm ET except on 2026-04-03 and 2026-07-03, the holiday Fridays when the halt
+  moved to Thursday.
+
+Tardis CDE quotes, 2026-11-01 (Sunday, EST, 8 perps):
+- Two-sided at every update 3-8 pm ET. The share of updates with an empty bid or ask is 0.
+- Spreads are similar or slightly wider at 5:30-5:50 (BIP 1.9 to 3.2 bp).
+- Quote-update rates fall 50-80% at 5:30-5:50 and rise 3-4x at 6:00.
+
+The CME hypothesis:
+- **Supported in shape:**
+  - The 6 pm volume jump matches CME's old Globex reopen.
+  - The anomaly is ET-anchored across DST changes.
+  - It roughly halved after CME went 24/7 on 2026-05-29.
+- **Not complete:** the gap is concentrated at 5:30-5:50, not across all of 5-6 pm. It still shows, smaller, after the
+  change (alts 31.9 vs about 5-9 in other slots per 1,000 traded minutes).
+- **Most likely reading:** market makers' scheduled daily process, which was tied to the CME break.
+
+P&L splits (frozen trades; 2x net / 1x net / gross bp):
+
+| Split | Trades | 2x net | 1x net | Gross bp | Note |
+|---|---|---|---|---|---|
+| Mon | 219 | +$871 | +$2,134 | 24.9 | |
+| Tue | 261 | +$1,579 | +$2,926 | 26.4 | |
+| Wed | 314 | +$80 | +$1,847 | 17.3 | |
+| Thu | 234 | +$1,276 | +$2,605 | 25.9 | |
+| Fri | 190 | -$375 | +$536 | 12.5 | normal Fridays -$748 / -$78; holiday Fridays +$373 / +$614 |
+| Sat | 42 | +$189 | +$461 | 26.9 | |
+| Sun | 154 | +$591 | +$1,513 | 23.2 | |
+| Not Friday | 1,224 | +$4,587 | +$11,486 | 23.3 | |
+| 4:55-5:00 pm | 25 | -$389 | -$305 | -15.2 | |
+| 5:00:00-5:01:00 | 20 | +$179 | +$274 | 36.2 | |
+| 5:00-5:05 | 116 | +$693 | +$1,342 | 29.2 | |
+| 5:05-5:30 | 195 | +$325 | +$1,429 | 19.2 | |
+| 5:30-5:50 | 752 | +$3,166 | +$7,309 | 23.7 | |
+| 5:50-6:00 | 134 | +$443 | +$1,169 | 23.1 | |
+| 6:00:00-6:01:00 | 68 | -$229 | +$198 | 14.2 | |
+| 6:00-6:05 | 192 | -$26 | +$1,077 | 17.1 | |
+| DST (EDT) | 931 | +$1,900 | +$6,868 | 21.0 | |
+| Standard time (EST) | 483 | +$2,312 | +$5,153 | 23.3 | |
+| Before CME 24/7 | 907 | +$3,374 | +$8,360 | 22.2 | alts 48.2 bp, majors 14.8 bp |
+| After CME 24/7 | 507 | +$838 | +$3,662 | 21.2 | alts 30.9 bp, majors 12.7 bp |
+| Perp-only | 1,213 | +$6,761 | +$13,249 | 26.0 | |
+| Spot-confirmed | 201 | -$2,550 | -$1,227 | 0.6 | |
+
+=====================================================================================================================
+FILL REALISM (core check)
+=====================================================================================================================
+Independent fetch on Actions (rt_job.py: 5 shards plus an audit fetch):
+- **Perp prints:** every perp print 4:50 pm ET to at least 7:12 pm ET (extended to the first traded minute after
+  7:07 pm), every day for 20 coins. 4,179,633 prints.
+- **Spot prints:** around my own candidate superset, which uses k = 5 rather than 6, so it is looser than the
+  builder's. 7,729,216 prints.
+- 20,979 requests in total.
+- **Completeness:** print contracts / candle contracts 1.0002, with 0 lost seconds.
+- My statistics (bbar, sigma) are written independently and equal the builder's exactly on all rows (XLM, ETH:
+  max abs diff 0).
+
+Independent re-simulation (rt_lib.sim, numba, own slots and costs):
+- All 1,414 frozen trades reproduce. L, TP, contracts, take-profit contracts, gross and close time are identical to the
+  nanosecond.
+- Net $4,212 and gross $19,831 are identical. The theta 0.25 variant reproduces exactly too (1,252 trades, $963).
+
+Print-level audit sample: 75 trades (25 random DEV, 25 random HOLD, the 15 largest and the 10 smallest by net P&L).
+- Re-fetched windows were fill - 10 min to close + 2 min; reports/hunt/h1pb/redteam/audit_*.
+- 73/75 trigger prints were located in the audit windows. The other 2 are first prints after a halt or a quiet spell
+  (HBAR Friday 18:02:54 after the weekly reopen; LINK 2026-04-03), and my full-evening re-simulation reproduces them.
+- **Rest condition:** the previous print is >= L in 73/73. The trigger is >= 1 tick through.
+- **Latency:** the spot reference is >= 1.01 s old (median 1.6 s).
+- **Level:** L recomputed from scratch equals the builder's L to 0 ticks in 73/73.
+- **Size:** n <= floor(0.5 x contracts beyond L) and <= the $10K target in 73/73. Coin conversion is correct, including
+  PEPE quoted per 1,000: contract value $313-393, fee 5.1-6.4 bp/side.
+- **Take-profit:** fills only on runs strictly through TP that start from a print at or inside TP after fill + 1 s.
+  Contracts, gross and close time match in 73/73.
+- **Time exits:** the first print >= deadline + 2 s, with 1.5x the median half-spread on the exited notional. Matched,
+  and the cost model reproduces to 1.5e-8 USD.
+- **Fair Value Limit:** L >= 0.95 x spot in 73/73. L sits 11-335 bp under spot, median 40 bp.
+
+Who traded (all 1,414 trades):
+- **Through-volume:** fills whose through-prints are all maker-BUY 72.3%; contract-weighted maker-BUY share 66.6%;
+  trigger print maker-BUY 91.7%.
+- **Wick size:** single-print wicks 15.6%; through-volume <= 3 contracts 10.0%. Median through-volume 33 contracts in
+  4 prints; 36% of wicks are a single-timestamp sweep. These are not single tiny trades.
+- **Net by type:**
+  - All-maker-BUY fills 5.6 bp at 2x; mixed fills 2.9 bp.
+  - Single-print fills 13.0 bp; tiny ones 23.5 bp, but at small size.
+- **Perp-only:** 80-83% of random fills are perp-only (spot within +-60 s never reached the spot-equivalent level), and
+  93% of the 15 largest. Losers include the Oct 10 2025 crash and the 2026-02-25 17:32-17:39 multi-coin event, where an
+  ADA print run stayed below L for 63 minutes.
+
+=====================================================================================================================
+HOLD-OUT DISCIPLINE
+=====================================================================================================================
+- **Timeline:**
+  - All 21 h1pb ledger rows were logged 08:37:13-08:37:17Z (trials.csv rows 164-184).
+  - Trials commit 369d3eb at 08:37:31Z; freeze commit 649038b at 08:37:34Z (frozen.json).
+  - The HOLD runs (42356343678, 42356346501, 42356349526) were created at 08:38:31Z on head 03cd8a4, which contains the
+    freeze. They ran `hold ... --modes sync --ks 6 --sides long --cand_k 6 --window 1015,1085`. final.py checks that
+    frozen.json is on origin.
+  - Every earlier run was a DEV stage (asserts d1 <= HOLD0) or a probe on DEV hours. gates.json and daily.parquet were
+    written once (49c1c77).
+  - The post-freeze code change (03cd8a4) only restricts the HOLD fetch. kernel.py, levels.py and book.py are unchanged
+    after the freeze.
+- **Selection:** onlymaint has the highest DEV alpha t (2.885, 910 trades >= 40) among the 21 trials. Every other trial
+  is <= -0.81. This follows the rule.
+- The window split trials were in the SPEC as idea #6.
+- **v2 fix and splice:** both checked (m3, m4). Neither leaked HOLD information nor changed the selection.
+- **Caveat:** the window's origin, as in M5.
+
+=====================================================================================================================
+LOOK-AHEAD
+=====================================================================================================================
+None found.
+- **Statistics:**
+  - bbar is the trailing 24 h median of both-traded minutes up to the minute before the row.
+  - e uses the previous both-traded minute's median.
+  - sigma is the trailing 3-day std, with floors 20 and 100.
+  - The row is the minute of (print time - 1 s). These are known at decision time.
+  - My independent implementation equals the builder's exactly.
+- **Spot reference:** the last spot print at or before print time - 1 s. Verified: minimum age 1.01 s.
+- **Time-of-day window:** applied to the ET clock of the fill.
+- **$150 contract rule:** applied at the level price at the print.
+- **Universe:** common.PERP, joined from each listing. No delisted perps found; BNB and PAXG are missing (m5).
+
+=====================================================================================================================
+COSTS (pre-registered model, re-implemented from the pre-registration text)
+=====================================================================================================================
+- **Every leg pays $0.20 x mult per contract.** That covers entries (maker), take-profits (maker) and time exits
+  (taker).
+- **Time exits also pay** 1.5 x the measured median half-spread (cfm_book_summary.csv) on the exited notional, x mult.
+- **Funding** is 1 bp per 8 h on contract-hours at the entry price, x mult.
+- **Gates use mult = 2** on every term: fee, spread and funding.
+- **Result:** my cost model equals the builder's per trade to 1.5e-8 USD and rebuilds all four daily series to 5e-13.
+- **Per-contract fee in bp** at the contract value at trade time is in the break-even section.
+- **Real funding** is hourly and premium-based (CFTC certification). It is immaterial here at a median hold of 2.2 min
+  (total $33 at 2x).
+
+=====================================================================================================================
+CAPITAL
+=====================================================================================================================
+- Maximum 6 open positions. Maximum gross notional $58,348 against a cap of $90,000 (3 x $30K). No two positions on
+  the same coin overlap. No trade exceeds $10K notional or its contract target.
+- **Overnight margin:** every fill is after 4 pm ET, so the overnight rates apply (Nov-6 overnight long rates 21-54%).
+  The maximum concurrent margin is $21,815 against $30K, so it is fundable.
+- **Booking:** P&L is booked on the UTC day of the final close. daily.parquet reproduces to 5e-13. Holding time:
+  median 2.2 min, p90 46 min, max 86 min (Friday halt).
+
+=====================================================================================================================
+SENSITIVITIES (descriptive; my re-simulation; the a rule re-applied)
+=====================================================================================================================
+Each row shows trades, then 2x net and sleeve Sharpe ($30K), full t, HOLD t, gains, then the 1x full t and HOLD t.
+
+| Variant | Trades | 2x net | 2x sleeve Sharpe | 2x full t | 2x HOLD t | 2x gain full / HOLD | 1x full t | 1x HOLD t |
+|---|---|---|---|---|---|---|---|---|
+| Base | 1,414 | $4,212 | 1.33 | 2.07 | -0.16 | +0.43 / -0.17 | 5.59 | 2.57 |
+| Latency +1 s | 1,437 | $3,009 | 0.69 | 1.98 | -0.43 | +0.34 / -0.26 | 5.14 | 2.02 |
+| Latency +5 s | 1,539 | $804 | -0.28 | 0.63 | -0.83 | +0.05 / -0.49 | 4.22 | 1.91 |
+| theta 0.25 | 1,252 | $963 | -0.30 | 0.87 | -1.41 | +0.08 / -0.42 | 4.30 | 1.24 |
+| Maker-BUY-only size | 1,347 | $2,570 | 0.60 | 1.68 | -0.10 | +0.24 / -0.07 | 5.03 | 2.35 |
+| 3x costs | 1,414 | -$3,598 | -2.33 | -1.56 | -2.60 | -0.41 / -1.20 | | |
+| Drop top-3 days | | $3,222 | 0.89 | 1.65 | -0.59 | +0.29 / -0.36 | 5.69 | 2.31 |
+| Drop best coin (XLM) | 1,358 | $2,755 | 0.65 | 1.81 | -0.72 | +0.28 / -0.28 | 5.04 | 2.05 |
+| Fridays excluded | 1,224 | $4,587 | 1.94 | 1.34 | -0.60 | +0.24 / -0.37 | 4.65 | 2.02 |
+| 5:00-5:05 pm excluded | 1,319 | $3,513 | 1.00 | 1.70 | -0.37 | +0.32 / -0.28 | 5.08 | 2.25 |
+| 5:30-5:45 pm excluded | 833 | $2,076 | 0.40 | 2.19 | 0.37 | +0.23 / +0.11 | 4.93 | 2.29 |
+| Alts only | 566 | $5,904 | 3.48 | 2.59 | 1.02 | +0.47 / +0.48 | 4.01 | 2.44 |
+| Majors only | 868 | -$1,594 | -2.08 | -1.21 | -3.63 | | 2.37 | -0.75 |
+| ETH excluded | 1,197 | $6,614 | 2.56 | 3.27 | 0.94 | +0.75 / +0.44 | 5.45 | 2.78 |
+| 2025-10-10 excluded | 1,372 | $5,290 | 2.31 | 1.70 | -0.16 | | 5.22 | 2.57 |
+
+- Notes on the rows:
+  - Drop top-3 days removes 2026-08-25, 2026-02-04 and 2026-02-01 ($990).
+  - Fridays excluded is lower partly because 2025-10-10 goes with them.
+  - Alts only, ETH excluded and the Oct-10 exclusion are post-hoc. They are informative, not candidates.
+  - Majors only: 1x sleeve Sharpe 1.61.
+- **Decay:** monthly alt net at 2x:
+  - Jan-Jun 2026: +1,140, +528, +685, +720, +771, +998.
+  - Jul-Oct: +16, +280, +218, +261.
+  - Majors are negative in 8 of 11 months since Dec 2025.
+  - Regime split as in M1.
+
+=====================================================================================================================
+OVERLAP WITH THE INCUMBENT
+=====================================================================================================================
+- **Activity:** sleeve active on 324 of 475 days, incumbent on 199, both on 143. Per crypto-edge-findings.md the
+  incumbent bot places no bids 4:55-6:05 pm ET, so the sleeve trades when the incumbent is idle.
+- **Correlation (2x, $50K vs incumbent $50K):**
+  - Full -0.344, DEV -0.432, HOLD +0.058.
+  - On days both were active, -0.559.
+  - Excluding 2025-10-10, -0.049.
+- **Incumbent's 10 worst days** (sum -$11,747 at $100K): the sleeve made +$278 at 2x (+$503 at 1x), active on 7 of them.
+  Almost all of it is 2026-01-19 (+$266).
+- **Incumbent's 10 best days** (sum +$26,775): the sleeve lost -$1,056 at 2x (-$815 at 1x). That is almost all
+  2025-10-10 (-$1,079).
+
+=====================================================================================================================
+SOURCES AND FILES
+=====================================================================================================================
+Web sources:
+- CDE market hours: https://docs.cdp.coinbase.com/derivatives/introduction/market-hours
+- CDE fee schedule, CFTC #2026-46: https://www.cftc.gov/filings/orgrules/rules08032613651.pdf
+- BIP certification (hours, price limits, Fair Value Limit): https://www.cftc.gov/sites/default/files/filings/ptc/25/06/ptc06262524818.pdf
+- NFA assessment fee FAQ: https://www.nfa.futures.org/faqs/members/nfa-assessment-fees.html
+- IBKR Coinbase Derivatives pass-through fees: https://www.interactivebrokers.com.sg/en/accounts/fees/Coinbase.php
+- Kraken vs Coinbase futures fees: https://www.kraken.com/cn/learn/kraken-vs-coinbase-futures
+- CME 24/7 from May 29 2026: https://www.crowdfundinsider.com/2026/02/263656-cme-group-to-roll-out-24-7-cryptocurrency-futures-and-options-trading-starting-may-29/
+- CME 24/7 page (daily break now 4:00-4:02 pm CT): https://cmegroup.com/markets/cryptocurrencies/24-7-crypto-trading.html
+- Coinbase 24/7 page (Friday 5-6 pm ET weekly maintenance): https://www.coinbase.com/learn/futures/24-7-trading
+
+On branch redteam/h1pb:
+- Jobs: scripts/redteam_h1pb/{rt_lib.py, rt_job.py, rt_audit_fetch.py, rt_tardis.py, rt_docs.py}.
+- Outputs: reports/hunt/h1pb/redteam/ (trig_*, vmin_*, fetchlog_*, audit_*, tardis_*, doc_*).
+- Local analysis (copied to scripts/redteam_h1pb/local/): rt_gates.py, rt_costs.py, rt_book.py, rt_breakeven.py,
+  a*.py, b*.py.
+- Tables: reports/hunt/h1pb/redteam/{sensitivities.csv, splits.csv, audit_sample_results.csv}.
+- No gates.log_trial calls were made.
