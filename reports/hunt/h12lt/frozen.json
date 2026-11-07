@@ -1,0 +1,47 @@
+{
+ "idea": "h12lt",
+ "variant": "T3_ai70",
+ "params": {
+  "pre": "ai70",
+  "note": "signals with prediction >= the quarter's 70th pct of training predictions",
+  "kappa": 0.002,
+  "weights": null
+ },
+ "rules": {
+  "theta": 0.5,
+  "ladder": "4/6/8 sigma thirds",
+  "gross_cap": 1.0,
+  "bound": "instant",
+  "venue": "Coinbase spot only",
+  "costs": "maker 6 / taker 12.5 / half-spread 2 bp, x2 for gates",
+  "capital": [
+   30000,
+   50000
+  ]
+ },
+ "selection": "highest DEV alpha t (sleeve $30K at 2x on the incumbent at $70K) among variants with >= 100 DEV trades; ties to the simpler variant",
+ "code_commit": "235025ee7a71c34c0a61b1216eb72320ba24dfd3",
+ "dev": {
+  "variant": "T3_ai70",
+  "note": "signals with prediction >= the quarter's 70th pct of training predictions",
+  "trades": 1701,
+  "coins": 36,
+  "filled_usd": 1648003.4332869053,
+  "pnl_usd": 7858.954999855102,
+  "net_bp": 47.68773438888167,
+  "sleeve_sharpe": 1.8793336081861225,
+  "t_alpha_70k": 1.7401595530652654,
+  "t_alpha_100k": 1.788413460541906,
+  "beta": 0.2383851877305443,
+  "corr": 0.32663908546278403,
+  "dev_book_sharpe": 2.6194746761607988,
+  "dev_inc_sharpe": 2.4438730129790485,
+  "active_days": 362,
+  "ret_yr": 0.18530481750304337,
+  "sleeve_sharpe_1x": 2.612607540270468,
+  "maker_bp": 11.999999999999998,
+  "taker_bp": 25.0
+ },
+ "trials_logged": 5,
+ "frozen_utc": "2026-11-07T08:44Z"
+}
