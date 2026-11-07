@@ -25,6 +25,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # the branch tip, not the trigger commit: a run queued behind the previous one must start from the state that
+          # run committed (on Nov 7 a run started from the stale trigger commit and its log could not be pushed)
+          ref: main
           sparse-checkout: |
             bot
             edge
@@ -53,4 +56,5 @@ jobs:
           git add paper_spot paper_spot_w2 2>/dev/null || git add paper_spot
           git diff --cached --quiet && exit 0
           git commit -m "Spot paper log $(date -u +%Y-%m-%dT%H:%MZ)"
-          for i in 1 2 3 4 5; do git pull --rebase origin main && git push && break; sleep $((i*5)); done
+          # -X theirs: on a conflict in the paper logs this run's (newer) version wins instead of the push failing
+          for i in 1 2 3 4 5; do git pull --rebase -X theirs origin main && git push && break; git rebase --abort 2>/dev/null; sleep $((i*5)); done
