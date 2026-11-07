@@ -7,7 +7,11 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   - 9 candidates were pre-registered: rung weights, a 10σ rung, a BTC-synchronised bid, 31 coins, and venue.
   - Trade-by-trade Coinbase data (4.3M trades) shows a 1-second reaction catches 87% of the deeper fills that a
     once-a-minute bot misses. That adds about 2 points a year at $250K, with Sharpe about flat. It is now in the bot.
-  - Coinbase stays the venue. Self-score 12.5/20; the missing points need live data (scorecard in the section).
+  - The simulator's fill capacity matches the trade data (ratio 1.01).
+  - Corrected: the research numbers also counted Coinbase perp volume, which the spot bot can't use.
+  - Spot-only expectation at $250K, live: 29.9% / Sharpe 2.28, 20.1% / 2.82 and 14.0% / 2.28 (selection / check /
+    2022–23).
+  - Coinbase stays the venue. Self-score 13.75/20; the missing points need live data (scorecard in the section).
 - **Live (real money):** BTC+ETH trend filter (below). Unchanged.
 - **Paper trading since Nov 6, 2026:** "wick catcher" — AI-filtered resting dip bids on Coinbase US perps (Execution round
   below). Out-of-sample Sharpe 2.95 (t = 4.0) on spot-priced simulation, Jan 2025 – Nov 2026, 2.25 with high costs.
@@ -70,7 +74,7 @@ few, mechanism-led candidates. Code: scripts/wick_v4/. Results: reports/wick_v4/
 **Adopted: 1-second fill detection.**
 - When the 4σ bid fills, the price usually reaches the deeper rung 9 s later (median). The share of those same-minute
   deeper fills still caught: 87% reacting in 1 s, 74% in 5 s, 0% once a minute.
-- At $250K, θ 0.5, return / Sharpe:
+- At $250K, θ 0.5, return / Sharpe, with the research's capacity (it includes perp volume; spot-only numbers below):
 
 | Detection | Selection | Check | 2022–23 |
 |---|---|---|---|
@@ -89,22 +93,44 @@ few, mechanism-led candidates. Code: scripts/wick_v4/. Results: reports/wick_v4/
 **Post-hoc lead (forward test only):** fills when BTC is flat (coin-specific selling) are the weakest, in all three
 eras (26 / 5 / 22 bp gross vs ~50).
 
-**Scorecard (rubric fixed in the pre-registration), 12.5 / 20:**
+**Fill capacity checked against trades (addendum C1, pre-registered): validated.**
+- The simulator caps each fill at θ × the volume it estimates traded below our bid. The estimate spreads each candle's
+  volume evenly over the minute's range.
+- On 1,567 parent fills, the trades give a ratio of 1.01 [0.98, 1.04] to that estimate: 1.01 in selection, 1.02 in
+  check. The deeper rungs give 0.99 and 0.96.
+- The fill dollars the trades support are 0.95–0.96 of the simulator's at $250K, $500K and $1M. Counting only taker
+  sells gives 0.89–0.93.
+- θ itself, the share of that volume we would actually get, still needs live fills.
+
+**Correction: spot-only numbers.**
+- The research also counted the volume of Coinbase's US perp-style futures (mid-2025 on) as fill capacity. The spot
+  bot can't fill there.
+- Spot only, the check period loses 1.2–1.4 points a year. Selection and 2022–23 are unchanged.
+- Spot-only $250K: paper 27.7% / 2.38, 18.4% / 2.87, 12.2% / 2.02; live (1-second) 29.9% / 2.28, 20.1% / 2.82,
+  14.0% / 2.28. At θ 0.25, live: 2.15 / 2.54 / 2.02.
+- $1M, live: 2.41 / 1.55 / 1.21 (reports/wick_v4/spot_only.csv).
+
+**Live broker against Coinbase's sandbox:** 17 of 17 checks pass (bot/spot/sandbox_test.py).
+- The sandbox gives static responses in the production format.
+- Checks cover accounts, good-til-date and GTC post-only orders, get order, cancel, list orders, list fills, preview and
+  market sell, plus simulated insufficient funds and a failed cancel.
+
+**Scorecard (rubric fixed in the pre-registration), 13.75 / 20:**
 
 | Criterion | Max | Score | Why |
 |---|---|---|---|
-| Out-of-sample edge | 4 | 4 | With 1-second detection, Sharpe ≥ 2 in all three eras at θ 0.5 (2.27 / 3.06 / 2.28) and θ 0.25 (2.15 / 2.82 / 2.02) |
-| Robustness / no overfitting | 4 | 3 | This round: pre-registered, nothing adopted on noise, the one change is measured not fitted. But R2-08 was the best of 130 (deflated Sharpe 0.77 < 0.95) |
-| Realism of the simulation | 4 | 2.5 | Fills and timing now checked against trade-by-trade data. The capture share and queue position need live fills |
-| Capacity | 2 | 0.5 | Sharpe at $1M 2.43 / 1.76 / 1.21: market-limited, and nothing tested raised it |
-| Implementation and risk | 3 | 2.5 | Parity, fault and server-death tests pass. Not yet run against the real Coinbase API |
+| Out-of-sample edge | 4 | 4 | Spot-only, 1-second detection: Sharpe ≥ 2 in all three eras at θ 0.5 (2.28 / 2.82 / 2.28) and θ 0.25 (2.15 / 2.54 / 2.02) |
+| Robustness / no overfitting | 4 | 3 | This round: pre-registered, nothing adopted on noise; the one change is measured, not fitted. But R2-08 was the best of 130 (deflated Sharpe 0.77 < 0.95) |
+| Realism of the simulation | 4 | 3.5 | Checked against trade-by-trade data: trade-through on 98.4% of fills, timing, fill capacity (ratio 1.01), spot-only venue. Fees are the published schedule. Left: θ, the share of the volume we'd really get |
+| Capacity | 2 | 0.5 | Sharpe at $1M 2.41 / 1.55 / 1.21: market-limited, and nothing tested raised it |
+| Implementation and risk | 3 | 2.75 | Parity, fault, server-death and Coinbase-sandbox tests pass. Not yet run against the real Coinbase API |
 | Live validation | 3 | 0 | Paper started Nov 6; no live fills yet |
 
-- The 7.5 missing points can't come from more backtesting, which would only overfit. They come from:
+- The 6.25 missing points can't come from more backtesting, which would only overfit. They come from:
   - live validation (3): months of paper and live consistent with the backtest;
-  - realism (1.5): the measured capture share;
   - robustness (1): forward out-of-sample data, which the deflated Sharpe needs;
-  - implementation (0.5): the pilot running cleanly on the real API;
+  - realism (0.5): θ measured on live fills;
+  - implementation (0.25): the pilot running cleanly on the real API;
   - capacity (1.5): more market volume, or judging capacity at the efficient size ($250–500K) instead of $1M.
 
 ## Wick catcher at $1M (Nov 6): best at $250–500K; about 10–20% a year at $1M
@@ -220,7 +246,7 @@ Run it at $250–500K and put the rest in C3.
   - At $500K: 23.4% / 2.46 and 14.5% / 2.67.
   - At θ = 0.25, $250K: 24.2% and 18.0%.
 - **Expected at $250K:**
-  - $49–69K a year before any haircut.
+  - $35–75K a year before any haircut (spot-only, live with 1-second detection; wick v4 section).
   - About 3 rung fills a day, and about 40 bp net per dollar bought.
   - One rung's net has a standard deviation of about 180 bp.
   - Marked-to-market drawdown −17.7% on Oct 10 2025; that day's realized P&L was −2.8%.

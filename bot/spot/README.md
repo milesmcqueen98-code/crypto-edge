@@ -11,22 +11,26 @@ thirds across the three rungs. This is the rule chosen in the $1M round (`report
 
 Files: `engine.py` (minute loop, paper broker, live broker), `run.py` (commands), `config.json` (settings),
 `replay_test.py` (parity test against an independent implementation), `live_sim_test.py` (live code paths against a
-fake exchange), `deploy/` (server setup, systemd unit, watchdog), `.github/workflows/paper-spot.yml` (paper run on
+fake exchange), `sandbox_test.py` (live broker against Coinbase's sandbox), `deploy/` (server setup, systemd unit, watchdog), `.github/workflows/paper-spot.yml` (paper run on
 GitHub Actions, logs to `paper_spot/`).
 
 ## What to expect
 
 Research simulator, 17 coins, θ = 0.5 (we get half the volume that trades through our price), VIP-1 fees (6 bp maker,
-12.5 bp taker). The bot misses deeper fills inside the parent's own minute, so these are the "bot-like" numbers:
+12.5 bp taker), Coinbase spot capacity only (wick v4: `reports/wick_v4/spot_only.csv`). Return a year / Sharpe:
 
-| Capital | Selection, Jan 2025 – Mar 2026 | Check, Apr – Nov 2026 | Dollars a year |
+| Capital, bot | Selection, Jan 2025 – Mar 2026 | Check, Apr – Nov 2026 | Fresh era, 2022–23 |
 |---|---|---|---|
-| $250K | 27.6%, Sharpe 2.37, marked drawdown −17.7% | 19.6%, Sharpe 3.10, −5.5% | $49–69K |
-| $500K | 23.4%, Sharpe 2.46, −16.6% | 14.5%, Sharpe 2.67, −5.4% | $72–117K |
-| $1M | 19.2%, Sharpe 2.45, −13.2% | 8.5%, Sharpe 1.73, −4.1% | $85–192K |
+| $250K, paper (steps once a minute) | 27.7% / 2.38 | 18.4% / 2.87 | 12.2% / 2.02 |
+| **$250K, live (1-second fill detection)** | **29.9% / 2.28** | **20.1% / 2.82** | **14.0% / 2.28** |
+| $500K, paper | 23.5% / 2.46 | 13.6% / 2.45 | 8.6% / 1.59 |
+| $1M, live | 20.9% / 2.41 | 9.2% / 1.55 | 6.6% / 1.21 |
 
-- At θ = 0.25, the $250K book makes 24.2% (selection) and 18.0% (check).
-- The −17.7% drawdown is intraday, marked to market, on the Oct 10, 2025 crash. Realized P&L that day was −2.8%.
+- **$250K live is about $35–75K a year** before the haircut below.
+- The simulator's fill sizes were checked against Coinbase's trade-by-trade data (wick v4, addendum C1). The volume it
+  assumes trades below our bids matches the trades (ratio 1.01), and the fill dollars agree to within 4–5%.
+- At θ = 0.25, $250K live: Sharpe 2.15 (selection), 2.54 (check), 2.02 (2022–23).
+- Marked drawdown about −18%, intraday, on the Oct 10, 2025 crash. Realized P&L that day was −2.8%.
 - About 3 rung fills a day at $250K.
 - Net per dollar bought is about 40 bp. One rung's result has a standard deviation of about 180 bp, so judge results over
   dozens of rungs, not days.
@@ -42,14 +46,14 @@ Research simulator, 17 coins, θ = 0.5 (we get half the volume that trades throu
 - When the 4σ bid fills, the price usually reaches the deeper rung 9 seconds later.
 - The live bot reads the account's fill list every second, so it catches about 87% of those same-minute deeper fills.
   A once-a-minute bot catches none.
-- At $250K, θ 0.5, live with 1-second detection: 29.8% / Sharpe 2.27 (selection), 21.5% / 3.06 (check), 14.0% / 2.28
-  (2022–23). That's about 2 points a year more than the table above.
+- That is worth about 2 points a year (the paper and live rows above).
 - The paper run steps once a minute, so it understates live by about that much.
 
 Known differences from the research simulation:
-- The deeper bids go out once the 4σ fill is seen, so deeper fills inside the parent's own minute are mostly missed.
-  This costs 3–4 points a year at $250K and is already in the table.
-- Fill capacity counts Coinbase spot only. That was 97% of the research's capacity.
+- Paper misses deeper fills inside the parent's own minute. Live, with 1-second detection, misses about 13% of them.
+  Both are already in the table.
+- The table counts Coinbase spot only. The research also counted the volume of Coinbase's US perp-style futures
+  (mid-2025 on), which this bot can't fill on. Removing it costs the check period about 1.2–1.4 points a year.
 - Cash held by resting bids counts against the cash cap. Coinbase holds the cash for every resting buy. The research
   ignored this, and the paper run measures how often it binds (`cash_short` events).
 
@@ -213,5 +217,15 @@ Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
   - Parity: rung for rung identical on Oct 10–12 2025 (156 of 156) and Jun 1–3 2026 (33 of 33).
   - Live paths: books equal the fake exchange's to $0.0002 after 540 crash minutes with injected faults, with no
     orphaned orders and no leftover coins.
-- Neither test reaches the real Coinbase API. The preflight and the $10K pilot are where real API surprises would
-  show up.
+- **Coinbase sandbox:** `python bot/spot/sandbox_test.py` (GitHub workflow `sandbox-test`) sends every live-broker
+  call through the official SDK to Coinbase's Advanced Trade sandbox. The sandbox answers with static responses in the
+  production format.
+  - Calls covered: accounts, good-til-date and GTC post-only orders, get order, batch cancel, list orders, list fills,
+    preview and market sell.
+  - It also simulates insufficient funds and a failed cancel.
+  - Nov 7: 17 of 17 checks pass.
+- The sandbox's responses are static, so it can't show:
+  - real order validation (post-only, the good-til-date minimum);
+  - key permissions;
+  - rate limits.
+  The preflight and the $10K pilot are where those would show up.

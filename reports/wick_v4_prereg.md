@@ -234,3 +234,8 @@ gave the same answers.
 - At θ 0.25: 2.15 / 2.54 / 2.02. At $1M: 2.41 / 1.55 / 1.21.
 - Source: reports/wick_v4/spot_only.csv. The 1-second values are interpolated between the minute and instant bots,
   corrected by the interpolation's error where the exact 1-second result exists.
+
+## Final self-score (rubric above): 13.75 / 20
+- Scores: OOS edge 4, robustness 3, realism 3.5, capacity 0.5, implementation 2.75, live 0.
+- The reasons are in reports/crypto-edge-findings.md (Wick v4 section).
+- The missing points need forward and live data, not more backtests.
