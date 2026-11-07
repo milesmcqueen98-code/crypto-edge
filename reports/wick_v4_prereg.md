@@ -99,6 +99,9 @@ U1: adopt only if better at $500K in both selection and check (Sharpe and dollar
    pre_wide_nobs.pkl predates the simulator review.
 3. Added after the results, as a forward test only (not an adoption): W2 runs as a second paper book (paper_spot_w2).
    It failed the rule below but looked better post hoc, so forward data will decide it.
+   - A later replay of the Oct 10, 2025 crash hours used unlimited fills.
+   - W2's marked drawdown reached −25.1% and tripped the 25% drawdown stop; the incumbent didn't trip it.
+   - The rung tests used daily realized P&L, so they didn't show this. It counts against W2.
 
 ## Results (2026-11-07 ~00:30 UTC)
 **Rung weights: none adopted.** $250K, θ 0.5, bot-like; Sharpe in selection / check / 2022–23 (reports/wick_v4/rungs.csv):

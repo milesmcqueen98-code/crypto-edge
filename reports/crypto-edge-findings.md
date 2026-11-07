@@ -66,6 +66,11 @@ few, mechanism-led candidates. Code: scripts/wick_v4/. Results: reports/wick_v4/
 - **Rung weights** (W1–W4: deeper-weighted, or a 10σ rung). Up to +0.25 Sharpe in selection, but every paired t is
   ≤ 1.2. The selection pick (W4) matched the incumbent's 2022–23 return exactly. W2 (¼, ¼, ½) looked better post hoc,
   so it now runs as a second paper book (paper_spot_w2) and forward data will decide it.
+  - Caution on W2: its 8σ rung is twice the size, so its crash drawdowns are deeper. The research Sharpe uses daily
+    realized P&L, which doesn't show this.
+  - In a replay of the Oct 10, 2025 crash with unlimited fills, W2's marked drawdown hit −25.1% at 21:20 and tripped
+    the drawdown stop. The incumbent didn't trip it.
+  - It ended the window +$0.9K against the incumbent's +$6.9K.
 - **BTC-synchronised bid** (re-price every 5 s with BTC's live price). Fill outcomes don't depend on BTC's same-minute
   move: correlation +0.06 / +0.02 / −0.01. Lowering the bid in BTC-led cascades would skip good fills.
 - **31 coins.** Worse than 17 in the check period at every size, including $500K (2.19 vs 2.67).
