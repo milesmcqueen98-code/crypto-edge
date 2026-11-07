@@ -249,6 +249,8 @@ def main():
     ap.add_argument("--delta", action="store_true")      # only rows in reports/hunt/h1pb/delta_rows.parquet
     ap.add_argument("--sub", default="")              # "j/m": only chunk j, j+m, ... of this shard (split a slow shard)
     ap.add_argument("--ks", default="3,4,6")
+    ap.add_argument("--cand_k", type=float, default=3.0)   # candidate superset depth (hold stage: the frozen k)
+    ap.add_argument("--window", default="")              # "lo,hi" ET minutes: candidates only there (frozen tod)
     ap.add_argument("--sides", default="long,short")
     args = ap.parse_args()
     modes = tuple(args.modes.split(","))
@@ -264,7 +266,9 @@ def main():
         D = pd.read_parquet(os.path.join(ROOT, "reports", "hunt", "h1pb", "delta_rows.parquet"))
         deltas = {c: np.sort(g.row.to_numpy(np.int64)) for c, g in D.groupby("coin")}
         coins = [c for c in coins if c in deltas]
-    chs, plans, load = PL.make(coins, d0, d1, args.n_shards, modes, verbose=(args.shard == 0), deltas=deltas)
+    kw = dict(cand_k=args.cand_k, cand_sides=tuple(args.sides.split(",")),
+              window=tuple(int(x) for x in args.window.split(",")) if args.window else None)
+    chs, plans, load = PL.make(coins, d0, d1, args.n_shards, modes, verbose=(args.shard == 0), deltas=deltas, **kw)
     mine = [c for c in chs if c["shard"] == args.shard]
     tag = ("delta" if args.delta else "") + str(args.shard)
     if args.sub:

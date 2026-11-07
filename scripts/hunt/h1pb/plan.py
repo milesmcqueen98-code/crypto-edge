@@ -36,15 +36,24 @@ def _segments(mask):
     return list(zip(np.nonzero(d == 1)[0], np.nonzero(d == -1)[0]))
 
 
-def coin_plan(coin, d0, d1, modes=("minute", "sync"), delta=None):
+def et_window_mask(idx, lo_min, hi_min):
+    """Minutes whose America/New_York clock time (minutes after midnight) is in [lo_min, hi_min)."""
+    t = idx.tz_localize("UTC").tz_convert("America/New_York")
+    m = t.hour * 60 + t.minute
+    return np.asarray((m >= lo_min) & (m < hi_min))
+
+
+def coin_plan(coin, d0, d1, modes=("minute", "sync"), delta=None, cand_k=3.0, cand_sides=("long", "short"), window=None):
     """delta: optional sorted array of rows; then only candle minutes t with row t or t-1 in delta are candidates."""
     st = LV.stats(coin, end=d1)
     if st is None:
         return None
     idx = st["idx"]
     n = len(idx)
-    lo, hi = LV.candidates(st, 3.0, sync=("sync" in modes))
-    cand = (lo | hi) & (idx >= d0) & (idx < d1)
+    lo, hi = LV.candidates(st, cand_k, sync=("sync" in modes))
+    cand = ((lo if "long" in cand_sides else False) | (hi if "short" in cand_sides else False)) & (idx >= d0) & (idx < d1)
+    if window is not None:                         # frozen time-of-day filter: fill minutes inside the ET window only
+        cand &= et_window_mask(idx, *window)
     dm = None
     if delta is not None:
         dm = np.zeros(n, bool)
@@ -121,12 +130,12 @@ def chunks(pl, target):
     return out
 
 
-def make(coins, d0, d1, n_shards, modes=("minute", "sync"), per_shard_chunks=4, verbose=False, deltas=None):
+def make(coins, d0, d1, n_shards, modes=("minute", "sync"), per_shard_chunks=4, verbose=False, deltas=None, **kw):
     """Deterministic plan: list of chunk dicts with a 'shard' field."""
     plans, all_chunks = {}, []
     rough = {}
     for c in coins:
-        pl = coin_plan(c, d0, d1, modes, None if deltas is None else deltas.get(c, np.zeros(0, np.int64)))
+        pl = coin_plan(c, d0, d1, modes, None if deltas is None else deltas.get(c, np.zeros(0, np.int64)), **kw)
         if pl is None or not len(pl["cand"]):
             continue
         rough[c] = float((pl["p_prints"][pl["perp_need"]].sum() + pl["s_prints"][pl["spot_need"]].sum()) / 1000)
