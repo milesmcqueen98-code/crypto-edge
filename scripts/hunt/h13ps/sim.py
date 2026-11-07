@@ -19,8 +19,10 @@ Engineering choices (not in the SPEC; fixed here before any trial was scored):
 - Mode I target and cash are fixed at the first bid (T_lo + 60 min); the target is reserved as cash from then until
   the exit (resting bids reserve cash). Mode II reserves its notional from entry to exit. Events are taken in time
   order; one that would breach the sleeve's capital is cut to the free cash (skipped if none).
-- If no print exists >= 2 s after an exit decision inside the fetched window (T_ft + 3 h), the exit is the last print
-  before the decision (flagged, counted). A Mode II entry after its exit decision is skipped.
+- If no print exists 2 s to 60 min after an exit decision inside the fetched window (T_ft + 3 h), the exit is the last
+  print before the decision (flagged, counted). A Mode II entry after its exit decision is skipped.
+- Events with T_ft - T_lo > 48 h are fetched in two windows (fetch_trades.py); for their Mode II decisions the
+  limit-only USD volume feature is unknown (NaN) because the gap was not fetched.
 - P&L is booked on the exit's UTC calendar day. Daily return = P&L / sleeve capital; 0 on idle days.
 """
 import glob
@@ -121,7 +123,7 @@ def _exit(M, leg_col):
     hs = np.array([M.at[i, f"{lg}_hs_bp"] for i, lg in zip(M.index, leg_col)], float)
     dec = np.array([M.at[i, f"{lg}_dec_ms"] for i, lg in zip(M.index, leg_col)], float)
     last = np.array([M.at[i, f"{lg}_last_px"] for i, lg in zip(M.index, leg_col)], float)
-    fb = ~np.isfinite(px) | ~np.isfinite(tm)
+    fb = ~np.isfinite(px) | ~np.isfinite(tm) | (tm - dec > 60 * MIN)    # no print within 60 min of the decision
     px = np.where(fb, last, px)
     tm = np.where(fb, dec + 2 * MS, tm)
     return px, tm, hs, fb
@@ -264,6 +266,8 @@ def features(M, mode, delta, btc, allE):
     f = pd.DataFrame(index=M.index)
     f["lo_dur_min_dec"] = (M[f"{nm}_dec_ms"] - M.lo_ms) / MIN
     f["log_lo_usd"] = np.log10(M[f"{nm}_lo_usd"].clip(lower=1.0))
+    if mode == 2:
+        f.loc[M.split.astype(bool).to_numpy(), "log_lo_usd"] = np.nan
     f["move_since_open"] = np.log(M[f"{nm}_last_px"] / M.first_px)
     d1 = dec.dt.floor("min") - pd.Timedelta(minutes=2)
     c1 = btc.reindex(d1, method="ffill").to_numpy()

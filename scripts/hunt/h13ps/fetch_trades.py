@@ -78,7 +78,7 @@ def lookups(ev, t, p, q, s, tick):
     buyer = s == "SELL"                       # maker SELL = an aggressive buyer lifted an offer
     lo, ft = ms(ev.T_lo), ms(ev.T_ft)
     out = dict(key=ev.key, n=len(t), first_ms=int(t[0]), first_px=float(p[0]), tick=tick,
-               n_before_lo=int((t < lo).sum()), last_ms=int(t[-1]))
+               n_before_lo=int((t < lo).sum()), last_ms=int(t[-1]), split=bool(ft - lo > CAP48))
     cs_usd = np.concatenate([[0.0], np.cumsum(usd)])
 
     def usd_between(a, b):

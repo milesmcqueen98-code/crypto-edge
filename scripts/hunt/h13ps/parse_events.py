@@ -12,7 +12,7 @@ kept only as a note. The time of a phase is the update's display time (display_a
 
 Per USD pair, the listing episode is anchored on the first auction / post-only / limit-only statement within 3 days
 of the pair's first trading day (h4nl's daily candles); T_lo = first limit-only statement of the episode, T_ft =
-first full-trading statement after T_lo (within 30 days). Universe (SPEC): USD pairs with both, T_lo in
+first full-trading statement after T_lo (within 400 days; some 2022-25 books stayed limit-only for months). Universe (SPEC): USD pairs with both, T_lo in
 2022-01-01 .. 2026-11-05; excluded: stablecoins, fiat-backed and wrapped/staked assets (h4nl's lists and name
 rules), relistings (base traded on Coinbase before 2022, ticker migrations, or the USD pair's first trade more than
 3 days before T_lo).
@@ -91,6 +91,7 @@ PHASES = [  # (phase, regex); a sentence may state several
 FUTURE = re.compile(r"\b(will(?!\s+now)|expect|expected|scheduled|anticipate|plan(ned)?|upcoming|later today|"
                     r"tomorrow|approximately|no earlier than|at the earliest|once|if|until|when)\b", re.I)
 PID = re.compile(r"\b([A-Z0-9]{1,15})-(USD|USDT|USDC|EUR|GBP|BTC|ETH|DAI)\b")
+PERP = re.compile(r"-PERP\b|International Exchange|Coinbase International", re.I)
 TICK = re.compile(r"\b([A-Z][A-Z0-9]{1,14})\b")
 
 
@@ -123,19 +124,27 @@ def statements(D, known_bases):
             if not ts:
                 continue
             t = pd.Timestamp(ts).tz_convert(None) if pd.Timestamp(ts).tzinfo else pd.Timestamp(ts)
+            prev = []
             for snt in sentences(u.get("body", "")):
+                if PERP.search(snt):                # Coinbase International perp markets, not the spot pair
+                    prev = []
+                    continue
+                named = sorted(set("-".join(m) for m in PID.findall(snt)))
                 ph = [p for p, rx in PHASES if rx.search(snt)]
                 if not ph:
+                    prev = named or prev
                     continue
                 fut = bool(FUTURE.search(snt))
-                pids = sorted(set("-".join(m) for m in PID.findall(snt)))
-                src = "pid"
+                pids, src = named, "pid"
                 if not pids:
                     tk = [x for x in TICK.findall(snt) if x in known_bases]
                     if tk:
                         pids, src = [f"{x}-USD" for x in sorted(set(tk))], "ticker"
-                    elif title_tickers:
-                        pids, src = [f"{x}-USD" for x in sorted(set(title_tickers))], "title"
+                    elif prev:                      # "Limit, market and stop orders are all now available."
+                        pids, src = prev, "prev"
+                    elif len(set(title_tickers)) == 1:
+                        pids, src = [f"{title_tickers[0]}-USD"], "title"
+                prev = named or prev
                 for p in ph:
                     for pid in pids:
                         rows.append(dict(code=rec["code"], incident=name, t=t, created=u.get("created_at"),
@@ -194,7 +203,7 @@ def episodes(S, P, U, names, adv):
         if lo.empty:
             continue
         T_lo = lo.t.iloc[0]
-        ftg = g[(g.phase == "fulltrading") & (g.t > T_lo) & (g.t <= T_lo + pd.Timedelta(days=30))]
+        ftg = g[(g.phase == "fulltrading") & (g.t > T_lo) & (g.t <= T_lo + pd.Timedelta(days=400))]
         T_ft = ftg.t.iloc[0] if len(ftg) else pd.NaT
         pre = g[(g.t <= T_lo) & (g.t >= T_lo - pd.Timedelta(days=3))]
         def first(ph):
@@ -209,7 +218,11 @@ def episodes(S, P, U, names, adv):
                  status_now=Pk.status.get(pid, ""), tick_now=float(Pk.quote_increment.get(pid, np.nan)),
                  code_lo=lo.code.iloc[0], code_ft=ftg.code.iloc[0] if len(ftg) else "",
                  src_lo=lo.src.iloc[0], src_ft=ftg.src.iloc[0] if len(ftg) else "",
-                 sent_lo=lo.sentence.iloc[0][:200], sent_ft=ftg.sentence.iloc[0][:200] if len(ftg) else "")
+                 sent_lo=lo.sentence.iloc[0][:200], sent_ft=ftg.sentence.iloc[0][:200] if len(ftg) else "",
+                 inc_ft=ftg.incident.iloc[0][:120] if len(ftg) else "",
+                 n_pids_ft_sentence=len(PID.findall(ftg.sentence.iloc[0])) if len(ftg) else 0,
+                 lo_again_before_ft=int(((g.phase == "limitonly") & (g.t > T_lo + pd.Timedelta(days=4)) &
+                                         ((g.t < T_ft) if pd.notna(T_ft) else True)).sum()))
         reason = rule_exclusion(base, name)
         h4 = Uk.loc[pid] if pid in Uk.index else None
         if not reason and h4 is not None and isinstance(h4.reason, str) and h4.reason:
