@@ -1,0 +1,32 @@
+name: ladder-fetch
+
+# Ladder v5 (reports/ladder_v5_prereg.md): Coinbase trade-by-trade prints around the 2022-23 parent fills, for the
+# "who sold to us" candidate. Six shards in parallel; raw trades are uploaded as artifacts and never committed.
+on:
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts/ladder_v5
+            reports/ladder_v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas requests pyarrow
+      - name: Fetch shard
+        run: python scripts/ladder_v5/fetch_trades_early.py ${{ matrix.shard }} 6
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trades-${{ matrix.shard }}
+          path: out/trades_${{ matrix.shard }}.parquet
+          retention-days: 14

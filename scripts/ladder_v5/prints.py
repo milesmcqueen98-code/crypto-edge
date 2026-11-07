@@ -13,7 +13,8 @@ Per parent (only derived numbers are written; raw prints stay in the artifacts):
   approach1_s, approach2_s  seconds from the first print within 1 (2) sigma above our bid to our fill
   mo_<L>s          last print L seconds after our fill vs our price, bp (L = 1, 2, 5, 10, 30, 60)
   min_after_bp, min_after_s  lowest print in the 2 minutes after our fill, and when
-Writes reports/ladder_v5/prints_parents.csv.  usage: python scripts/ladder_v5/prints.py <artifact dir>
+Writes reports/ladder_v5/prints_parents.csv (main era) or prints_parents_early.csv.
+usage: python scripts/ladder_v5/prints.py <artifact dir> [main|early]
 """
 import glob
 import os
@@ -35,13 +36,15 @@ def ticks():
     return d
 
 
-def main(art):
+def main(art, tag="main"):
     T = pd.concat([pd.read_parquet(f) for f in glob.glob(os.path.join(art, "**", "trades_*.parquet"), recursive=True)])
     T = T.sort_values(["window_id", "time", "trade_id"])
-    W = pd.read_csv(os.path.join(ROOT, "reports", "wick_v4", "windows.csv"), parse_dates=["start", "end"])
+    wpath = os.path.join(ROOT, "reports", "wick_v4", "windows.csv") if tag == "main" else \
+        os.path.join(OUT, "windows_early.csv")
+    W = pd.read_csv(wpath, parse_dates=["start", "end"])
     alt = {(r.product.split("-")[0], r.start): r.window_id for r in W[W.kind == "alt"].itertuples()}
     by = {w: g for w, g in T.groupby("window_id")}
-    P = pd.read_pickle(os.path.join(OUT, "frozen", "pre_hunt_main.pkl"))
+    P = pd.read_pickle(os.path.join(OUT, "frozen", f"pre_hunt_{tag}.pkl"))
     par = P[(P.k == 4.0) & P.filled]
     tk = ticks()
     rows = []
@@ -92,7 +95,7 @@ def main(art):
         rows.append(rec)
     D = pd.DataFrame(rows)
     # approach speed needs sigma: from the trade list
-    tr = pd.read_parquet(os.path.join(ROOT, "reports", "wick1m", "trades_main.parquet"))[["ts", "coin", "sig"]]
+    tr = pd.read_parquet(os.path.join(ROOT, "reports", "wick1m", f"trades_{tag}.parquet"))[["ts", "coin", "sig"]]
     D = D.merge(tr, on=["ts", "coin"], how="left")
     ap1, ap2 = [], []
     for r in D.itertuples():
@@ -111,10 +114,10 @@ def main(art):
         ap2.append(out[1])
     D["approach1_s"], D["approach2_s"] = ap1, ap2
     os.makedirs(OUT, exist_ok=True)
-    D.to_csv(os.path.join(OUT, "prints_parents.csv"), index=False)
+    D.to_csv(os.path.join(OUT, "prints_parents.csv" if tag == "main" else "prints_parents_early.csv"), index=False)
     print(f"{len(T):,} prints; {len(D)} parents with prints; through seen {D.through_s.notna().mean():.1%}")
     print(D.describe().T.round(2).to_string())
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else "main")
