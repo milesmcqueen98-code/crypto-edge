@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install pandas numpy requests coinbase-advanced-py cryptography
+      - run: pip install pandas numpy requests lightgbm pyarrow coinbase-advanced-py cryptography
       - run: pip show coinbase-advanced-py | head -3
       - name: Sandbox smoke test
         run: python bot/spot/sandbox_test.py
