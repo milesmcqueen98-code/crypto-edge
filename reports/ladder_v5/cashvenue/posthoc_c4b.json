@@ -1,0 +1,214 @@
+{
+ "S_0.5": {
+  "eras": {
+   "sel": {
+    "held_avg": 0.43377472226768377,
+    "free_b_avg": 0.5624444724822883,
+    "reward_a_usd_yr": 4364.948804271859,
+    "reward_b_usd_yr": 2433.4839021224943,
+    "inc_ret": 0.19463218200167529,
+    "inc_sharpe": 2.3106100740134767,
+    "a_ret": 0.2118154124400468,
+    "a_sharpe": 2.5648600697205928,
+    "a_mean_diff": 4.7045120981167705e-05,
+    "a_t": 25.307201843823584,
+    "b_ret": 0.20408955283144933,
+    "b_sharpe": 2.449595296652927,
+    "b_mean_diff": 2.5892870170497038e-05,
+    "b_t": 13.573645516285987
+   },
+   "chk": {
+    "held_avg": 0.41320330176676384,
+    "free_b_avg": 0.58406259189938,
+    "reward_a_usd_yr": 3928.6518357421146,
+    "reward_b_usd_yr": 2303.304417959304,
+    "inc_ret": 0.15071714914637357,
+    "inc_sharpe": 2.311429592641081,
+    "a_ret": 0.16645209672863406,
+    "a_sharpe": 2.633394608525612,
+    "a_mean_diff": 4.307993862357417e-05,
+    "a_t": 10.87885438870416,
+    "b_ret": 0.1599507070575028,
+    "b_sharpe": 2.5025949388124697,
+    "b_mean_diff": 2.5280103795014987e-05,
+    "b_t": 6.150178695952772
+   },
+   "early": {
+    "held_avg": 0.026479368222567537,
+    "free_b_avg": 0.9722150030819391,
+    "reward_a_usd_yr": 3856.243051473877,
+    "reward_b_usd_yr": 3718.6487774052657,
+    "inc_ret": 0.10370017315741828,
+    "inc_sharpe": 1.7201650142418616,
+    "a_ret": 0.11918794755661417,
+    "a_sharpe": 1.71665816710777,
+    "a_mean_diff": 4.240321532976288e-05,
+    "a_t": 1.5371822956904735,
+    "b_ret": 0.11863757046033974,
+    "b_sharpe": 1.70562020634714,
+    "b_mean_diff": 4.089636496350841e-05,
+    "b_t": 1.4831701593814692
+   }
+  },
+  "pooled_t": {
+   "a": 3.0630402807343007,
+   "b": 2.337546914766415
+  },
+  "info": {
+   "sel": {
+    "minutes": 655200,
+    "active_minutes": 24430,
+    "days_short": 0,
+    "hsim_stats": {
+     "parents": 1155,
+     "parent_unfunded": 38,
+     "parent_partial": 6,
+     "deep_placed": 2105,
+     "deep_late": 92,
+     "deep_never": 87,
+     "cash_short_minutes": 3863,
+     "deep_filled": 737
+    },
+    "seconds": 15
+   },
+   "chk": {
+    "minutes": 315360,
+    "active_minutes": 10105,
+    "days_short": 0,
+    "hsim_stats": {
+     "parents": 412,
+     "parent_unfunded": 12,
+     "parent_partial": 3,
+     "deep_placed": 744,
+     "deep_late": 16,
+     "deep_never": 36,
+     "cash_short_minutes": 1304,
+     "deep_filled": 236
+    },
+    "seconds": 7
+   },
+   "early": {
+    "minutes": 1051200,
+    "active_minutes": 18306,
+    "days_short": 0,
+    "hsim_stats": {
+     "parents": 744,
+     "parent_unfunded": 0,
+     "parent_partial": 1,
+     "deep_placed": 1484,
+     "deep_late": 5,
+     "deep_never": 5,
+     "cash_short_minutes": 172,
+     "deep_filled": 506
+    },
+    "seconds": 9
+   }
+  }
+ },
+ "base_0.5": {
+  "eras": {
+   "sel": {
+    "held_avg": 0.6923817378314367,
+    "free_b_avg": 0.302571547999969,
+    "reward_a_usd_yr": 8718.91837776919,
+    "reward_b_usd_yr": 2574.6678434531664,
+    "inc_ret": 0.22417547956339656,
+    "inc_sharpe": 2.162887611444368,
+    "a_ret": 0.25876419973224524,
+    "a_sharpe": 2.5670809229351192,
+    "a_mean_diff": 9.469875474017447e-05,
+    "a_t": 48.063861877819846,
+    "b_ret": 0.23418719759498116,
+    "b_sharpe": 2.2785482392876064,
+    "b_mean_diff": 2.7410590093318617e-05,
+    "b_t": 11.7995930224538
+   },
+   "chk": {
+    "held_avg": 0.4932362898659566,
+    "free_b_avg": 0.5036312278370807,
+    "reward_a_usd_yr": 7854.173916099044,
+    "reward_b_usd_yr": 3973.592975628118,
+    "inc_ret": 0.17579001463506183,
+    "inc_sharpe": 2.6133452755480726,
+    "a_ret": 0.20722844381313463,
+    "a_sharpe": 3.208172403885046,
+    "a_mean_diff": 8.607372807138343e-05,
+    "a_t": 21.69661377339936,
+    "b_ret": 0.19170612005125093,
+    "b_sharpe": 2.91882168430024,
+    "b_mean_diff": 4.357592174179082e-05,
+    "b_t": 9.429783745624155
+   },
+   "early": {
+    "held_avg": 0.0334201356974924,
+    "free_b_avg": 0.9649046623414942,
+    "reward_a_usd_yr": 7709.574377049562,
+    "reward_b_usd_yr": 7363.386348180896,
+    "inc_ret": 0.13689787672507428,
+    "inc_sharpe": 2.1764885892986876,
+    "a_ret": 0.16779255642164495,
+    "a_sharpe": 2.4326267760891582,
+    "a_mean_diff": 8.458502312545005e-05,
+    "a_t": 3.036809067047421,
+    "b_ret": 0.16640780430617025,
+    "b_sharpe": 2.40821194443225,
+    "b_mean_diff": 8.079377845611489e-05,
+    "b_t": 2.905275890922367
+   }
+  },
+  "pooled_t": {
+   "a": 6.070150791388082,
+   "b": 3.9546914724565276
+  },
+  "info": {
+   "sel": {
+    "minutes": 655200,
+    "active_minutes": 24430,
+    "days_short": 0,
+    "hsim_stats": {
+     "parents": 1155,
+     "parent_unfunded": 113,
+     "parent_partial": 18,
+     "deep_placed": 1612,
+     "deep_late": 193,
+     "deep_never": 301,
+     "cash_short_minutes": 16191,
+     "deep_filled": 523
+    },
+    "seconds": 7
+   },
+   "chk": {
+    "minutes": 315360,
+    "active_minutes": 10105,
+    "days_short": 0,
+    "hsim_stats": {
+     "parents": 412,
+     "parent_unfunded": 29,
+     "parent_partial": 2,
+     "deep_placed": 682,
+     "deep_late": 25,
+     "deep_never": 57,
+     "cash_short_minutes": 2221,
+     "deep_filled": 215
+    },
+    "seconds": 2
+   },
+   "early": {
+    "minutes": 1051200,
+    "active_minutes": 18306,
+    "days_short": 0,
+    "hsim_stats": {
+     "parents": 744,
+     "parent_unfunded": 4,
+     "parent_partial": 3,
+     "deep_placed": 1461,
+     "deep_late": 19,
+     "deep_never": 20,
+     "cash_short_minutes": 575,
+     "deep_filled": 491
+    },
+    "seconds": 5
+   }
+  }
+ }
+}
