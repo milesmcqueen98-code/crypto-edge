@@ -1,0 +1,2 @@
+variant,k,exit,qset,H,cascade,trades,fill_musd,src_print,src_candle,print_reject,small,trade_usd_2x,inv_usd_2x
+k6_b_BTCETH_casc,6.0,b,BTCETH,60,True,4261,16.51813034223528,0,4261,0,156,-127824.4239244208,-24057.724285031592
