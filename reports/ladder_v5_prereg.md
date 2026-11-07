@@ -191,3 +191,7 @@ sizing (no US-accessible history: a forward log below).
 | Capacity | 5 | Sharpe change at $1M (S*): ≥ +0.25 → 5; 0 to +0.25 → 2; < 0 → 0 |
 
 ## Deviation log
+- 2026-11-07 23:40 UTC (after the freeze, no rule change): the second engine check finished. Jan 31 2026, a full
+  cascade day at $250K: parents funded 41 (hsim) vs 39 (engine) of the research's 44; deeper fills 24 vs 24
+  (reports/ladder_v5/hsim_check_20260131.csv). With Oct 10 2025 (58 vs 60 of 77; 41 vs 37), hsim tracks the engine.
+
