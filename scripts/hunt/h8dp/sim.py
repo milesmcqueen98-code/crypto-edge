@@ -322,37 +322,37 @@ def n_fills(R):
 
 
 # ------------------------------------------------------------------------------------------------ modes
-def mode_dev():
-    gates_inc70 = None
-    rows = []
+def mode_dev(universes=("usdt", "all")):
+    """The SPEC's DEV grid. Each configuration is scored once and logged once (gates.log_trial)."""
+    inc70 = None
     t0 = time.time()
-    for universe in ("usdt", "all"):
+    path = os.path.join(OUT, "dev_trials.csv")
+    for universe in universes:
         for ladder in ("shallow", "deep"):
             for exit_ in ("tp", "tp7"):
                 var = f"{universe}|{ladder}|{exit_}"
                 R, daily, opens, info = run(universe, ladder, exit_, theta=0.5, mult=2.0, capital=30e3, end=HOLD0)
                 s30 = scored(daily)
                 gates.assert_dev_only(s30)
-                if gates_inc70 is None:
-                    gates_inc70 = gates.incumbent(70e3, days=s30.index)
-                at = gates.alpha_test(s30, gates_inc70)
+                if inc70 is None:
+                    inc70 = gates.incumbent(70e3, days=s30.index)
+                at = gates.alpha_test(s30, inc70)
                 scr = gates.dev_screen(s30)
                 bk = gates.dev_book(s30)
                 Rs = R[R.t_exit.dt.floor("D").isin(s30.index)]
-                row = dict(variant=var, universe=universe, ladder=ladder, exit=exit_, fills_all=n_fills(R),
-                           fills_scored=n_fills(Rs), lots=len(R), pnl_usd_scored=float(Rs.pnl.sum()),
-                           sleeve_sharpe=scr["sleeve_sharpe"], t_alpha_inc70=at["t_alpha"],
-                           t_alpha_inc100=scr["t_alpha"], alpha_yr=at["alpha_yr"], corr=scr["corr"],
-                           active_days=scr["active_days"], dev_book_sharpe=gates.sharpe(bk),
-                           open_lots_at_dev_end=len(opens), sleeve_ret_total=float(s30.sum()))
-                rows.append(row)
+                row = dict(variant=var, universe=universe, ladder=ladder, exit=exit_, fills_scored=n_fills(Rs),
+                           fills_all=n_fills(R), lots_scored=len(Rs), pnl_usd_scored=float(Rs.pnl.sum()),
+                           sleeve_sharpe=scr["sleeve_sharpe"], t_alpha=at["t_alpha"], t_alpha_inc100=scr["t_alpha"],
+                           alpha_yr=at["alpha_yr"], beta=at["beta"], corr=scr["corr"], active_days=scr["active_days"],
+                           dev_book_sharpe=gates.sharpe(bk), sleeve_ret_per_yr=float(s30.mean() * 365),
+                           open_lots_at_dev_end=len(opens), avg_deployed=info.get("avg_deployed_frac"),
+                           by_pair_pnl=json.dumps(Rs.groupby("pid").pnl.sum().round(0).to_dict()),
+                           by_kind=json.dumps(Rs.groupby("kind").size().to_dict()))
                 gates.log_trial("h8dp", var, bk, note="DEV grid (SPEC): book a=0.7, sleeve $30K at 2x costs, theta 0.5",
-                                sleeve_sharpe=row["sleeve_sharpe"], t_alpha_inc70=row["t_alpha_inc70"],
-                                fills=row["fills_scored"])
+                                sleeve_sharpe=row["sleeve_sharpe"], t_alpha=row["t_alpha"], fills=row["fills_scored"])
+                pd.DataFrame([row]).to_csv(path, mode="a", header=not os.path.exists(path), index=False)
+                Rs.to_csv(os.path.join(OUT, f"dev_lots_{universe}_{ladder}_{exit_}.csv"), index=False)
                 print(json.dumps({k: (round(v, 4) if isinstance(v, float) else v) for k, v in row.items()}), flush=True)
-    T = pd.DataFrame(rows)
-    os.makedirs(OUT, exist_ok=True)
-    T.to_csv(os.path.join(OUT, "dev_trials.csv"), index=False)
     print(f"done in {time.time() - t0:.0f}s")
 
 
@@ -444,4 +444,7 @@ def mode_hold():
 
 
 if __name__ == "__main__":
-    {"dev": mode_dev, "episodes": mode_episodes, "mech": mode_mech, "hold": mode_hold}[sys.argv[1]]()
+    if sys.argv[1] == "dev":
+        mode_dev(tuple(sys.argv[2:]) or ("usdt", "all"))
+    else:
+        {"episodes": mode_episodes, "mech": mode_mech, "hold": mode_hold}[sys.argv[1]]()
