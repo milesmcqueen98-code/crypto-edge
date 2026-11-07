@@ -13,6 +13,7 @@ ABOVE the take-profit level (par - 5 bp), ids_missing (trade-id gaps inside fetc
 Outputs are split at the hold-out start (gates.HOLD0) into tagg/<PRODUCT>_<part>_dev.parquet and ..._hold.parquet so
 nothing on HOLD days is read before the freeze. Logs print request counts and timings only.
 """
+import glob
 import os
 import sys
 import time
@@ -101,6 +102,45 @@ def run_win(pid, shard, n):
     print(f"{pid} shard {shard}: done, {tf.n_req} requests, {time.time() - t0:.0f}s", flush=True)
 
 
+def run_refetch(pid, shard, n):
+    """Re-fetch, with the fixed common.TradeFetcher (paging fix 06b7052), every window whose first fetch had trade-id
+    gaps (ids_missing > 0: prints lost by the old paging). Writes parts r<shard>; sim.prints_for prefers them."""
+    import common
+    shard, n = int(shard), int(n)
+    W = pd.concat([pd.read_parquet(f) for f in sorted(glob.glob(os.path.join(OUT, f"{pid}_w*_win_*.parquet")))])
+    W = W[W.ids_missing > 0].sort_values("start").reset_index(drop=True)
+    W = W[W.index % n == shard]
+    C = LV.load_candles(pid)
+    L = LV.levels_for(pid, C)
+    del C
+    tf = common.TradeFetcher()
+    parts, miss, t0 = [], [], time.time()
+    for k, w in enumerate(W.itertuples()):
+        a, b = w.start, w.end
+        try:
+            d = tf.window(pid, a, b)
+        except Exception as err:  # noqa: BLE001
+            print("FAILED", pid, repr(err)[:200], flush=True)
+            miss.append((a, b, -1))
+            continue
+        if len(d):
+            ids = d.trade_id.astype(np.int64)
+            miss.append((a, b, int(ids.max() - ids.min() + 1 - ids.nunique())))
+            parts.append(aggregate(d, pid, L.loc[a - pd.Timedelta(minutes=5):b]))
+        else:
+            miss.append((a, b, 0))
+        if k % 50 == 0:
+            print(f"{pid} refetch shard {shard}: {k}/{len(W)}, {tf.n_req} requests, {time.time() - t0:.0f}s", flush=True)
+    A = pd.concat(parts) if parts else pd.DataFrame()
+    A = A[~A.index.duplicated()].sort_index()
+    save(A, pid, f"r{shard}")
+    M = pd.DataFrame(miss, columns=["start", "end", "ids_missing"])
+    M[M.start < HOLD0].to_parquet(os.path.join(OUT, f"{pid}_r{shard}_win_dev.parquet"), index=False)
+    M[M.start >= HOLD0].to_parquet(os.path.join(OUT, f"{pid}_r{shard}_win_hold.parquet"), index=False)
+    print(f"{pid} refetch shard {shard}: done, {len(W)} windows, ids still missing {int(M.ids_missing.clip(lower=0).sum())}, "
+          f"{tf.n_req} requests, {time.time() - t0:.0f}s", flush=True)
+
+
 def run_full(pid):
     import fetch
     t0, rows, cur = time.time(), [], None
@@ -138,6 +178,8 @@ if __name__ == "__main__":
     elif mode == "full":
         for p in sys.argv[2:]:
             run_full(p)
+    elif mode == "refetch":
+        run_refetch(*sys.argv[2:5])
     elif mode == "local":
         for p in sys.argv[2:]:
             run_local(p)

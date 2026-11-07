@@ -50,6 +50,7 @@ LADDERS = {"shallow": (0.0010, 0.0025, 0.0050), "deep": (0.0050, 0.0100, 0.0200)
 EXITS = {"tp": None, "tp7": 7}
 UNIVERSES = {"usdt": ("USDT-USD",), "all": LV.UNIVERSE_ALL}
 MIN_ORDER_USD = 1.0
+USE_REFETCH = os.environ.get("H8_PRINTS", "fixed") == "fixed"   # H8_PRINTS=old reproduces the pre-fix tables
 NS_MIN = 60_000_000_000
 
 
@@ -66,7 +67,10 @@ def prints_for(pid, end):
     parts = ["dev"] + (["hold"] if end > HOLD0 else [])
     agg, wins, full = [], [], False
     for part in parts:
-        for f in sorted(glob.glob(os.path.join(TAGG, f"{pid}_*_{part}.parquet"))):
+        fs = sorted(glob.glob(os.path.join(TAGG, f"{pid}_*_{part}.parquet")))
+        fs = [f for f in fs if f"{pid}_r" not in os.path.basename(f)] + \
+            ([f for f in fs if f"{pid}_r" in os.path.basename(f)] if USE_REFETCH else [])
+        for f in fs:
             name = os.path.basename(f)
             if "_win_" in name:
                 wins.append(pd.read_parquet(f))
@@ -74,7 +78,8 @@ def prints_for(pid, end):
             full = full or "_full_" in name
             agg.append(pd.read_parquet(f))
     A = pd.concat(agg) if agg else pd.DataFrame(columns=["ts"])
-    A = A[A.ts < end].drop_duplicates("ts").set_index("ts").sort_index()
+    # re-fetched windows (fixed paging) are loaded last and win for every minute they cover
+    A = A[A.ts < end].drop_duplicates("ts", keep="last").set_index("ts").sort_index()
     W = pd.concat(wins) if wins else pd.DataFrame(columns=["start", "end", "ids_missing"])
     W = W[W.start < end]
     return A, W, full
