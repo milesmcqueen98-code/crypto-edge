@@ -190,9 +190,10 @@ def trade_pnl(T, exit_, mult, hs):
     mk = common.spot_cost_bp(False, mult) / 1e4
     tk = common.spot_cost_bp(True, mult) / 1e4
     if exit_ == "a":
-        hs_def = np.nanmedian(list(hs.values())) if hs else 10.0
-        hsp = T.pair.map(hs).fillna(hs_def).to_numpy()
-        extra = mult * np.maximum(0.0, 1.5 * hsp - common.SPOT_HALF_SPREAD_BP) / 1e4
+        # scoring basis: common.py (2 bp half-spread on every spot market order); `hs` (measured half-spreads of the
+        # secondary books, bp) adds max(0, 1.5 x hs - 2 bp) where given (realism check, not the scoring basis)
+        hsp = T.pair.map(hs or {}).to_numpy(dtype=float)
+        extra = np.nan_to_num(mult * np.maximum(0.0, 1.5 * hsp - common.SPOT_HALF_SPREAD_BP) / 1e4)
         tp_pnl = np.where(T.tp_usd > 0, T.tp_usd * ((T.tp / T.lvl) * (1 - mk) - 1) * (T.q_tp / T.q_prev), 0.0)
         mx_pnl = np.where(T.rem > 1e-9, T.rem * ((T.mx_px / T.lvl) * (1 - tk - extra) - 1) * (T.mx_q / T.q_prev), 0.0)
         entry = T.fill * mk

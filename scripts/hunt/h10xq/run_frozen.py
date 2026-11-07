@@ -33,8 +33,10 @@ def main():
     k, ex, q, H, casc = F["k"], F["exit"], F["qset"], F["H"], F["cascade"]
     E = pd.concat([sim.load_events("dev", q, k, H), sim.load_events("hold", q, k, H)], ignore_index=True)
     E = E.sort_values(["ts", "pair"]).reset_index(drop=True)
-    P = sim.load_prints()
-    hs = sim.half_spreads(P)
+    # Scoring basis: candles for every fill, costs exactly as common.py (deviation in REPORT: prints were fetched for a
+    # ~1% sample only and are used to measure the candle-vs-print bias). H10_USE_PRINTS=1 applies them (information).
+    P = sim.load_prints() if os.environ.get("H10_USE_PRINTS") == "1" else None
+    hs = sim.half_spreads(P) if os.environ.get("H10_USE_PRINTS") == "1" else {}
     days = gates.ERA_DAYS
     cols, trades, info = {}, {}, {}
     for C in (30000.0, 50000.0):

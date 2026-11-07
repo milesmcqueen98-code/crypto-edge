@@ -37,8 +37,10 @@ def grid(spec):
 
 def main(tag, spec):
     os.makedirs(OUT, exist_ok=True)
-    P = sim.load_prints()
-    hs = sim.half_spreads(P)
+    # Scoring basis: candles for every fill, costs exactly as common.py (deviation in REPORT: prints were fetched for a
+    # ~1% sample only and are used to measure the candle-vs-print bias). H10_USE_PRINTS=1 applies them (information).
+    P = sim.load_prints() if os.environ.get("H10_USE_PRINTS") == "1" else None
+    hs = sim.half_spreads(P) if os.environ.get("H10_USE_PRINTS") == "1" else {}
     days = gates.ERA_DAYS[gates.ERA_DAYS < gates.HOLD0]
     rows, t0 = [], time.time()
     for k, ex, q, H, c in grid(spec):
