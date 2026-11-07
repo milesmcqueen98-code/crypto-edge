@@ -41,7 +41,7 @@ def frozen_ok():
 
 
 def entries(H, theta, mode):
-    D = B.load("dev", H, theta, mode)
+    D = B.load_devc(H, theta, mode)
     Hh = B.load("hold", H, theta, mode)
     D = D[D.t_fill < CUT.value]
     Hh = Hh[Hh.t_fill >= CUT.value]

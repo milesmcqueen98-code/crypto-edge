@@ -58,7 +58,7 @@ def best(rows):
 
 def main():
     rows = []
-    E = B.load("dev", 60, 0.5)
+    E = B.load_devc(60, 0.5)
     print(f"DEV entries (H 60, theta 0.5, n >= 1): {len(E)}; days {DEV_DAYS[0].date()}..{DEV_DAYS[-1].date()} "
           f"({len(DEV_DAYS)})", flush=True)
     for mode in ("minute", "sync"):
@@ -67,12 +67,12 @@ def main():
                 rows.append(score(f"{mode}_k{int(k)}_{side}_H60", E, mode, k, side))
     b18 = best(rows)
     if b18 is not None:
-        E15 = B.load("dev", 15, 0.5)
+        E15 = B.load_devc(15, 0.5)
         rows.append(score(f"{b18['mode']}_k{int(b18['k'])}_{b18['side']}_H15", E15, b18["mode"], b18["k"], b18["side"], H=15))
         del E15
     b19 = best(rows)
     if b19 is not None:
-        Eb = E if b19["H"] == 60 else B.load("dev", 15, 0.5)
+        Eb = E if b19["H"] == 60 else B.load_devc(15, 0.5)
         base = f"{b19['mode']}_k{int(b19['k'])}_{b19['side']}_H{b19['H']}"
         rows.append(score(base + "_nomaint", Eb, b19["mode"], b19["k"], b19["side"], tod="no_maint", H=b19["H"]))
         rows.append(score(base + "_onlymaint", Eb, b19["mode"], b19["k"], b19["side"], tod="only_maint", H=b19["H"]))
