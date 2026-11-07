@@ -788,7 +788,7 @@ def run_prints(coin):
     tick = float(tick)
     w0 = T.fill_ts.dt.floor("min")
     w1 = pd.concat([T.x_ts.fillna(T.tp_ts), T.fill_ts + pd.to_timedelta(T.H, unit="m")], axis=1).max(axis=1) \
-        + pd.Timedelta(minutes=3)
+        + pd.Timedelta(minutes=20)                      # slack so the market exit always has a print to land on
     W = pd.DataFrame(dict(s=w0, e=w1)).sort_values("s").reset_index(drop=True)
     merged = []
     for r in W.itertuples():
