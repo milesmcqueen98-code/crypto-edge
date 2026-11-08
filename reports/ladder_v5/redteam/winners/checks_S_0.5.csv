@@ -1,0 +1,16 @@
+cfg,era,phantom,mult_mismatch,mult_checked,share_x05,share_x15,world,n0_max_daily_diff,market_exit_replication
+S_0.5,sel,False,0.0,20000.0,0.37727600873949146,0.02496185606967903,,,
+S_0.5,sel,,,,,,faithful,0.0,0.0
+S_0.5,sel,,,,,,faithful_c3cash,0.0,0.0
+S_0.5,sel,True,0.0,20000.0,0.37754954519878686,0.024982929833002578,,,
+S_0.5,sel,,,,,,hsim_like,0.0,0.0
+S_0.5,chk,False,0.0,20000.0,0.37364668881008845,0.052477955134514274,,,
+S_0.5,chk,,,,,,faithful,0.0,0.0
+S_0.5,chk,,,,,,faithful_c3cash,0.0,0.0
+S_0.5,chk,True,0.0,20000.0,0.3744012861935783,0.052383925181471246,,,
+S_0.5,chk,,,,,,hsim_like,0.0,0.0
+S_0.5,early,False,0.0,20000.0,0.6959414228226031,0.07918402559748393,,,
+S_0.5,early,,,,,,faithful,0.0,0.0
+S_0.5,early,,,,,,faithful_c3cash,0.0,0.0
+S_0.5,early,True,0.0,20000.0,0.7058883561629855,0.0753531605341955,,,
+S_0.5,early,,,,,,hsim_like,0.0,0.0
