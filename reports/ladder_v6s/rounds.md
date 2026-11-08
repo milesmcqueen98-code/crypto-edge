@@ -100,3 +100,37 @@ Rule (family Z6, low-parameter):
 - σ_tgt is the median of σ_w over all earlier days. With fewer than 60 earlier days, m = 1.
 
 Variants: w 30 / 60, λ 0.5 / 1, capped and uncapped (8 runs).
+
+### Round 3 read
+| Run | Sharpe-path t (best 5 out) | Return-path t | dSharpe | dret |
+|---|---|---|---|---|
+| Z6 w 30, λ 0.5 / 1, capped | −1.77 (−2.77) / −1.81 (−2.71) | −2.40 / −2.61 | −0.41 / −0.68 | −3.4 / −5.8 pp |
+| Z6 w 60, λ 0.5 / 1, capped | −0.87 (−1.91) / −0.99 (−1.84) | −2.23 / −2.21 | −0.16 / −0.30 | −2.2 / −3.7 pp |
+| Z6, uncapped (all four) | −0.36 to −1.95 | −1.79 to −2.25 | −0.12 to −0.76 | −1.7 to −6.3 pp |
+
+- As predicted, the book's volatility is not a good reason to shrink it. The edge is largest after volatile weeks,
+  so shrinking then gives up more return than risk. Z6 is dropped.
+- A diagnostic between rounds shows why the gains concentrate. 41% of signal dollars and 55% of signal net P&L fall
+  on the 20 days with the largest absolute P&L.
+- μ̂ still ranks outcomes off those days (Spearman +0.26) and among isolated signals (+0.32). But its bottom tercile
+  is weak both isolated (+5 bp a dollar) and in cascades (+1 bp). Downsizing that tercile alone was already tried by
+  red team 2 (bottom-only ×0.5): selection positive, out-of-sample t −1.78. It is not retried here.
+
+## Round 4: diversification across armed coins (written before running)
+Hypothesis:
+- When more coins are armed than the cash can cover, the cash rule funds the top-ranked bids in full and starves the
+  rest.
+- Sizing each bid by 1/√(armed coins) spreads the cash over more coins in a cascade. It also leaves bids full when
+  few are armed.
+- This is the one mechanism not yet covered (cash and diversification). Its effect lives in cascades, so I predict
+  a small Sharpe gain at best, which fails the spread check.
+
+Rule (family Z7):
+- f = 1/√n_armed, where n_armed is the number of approved, fresh coins with a bid at that minute.
+- m = clip((f / f̄)^λ, 0.5, 2), with f̄ the trailing 90-day median of f at research parent fills. ADV-capped.
+- Variants: λ 0.5 and 1, capped and uncapped.
+
+Reference, not a candidate: C2a (×0.5 / 1 / 1.5 by the margin's tercile, cutoffs from the earlier quarters' parent
+fills) on this simulator, capped and uncapped. This answers the ADV-cap question for C2a itself on the selection era.
+Round 5 is not planned: Z1–Z7 cover the mechanism-led forms (edge, variance, both, cascade breadth, book volatility,
+cash and diversification).

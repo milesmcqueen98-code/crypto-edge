@@ -272,3 +272,37 @@ def round2():
 
 if __name__ == "__main__" and sys.argv[1] == "round2":
     round2()
+
+
+# ------------------------------------------------------------------------------------------------ round 3 (Z6)
+def z6_mult(cfg, era, w, lam, capped=True, lo=0.5, hi=2.0, min_hist=60, prior=None):
+    """Book volatility targeting: one multiplier per day from the incumbent's own trailing daily volatility.
+    `prior`: earlier daily returns of the same book (e.g. the selection era before the check era)."""
+    X = ssim.inputs(cfg, era)
+    inc = incumbent(cfg, era)
+    r = pd.concat([prior, inc]) if prior is not None else inc
+    sw = r.rolling(w, min_periods=w).std().shift(1)                 # known before the day
+    tgt = sw.expanding(min_periods=min_hist).median().shift(1)
+    md = np.clip((tgt / sw) ** lam, lo, hi).reindex(X["du"])
+    md = np.where(np.isfinite(md.to_numpy()), md.to_numpy(), 1.0)
+    m = np.repeat(md[X["di"]][:, None], X["M"].shape[1], axis=1)
+    if capped:
+        m = np.minimum(m, X["room"])
+    return m
+
+
+def round3():
+    lines = []
+    for w in (30, 60):
+        for lam in (0.5, 1.0):
+            for capped in (True, False):
+                m = z6_mult("S_0.5", "sel", w, lam, capped)
+                name = f"Z6 voltarget w{w} lam{lam:g} {'capped' if capped else 'uncapped'}"
+                s, _ = run(name, m, 3, family="z6_voltarget", lam=lam, capped=capped, fit=f"w{w}")
+                lines.append(line(name, s))
+                print(lines[-1], flush=True)
+    open(os.path.join(OUT, "round3.txt"), "w").write("\n".join(lines) + "\n")
+
+
+if __name__ == "__main__" and sys.argv[1] == "round3":
+    round3()

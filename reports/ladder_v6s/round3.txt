@@ -1,0 +1,8 @@
+Z6 voltarget w30 lam0.5 capped     Sharpe-path t -1.77 (best 5 out -2.77)  return-path t -2.40 (best 5 out -3.22)  dSharpe -0.410  dret -3.40pp  top-5 share nan
+Z6 voltarget w30 lam0.5 uncapped   Sharpe-path t -1.95 (best 5 out -2.92)  return-path t -2.16 (best 5 out -3.08)  dSharpe -0.459  dret -3.19pp  top-5 share nan
+Z6 voltarget w30 lam1 capped       Sharpe-path t -1.81 (best 5 out -2.71)  return-path t -2.61 (best 5 out -3.23)  dSharpe -0.678  dret -5.84pp  top-5 share nan
+Z6 voltarget w30 lam1 uncapped     Sharpe-path t -1.62 (best 5 out -2.46)  return-path t -2.25 (best 5 out -2.90)  dSharpe -0.762  dret -6.25pp  top-5 share nan
+Z6 voltarget w60 lam0.5 capped     Sharpe-path t -0.87 (best 5 out -1.91)  return-path t -2.23 (best 5 out -2.98)  dSharpe -0.161  dret -2.23pp  top-5 share nan
+Z6 voltarget w60 lam0.5 uncapped   Sharpe-path t -0.69 (best 5 out -1.77)  return-path t -1.81 (best 5 out -2.64)  dSharpe -0.123  dret -1.68pp  top-5 share nan
+Z6 voltarget w60 lam1 capped       Sharpe-path t -0.99 (best 5 out -1.84)  return-path t -2.21 (best 5 out -2.84)  dSharpe -0.304  dret -3.68pp  top-5 share nan
+Z6 voltarget w60 lam1 uncapped     Sharpe-path t -0.36 (best 5 out -1.42)  return-path t -1.79 (best 5 out -2.53)  dSharpe -0.175  dret -3.23pp  top-5 share nan
