@@ -168,3 +168,58 @@ parent filling in the same minute is never cancelled); charging it would lower C
   (counts), rt_matrix.py (configurations x switches), rt_engine.py (engine check), rt_c1a.py (C1a), rt_tables.py.
 - reports/ladder_v5/redteam/: matrix_{base,S_0.5,base_1M}.csv and daily_*.parquet; rt_diag_base.csv;
   engine_check_{20251010,20260131,20250202}.{csv,json} and engine_events_*.csv.gz; c1a_*.json and c1a_daily_*.parquet.
+
+## Addendum (2026-11-08): the winners on my engine-faithful replay
+Scope (coordinator): C2a and C4 alone. C3b and every set containing it are dropped (red team 2: with print-measured
+exit costs C3's gain vanishes). J_c2a_c4 is shown as an extra line. Code: scripts/ladder_v5/redteam/rt_winners.py,
+rt_prints.py; outputs in reports/ladder_v5/redteam/winners/ and prints/.
+
+**Method.** The builders' modules are copied unchanged from origin/ladder/joint (cand_sizing, cand_exits,
+cand_cashvenue, cand_joint). Red team 2's exit-cost code and tables are copied unchanged from origin/ladder/redteam2
+(scripts/ladder_v5/redteam2/c3.py, reports/ladder_v5/prints_rt2_{exit,coin}.csv).
+- C2a: the multiplier is applied where the engine applies `size_mult` (bot/spot/engine.py on origin/ladder/v5-bot):
+  the 4-sigma bid of each minute with that minute's multiplier, and the ladder's S, hence the deeper rungs, with the
+  multiplier of the minute the parent filled. Multipliers come from cand_sizing.c2_arrays. They equal
+  cand_sizing.size_fn_for on 20,000 sampled candidate minutes per era and configuration (0 mismatches).
+- C4: cand_joint.c4_overlay on my book's instant-bound positions.
+- Statistics: what gates.run computes (per-era return / Sharpe and t, pooled Newey-West t, vol-matched t, G1-G4 on
+  the return path), computed by my own code against MY incumbent in the same configuration. gates.run itself compares
+  against the cached hsim incumbent, so I did not call it. Nothing logged; trials.csv untouched. hsim and gates are
+  imported only as dependencies of the builders' modules; nothing calls them.
+- Cross-check: in my hsim-like world C2a scores S* t +2.19 (logged +2.21) and C4 +3.06 (logged +3.06), so the
+  builders' code is applied as they applied it.
+
+**Engine-faithful cash rule, the frozen cost model** (pooled t, vol-matched t in brackets; per era: incumbent ->
+candidate return / Sharpe, era t):
+
+| Book | S* theta 0.5 | S* theta 0.25 | base | $1M | Gates |
+|---|---|---|---|---|---|
+| C2a | **+2.21** (+0.89): sel 19.9%/2.49 -> 22.9%/2.88 (+1.98); chk 16.4%/2.22 -> 18.1%/2.14 (+0.74); 2022-23 10.2%/1.68 -> 11.3%/1.82 (+1.07) | +2.25 (+1.05) | +1.29 (+0.20) | +3.03 (+1.54) | G1-G4 pass |
+| C4 | **+3.06** (+0.93): 19.9% -> 21.6%; 16.4% -> 18.0%; 10.2% -> 11.7% | +3.06 (+0.95) | +6.07 (+4.15) | +3.07 (+0.43) | G1-G4 pass |
+| J_c2a_c4 (extra) | +3.54 (+1.40): 19.9% -> 24.6%; 16.4% -> 19.7%; 10.2% -> 12.9% | +3.68 (+1.55) | +4.24 (+2.37) | +4.37 (+1.50) | G1-G4 pass |
+
+**With red team 2's print-measured exit costs** in both books (the 60-minute market exit of each remainder pays the
+prints' half-spread + first-X slippage at that exit instead of the model's half-spread + impact). About 95-100% of
+remainder dollars are priced from prints, depending on configuration and bound; the rest keep the model's cost. My
+application equals red team 2's c3.book on my tranche frames (difference 0.0). With the model's cost it reproduces
+my book to 1e-17.
+
+| Config | Live incumbent: engine-faithful cash rule + print exit costs (sel / chk / 2022-23) | C2a | Pooled t (vol-matched) |
+|---|---|---|---|
+| S* theta 0.5 | **22.8% / 2.94, 19.1% / 2.66, 11.1% / 1.91** | 25.3%/3.23 (+1.71), 20.4%/2.45 (+0.60), 12.2%/2.00 (+0.98) | **+1.92** (+0.36) |
+| S* theta 0.25 | 20.4% / 2.76, 17.1% / 2.41, 9.8% / 1.66 | 22.8%/3.00, 18.2%/2.20, 10.6%/1.83 | +1.92 (+0.47) |
+| base | 25.5% / 2.66, 20.0% / 2.67, 13.5% / 2.21 | 27.9%/3.19, 21.1%/2.41, 13.8%/1.85 | +1.16 (-0.03) |
+| $1M | 15.0% / 2.28, 8.5% / 1.47, 5.1% / 0.73 | 17.3%/2.51, 9.4%/1.56, 5.9%/1.02 | +2.69 (+0.96) |
+
+Gates for C2a under print costs: G1 no (+1.92), G2 yes, G3 no (+1.92), G4 yes. Red team 2 got +1.91 / +1.76 on hsim's
+books. C4's daily difference (the USDC overlay on positions) does not depend on exit costs, so its paired t stays
++3.06 at S*.
+
+**Verdicts (addendum).**
+- **C2a:** survives hsim's two deviations under the frozen cost model (passes G1-G4: +2.21 / +2.25 at S* theta 0.5 /
+  0.25). With print-measured exit costs it misses G1 and G3 (+1.92 / +1.92), as red team 2 found on hsim's books. Its
+  vol-matched t is +0.89 (model) and +0.36 (prints): the gain is mostly larger size on high-margin signals, not a
+  better return per unit of risk.
+- **C4:** survives unchanged (+3.06). The cash rule does not touch it.
+- **Best single estimate of the live incumbent at S*:** engine-faithful cash rule plus print-measured exit costs gives
+  22.8% / 19.1% / 11.1% a year (Sharpe 2.94 / 2.66 / 1.91), selection / check / 2022-23.
