@@ -306,3 +306,81 @@ def round3():
 
 if __name__ == "__main__" and sys.argv[1] == "round3":
     round3()
+
+
+# ------------------------------------------------------------------------------------------------ round 4 (Z7, C2a ref)
+def z7_mult(cfg, era, lam, capped=True, lo=0.5, hi=2.0, window_days=90, min_n=30):
+    """Diversification across armed coins: f = 1/sqrt(armed coins at the minute), normalised at research parents."""
+    A = ssim.base(cfg, era)
+    X = ssim.inputs(cfg, era)
+    n = np.maximum(A["ncand"].astype(np.float64), 1.0)
+    f = 1.0 / np.sqrt(n)
+    pos = X["par_pos"]
+    okg = pos >= 0
+    fp = f[pos[okg]]
+    s = pd.Series(fp, index=pd.to_datetime(X["par_ts"][okg])).sort_index()
+    tv, vals = s.index.to_numpy(), s.to_numpy()
+    fb = np.full(len(X["du"]), np.nan)
+    for i, d in enumerate(X["du"]):
+        a_ = np.searchsorted(tv, (d - pd.Timedelta(days=window_days)).to_datetime64(), "left")
+        b_ = np.searchsorted(tv, d.to_datetime64(), "left")
+        if b_ - a_ >= min_n:
+            fb[i] = np.median(vals[a_:b_])
+    fbm = fb[X["di"]]
+    with np.errstate(invalid="ignore", divide="ignore"):
+        mm = np.clip((f / fbm) ** lam, lo, hi)
+    mm = np.where(np.isfinite(mm), mm, 1.0)
+    m = np.repeat(mm[:, None], X["M"].shape[1], axis=1)
+    if capped:
+        m = np.minimum(m, X["room"])
+    return m
+
+
+def c2a_mult(cfg, era, capped=True, min_n=60):
+    """Reference: ladder v5 C2a on this simulator (x0.5 / 1 / 1.5 by the margin's tercile; cutoffs per quarter from
+    the earlier parent fills' margins; x1 with fewer than 60)."""
+    X = ssim.inputs(cfg, era)
+    I = RL.inputs(fsim.ERAS[era][0])
+    pos = I["pidx"].get_indexer(X["idx"])
+    th = np.full(len(X["idx"]), np.nan)
+    th[pos >= 0] = I["thr"][pos[pos >= 0]]
+    margin = X["M"] - th[:, None]
+    ip = I["pidx"].get_indexer(pd.to_datetime(X["par_ts"]))
+    pth = np.where(ip >= 0, I["thr"][np.maximum(ip, 0)], np.nan)
+    pm = X["par_M"] - pth
+    pts = pd.to_datetime(X["par_ts"])
+    q_grid = X["idx"].to_period("Q")
+    m = np.ones_like(X["M"])
+    for q in sorted(set(q_grid)):
+        prev = pm[(pts < q.start_time) & np.isfinite(pm)]
+        if len(prev) < min_n:
+            continue
+        lo_c, hi_c = np.quantile(prev, 1 / 3), np.quantile(prev, 2 / 3)
+        rows = np.nonzero(np.asarray(q_grid == q))[0]
+        mg = margin[rows]
+        m[rows] = np.where(mg < lo_c, 0.5, np.where(mg >= hi_c, 1.5, 1.0))
+    m = np.where(np.isfinite(margin), m, 1.0)
+    if capped:
+        m = np.minimum(m, X["room"])
+    return m
+
+
+def round4():
+    lines = []
+    for lam in (0.5, 1.0):
+        for capped in (True, False):
+            name = f"Z7 armed lam{lam:g} {'capped' if capped else 'uncapped'}"
+            s, _ = run(name, z7_mult("S_0.5", "sel", lam, capped), 4, family="z7_armed", lam=lam, capped=capped)
+            lines.append(line(name, s))
+            print(lines[-1], flush=True)
+    for capped in (True, False):
+        name = f"C2a reference {'capped' if capped else 'uncapped'}"
+        s, _ = run(name, c2a_mult("S_0.5", "sel", capped), 4, family="c2a_reference", lam=np.nan, capped=capped,
+                   note="reference, not a candidate")
+        lines.append(line(name, s))
+        print(lines[-1], flush=True)
+    open(os.path.join(OUT, "round4.txt"), "w").write("\n".join(lines) + "\n")
+
+
+if __name__ == "__main__" and sys.argv[1] == "round4":
+    round4()

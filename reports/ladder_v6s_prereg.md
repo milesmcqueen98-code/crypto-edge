@@ -105,3 +105,9 @@ Context:
 
 ## Deviation log
 
+- Freeze (this entry's commit time): no rule is frozen. All seven families (Z1-Z4 pre-registered; Z5 Kelly on the
+  signal's predicted dispersion, Z6 book volatility targeting, Z7 diversification across armed coins added as round
+  refinements, each written in rounds.md before it ran) stay below the drop bar inside the ADV cap; round 5 not run.
+  The check era and 2022-23 are therefore not read for sizing. Families Z5-Z7 are additions to the plan's list, made as
+  "refine" steps; the drop bar applied to them unchanged. Scorecard: each family's best capped variant scored on the
+  selection era (in-sample upper bound), hand parts fixed in reports/ladder_v6s/scorecard_manual.json in this commit.

@@ -134,3 +134,30 @@ Reference, not a candidate: C2a (×0.5 / 1 / 1.5 by the margin's tercile, cutoff
 fills) on this simulator, capped and uncapped. This answers the ADV-cap question for C2a itself on the selection era.
 Round 5 is not planned: Z1–Z7 cover the mechanism-led forms (edge, variance, both, cascade breadth, book volatility,
 cash and diversification).
+
+### Round 4 read
+| Run | Sharpe-path t (best 5 out) | Return-path t (best 5 out) | dSharpe | Top-5 share of the gain |
+|---|---|---|---|---|
+| Z7 armed coins, λ 0.5, capped | +1.01 (−0.61) | +0.60 (−1.12) | +0.06 | 2.3 |
+| Z7 armed coins, λ 1, capped | +0.92 (−1.72) | +1.34 (−0.77) | +0.13 | 1.2 |
+| Z7, uncapped, λ 0.5 / 1 | +0.37 / +0.27 | +0.51 / +1.23 | +0.03 / +0.05 | 2.5 / 1.4 |
+| C2a reference, capped | +0.68 (−1.20) | +2.06 (+0.73) | +0.19 | 0.8 |
+| C2a reference, uncapped | +1.25 (−0.46) | +1.71 (+0.23) | +0.30 | 0.9 |
+
+- **Z7 is dropped** (+1.01 against the bar of 1.4), with the gain concentrated as predicted. A top-5 share above 1
+  means the rest of the days net to a loss.
+- **C2a on the engine-faithful book with print costs** reads Sharpe-path t +1.25 uncapped and +0.68 inside the
+  0.2% ADV cap. Without its best 5 days it is negative either way.
+
+## Conclusion of the iteration
+Four rounds and seven families:
+- Kelly on the coin's volatility; inverse variance; edge; cascade breadth.
+- Kelly on the signal's own predicted dispersion; book volatility targeting; diversification across armed coins.
+
+None reaches the drop bar inside the ADV cap. The best are Z5 in-sample at +1.14 and Z4 and Z7 at +1.01. None keeps a
+positive Sharpe-path t without its 5 best days.
+
+The hindsight oracle shows real headroom: t +3.45, with its gain spread. But what is knowable at the minute ranks
+outcome size and outcome variance together. Most of the book's P&L, and so most of any resizing's effect, sits on the
+20 or so cascade days a year. Round 5 is not run. Nothing is frozen, and the out-of-sample eras stay unread for
+sizing.
