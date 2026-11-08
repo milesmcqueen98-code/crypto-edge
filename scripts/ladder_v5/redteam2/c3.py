@@ -159,8 +159,15 @@ class PrintCost:
             hs = r.hs_bp if np.isfinite(r.hs_bp) and r.hs_n >= 5 else hs_pool.get((r.coin, r.era_tag), np.nan)
             self.tab[(r.coin, pd.Timestamp(r.fill_t), r.m)] = (hs, s)
 
-    def cost(self, coin, fill_t, m, x):
-        """Fraction of x lost vs the mid (half-spread + slippage); NaN when the event has no prints."""
+    n_calls = 0
+    n_extrap = 0
+    usd_extrap = 0.0
+    usd_calls = 0.0
+
+    def cost(self, coin, fill_t, m, x, fb_bp=0.0):
+        """Fraction of x lost vs the mid (half-spread + slippage); NaN when the event has no prints. Beyond the
+        largest size with data: the larger of a linear extrapolation in size and fb_bp (the caller passes the
+        frozen model's 1x impact), so unobserved sizes are never cheaper than the model says."""
         v = self.tab.get((coin, pd.Timestamp(fill_t), m))
         if v is None or not np.isfinite(v[0]):
             return np.nan
@@ -169,12 +176,16 @@ class PrintCost:
         if not ok.any():
             return np.nan
         xs, ss = self.xs[ok], np.maximum.accumulate(np.maximum(s[ok], 0.0))
+        self.n_calls += 1
+        self.usd_calls += x
         if x <= xs[0]:
             sl = ss[0] * x / xs[0]
         elif x <= xs[-1]:
             sl = np.interp(x, xs, ss)
         else:
-            sl = ss[-1] * x / xs[-1]                 # beyond the largest observed size: linear in size
+            sl = max(ss[-1] * x / xs[-1], fb_bp)
+            self.n_extrap += 1
+            self.usd_extrap += x
         return (hs + sl) / 1e4
 
 
@@ -212,7 +223,7 @@ def tranche_pnl(Q, cfg, era, bound, N, paths="live", tick="model", share=False, 
     else:
         close_g, pg, pcp = frozen_paths(Q, tag)
     if cap == "print":
-        pcp = pcap(Q, era, tick)                 # (n, 15) USD at/above peg + tick from prints (NaN: no prints)
+        pg, pcp = pcap(Q, era, tick)             # peg gains and USD at/above peg + tick from prints, (n, 15)
     g60 = Q.g60.to_numpy() / 1e4
 
     def exit_cost(i, x, m):
@@ -220,7 +231,8 @@ def tranche_pnl(Q, cfg, era, bound, N, paths="live", tick="model", share=False, 
             return 0.0
         if cost == "model":
             return hs + y * vol_d[i] * np.sqrt(x / adv[i])
-        c = pc.cost(Q.coin.iat[i], Q.fill_t.iat[i], m, x / fsc[i])
+        fb = 1e4 * fsim.IMPACT_Y * vol_d[i] * np.sqrt(x / adv[i])
+        c = pc.cost(Q.coin.iat[i], Q.fill_t.iat[i], m, x / fsc[i], fb_bp=fb)
         return pmult * c
 
     used = {}
