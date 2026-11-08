@@ -1,0 +1,92 @@
+name: hunt2
+
+# Edge hunt 2 (reports/hunt2_prereg.md on branch hunt2): generic runner for fetches and heavy research jobs, like
+# hunt.yml, plus an optional step that downloads the artifacts of earlier runs into art/<run_id>/ (raw trade prints
+# never leave the runners; only derived per-event results are committed).
+# Dispatch: POST /repos/{owner}/{repo}/actions/workflows/hunt2.yml/dispatches with ref = the working branch.
+on:
+  workflow_dispatch:
+    inputs:
+      script:
+        description: "python script to run (repo-relative)"
+        required: true
+      args:
+        description: "arguments"
+        default: ""
+      pip:
+        description: "extra pip packages"
+        default: ""
+      commit:
+        description: "space-separated paths to commit back to the branch"
+        default: ""
+      artifact:
+        description: "space-separated paths to upload as an artifact"
+        default: ""
+      tag:
+        description: "short label for the commit message and artifact"
+        default: "run"
+      sparse:
+        description: "space-separated repo-relative files or folders to check out (empty = whole repo)"
+        default: ""
+      art_runs:
+        description: "space-separated run ids whose artifacts are downloaded into art/<run_id>/ first"
+        default: ""
+      art_pattern:
+        description: "artifact name pattern for art_runs"
+        default: "*"
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+      - name: Checkout scope
+        run: |
+          SPARSE="${{ inputs.sparse }}"
+          if [ -n "$SPARSE" ]; then
+            pats="/.github/"; for p in $SPARSE; do pats="$pats /${p#/}"; done
+            git sparse-checkout set --no-cone $pats
+          else
+            git sparse-checkout disable
+          fi
+          du -sh . 2>/dev/null | tail -1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q pandas numpy pyarrow requests scipy numba lightgbm statsmodels ${{ inputs.pip }}
+      - name: Download artifacts of earlier runs
+        if: inputs.art_runs != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p art
+          for r in ${{ inputs.art_runs }}; do
+            gh run download "$r" -R "${{ github.repository }}" -D "art/$r" -p "${{ inputs.art_pattern }}"
+          done
+          du -sh art; find art -type f | head -50
+      - name: Run
+        run: |
+          nproc; free -g
+          python ${{ inputs.script }} ${{ inputs.args }}
+      - name: Commit outputs
+        if: inputs.commit != ''
+        run: |
+          git config user.name "crypto-edge-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add --sparse -f ${{ inputs.commit }} || true
+          git diff --cached --quiet && exit 0
+          git commit -m "hunt2 ${{ inputs.tag }}: outputs ($(date -u +%Y-%m-%dT%H:%MZ))"
+          for i in 1 2 3 4 5 6; do git pull --rebase origin ${GITHUB_REF_NAME} && git push origin HEAD:${GITHUB_REF_NAME} && break; sleep $((5*i)); done
+      - uses: actions/upload-artifact@v4
+        if: inputs.artifact != ''
+        with:
+          name: hunt2-${{ inputs.tag }}-${{ github.run_id }}
+          path: ${{ inputs.artifact }}
+          retention-days: 21
