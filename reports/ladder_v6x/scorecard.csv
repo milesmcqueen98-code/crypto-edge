@@ -1,0 +1,4 @@
+candidate,basis,total,evidence,robustness,prize,capacity,realism,mechanism,implementation,t,mean_dsharpe,cap_dsharpe,verdict
+X12_family_best,"dropped at round 1; selection era, best in-sample rule of the family (upper bound, no out-of-sample read)",46,8,16,5,2,8,3,4,1.32,0.157,0.167,reject (dropped at round 1)
+X2_wf6_h10,"out-of-sample (check + 2022-23), frozen rule",33,3,10,0,2,9,4,5,0.52,-0.149,0.004,"reject (out of sample: G1 t +0.52, check era negative; fails G1-G3)"
+X1_family_best,"dropped at round 1; selection era, best in-sample rule of the family (upper bound, no out-of-sample read)",18,0,0,0,0,8,3,7,-0.72,-0.374,-0.052,reject (dropped at round 1)

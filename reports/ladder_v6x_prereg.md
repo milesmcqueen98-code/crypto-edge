@@ -104,3 +104,10 @@ A market sell of a remainder X USD at minute m after its fill pays the taker fee
   measured kappa -0.72 and +1.32). Rounds run: 4 of 5 (round 5 not needed). Frozen candidate: X2_wf6_h10
   (reports/ladder_v6x/frozen_rule.json), hand scores fixed before the read (scorecard_manual.json). Times in
   rounds.md were hand-typed in earlier commits and are corrected to the commit times.
+- 2026-11-08 20:37 UTC (commit 5d7174b, after the freeze 94209a0 at 20:33 UTC): the one out-of-sample read. X2_wf6_h10
+  fails G1 (pooled t +0.52 at S* theta 0.5), G2 (check era -0.04 bp a day), G3 (theta 0.25 pooled t +0.60); G4 passes
+  (base +0.28 bp a day). Sharpe at S* theta 0.5: check 2.66 -> 2.37, 2022-23 1.91 -> 1.90. Verdict: reject. Nothing
+  passed, so no red team and no forward test (the forward-test verdict needs pooled t >= 1 with both eras positive).
+  For information after the freeze, the dropped levers' best in-sample specs run walk-forward on the selection era:
+  X12 t +0.46 (dSharpe -0.32), X1 +0.16 (-0.27). Scorecard (scorecard.csv): X12 46 and X1 18 on their in-sample
+  upper bounds, X2 33 out of sample. No change to the bot, so no patch.
