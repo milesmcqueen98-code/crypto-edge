@@ -192,7 +192,6 @@ def era_arrays(tag, era, theta, C, today, notional=0.25, kappa=0.002, phantom=Fa
 
 
 # ------------------------------------------------------------------------------------------------ core
-@nb.njit(cache=True)
 def _place(q, k, t, ts, usd, free, fee, dp_start, dp_len, f_off, late_fills, r_usd, r_place, r_state, r_fidx,
            r_ncash):
     """_place_pending for one rung: full if it fits, partial if >= 50% of the need, else deferred. Returns the
@@ -217,7 +216,9 @@ def _place(q, k, t, ts, usd, free, fee, dp_start, dp_len, f_off, late_fills, r_u
     return pl * (1 + fee)
 
 
-@nb.njit(cache=True)
+_place = nb.njit(cache=True)(_place)
+
+
 def _core(T, NC, order, ncand, want4, M, NP, p_t, p_c, p_in, p_scan, p_tpoff, p_tp, p_want, p_close, dp_start,
           dp_len, lvl_ok, f_off, f_in, f_scan, f_tpoff, f_tp, E, theta, fee, instant, policy, busy_on, rem_hold,
           tp_release, late_fills, inst_new_first, prio_mode, alloc_first, rel_shift, busy_mode, mkt_check,
@@ -588,6 +589,9 @@ def _core(T, NC, order, ncand, want4, M, NP, p_t, p_c, p_in, p_scan, p_tpoff, p_
             filled_prev[c] = filled_now[c]
             fq_prev[c] = fq_now[c]
     return a4, F4, tpF4, why4, r_state, r_usd, r_fidx, r_F, r_tpF, r_place, r_ncash, cash_short
+
+
+_core = nb.njit(cache=True)(_core)
 
 
 def replay(A, theta=0.5, C=250e3, bound="minute", policy="engine", busy_on=True, rem_hold=True, tp_release=True,
