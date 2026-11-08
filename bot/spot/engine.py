@@ -210,6 +210,8 @@ class LiveBroker:
 
     live = True
     TERMINAL = ("FILLED", "CANCELLED", "EXPIRED", "FAILED")
+    quote = "USD"                                          # class defaults: tests build brokers without __init__
+    last_usdc = None
 
     def __init__(self, count_usdc=False, quote="USD", client=None):
         if client is None:
