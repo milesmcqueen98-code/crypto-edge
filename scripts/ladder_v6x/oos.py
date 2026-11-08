@@ -55,9 +55,9 @@ def era_betas(era, spec):
     return out
 
 
-def candidate(cfg, era, spec, betas):
+def candidate(cfg, era, spec, betas, ext=None):
     kappa, lever, inputs, h = spec["kappa"], spec["lever"], tuple(spec["inputs"]), spec["h"]
-    ext = spec["cash_ext"]
+    ext = spec["cash_ext"] if ext is None else ext
     inc = X.blended(RU.books(cfg, era, kappa, 0), X.at60)
     bk = RU.books(cfg, era, kappa, ext)
     cand = X.blended(bk, lambda x: RU.decide(x, lever, RU.beta_rows(x, betas, len(inputs)), h, inputs))
@@ -66,6 +66,7 @@ def candidate(cfg, era, spec, betas):
 
 def main():
     spec = json.load(open(os.path.join(OUT, "frozen_rule.json")))
+    spec["kappa"] = X.measured_kappa() if str(spec["kappa"]).startswith("measured") else float(spec["kappa"])
     os.makedirs(OOS, exist_ok=True)
     betas = {era: era_betas(era, spec) for era in OUT_ERAS}
     res, daily = {"spec": spec, "configs": {}}, {}
@@ -108,6 +109,24 @@ def main():
         for era, e in v["eras"].items():
             lines.append(f"    {era:5s} inc {100 * e['inc_ret']:5.1f}% / {e['inc_sharpe']:.2f}  cand {100 * e['ret']:5.1f}% / "
                          f"{e['sharpe']:.2f}  t {e['t']:+.2f}  mean {e['mean_bp']:+.2f} bp/day")
+    if spec["cash_ext"]:                                   # for information only: the same rule, optimistic cash
+        lines.append("for information, optimistic cash (no remainder blocks cash past 60):")
+        info = {}
+        for cfg in CFGS:
+            pi, pc_ = [], []
+            for era in OUT_ERAS:
+                inc, cand = candidate(cfg, era, spec, betas[era], ext=0)
+                daily[f"{cfg}|{era}|cand_ext0"] = cand
+                pi.append(inc)
+                pc_.append(cand)
+            d = pd.concat(pc_) - pd.concat(pi)
+            info[cfg] = dict(pooled_t=float(fsim.nw_t(d)), pooled_mean_bp=1e4 * float(d.mean()),
+                             era_mean_bp={e: 1e4 * float((c - i).mean()) for e, i, c in zip(OUT_ERAS, pi, pc_)})
+            lines.append(f"  {cfg}: pooled t {info[cfg]['pooled_t']:+.2f}, eras "
+                         + ", ".join(f"{e} {v:+.2f} bp/day" for e, v in info[cfg]["era_mean_bp"].items()))
+        res["optimistic_cash"] = info
+        json.dump(res, open(os.path.join(OOS, "result.json"), "w"), indent=1, default=float)
+        pd.DataFrame(daily).to_parquet(os.path.join(OOS, "daily.parquet"))
     open(os.path.join(OOS, "summary.txt"), "w").write("\n".join(lines) + "\n")
     print("\n".join(lines))
 

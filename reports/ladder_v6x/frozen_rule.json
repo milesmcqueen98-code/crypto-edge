@@ -1,0 +1,18 @@
+{
+ "name": "X2_wf6_h10",
+ "lever": "X2",
+ "description": "Hold the part a take-profit has not sold past minute 60, take-profit still resting, while a linear prediction of the gain from holding to minute 120 (bp per remainder dollar, net of costs) is at least h; otherwise sell it at market at that minute's close; sell what is left at minute 120.",
+ "inputs": ["mark", "rec", "k", "btc", "breadth", "m"],
+ "inputs_meaning": {"mark": "close vs the entry, bp", "rec": "mark / (k sigma), sigma from the take-profit distance (g_tp / 0.6)", "k": "rung depth", "btc": "BTC close vs its close at the fill minute, bp", "breadth": "coins with a research parent fill in minutes m-29..m", "m": "minutes since the fill"},
+ "weights": null,
+ "h": 10.0,
+ "horizon": 120,
+ "decision_minutes": "60..119",
+ "fit": "OLS, refit each quarter on the tranche-minutes of earlier quarters; out-of-sample eras: selection era plus the same era's earlier quarters (deviation log 20:16 UTC); training frame S* theta 0.5 instant bound",
+ "kappa": "measured (unused by X2: all its exits are at minutes >= 60)",
+ "cash_ext": 60,
+ "path": "return",
+ "selection_walk_forward": {"S_0.5": {"t": 0.62, "d_ret_pp": 0.50, "d_sharpe": -0.032, "t_volmatched": -0.44}, "S_0.25": {"t": 0.45}, "base_0.5": {"t": -0.88}, "cap_1M": {"t": 1.05}},
+ "gates": "G1 pooled paired NW t >= 2 over check + 2022-23 at S* theta 0.5 (return path); G2 both eras' mean daily difference > 0 at S* theta 0.5; G3 theta 0.25 pooled t >= 2 and both eras positive; G4 base pooled mean > 0",
+ "reader": "scripts/ladder_v6x/oos.py (run once after this commit)"
+}

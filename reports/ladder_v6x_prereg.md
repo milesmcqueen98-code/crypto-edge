@@ -99,3 +99,8 @@ A market sell of a remainder X USD at minute m after its fill pays the taker fee
     selection era plus the same era's earlier quarters (no quarter runs the incumbent's exit there). The plan's "first
     quarter of an era runs the incumbent's exit" would have zeroed 3 of the check era's 7 months; within the selection
     era the first quarter (2025Q1) still runs the incumbent's exit.
+- Freeze (this entry's commit time is the freeze time). kappa(m) measured (ladder/v6x-kappa): 1.02 / 1.15 / 1.17 /
+  1.10 / 1.01 / 1.03 at minutes 2 / 5 / 10 / 20 / 30 / 45; X1 and X12 dropped at round 1 (family bounds at the
+  measured kappa -0.72 and +1.32). Rounds run: 4 of 5 (round 5 not needed). Frozen candidate: X2_wf6_h10
+  (reports/ladder_v6x/frozen_rule.json), hand scores fixed before the read (scorecard_manual.json). Times in
+  rounds.md were hand-typed in earlier commits and are corrected to the commit times.

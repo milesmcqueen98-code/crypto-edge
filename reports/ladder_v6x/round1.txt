@@ -25,3 +25,5 @@ family best X1 kappa1                  t  -0.60  dSharpe -0.349  dret  -1.37pp  
 family best X12 kappa1                 t  +1.30  dSharpe +0.158  dret  +4.28pp  mean  +1.17 bp/day  h 0 inputs rec+m
 family best X1 kappa2                  t  -1.03  dSharpe -0.415  dret  -2.20pp  mean  -0.60 bp/day  h 0 inputs rec+k+breadth+m
 family best X12 kappa2                 t  +1.12  dSharpe +0.039  dret  +3.81pp  mean  +1.04 bp/day  h 0 inputs rec+breadth+m
+family best X1 kappameasured           t  -0.72  dSharpe -0.374  dret  -1.66pp  mean  -0.45 bp/day  h 0 inputs rec+k+btc+breadth+m
+family best X12 kappameasured          t  +1.32  dSharpe +0.157  dret  +4.35pp  mean  +1.19 bp/day  h 0 inputs rec+m

@@ -1,0 +1,25 @@
+{
+ "X2_wf6_h10": {
+  "record": "oos/result.json",
+  "basis": "out-of-sample (check + 2022-23), frozen rule",
+  "realism": {"score": 9, "reason": "Exits at 60-120 priced from prints (60 / 65 / 75 measured, the 75-minute cost after); inputs all known live (minute closes, BTC, the bot's own parent fills); cash on the pessimistic bound. Deductions: take-profit fills after 60 extend the frozen capacity model past the window it was checked on, and the rule's own exit minutes past 75 were not print-measured."},
+  "mechanism": {"score": 4, "reason": "A dislocation not finished at 60 keeps rebounding, more while the cascade is still spreading: plausible, but the selection era's support is one quarter (2025Q1) and the walk-forward fits do not show it."},
+  "implementation": {"score": 5, "reason": "Engine change: remainders held up to 120 with the take-profit resting, a per-minute linear prediction from 6 inputs, quarterly refit; touches order handling and cash (held remainders block new entries). Testable in the replay; moderate risk."}
+ },
+ "X1_family_best": {
+  "record": "records/X1_family_best.json",
+  "basis": "dropped at round 1; selection era, best in-sample rule of the family (upper bound, no out-of-sample read)",
+  "verdict": "reject (dropped at round 1)",
+  "realism": {"score": 8, "reason": "Early-exit costs are kappa(m) x the minute-60 print cost, kappa measured on 300 tranches (1.02-1.17). The strongest in-sample pattern (sell the unfilled part once the price is above the take-profit) exists because the model fills only theta of the volume trading through the take-profit; a live resting order would mostly be filled."},
+  "mechanism": {"score": 3, "reason": "The remaining rebound is not predictable enough from these inputs to beat holding with the take-profit resting; stops already hurt (wick v2)."},
+  "implementation": {"score": 7, "reason": "Simple: cancel the take-profit and sell at market when the rule says so; no cash change."}
+ },
+ "X12_family_best": {
+  "record": "records/X12_family_best.json",
+  "basis": "dropped at round 1; selection era, best in-sample rule of the family (upper bound, no out-of-sample read)",
+  "verdict": "reject (dropped at round 1)",
+  "realism": {"score": 8, "reason": "X1's early-exit costs plus X2's untested extrapolations past 60."},
+  "mechanism": {"score": 3, "reason": "As X1 and X2: the early part loses, the late part did not survive walk-forward."},
+  "implementation": {"score": 4, "reason": "Both changes: per-minute decisions over two hours, order handling and cash."}
+ }
+}

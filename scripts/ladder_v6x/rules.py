@@ -213,6 +213,7 @@ def family_bound(levers=("X1", "X12"), kappas=(1.0, 2.0)):
     import itertools
     lines = []
     for kappa in kappas:
+        kl = "measured" if isinstance(kappa, dict) else f"{kappa:g}"
         for lever in levers:
             train = books("S_0.5", "sel", kappa, 0)["instant"]
             rows = np.ones(len(train.Q), bool)
@@ -223,20 +224,22 @@ def family_bound(levers=("X1", "X12"), kappas=(1.0, 2.0)):
                     for h in (0.0, 5.0, 10.0):
                         inc, cand, bk, rule = run_rule(lever, kappa, h, beta, sub)
                         s = score(inc, cand)
-                        log(dict(round=1, name=f"family {lever} kappa{kappa:g} h{h:g} {'+'.join(sub)}", lever=lever,
-                                 kappa=kappa, cash="ext60" if lever != "X1" else "ext0", fit="insample-family", h=h,
+                        log(dict(round=1, name=f"family {lever} kappa{kl} h{h:g} {'+'.join(sub)}", lever=lever,
+                                 kappa=kl, cash="ext60" if lever != "X1" else "ext0", fit="insample-family", h=h,
                                  inputs="+".join(sub), weights="ols", **{f"sel_{k}": v for k, v in s.items()},
                                  moved=np.nan, note="drop-rule bound over the family"))
                         if best is None or s["t"] > best[0]["t"]:
                             best = (s, sub, h)
             s, sub, h = best
-            lines.append(report_line(f"family best {lever} kappa{kappa:g}", s, f"h {h:g} inputs {'+'.join(sub)}"))
+            lines.append(report_line(f"family best {lever} kappa{kl}", s, f"h {h:g} inputs {'+'.join(sub)}"))
             print(lines[-1], flush=True)
     open(os.path.join(OUT, "round1.txt"), "a").write("\n".join(lines) + "\n")
 
 
 if __name__ == "__main__" and sys.argv[1] == "family":
     family_bound()
+if __name__ == "__main__" and sys.argv[1] == "family_measured":
+    family_bound(kappas=(X.measured_kappa(),))
 
 
 def hold_all(lever):
@@ -292,3 +295,36 @@ ROUND4 = ([(f"R4 X2 wf all6 WLS h{h:g}", "X2", ALL, h, "usd", "wf") for h in (0.
 
 if __name__ == "__main__" and sys.argv[1] == "round4":
     run_round(4, ROUND4)
+
+
+def record(name, lever, kappa, inputs, h, fitk="insample", weights=None, note=""):
+    """Selection-era record in the out-of-sample reader's format (for the scorecard of levers never frozen)."""
+    import json
+    train = books("S_0.5", "sel", kappa, 0)["instant"]
+    if fitk == "wf":
+        betas = wf_betas(train, lever, inputs, weights)
+    else:
+        betas = fit(train, lever, np.ones(len(train.Q), bool), inputs, weights)[0]
+    out = {"name": name, "basis": note, "spec": dict(lever=lever, inputs=list(inputs), h=h, fit=fitk, path="return"),
+           "configs": {}}
+    for cfg in ("S_0.5", "S_0.25", "base_0.5", "cap_1M"):
+        inc, cand, bk, rule = run_rule(lever, kappa, h, betas, inputs, cfg=cfg)
+        s = score(inc, cand, cfg)
+        d = cand - inc
+        vm = cand * (inc.std() / cand.std()) - inc
+        out["configs"][cfg] = dict(eras={"sel": s}, pooled_t=s["t"], pooled_mean_bp=s["mean_bp"],
+                                   pooled_t_volmatched=float(X.fsim.nw_t(vm)),
+                                   era_means_volmatched_bp={"sel": 1e4 * float(vm.mean())})
+    os.makedirs(os.path.join(OUT, "records"), exist_ok=True)
+    json.dump(out, open(os.path.join(OUT, "records", f"{name}.json"), "w"), indent=1, default=float)
+    return out
+
+
+if __name__ == "__main__" and sys.argv[1] == "records":
+    km = X.measured_kappa()
+    for nm, lev, inp, h in (("X1_family_best", "X1", ("rec", "k", "btc", "breadth", "m"), 0.0),
+                            ("X12_family_best", "X12", ("rec", "m"), 0.0)):
+        o = record(nm, lev, km, inp, h, note="dropped at round 1: best in-sample rule of the family, selection era "
+                                             "(an upper bound; no out-of-sample read)")
+        print(nm, {c: round(v["pooled_t"], 2) for c, v in o["configs"].items()},
+              {c: round(v["eras"]["sel"]["d_sharpe"], 3) for c, v in o["configs"].items()})

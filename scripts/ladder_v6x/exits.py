@@ -370,3 +370,10 @@ if __name__ == "__main__":
         build(era, fr)
     elif cmd == "parity":
         parity(era, tuple(sys.argv[3:]) or ("S_0.5",))
+
+
+def measured_kappa():
+    """kappa(m) measured on the pre-registered sample (reports/ladder_v6x/kappa/kappa.csv, branch ladder/v6x-kappa):
+    {minute: median ratio}, or 2 at a minute with fewer than 100 valid pairs (pre-registered)."""
+    k = pd.read_csv(os.path.join(OUT, "kappa", "kappa.csv"))
+    return {int(r.m): (float(r.kappa) if r.n_valid >= 100 else 2.0) for r in k.itertuples()}
