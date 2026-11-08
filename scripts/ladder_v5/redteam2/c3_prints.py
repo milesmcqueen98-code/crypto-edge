@@ -60,6 +60,9 @@ class PrintCap:
 def cost_table(pc):
     """Per remainder dollar of the incumbent's 60-minute market exit: model half-spread and impact vs prints."""
     rows = []
+    X0 = pd.read_csv(os.path.join(fsim.OUT, "prints_rt2_exit.csv"), parse_dates=["fill_t"])
+    X0 = X0[X0.m == 0]
+    at_ask = {(r.coin, pd.Timestamp(r.fill_t)): (r.close_side == "sell") for r in X0.itertuples()}
     for cfg in ("S_0.5", "base_0.5", "cap_1M"):
         kw = gates.CONFIGS[cfg]
         for era in fsim.ERAS:
@@ -72,19 +75,21 @@ def cost_table(pc):
             vol_d = Q.vol_d.to_numpy()
             hs_m = fsim.HS_BP * kw["cost_mult"] * np.ones(len(Q))
             imp_m = 1e4 * fsim.IMPACT_Y * kw["cost_mult"] * vol_d * np.sqrt(rem / adv)
-            hs_p, sl_p, sl_t, y_imp = [], [], [], []
+            hs_p, sl_p, sl_t, y_imp, ask = [], [], [], [], []
             for i in range(len(Q)):
                 v = pc.tab.get((Q.coin.iat[i], pd.Timestamp(Q.fill_t.iat[i]), 0))
                 if v is None or not np.isfinite(v[0]):
                     hs_p.append(np.nan), sl_p.append(np.nan), sl_t.append(np.nan), y_imp.append(np.nan)
+                    ask.append(np.nan)
                     continue
+                ask.append(float(at_ask.get((Q.coin.iat[i], pd.Timestamp(Q.fill_t.iat[i])), np.nan)))
                 fb = 1e4 * fsim.IMPACT_Y * vol_d[i] * np.sqrt(rem[i] / adv[i])
                 c_era = 1e4 * pc.cost(Q.coin.iat[i], Q.fill_t.iat[i], 0, rem[i], fb_bp=fb) - v[0]
                 c_tod = 1e4 * pc.cost(Q.coin.iat[i], Q.fill_t.iat[i], 0, rem[i] / fsc[i], fb_bp=fb) - v[0]
                 hs_p.append(v[0]), sl_p.append(c_era), sl_t.append(c_tod)
                 base_imp = 1e4 * vol_d[i] * np.sqrt(rem[i] / (adv[i] / fsc[i]))   # era ADV
                 y_imp.append(c_era / base_imp if base_imp > 0 else np.nan)
-            hs_p, sl_p, sl_t, y_imp = map(np.array, (hs_p, sl_p, sl_t, y_imp))
+            hs_p, sl_p, sl_t, y_imp, ask = map(np.array, (hs_p, sl_p, sl_t, y_imp, ask))
             ok = np.isfinite(hs_p)
             w = rem[ok] / rem[ok].sum()
             rows.append(dict(cfg=cfg, era=era, tranches=len(Q), with_prints=int(ok.sum()),
@@ -97,6 +102,9 @@ def cost_table(pc):
                              print_total_today_bp=float((w * (hs_p[ok] + sl_t[ok])).sum()),
                              implied_y=float(np.nansum(w * np.nan_to_num(y_imp[ok])) /
                                              max(1e-12, np.sum(w[np.isfinite(y_imp[ok])]))),
+                             share_close_at_ask=float(np.nanmean(ask[ok])),
+                             print_total_vs_close_bp=float((w * (2 * hs_p[ok] * np.nan_to_num(ask[ok], nan=0.5) +
+                                                                 sl_p[ok])).sum()),
                              print_hs_median_bp=float(np.median(hs_p[ok])),
                              print_slip_median_bp=float(np.median(sl_p[ok]))))
     return pd.DataFrame(rows)
