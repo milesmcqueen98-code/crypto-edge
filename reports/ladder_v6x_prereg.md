@@ -79,3 +79,23 @@ A market sell of a remainder X USD at minute m after its fill pays the taker fee
 - A patch to bot/spot only for an adopted change, with parity and fault tests, every safety check kept.
 
 ## Deviation log
+- 2026-11-08 20:16 UTC (before any exit variant ran; implementation choices the plan left open, scripts/ladder_v6x/exits.py):
+  - Exit costs between measured points: kappa(m) linear between measured minutes, kappa(2) for minutes 0-1; between
+    60, 65 and 75 the tranche's own frozen costs are interpolated linearly in m (same size).
+  - A tranche without event prints whose minute-60 exit the incumbent priced with the frozen model keeps the model
+    x kappa(m) at every minute (deviation: the plan said pooled prints, which would break the required parity at 60;
+    the model is dearer than prints, so this is conservative). 45 of 3,571 S* theta 0.5 selection tranche-frames.
+  - Take-profit fills in the exit layer: an early exit keeps only the take-profit fill that had traded (the incumbent's
+    fill, accrued with the USD traded above the take-profit from the touch on); after 60 the order keeps resting and
+    gets theta x the later USD above it (x today's-volume factor in S*), shared pro rata among a parent's open tranches.
+    Exit at 60 everywhere reproduces the incumbent (max daily difference 5e-20); the exit dataset reproduces the
+    frames' take-profit touches and capacities exactly.
+  - Decisions run from the close of the fill minute (m = 0) to the horizon minus one.
+  - Training rows: open tranche-minutes of the S* theta 0.5 instant-bound incumbent frame; the fitted coefficients
+    apply to every configuration and bound. OLS, unweighted.
+  - Cash for X2 / X12 under walk-forward: quarters that run the incumbent's exit use the incumbent's frames; fitted
+    quarters use the rem_extra = 60 frames (pessimistic), spliced at quarter boundaries.
+  - Walk-forward on the out-of-sample eras (deviation, fixed now): each quarter's coefficients are fitted on the
+    selection era plus the same era's earlier quarters (no quarter runs the incumbent's exit there). The plan's "first
+    quarter of an era runs the incumbent's exit" would have zeroed 3 of the check era's 7 months; within the selection
+    era the first quarter (2025Q1) still runs the incumbent's exit.
