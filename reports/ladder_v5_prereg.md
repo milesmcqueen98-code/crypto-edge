@@ -220,7 +220,7 @@ sizing (no US-accessible history: a forward log below).
   has pooled t ≥ 1 and a positive mean in every era. A component failing (b) is dropped and the smaller set must pass
   (a). Whatever the result, C4 goes live only after the pre-registered USDC verification, and every adopted change
   runs in paper_spot_v5 before the live bot changes.
-- 2026-11-08 00:56 UTC (after red team 1, before any re-run of the winners on its replay). Red team 1 found that hsim,
+- 2026-11-08 00:23 UTC (after red team 1, before any re-run of the winners on its replay). Red team 1 found that hsim,
   the frozen simulator of the live cash rule, departs from bot/spot/engine.py in two ways (deeper rungs get cash in
   parent-fill order instead of ladder-creation order; a deeper rung is placed and filled when the market is already at
   or below its level, where the engine defers it). Its engine-faithful replay matches the engine rung by rung on three
