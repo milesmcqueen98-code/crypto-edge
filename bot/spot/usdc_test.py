@@ -96,7 +96,7 @@ def run():
           E.LiveBroker(count_usdc=True, quote="USD", client=FakeClient()).cash(), 251000.0)
     b = E.LiveBroker(quote="USDC", client=FakeClient())
     check("quote USDC: cash = available USDC only", b.cash(), 250000.0)
-    check("quote USDC: USDC for the rewards check (available + on hold)", b.last_usdc, 270000.0)
+    check("quote USDC: USDC for the rewards check (available, on hold)", b.last_usdc, (250000.0, 20000.0))
     try:
         E.LiveBroker(quote="EUR", client=FakeClient())
         check("an unknown quote is refused", False, True)

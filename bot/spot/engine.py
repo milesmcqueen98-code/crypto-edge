@@ -227,7 +227,7 @@ class LiveBroker:
         self.quote = (quote or "USD").upper()             # ladder v5 C4: "USDC" trades the -USDC aliases
         if self.quote not in ("USD", "USDC"):
             raise ValueError(f"quote must be USD or USDC, not {quote}")
-        self.last_usdc = None
+        self.last_usdc = None                               # (available, on hold) at the last cash read
 
     def _p(self, product):
         """The product an order goes to: the -USDC alias of a -USD book when the bot's cash is USDC."""
@@ -364,7 +364,7 @@ class LiveBroker:
     def cash(self):
         b = self.balances()
         if self.quote == "USDC":
-            self.last_usdc = sum(b.get("USDC", (0.0, 0.0)))   # available + on hold, for the USDC rewards check
+            self.last_usdc = b.get("USDC", (0.0, 0.0))     # for the rewards check: is USDC on hold paid too?
             return b.get("USDC", (0.0, 0.0))[0]           # orders on the -USDC aliases spend USDC only
         usd = b.get("USD", (0.0, 0.0))[0]
         return usd + (b.get("USDC", (0.0, 0.0))[0] if self.count_usdc else 0.0)
@@ -852,7 +852,8 @@ class Engine:
                      committed=round(self.committed()), free=round(free) if np.isfinite(free) else None,
                      armed=sorted(l["coin"] for l in self.ladders() if l["status"] == "armed"),
                      open=sorted(f"{l['coin']}:{'/'.join(sorted(l['tranches']))}" for l in self.ladders() if l["tranches"]),
-                     counts=self.counts, **({"usdc": round(self.broker.last_usdc, 2)}
+                     counts=self.counts, **({"usdc_avail": round(self.broker.last_usdc[0], 2),
+                                             "usdc_hold": round(self.broker.last_usdc[1], 2)}
                                             if getattr(self.broker, "last_usdc", None) is not None else {}))
             self.counts = {}
         self.state["last_minute"] = t.isoformat()

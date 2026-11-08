@@ -272,11 +272,16 @@ elif a.cmd == "usdc-check":
         st = br.status(oid)["status"]
         print(f"   cancelled: status {st}")
         ok = ok and st in br.TERMINAL
-    # 3. the rewards check needs one rewards period of history
-    print("3. after one rewards period, compare the USDC rewards Coinbase paid with the expected amount: the average of "
-          "the heartbeat 'usdc' field (available + on hold) x the advertised APY x days / 365 (python bot/spot/run.py "
-          "report). Stop C4 if rewards are below half the expected amount, if any -USDC order is rejected, or if the "
-          "rules change to end exchange rewards.")
+    # 3. the rewards check needs live history (strengthened after the ladder v5 red team: a $10 bid cannot tell
+    #    whether USDC on hold for resting bids is paid)
+    print("3. before switching the bot to USDC: confirm in the Coinbase app that USDC rewards are offered to this "
+          "account (state of residence, Coinbase One active, the bot's API portfolio included) and set payouts to USDC; "
+          "convert USD to USDC only at a 1:1, zero-fee quote. Then run the bot on USDC through at least one weekly "
+          "payout and compare the rewards paid with two expectations from the heartbeats (python bot/spot/run.py "
+          "report): A = average(usdc_avail + usdc_hold) x APY x days / 365 (holds paid) and B = average(usdc_avail) x "
+          "APY x days / 365 (holds not paid). Stop using USDC if rewards are below half of B, if any -USDC order is "
+          "rejected, if Coinbase changes the program, or if USDC trades below 0.997 for 15 minutes: then pause the bot "
+          "and hold the USDC; never sell it at a discount.")
     print("\nusdc-check", "PASSED (steps 1-2)" if ok else "FAILED")
 
 elif a.cmd == "reset-halt":
