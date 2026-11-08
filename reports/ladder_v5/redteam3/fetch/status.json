@@ -1,0 +1,62 @@
+{
+ "kraken_ohlc": 200,
+ "kraken_ohlc_rows": 721,
+ "kraken_ohlc_range": [
+  "2024-11-18",
+  "2026-11-08"
+ ],
+ "kraken_ohlc_seconds": 0,
+ "fred_TB3MS": 200,
+ "fred_DTB3": 200,
+ "fred_seconds": 0,
+ "treasury_2022": 200,
+ "treasury_2023": 200,
+ "treasury_2024": 200,
+ "treasury_2025": 200,
+ "treasury_2026": 200,
+ "treasury_seconds": 93,
+ "coinbase_candles_BTC-USD": 200,
+ "coinbase_candles_BTC-USDC": 200,
+ "coinbase_candles_ETH-USD": 200,
+ "coinbase_candles_ETH-USDC": 200,
+ "coinbase_candles_USDT-USD": 200,
+ "coinbase_candles_USDT-USDC": 200,
+ "coinbase_seconds": 11,
+ "kraken_trades_2022-04-16": {
+  "trades": 8565,
+  "calls": 9,
+  "first": "2022-04-16 00:00:01.749677420",
+  "last": "2022-04-18 23:59:40.760216951"
+ },
+ "kraken_trades_2022-05-11": {
+  "trades": 69934,
+  "calls": 71,
+  "first": "2022-05-11 00:00:12.356776714",
+  "last": "2022-05-12 23:59:55.514631509"
+ },
+ "kraken_trades_2022-11-24": {
+  "trades": 28831,
+  "calls": 29,
+  "first": "2022-11-24 00:01:10.092535257",
+  "last": "2022-11-25 23:54:42.008287190"
+ },
+ "kraken_trades_2023-01-18": {
+  "trades": 10721,
+  "calls": 11,
+  "first": "2023-01-18 00:00:59.525356770",
+  "last": "2023-01-20 23:58:44.556443930"
+ },
+ "kraken_trades_2023-03-09": {
+  "trades": 330663,
+  "calls": 331,
+  "first": "2023-03-09 00:00:41.819423437",
+  "last": "2023-03-15 23:59:53.088106155"
+ },
+ "kraken_trades_2025-06-02": {
+  "trades": 28608,
+  "calls": 30,
+  "first": "2025-06-02 00:00:07.563819647",
+  "last": "2025-06-03 23:59:57.417192698"
+ },
+ "kraken_windows_seconds": 617
+}
