@@ -1,9 +1,12 @@
-off/off vs cached incumbent, sel: max daily difference 1.73e-17
-off/off vs cached incumbent, chk: max daily difference 8.67e-19
-off/off vs cached incumbent, early: max daily difference 8.67e-18
+all off vs cached incumbent, sel: max daily difference 1.73e-17
+all off vs cached incumbent, chk: max daily difference 8.67e-19
+all off vs cached incumbent, early: max daily difference 8.67e-18
 C2a_margin_terciles alone, sel: return 0.224489 vs logged 0.224489; Sharpe 2.652575 vs 2.652575
 C2a_margin_terciles alone, chk: return 0.156973 vs logged 0.156973; Sharpe 2.278451 vs 2.278451
 C2a_margin_terciles alone, early: return 0.116255 vs logged 0.116255; Sharpe 1.840191 vs 1.840191
 C3b_passive_15 alone, sel: return 0.230138 vs logged 0.230138; Sharpe 2.843243 vs 2.843243
 C3b_passive_15 alone, chk: return 0.172097 vs logged 0.172097; Sharpe 2.751618 vs 2.751618
 C3b_passive_15 alone, early: return 0.116220 vs logged 0.116220; Sharpe 2.013974 vs 2.013974
+C4_usdc alone, sel: return 0.211815 vs logged 0.211815; Sharpe 2.564860 vs 2.564860
+C4_usdc alone, chk: return 0.166452 vs logged 0.166452; Sharpe 2.633395 vs 2.633395
+C4_usdc alone, early: return 0.119188 vs logged 0.119188; Sharpe 1.716658 vs 1.716658
