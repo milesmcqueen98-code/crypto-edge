@@ -1,0 +1,10 @@
+R2 hold-all-to-120 (reference)         t  +1.07  dSharpe +0.360  dret  +3.85pp  mean  +1.05 bp/day  
+R2 X2 wf mark+rec+k+btc+breadth+m h0   t  +0.24  dSharpe -0.056  dret  +0.20pp  mean  +0.06 bp/day  
+R2 X2 wf mark+rec+k+btc+breadth+m h5   t  +0.34  dSharpe -0.055  dret  +0.28pp  mean  +0.08 bp/day  
+R2 X2 wf mark+rec+k+btc+breadth+m h10  t  +0.62  dSharpe -0.032  dret  +0.50pp  mean  +0.14 bp/day  
+R2 X2 wf rec h0                        t  -0.51  dSharpe -0.162  dret  -0.53pp  mean  -0.15 bp/day  
+R2 X2 wf rec h5                        t  -0.61  dSharpe -0.150  dret  -0.54pp  mean  -0.15 bp/day  
+R2 X2 wf rec h10                       t  -0.99  dSharpe -0.132  dret  -0.78pp  mean  -0.21 bp/day  
+R2 X2 wf rec+m h0                      t  -0.59  dSharpe -0.201  dret  -0.68pp  mean  -0.19 bp/day  
+R2 X2 wf rec+m h5                      t  -0.48  dSharpe -0.120  dret  -0.47pp  mean  -0.13 bp/day  
+R2 X2 wf rec+m h10                     t  -0.76  dSharpe -0.175  dret  -0.75pp  mean  -0.20 bp/day  

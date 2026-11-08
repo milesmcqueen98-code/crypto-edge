@@ -277,3 +277,10 @@ ROUND2 = [("R2 hold-all-to-120 (reference)", "X2", (), np.nan, None, "hold")] + 
 
 if __name__ == "__main__" and sys.argv[1] == "round2":
     run_round(2, ROUND2)
+
+
+ROUND3 = [(f"R3 X2 wf {'+'.join(inp)} h{h:g}", "X2", inp, h, None, "wf")
+          for inp in (("breadth",), ("breadth", "mark"), ("breadth", "rec")) for h in (0.0, 5.0, 10.0)]
+
+if __name__ == "__main__" and sys.argv[1] == "round3":
+    run_round(3, ROUND3)

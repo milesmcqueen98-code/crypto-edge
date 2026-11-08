@@ -46,3 +46,26 @@ hour", which is one input (the recovered share), so a parsimonious fit should su
 Variants (OLS, refit quarterly on earlier quarters, 2025Q1 runs the incumbent, pessimistic cash): inputs {all 6},
 {rec}, {rec, m}, each at h 0 / 5 / 10. Reference, not a candidate: every remainder held to 120 (a plain hold time,
 already tried in wick v2), to separate the state-dependence from the extension itself.
+
+### Round 2 read (2026-11-08 20:41 UTC)
+| Variant (walk-forward, pessimistic cash) | t | dSharpe | dret |
+|---|---|---|---|
+| 6 inputs, h 0 / 5 / 10 | +0.24 / +0.34 / +0.62 | -0.06 / -0.06 / -0.03 | +0.2 / +0.3 / +0.5 pp |
+| rec, h 0 / 5 / 10 | -0.51 / -0.61 / -0.99 | -0.16 / -0.15 / -0.13 | -0.5 / -0.5 / -0.8 pp |
+| rec + m, h 0 / 5 / 10 | -0.59 / -0.48 / -0.76 | -0.20 / -0.12 / -0.18 | -0.7 / -0.5 / -0.8 pp |
+| reference: every remainder held to 120 | +1.07 | +0.36 | +3.85 pp |
+- The hypothesis was wrong: the parsimonious fits lose. The "deep under water at 60, keep holding" effect was a
+  2025Q1 effect (+164 bp per dollar for recovered share <= -0.6), then -3, -46, -47, +35 in the next four quarters.
+- The pessimistic cash bound alone (incumbent's exit, every remainder held 60 more minutes in the cash rule) costs
+  -3.5 pp a year (t -1.42): a selective extension must earn that back before it shows a gain. Without it (for
+  information only) the 6-input rule reads t +1.04 / +1.22 at h 0 / 10.
+- Walk-forward coefficients: breadth is the one stable input (+19.4, +17.5, +18.9, +15.6 bp per coin across the four
+  refits); k, BTC and minutes change sign or size; mark and rec move together (collinear).
+
+## Round 3: the cascade is not over (written 2026-11-08 20:41 UTC, before running)
+Hypothesis: a remainder should be held past 60 while the cascade is still spreading (other coins' parent fills in the
+last 30 minutes), because the dislocation, and its rebound, is still under way; once the market has been quiet for 30
+minutes, sell. Breadth plus at most the markout should then carry what the 6-input fit had, with less noise.
+Prediction: walk-forward t around +1 with optimistic cash and near 0 under the pessimistic bound, because the
+extension happens exactly when cash is scarce (a cascade). Variants (OLS walk-forward, pessimistic cash): inputs
+{breadth}, {breadth, mark}, {breadth, rec}, each at h 0 / 5 / 10.
