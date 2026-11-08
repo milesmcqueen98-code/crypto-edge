@@ -106,7 +106,7 @@ round-2 refits (mark, rec, breadth), OLS and WLS, h 0 / 5 / 10. Walk-forward, pe
 ### Round 1, final: kappa(m) measured (see the freeze commit for the time)
 kappa(m), the median ratio of a market sale's print-measured cost at minute m to minute 60 on the 300 pre-drawn
 selection tranches (252-264 valid pairs per minute; branch ladder/v6x-kappa): 1.02 (2 min), 1.15 (5), 1.17 (10),
-1.10 (20), 1.01 (30), 1.03 (45). Selling early costs 2-17% more than at minute 60 (median minute-60 cost 2.8 bp), so
+1.10 (20), 1.01 (30), 1.03 (45). Selling early costs 1-17% more than at minute 60 (median minute-60 cost 2.8 bp), so
 nothing reopens X1 or X12. Family bounds at the measured kappa: X1 -0.72, X12 +1.32 (rec + m, h 0). Both dropped.
 
 ## Freeze

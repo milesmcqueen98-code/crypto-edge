@@ -22,7 +22,7 @@
   "verdict": "reject (dropped at round 1)",
   "realism": {
    "score": 8,
-   "reason": "Early-exit costs are kappa(m) x the minute-60 print cost, kappa measured on 300 tranches (1.02-1.17). The strongest in-sample pattern (sell the unfilled part once the price is above the take-profit) exists because the model fills only theta of the volume trading through the take-profit; a live resting order would mostly be filled."
+   "reason": "Early-exit costs are kappa(m) x the minute-60 print cost, kappa measured on 300 tranches (1.01-1.17). The strongest in-sample pattern (sell the unfilled part once the price is above the take-profit) exists because the model fills only theta of the volume trading through the take-profit; a live resting order would mostly be filled."
   },
   "mechanism": {
    "score": 3,

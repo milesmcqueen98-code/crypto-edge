@@ -23,7 +23,7 @@ sell order of at least X in [T - 5, T + 5) min, X = the tranche's fill at today'
 | 60 | 264 | 1 | 2.80 | 2.80 | 1 |
 
 Every minute has at least 100 valid pairs, so the pre-registered fallback (kappa = 2) never applies. Selling before
-minute 60 costs 2-17% more than at 60.
+minute 60 costs 1-17% more than at 60.
 
 Sensitivity (not used): with windows starting at fill_t + 1 min, kappa(2) = 1.126 (259 pairs, dollar-weighted 1.23);
 kappa(5) is unchanged (its windows already start there).

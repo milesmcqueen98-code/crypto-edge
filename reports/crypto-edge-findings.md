@@ -7,7 +7,7 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   - Selling early loses even with a rule fitted to the data it is scored on.
   - Holding past 60 had an in-sample edge from one quarter (Q1 2025). It failed walk-forward and failed out of sample:
     pooled t +0.52, check era negative.
-  - Measured on Coinbase prints, selling before minute 60 costs 2–17% more than selling at 60 (2.8 bp median at 60).
+  - Measured on Coinbase prints, selling before minute 60 costs 1–17% more than selling at 60 (2.8 bp median at 60).
   - The hour-long markout rise is already captured: the take-profit sells 53% of the dollars by 60, and what is left
     is the tranches that did not rebound.
 - **Ladder v5 (Nov 7–8): no trading change adopted; the live ladder is better than estimated; idle cash in USDC goes
@@ -89,8 +89,9 @@ Question set by Miles: the 60-minute market sell costs 3–6 bp on prints, not t
 best exit? Start with a minute-by-minute hold-or-sell rule with few parameters, walk-forward. "No change" was a valid
 answer.
 
-Record: branch ladder/v6-exits. reports/ladder_v6x_prereg.md holds the plan and its deviation log; reports/ladder_v6x/
-holds the README, rounds.md, variants.csv (1,187 logged runs), the scorecard and oos/.
+Final report: the "Ladder v6: Exits Report" doc (https://claude.ai/artifact/9gPMndnptiS4KiizsZSdt3). Record: branch
+ladder/v6-exits. reports/ladder_v6x_prereg.md holds the plan and its deviation log; reports/ladder_v6x/ holds the
+README, rounds.md, variants.csv (1,187 logged runs), the scorecard and oos/.
 
 **Protocol**
 - Ladder v5's named simulator was frozen: the engine-faithful cash rule plus print-measured exit costs. It reproduces
