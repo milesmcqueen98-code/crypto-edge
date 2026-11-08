@@ -1528,3 +1528,6 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
   sell 1.6–3× at 1× and 3–5× in the doubled-cost stress (ladder v5, 2,053 exits on prints).
 - Wick-catcher capacity is estimated from 1-minute candles (volume spread evenly over each candle's range); real depth
   during wicks is unobserved until the paper test logs it.
+- Take-profit fills assume we get half (θ 0.5) of the volume trading through the take-profit. The only strongly
+  predictable exit pattern in ladder v6 (sell the unfilled part once the price is above the take-profit) depends on
+  that haircut. Paper take-profit fills can measure the real share.
