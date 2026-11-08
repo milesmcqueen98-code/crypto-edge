@@ -1,0 +1,295 @@
+     cfg   era  tranches  with_prints  rem_usd_median  rem_usd_mean  model_hs_bp  model_impact_bp  model_total_bp  print_hs_bp  print_slip_bp  print_total_bp  print_slip_today_bp  print_total_today_bp  implied_y  share_close_at_ask  print_total_vs_close_bp  print_hs_median_bp  print_slip_median_bp
+   S_0.5   sel       936          936         5349.15       8499.35          4.0            12.37           16.37         0.95           1.33            2.28                 3.59                  4.54       0.24                0.60                     2.53                0.57                  0.44
+   S_0.5   chk       338          338         5336.81       8479.68          4.0            13.05           17.05         0.83           1.72            2.54                 2.20                  3.03       0.19                0.51                     2.53                0.64                  0.54
+   S_0.5 early       629          629         3847.95       6860.24          4.0            13.32           17.32         1.81           2.63            4.44                 3.84                  5.65       0.32                0.57                     4.86                1.48                  0.25
+base_0.5   sel       805          805        15847.85      13417.11          2.0             6.08            8.08         0.94           2.58            3.53                 2.58                  3.53       0.29                0.59                     3.70                0.56                  0.96
+base_0.5   chk       320          320         9301.88      10447.45          2.0             6.61            8.61         0.80           2.09            2.89                 2.09                  2.89       0.21                0.51                     2.88                0.65                  0.73
+base_0.5 early       625          625         6105.48       8889.64          2.0             6.59            8.59         1.81           3.56            5.37                 3.56                  5.37       0.39                0.58                     5.78                1.48                  0.98
+  cap_1M   sel       976          976         5645.91      18640.98          4.0            13.83           17.83         0.73           2.58            3.31                 4.90                  5.63       0.39                0.60                     3.54                0.58                  0.67
+  cap_1M   chk       352          352         5503.90      18341.71          4.0            16.58           20.58         0.82           4.22            5.04                 4.50                  5.32       0.35                0.51                     5.00                0.64                  0.79
+  cap_1M early       630          630         3854.09      12542.61          4.0            14.27           18.27         1.43           4.11            5.54                 5.29                  6.72       0.50                0.57                     5.85                1.48                  0.32
+  era  tick  minutes  through_candle  through_prints  usd_candle_formula  usd_prints_same_formula  usd_prints_actual  actual_over_candle  minute1_through_candle  minute1_through_prints
+  sel model    13020           0.758           0.779           77431.398                77589.049          71962.615               0.929                   0.776                   0.789
+  sel  real    13020           0.759           0.785           79867.664                80030.839          76323.268               0.956                   0.774                   0.793
+  chk model     4575           0.694           0.715           22790.189                22917.943          21642.223               0.950                   0.639                   0.656
+  chk  real     4575           0.694           0.715           23062.633                23195.449          22043.897               0.956                   0.649                   0.656
+early model     8640           0.658           0.682           43051.725                44254.374          37777.280               0.877                   0.660                   0.684
+early  real     8640           0.702           0.731           48038.823                49242.710          45722.791               0.952                   0.714                   0.740
+{'share_takerbuy_above_peg_real': 0.6067877512412787, 'median_seconds_to_through_real': 3.217071, 'share_first_print_at_or_above_peg_real': 0.3807761000162364}
+C3a_model_cost_candle_fill (path return): gates {'G1': True, 'G2': True, 'G3': True, 'G4': True, 'pass': True}
+  S_0.5: pooled t +7.26 (vol-matched +7.15)
+    sel   inc  19.5% /  2.31  cand  23.0% /  2.85  t +5.80
+    chk   inc  15.1% /  2.31  cand  16.8% /  2.66  t +2.77
+    early inc  10.4% /  1.72  cand  11.6% /  2.00  t +3.89
+  S_0.25: pooled t +5.88 (vol-matched +6.07)
+    sel   inc  16.2% /  1.96  cand  19.2% /  2.48  t +5.17
+    chk   inc  13.1% /  1.98  cand  14.1% /  2.18  t +1.71
+    early inc   9.1% /  1.48  cand  10.1% /  1.72  t +2.91
+  base_0.5: pooled t +3.98 (vol-matched +4.18)
+    sel   inc  22.4% /  2.16  cand  24.4% /  2.41  t +3.58
+    chk   inc  17.6% /  2.61  cand  18.0% /  2.70  t +0.87
+    early inc  13.7% /  2.18  cand  14.3% /  2.32  t +1.99
+  cap_1M: pooled t +6.32 (vol-matched +6.45)
+    sel   inc  12.1% /  1.76  cand  14.5% /  2.26  t +5.19
+    chk   inc   6.9% /  0.97  cand   8.0% /  1.31  t +2.05
+    early inc   4.7% /  0.55  cand   5.3% /  0.85  t +3.59
+C3b_model_cost_candle_fill (path return): gates {'G1': True, 'G2': True, 'G3': True, 'G4': True, 'pass': True}
+  S_0.5: pooled t +7.76 (vol-matched +7.66)
+    sel   inc  19.5% /  2.31  cand  23.3% /  2.89  t +6.17
+    chk   inc  15.1% /  2.31  cand  17.3% /  2.77  t +3.15
+    early inc  10.4% /  1.72  cand  11.7% /  2.02  t +4.13
+  S_0.25: pooled t +6.63 (vol-matched +6.80)
+    sel   inc  16.2% /  1.96  cand  19.7% /  2.55  t +5.72
+    chk   inc  13.1% /  1.98  cand  14.8% /  2.32  t +2.45
+    early inc   9.1% /  1.48  cand  10.2% /  1.75  t +3.16
+  base_0.5: pooled t +4.41 (vol-matched +4.53)
+    sel   inc  22.4% /  2.16  cand  24.7% /  2.43  t +3.84
+    chk   inc  17.6% /  2.61  cand  18.4% /  2.78  t +1.47
+    early inc  13.7% /  2.18  cand  14.4% /  2.33  t +2.09
+  cap_1M: pooled t +6.75 (vol-matched +6.88)
+    sel   inc  12.1% /  1.76  cand  14.6% /  2.28  t +5.42
+    chk   inc   6.9% /  0.97  cand   8.3% /  1.42  t +2.46
+    early inc   4.7% /  0.55  cand   5.4% /  0.87  t +3.84
+C3a_model_cost_print_fill_modeltick (path return): gates {'G1': True, 'G2': True, 'G3': True, 'G4': True, 'pass': True}
+  S_0.5: pooled t +5.56 (vol-matched +5.58)
+    sel   inc  19.5% /  2.31  cand  22.5% /  2.78  t +5.43
+    chk   inc  15.1% /  2.31  cand  16.2% /  2.52  t +1.84
+    early inc  10.4% /  1.72  cand  11.2% /  1.90  t +2.27
+  S_0.25: pooled t +4.05 (vol-matched +4.38)
+    sel   inc  16.2% /  1.96  cand  18.9% /  2.45  t +4.52
+    chk   inc  13.1% /  1.98  cand  13.5% /  2.03  t +0.61
+    early inc   9.1% /  1.48  cand   9.6% /  1.60  t +1.38
+  base_0.5: pooled t +1.84 (vol-matched +2.18)
+    sel   inc  22.4% /  2.16  cand  23.8% /  2.35  t +2.54
+    chk   inc  17.6% /  2.61  cand  17.4% /  2.57  t -0.33
+    early inc  13.7% /  2.18  cand  13.9% /  2.24  t +0.58
+  cap_1M: pooled t +4.81 (vol-matched +5.40)
+    sel   inc  12.1% /  1.76  cand  14.0% /  2.21  t +4.64
+    chk   inc   6.9% /  0.97  cand   7.5% /  1.17  t +1.25
+    early inc   4.7% /  0.55  cand   5.1% /  0.74  t +1.94
+C3b_model_cost_print_fill_modeltick (path return): gates {'G1': True, 'G2': True, 'G3': True, 'G4': True, 'pass': True}
+  S_0.5: pooled t +6.39 (vol-matched +6.42)
+    sel   inc  19.5% /  2.31  cand  22.8% /  2.83  t +5.90
+    chk   inc  15.1% /  2.31  cand  16.8% /  2.67  t +2.67
+    early inc  10.4% /  1.72  cand  11.3% /  1.93  t +2.64
+  S_0.25: pooled t +5.14 (vol-matched +5.53)
+    sel   inc  16.2% /  1.96  cand  19.3% /  2.52  t +4.82
+    chk   inc  13.1% /  1.98  cand  14.3% /  2.23  t +1.92
+    early inc   9.1% /  1.48  cand   9.8% /  1.65  t +1.96
+  base_0.5: pooled t +2.43 (vol-matched +2.76)
+    sel   inc  22.4% /  2.16  cand  24.1% /  2.38  t +2.90
+    chk   inc  17.6% /  2.61  cand  17.8% /  2.67  t +0.45
+    early inc  13.7% /  2.18  cand  14.0% /  2.26  t +0.73
+  cap_1M: pooled t +5.55 (vol-matched +6.14)
+    sel   inc  12.1% /  1.76  cand  14.1% /  2.22  t +4.81
+    chk   inc   6.9% /  0.97  cand   8.0% /  1.32  t +2.18
+    early inc   4.7% /  0.55  cand   5.2% /  0.77  t +2.37
+C3a_model_cost_print_fill_realtick (path return): gates {'G1': True, 'G2': True, 'G3': True, 'G4': True, 'pass': True}
+  S_0.5: pooled t +6.06 (vol-matched +6.12)
+    sel   inc  19.5% /  2.31  cand  22.5% /  2.79  t +5.35
+    chk   inc  15.1% /  2.31  cand  16.1% /  2.51  t +1.68
+    early inc  10.4% /  1.72  cand  11.3% /  1.93  t +3.05
+  S_0.25: pooled t +4.49 (vol-matched +4.87)
+    sel   inc  16.2% /  1.96  cand  18.8% /  2.44  t +4.45
+    chk   inc  13.1% /  1.98  cand  13.4% /  2.02  t +0.52
+    early inc   9.1% /  1.48  cand   9.7% /  1.64  t +2.08
+  base_0.5: pooled t +2.13 (vol-matched +2.51)
+    sel   inc  22.4% /  2.16  cand  23.8% /  2.34  t +2.55
+    chk   inc  17.6% /  2.61  cand  17.4% /  2.56  t -0.37
+    early inc  13.7% /  2.18  cand  14.0% /  2.27  t +0.95
+  cap_1M: pooled t +5.62 (vol-matched +6.12)
+    sel   inc  12.1% /  1.76  cand  14.1% /  2.21  t +4.79
+    chk   inc   6.9% /  0.97  cand   7.5% /  1.16  t +1.23
+    early inc   4.7% /  0.55  cand   5.3% /  0.81  t +3.50
+C3b_model_cost_print_fill_realtick (path return): gates {'G1': True, 'G2': True, 'G3': True, 'G4': True, 'pass': True}
+  S_0.5: pooled t +6.82 (vol-matched +6.89)
+    sel   inc  19.5% /  2.31  cand  22.8% /  2.83  t +5.78
+    chk   inc  15.1% /  2.31  cand  16.7% /  2.65  t +2.46
+    early inc  10.4% /  1.72  cand  11.4% /  1.96  t +3.39
+  S_0.25: pooled t +5.45 (vol-matched +5.87)
+    sel   inc  16.2% /  1.96  cand  19.2% /  2.51  t +4.74
+    chk   inc  13.1% /  1.98  cand  14.2% /  2.21  t +1.70
+    early inc   9.1% /  1.48  cand   9.9% /  1.68  t +2.61
+  base_0.5: pooled t +2.72 (vol-matched +3.07)
+    sel   inc  22.4% /  2.16  cand  24.1% /  2.38  t +2.87
+    chk   inc  17.6% /  2.61  cand  17.8% /  2.65  t +0.31
+    early inc  13.7% /  2.18  cand  14.1% /  2.28  t +1.12
+  cap_1M: pooled t +6.31 (vol-matched +6.87)
+    sel   inc  12.1% /  1.76  cand  14.2% /  2.24  t +5.04
+    chk   inc   6.9% /  0.97  cand   8.0% /  1.31  t +2.13
+    early inc   4.7% /  0.55  cand   5.3% /  0.83  t +3.74
+C3a_print_cost_candle_fill (path return): gates {'G1': False, 'G2': False, 'G3': False, 'G4': True, 'pass': False}
+  S_0.5: pooled t +1.75 (vol-matched +1.96)
+    sel   inc  22.5% /  2.76  cand  23.3% /  2.89  t +2.55
+    chk   inc  17.7% /  2.83  cand  17.2% /  2.75  t -1.00
+    early inc  11.4% /  1.95  cand  11.7% /  2.02  t +1.11
+  S_0.25: pooled t +0.57 (vol-matched +1.05)
+    sel   inc  19.1% /  2.43  cand  19.7% /  2.55  t +1.83
+    chk   inc  15.7% /  2.50  cand  14.8% /  2.32  t -1.64
+    early inc  10.1% /  1.72  cand  10.2% /  1.76  t +0.39
+  base_0.5: pooled t +1.20 (vol-matched +1.42)
+    sel   inc  24.0% /  2.35  cand  24.6% /  2.44  t +1.26
+    chk   inc  18.9% /  2.84  cand  18.3% /  2.75  t -1.06
+    early inc  14.0% /  2.25  cand  14.4% /  2.33  t +1.08
+  cap_1M: pooled t +2.13 (vol-matched +2.71)
+    sel   inc  13.9% /  2.14  cand  14.6% /  2.28  t +3.05
+    chk   inc   8.5% /  1.46  cand   8.2% /  1.38  t -0.84
+    early inc   5.2% /  0.76  cand   5.4% /  0.87  t +1.25
+C3b_print_cost_candle_fill (path return): gates {'G1': False, 'G2': False, 'G3': False, 'G4': True, 'pass': False}
+  S_0.5: pooled t +1.90 (vol-matched +2.15)
+    sel   inc  22.5% /  2.76  cand  23.3% /  2.89  t +2.72
+    chk   inc  17.7% /  2.83  cand  17.4% /  2.79  t -0.70
+    early inc  11.4% /  1.95  cand  11.7% /  2.02  t +1.05
+  S_0.25: pooled t +0.66 (vol-matched +1.18)
+    sel   inc  19.1% /  2.43  cand  19.7% /  2.56  t +1.92
+    chk   inc  15.7% /  2.50  cand  14.9% /  2.36  t -1.33
+    early inc  10.1% /  1.72  cand  10.2% /  1.76  t +0.30
+  base_0.5: pooled t +1.36 (vol-matched +1.50)
+    sel   inc  24.0% /  2.35  cand  24.7% /  2.44  t +1.31
+    chk   inc  18.9% /  2.84  cand  18.5% /  2.79  t -0.71
+    early inc  14.0% /  2.25  cand  14.4% /  2.33  t +1.08
+  cap_1M: pooled t +2.38 (vol-matched +2.98)
+    sel   inc  13.9% /  2.14  cand  14.6% /  2.29  t +3.20
+    chk   inc   8.5% /  1.46  cand   8.3% /  1.43  t -0.46
+    early inc   5.2% /  0.76  cand   5.4% /  0.87  t +1.29
+C3a_print_cost_print_fill_realtick (path return): gates {'G1': False, 'G2': False, 'G3': False, 'G4': False, 'pass': False}
+  S_0.5: pooled t -0.06 (vol-matched +0.42)
+    sel   inc  22.5% /  2.76  cand  22.8% /  2.84  t +1.17
+    chk   inc  17.7% /  2.83  cand  16.7% /  2.63  t -1.71
+    early inc  11.4% /  1.95  cand  11.4% /  1.97  t +0.18
+  S_0.25: pooled t -0.62 (vol-matched +0.05)
+    sel   inc  19.1% /  2.43  cand  19.5% /  2.54  t +0.94
+    chk   inc  15.7% /  2.50  cand  14.3% /  2.20  t -2.15
+    early inc  10.1% /  1.72  cand  10.0% /  1.70  t -0.32
+  base_0.5: pooled t -0.40 (vol-matched -0.00)
+    sel   inc  24.0% /  2.35  cand  24.1% /  2.38  t +0.22
+    chk   inc  18.9% /  2.84  cand  17.7% /  2.63  t -1.81
+    early inc  14.0% /  2.25  cand  14.1% /  2.28  t +0.17
+  cap_1M: pooled t +0.72 (vol-matched +1.88)
+    sel   inc  13.9% /  2.14  cand  14.3% /  2.25  t +1.73
+    chk   inc   8.5% /  1.46  cand   7.9% /  1.28  t -1.50
+    early inc   5.2% /  0.76  cand   5.3% /  0.84  t +0.92
+C3b_print_cost_print_fill_realtick (path return): gates {'G1': False, 'G2': False, 'G3': False, 'G4': False, 'pass': False}
+  S_0.5: pooled t +0.04 (vol-matched +0.60)
+    sel   inc  22.5% /  2.76  cand  22.8% /  2.84  t +1.07
+    chk   inc  17.7% /  2.83  cand  16.9% /  2.69  t -1.37
+    early inc  11.4% /  1.95  cand  11.4% /  1.97  t +0.15
+  S_0.25: pooled t -0.58 (vol-matched +0.23)
+    sel   inc  19.1% /  2.43  cand  19.4% /  2.53  t +0.64
+    chk   inc  15.7% /  2.50  cand  14.6% /  2.28  t -1.76
+    early inc  10.1% /  1.72  cand  10.0% /  1.70  t -0.37
+  base_0.5: pooled t -0.23 (vol-matched +0.16)
+    sel   inc  24.0% /  2.35  cand  24.1% /  2.38  t +0.27
+    chk   inc  18.9% /  2.84  cand  17.9% /  2.67  t -1.52
+    early inc  14.0% /  2.25  cand  14.1% /  2.29  t +0.20
+  cap_1M: pooled t +0.76 (vol-matched +2.13)
+    sel   inc  13.9% /  2.14  cand  14.2% /  2.24  t +1.48
+    chk   inc   8.5% /  1.46  cand   8.0% /  1.33  t -1.20
+    early inc   5.2% /  0.76  cand   5.3% /  0.84  t +0.85
+C3a_print_cost_x2_print_fill_realtick (path return): gates {'G1': True, 'G2': False, 'G3': False, 'G4': True, 'pass': False}
+  S_0.5: pooled t +2.82 (vol-matched +2.80)
+    sel   inc  21.3% /  2.60  cand  22.8% /  2.83  t +3.27
+    chk   inc  17.2% /  2.72  cand  16.6% /  2.61  t -0.99
+    early inc  10.9% /  1.85  cand  11.4% /  1.96  t +1.75
+  S_0.25: pooled t +1.71 (vol-matched +2.10)
+    sel   inc  17.9% /  2.25  cand  19.3% /  2.52  t +2.63
+    chk   inc  15.1% /  2.40  cand  14.1% /  2.17  t -1.60
+    early inc   9.6% /  1.61  cand   9.9% /  1.68  t +0.96
+  base_0.5: pooled t +2.21 (vol-matched +2.35)
+    sel   inc  22.8% /  2.22  cand  24.0% /  2.37  t +2.16
+    chk   inc  18.2% /  2.73  cand  17.6% /  2.60  t -1.08
+    early inc  13.5% /  2.13  cand  14.1% /  2.28  t +1.72
+  cap_1M: pooled t +3.55 (vol-matched +4.07)
+    sel   inc  13.1% /  1.97  cand  14.2% /  2.24  t +3.52
+    chk   inc   8.0% /  1.29  cand   7.8% /  1.24  t -0.42
+    early inc   4.9% /  0.64  cand   5.3% /  0.83  t +2.58
+C3b_print_cost_x2_print_fill_realtick (path return): gates {'G1': True, 'G2': False, 'G3': False, 'G4': True, 'pass': False}
+  S_0.5: pooled t +3.10 (vol-matched +3.13)
+    sel   inc  21.3% /  2.60  cand  22.8% /  2.84  t +3.30
+    chk   inc  17.2% /  2.72  cand  16.9% /  2.68  t -0.50
+    early inc  10.9% /  1.85  cand  11.4% /  1.97  t +1.82
+  S_0.25: pooled t +2.02 (vol-matched +2.50)
+    sel   inc  17.9% /  2.25  cand  19.3% /  2.53  t +2.47
+    chk   inc  15.1% /  2.40  cand  14.5% /  2.27  t -1.05
+    early inc   9.6% /  1.61  cand  10.0% /  1.69  t +1.12
+  base_0.5: pooled t +2.45 (vol-matched +2.58)
+    sel   inc  22.8% /  2.22  cand  24.1% /  2.38  t +2.17
+    chk   inc  18.2% /  2.73  cand  17.8% /  2.67  t -0.65
+    early inc  13.5% /  2.13  cand  14.1% /  2.28  t +1.80
+  cap_1M: pooled t +3.86 (vol-matched +4.48)
+    sel   inc  13.1% /  1.97  cand  14.2% /  2.24  t +3.51
+    chk   inc   8.0% /  1.29  cand   8.0% /  1.32  t +0.10
+    early inc   4.9% /  0.64  cand   5.3% /  0.84  t +2.61
+                                 case      cfg   era     rem_usd  passive_share  c3_minus_inc_bp  inc_exit_cost_bp
+           C3a_model_cost_candle_fill    S_0.5   sel  7955393.96           0.95            13.82             16.37
+           C3a_model_cost_candle_fill    S_0.5   chk  2866132.23           0.84             9.62             17.05
+           C3a_model_cost_candle_fill    S_0.5 early  4315092.39           0.91            13.93             17.32
+           C3a_model_cost_candle_fill base_0.5   sel 10800770.75           0.92             5.68              8.08
+           C3a_model_cost_candle_fill base_0.5   chk  3343184.94           0.82             2.47              8.61
+           C3a_model_cost_candle_fill base_0.5 early  5556022.74           0.92             5.95              8.59
+           C3b_model_cost_candle_fill    S_0.5   sel  7955393.96           0.99            14.86             16.37
+           C3b_model_cost_candle_fill    S_0.5   chk  2866132.23           0.97            12.25             17.05
+           C3b_model_cost_candle_fill    S_0.5 early  4315092.39           0.99            14.99             17.32
+           C3b_model_cost_candle_fill base_0.5   sel 10800770.75           0.99             6.39              8.08
+           C3b_model_cost_candle_fill base_0.5   chk  3343184.94           0.96             4.22              8.61
+           C3b_model_cost_candle_fill base_0.5 early  5556022.74           0.99             6.45              8.59
+  C3a_model_cost_print_fill_modeltick    S_0.5   sel  7955393.96           0.91            11.47             16.37
+  C3a_model_cost_print_fill_modeltick    S_0.5   chk  2866132.23           0.78             6.14             17.05
+  C3a_model_cost_print_fill_modeltick    S_0.5 early  4315092.39           0.85             9.23             17.32
+  C3a_model_cost_print_fill_modeltick base_0.5   sel 10800770.75           0.89             3.88              8.08
+  C3a_model_cost_print_fill_modeltick base_0.5   chk  3343184.94           0.75            -0.57              8.61
+  C3a_model_cost_print_fill_modeltick base_0.5 early  5556022.74           0.86             2.32              8.59
+  C3b_model_cost_print_fill_modeltick    S_0.5   sel  7955393.96           0.99            12.70             16.37
+  C3b_model_cost_print_fill_modeltick    S_0.5   chk  2866132.23           0.95             9.57             17.05
+  C3b_model_cost_print_fill_modeltick    S_0.5 early  4315092.39           0.98            10.73             17.32
+  C3b_model_cost_print_fill_modeltick base_0.5   sel 10800770.75           0.98             4.75              8.08
+  C3b_model_cost_print_fill_modeltick base_0.5   chk  3343184.94           0.93             1.32              8.61
+  C3b_model_cost_print_fill_modeltick base_0.5 early  5556022.74           0.98             2.94              8.59
+   C3a_model_cost_print_fill_realtick    S_0.5   sel  7955393.96           0.91            11.47             16.37
+   C3a_model_cost_print_fill_realtick    S_0.5   chk  2866132.23           0.77             5.83             17.05
+   C3a_model_cost_print_fill_realtick    S_0.5 early  4315092.39           0.88            10.65             17.32
+   C3a_model_cost_print_fill_realtick base_0.5   sel 10800770.75           0.89             3.84              8.08
+   C3a_model_cost_print_fill_realtick base_0.5   chk  3343184.94           0.75            -0.72              8.61
+   C3a_model_cost_print_fill_realtick base_0.5 early  5556022.74           0.89             3.21              8.59
+   C3b_model_cost_print_fill_realtick    S_0.5   sel  7955393.96           0.99            12.66             16.37
+   C3b_model_cost_print_fill_realtick    S_0.5   chk  2866132.23           0.94             9.11             17.05
+   C3b_model_cost_print_fill_realtick    S_0.5 early  4315092.39           0.99            12.03             17.32
+   C3b_model_cost_print_fill_realtick base_0.5   sel 10800770.75           0.98             4.67              8.08
+   C3b_model_cost_print_fill_realtick base_0.5   chk  3343184.94           0.92             1.00              8.61
+   C3b_model_cost_print_fill_realtick base_0.5 early  5556022.74           0.99             3.87              8.59
+           C3a_print_cost_candle_fill    S_0.5   sel  7955393.96           0.95             2.91              4.54
+           C3a_print_cost_candle_fill    S_0.5   chk  2866132.23           0.84            -2.07              3.03
+           C3a_print_cost_candle_fill    S_0.5 early  4315092.39           0.91             3.41              5.65
+           C3a_print_cost_candle_fill base_0.5   sel 10800770.75           0.92             1.74              3.53
+           C3a_print_cost_candle_fill base_0.5   chk  3343184.94           0.82            -2.07              2.89
+           C3a_print_cost_candle_fill base_0.5 early  5556022.74           0.92             3.15              5.37
+           C3b_print_cost_candle_fill    S_0.5   sel  7955393.96           0.99             3.14              4.54
+           C3b_print_cost_candle_fill    S_0.5   chk  2866132.23           0.97            -1.32              3.03
+           C3b_print_cost_candle_fill    S_0.5 early  4315092.39           0.99             3.40              5.65
+           C3b_print_cost_candle_fill base_0.5   sel 10800770.75           0.99             1.94              3.53
+           C3b_print_cost_candle_fill base_0.5   chk  3343184.94           0.96            -1.27              2.89
+           C3b_print_cost_candle_fill base_0.5 early  5556022.74           0.99             3.26              5.37
+   C3a_print_cost_print_fill_realtick    S_0.5   sel  7955393.96           0.91             1.15              4.54
+   C3a_print_cost_print_fill_realtick    S_0.5   chk  2866132.23           0.77            -4.92              3.03
+   C3a_print_cost_print_fill_realtick    S_0.5 early  4315092.39           0.88             0.71              5.65
+   C3a_print_cost_print_fill_realtick base_0.5   sel 10800770.75           0.89             0.17              3.53
+   C3a_print_cost_print_fill_realtick base_0.5   chk  3343184.94           0.75            -4.91              2.89
+   C3a_print_cost_print_fill_realtick base_0.5 early  5556022.74           0.89             0.64              5.37
+   C3b_print_cost_print_fill_realtick    S_0.5   sel  7955393.96           0.99             1.06              4.54
+   C3b_print_cost_print_fill_realtick    S_0.5   chk  2866132.23           0.94            -3.88              3.03
+   C3b_print_cost_print_fill_realtick    S_0.5 early  4315092.39           0.99             0.62              5.65
+   C3b_print_cost_print_fill_realtick base_0.5   sel 10800770.75           0.98             0.25              3.53
+   C3b_print_cost_print_fill_realtick base_0.5   chk  3343184.94           0.92            -4.21              2.89
+   C3b_print_cost_print_fill_realtick base_0.5 early  5556022.74           0.99             0.73              5.37
+C3a_print_cost_x2_print_fill_realtick    S_0.5   sel  7955393.96           0.91             5.42              9.08
+C3a_print_cost_x2_print_fill_realtick    S_0.5   chk  2866132.23           0.77            -2.47              6.06
+C3a_print_cost_x2_print_fill_realtick    S_0.5 early  4315092.39           0.88             5.81             11.29
+C3a_print_cost_x2_print_fill_realtick base_0.5   sel 10800770.75           0.89             3.47              7.05
+C3a_print_cost_x2_print_fill_realtick base_0.5   chk  3343184.94           0.75            -2.62              5.78
+C3a_print_cost_x2_print_fill_realtick base_0.5 early  5556022.74           0.89             5.66             10.74
+C3b_print_cost_x2_print_fill_realtick    S_0.5   sel  7955393.96           0.99             5.57              9.08
+C3b_print_cost_x2_print_fill_realtick    S_0.5   chk  2866132.23           0.94            -1.03              6.06
+C3b_print_cost_x2_print_fill_realtick    S_0.5 early  4315092.39           0.99             6.19             11.29
+C3b_print_cost_x2_print_fill_realtick base_0.5   sel 10800770.75           0.98             3.73              7.05
+C3b_print_cost_x2_print_fill_realtick base_0.5   chk  3343184.94           0.92            -1.51              5.78
+C3b_print_cost_x2_print_fill_realtick base_0.5 early  5556022.74           0.99             6.03             10.74
