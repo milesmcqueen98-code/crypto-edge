@@ -49,9 +49,9 @@ def nw_t(x, lags=5):
     x = np.asarray(x, float)
     n, mu = len(x), x.mean()
     e = x - mu
-    s = e @ e / n
+    s = np.dot(e, e) / n
     for k in range(1, lags + 1):
-        s += 2.0 * (1.0 - k / (lags + 1.0)) * (e[k:] @ e[:-k]) / n
+        s += 2.0 * (1.0 - k / (lags + 1.0)) * np.dot(e[k:], e[:-k]) / n
     return mu / np.sqrt(s / n) if s > 0 else np.nan
 
 
