@@ -1,0 +1,3 @@
+S_0.5 sel: 22.79% / Sharpe 2.935; max daily diff vs the cached incumbent: base arrays 0.0e+00, through the multiplier hook (m = 1) 0.0e+00
+S_0.5 chk: 19.05% / Sharpe 2.661; max daily diff vs the cached incumbent: base arrays 0.0e+00, through the multiplier hook (m = 1) 0.0e+00
+S_0.5 early: 11.14% / Sharpe 1.913; max daily diff vs the cached incumbent: base arrays 0.0e+00, through the multiplier hook (m = 1) 0.0e+00
