@@ -86,3 +86,17 @@ Hypothesis: the unweighted fit lets small tranches set the coefficients while P&
 fit by remainder dollars (WLS) should improve the walk-forward result of the 6-input fit, by at most a few tenths of t.
 Variants: 6 inputs, WLS by remainder USD, h 0 / 5 / 10; and the three inputs whose sign never changed across the
 round-2 refits (mark, rec, breadth), OLS and WLS, h 0 / 5 / 10. Walk-forward, pessimistic cash.
+
+### Round 4 read (2026-11-08 20:50 UTC)
+| Variant (walk-forward, pessimistic cash) | t (h 0 / 5 / 10) |
+|---|---|
+| 6 inputs, WLS | +0.18 / +0.56 / +0.31 |
+| mark + rec + breadth, OLS | -0.56 / -0.72 / -0.21 |
+| mark + rec + breadth, WLS | +0.13 / +0.16 / +0.14 |
+- No gain from weighting or from keeping only the sign-stable inputs. Every X2 variant on the gate's cash terms sits
+  between t -1.5 and +0.6, and every one lowers the selection Sharpe (dSharpe -0.03 to -0.20).
+- Decision: no round 5 for X2. Nothing in rounds 2-4 points to a refinement that is not a fishing trip, and the best
+  variant (round 2: 6 inputs, OLS, h 10; t +0.62, dret +0.5 pp, dSharpe -0.03, vol-matched t -0.44) is far below what
+  the out-of-sample gate needs (selection t of about 1.4 at equal effect). It is frozen as the round's one candidate
+  so the out-of-sample eras give it a single honest read. X1 and X12 stay dropped unless the measured kappa(m) is
+  below 1 (X12's family bound was +1.30 at kappa 1); round 5 is kept for that case only.

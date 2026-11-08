@@ -1,0 +1,9 @@
+R4 X2 wf all6 WLS h0                   t  +0.18  dSharpe -0.069  dret  +0.14pp  mean  +0.04 bp/day  
+R4 X2 wf all6 WLS h5                   t  +0.56  dSharpe -0.053  dret  +0.42pp  mean  +0.12 bp/day  
+R4 X2 wf all6 WLS h10                  t  +0.31  dSharpe -0.066  dret  +0.24pp  mean  +0.07 bp/day  
+R4 X2 wf mark+rec+breadth OLS h0       t  -0.56  dSharpe -0.090  dret  -0.38pp  mean  -0.11 bp/day  
+R4 X2 wf mark+rec+breadth OLS h5       t  -0.72  dSharpe -0.111  dret  -0.50pp  mean  -0.14 bp/day  
+R4 X2 wf mark+rec+breadth OLS h10      t  -0.21  dSharpe -0.136  dret  -0.16pp  mean  -0.04 bp/day  
+R4 X2 wf mark+rec+breadth usd h0       t  +0.13  dSharpe -0.098  dret  +0.09pp  mean  +0.02 bp/day  
+R4 X2 wf mark+rec+breadth usd h5       t  +0.16  dSharpe -0.095  dret  +0.12pp  mean  +0.03 bp/day  
+R4 X2 wf mark+rec+breadth usd h10      t  +0.14  dSharpe -0.111  dret  +0.11pp  mean  +0.03 bp/day  
