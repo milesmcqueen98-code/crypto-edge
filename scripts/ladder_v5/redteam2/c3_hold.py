@@ -22,7 +22,7 @@ for lab, N in (("C3a", 5), ("C3b", 15)):
     for hold in (False, True):
         c3.QD = os.path.join(c3.RT, f"q_hold{N}") if hold else os.path.join(c3.RT, "q")
         r = c3.score(f"{lab}_{mode}_{'hold' if hold else 'nohold'}", N,
-                     inc_from="cache" if mode == "model" else "same", **opt)
+                     inc_from="cache" if mode == "model" else "same", inc_qd=os.path.join(c3.RT, "q"), **opt)
         res[r["name"]] = r
         print(gates.summary(r), flush=True)
 json.dump(res, open(os.path.join(c3.RT, f"c3_hold{'_print' if mode == 'print' else ''}.json"), "w"), indent=1,

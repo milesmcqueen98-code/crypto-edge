@@ -309,9 +309,10 @@ def book(cfg, era, N, **opt):
     return (dc["minute"] + s * (dc["instant"] - dc["minute"]), di["minute"] + s * (di["instant"] - di["minute"]))
 
 
-def score(name, N, configs=("S_0.5", "S_0.25", "base_0.5", "cap_1M"), inc_from="cache", **opt):
+def score(name, N, configs=("S_0.5", "S_0.25", "base_0.5", "cap_1M"), inc_from="cache", inc_qd=None, **opt):
     """gates.run's statistics for C3 with N passive minutes; inc_from 'cache' (the frozen incumbent) or 'same'
-    (the incumbent re-scored with the same exit cost model as the candidate)."""
+    (the incumbent re-scored with the same exit cost model as the candidate, from the tables in inc_qd if given,
+    else from the candidate's own tables)."""
     out = {"name": name, "path": "return", "configs": {}, "opt": {k: str(v) for k, v in opt.items()
                                                                   if k not in ("pc", "pcap", "detail")}}
     for cfg in configs:
@@ -319,6 +320,11 @@ def score(name, N, configs=("S_0.5", "S_0.25", "base_0.5", "cap_1M"), inc_from="
         per, diffs = {}, []
         for era in fsim.ERAS:
             cand, inc_same = book(cfg, era, N, **opt)
+            if inc_from == "same" and inc_qd is not None:
+                qd0 = globals()["QD"]
+                globals()["QD"] = inc_qd
+                inc_same, _ = book(cfg, era, 0, **opt)
+                globals()["QD"] = qd0
             inc = gates.incumbent_cached(era, cfg) if inc_from == "cache" else inc_same
             cand = cand.reindex(inc.index, fill_value=0.0)
             d = cand - inc
