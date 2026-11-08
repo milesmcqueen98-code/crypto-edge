@@ -284,3 +284,11 @@ ROUND3 = [(f"R3 X2 wf {'+'.join(inp)} h{h:g}", "X2", inp, h, None, "wf")
 
 if __name__ == "__main__" and sys.argv[1] == "round3":
     run_round(3, ROUND3)
+
+
+ROUND4 = ([(f"R4 X2 wf all6 WLS h{h:g}", "X2", ALL, h, "usd", "wf") for h in (0.0, 5.0, 10.0)]
+          + [(f"R4 X2 wf mark+rec+breadth {w or 'OLS'} h{h:g}", "X2", ("mark", "rec", "breadth"), h, w, "wf")
+             for w in (None, "usd") for h in (0.0, 5.0, 10.0)])
+
+if __name__ == "__main__" and sys.argv[1] == "round4":
+    run_round(4, ROUND4)

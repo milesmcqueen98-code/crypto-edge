@@ -69,3 +69,20 @@ minutes, sell. Breadth plus at most the markout should then carry what the 6-inp
 Prediction: walk-forward t around +1 with optimistic cash and near 0 under the pessimistic bound, because the
 extension happens exactly when cash is scarce (a cascade). Variants (OLS walk-forward, pessimistic cash): inputs
 {breadth}, {breadth, mark}, {breadth, rec}, each at h 0 / 5 / 10.
+
+### Round 3 read (2026-11-08 20:45 UTC)
+| Variant (walk-forward, pessimistic cash) | t (h 0 / 5 / 10) | for information: optimistic cash, best h |
+|---|---|---|
+| breadth | -1.15 / -1.15 / -1.15 | +0.39 |
+| breadth + mark | -0.67 / -0.40 / -0.14 | +0.87 (h 10) |
+| breadth + rec | -1.51 / -1.07 / -1.00 | +0.79 (h 10) |
+- Wrong again: breadth's coefficient was stable but its walk-forward gain is not (-3, +7, +5, -1 bp per remainder
+  dollar by quarter for breadth alone). As predicted, the pessimistic cash bound sinks it: extensions cluster in
+  cascades, exactly when cash is short.
+- Best so far on the gate's terms: round 2's 6-input fit at h 10, t +0.62.
+
+## Round 4: fit the objective (written 2026-11-08 20:45 UTC, before running)
+Hypothesis: the unweighted fit lets small tranches set the coefficients while P&L is dollar-weighted; weighting the
+fit by remainder dollars (WLS) should improve the walk-forward result of the 6-input fit, by at most a few tenths of t.
+Variants: 6 inputs, WLS by remainder USD, h 0 / 5 / 10; and the three inputs whose sign never changed across the
+round-2 refits (mark, rec, breadth), OLS and WLS, h 0 / 5 / 10. Walk-forward, pessimistic cash.

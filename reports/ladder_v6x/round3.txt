@@ -1,0 +1,9 @@
+R3 X2 wf breadth h0                    t  -1.15  dSharpe -0.069  dret  -0.67pp  mean  -0.18 bp/day  
+R3 X2 wf breadth h5                    t  -1.15  dSharpe -0.069  dret  -0.67pp  mean  -0.18 bp/day  
+R3 X2 wf breadth h10                   t  -1.15  dSharpe -0.069  dret  -0.67pp  mean  -0.18 bp/day  
+R3 X2 wf breadth+mark h0               t  -0.67  dSharpe -0.190  dret  -0.52pp  mean  -0.14 bp/day  
+R3 X2 wf breadth+mark h5               t  -0.40  dSharpe -0.200  dret  -0.35pp  mean  -0.10 bp/day  
+R3 X2 wf breadth+mark h10              t  -0.14  dSharpe -0.146  dret  -0.12pp  mean  -0.03 bp/day  
+R3 X2 wf breadth+rec h0                t  -1.51  dSharpe -0.136  dret  -0.88pp  mean  -0.24 bp/day  
+R3 X2 wf breadth+rec h5                t  -1.07  dSharpe -0.078  dret  -0.60pp  mean  -0.16 bp/day  
+R3 X2 wf breadth+rec h10               t  -1.00  dSharpe -0.060  dret  -0.56pp  mean  -0.15 bp/day  
