@@ -1,0 +1,30 @@
+S_0.5 sel: 1113 funded signals, $16.4M; vol_d check vs frame: max |diff| 2.24e-07
+by mu quintile (dollar-weighted net per dollar of the signal):
+   Q1:     41.41 | r  +20.5 bp, sd   133, mean/var x1e4 +11.59, n 223
+   Q2:     49.47 | r   +4.3 bp, sd   135, mean/var x1e4  +2.39, n 222
+   Q3:     60.66 | r  +37.0 bp, sd   136, mean/var x1e4 +19.85, n 223
+   Q4:     79.66 | r  +73.7 bp, sd   158, mean/var x1e4 +29.53, n 222
+   Q5:     143.6 | r  +97.5 bp, sd   271, mean/var x1e4 +13.31, n 223
+by sig quintile (dollar-weighted net per dollar of the signal):
+   Q1:   0.03195 | r  +12.2 bp, sd   152, mean/var x1e4  +5.24, n 223
+   Q2:   0.03906 | r  +50.8 bp, sd   145, mean/var x1e4 +24.34, n 222
+   Q3:   0.04591 | r  +40.9 bp, sd   174, mean/var x1e4 +13.56, n 223
+   Q4:   0.05271 | r  +51.9 bp, sd   193, mean/var x1e4 +13.99, n 222
+   Q5:   0.06265 | r  +90.3 bp, sd   203, mean/var x1e4 +22.01, n 223
+by kelly quintile (dollar-weighted net per dollar of the signal):
+   Q1: 1.463e+04 | r  +59.8 bp, sd   192, mean/var x1e4 +16.14, n 223
+   Q2: 2.253e+04 | r  +48.5 bp, sd   131, mean/var x1e4 +28.30, n 222
+   Q3:  3.18e+04 | r  +40.6 bp, sd   161, mean/var x1e4 +15.59, n 223
+   Q4:  4.56e+04 | r  +43.2 bp, sd   145, mean/var x1e4 +20.65, n 222
+   Q5: 7.547e+04 | r  +35.2 bp, sd   226, mean/var x1e4  +6.87, n 223
+by breadth quintile (dollar-weighted net per dollar of the signal):
+   Q1:         1 | r  +36.3 bp, sd   169, mean/var x1e4 +12.75, n 223
+   Q2:         2 | r  +39.0 bp, sd   185, mean/var x1e4 +11.45, n 222
+   Q3:         4 | r  +32.8 bp, sd   172, mean/var x1e4 +11.10, n 223
+   Q4:         7 | r  +86.2 bp, sd   126, mean/var x1e4 +54.33, n 222
+   Q5:        11 | r  +38.4 bp, sd   204, mean/var x1e4  +9.23, n 223
+Spearman(mu, r) = +0.412; Spearman(mu, |r - mean|) = +0.290
+Spearman(sig, r) = +0.205; Spearman(sig, |r - mean|) = +0.216
+Spearman(kelly, r) = +0.101; Spearman(kelly, |r - mean|) = +0.035
+Spearman(breadth, r) = +0.158; Spearman(breadth, |r - mean|) = +0.064
+incumbent: best 5 days carry 37% of the era's P&L; worst 5 days -23%
