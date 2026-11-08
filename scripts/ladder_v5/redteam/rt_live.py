@@ -77,13 +77,17 @@ def inputs(tag):
     return _IN[tag]
 
 
-def era_arrays(tag, era, theta, C, today, notional=0.25, kappa=0.002, phantom=False, win=None, newcoin=False):
+def era_arrays(tag, era, theta, C, today, notional=0.25, kappa=0.002, phantom=False, win=None, newcoin=False,
+               mult_fn=None):
     """Per-minute candidate order and 4-sigma wants; parents and deeper rungs of the era (volumes scaled for today).
     phantom=True (artifact test): no freshness check, and a coin with unknown ADV bids notional x C / 3 (what hsim
     does); the engine skips a coin without recent candles and, here, a coin whose ADV is unknown gets no bid.
     newcoin=True (engine-faithful edge case): a fresh coin whose ADV is still unknown (first 10 days of trading) holds
     a notional x C / 3 bid, as the engine sizes it (no ADV cap); its trades are not priced (the dataset has size 0).
-    win=(lo, hi): only bids and parents inside the window (engine check)."""
+    win=(lo, hi): only bids and parents inside the window (engine check).
+    mult_fn(pos, M, th) -> T x NC multiplier of a signal's whole ladder (ladder v5 C2a, engine option size_by_margin:
+    `_allocate` sizes the 4-sigma bid with that minute's multiplier and `_arm` sets the ladder's S with it, so the
+    deeper rungs use the multiplier of the minute the parent filled); pos = panel index of each minute (-1 outside)."""
     I = inputs(tag)
     P, coins = I["P"], I["coins"]
     lo, hi = fsim.ERAS[era][1]
@@ -125,6 +129,11 @@ def era_arrays(tag, era, theta, C, today, notional=0.25, kappa=0.002, phantom=Fa
     S_day = np.minimum(notional * C, kappa * A[coins].to_numpy() * fac[None, :])
     di = pd.DatetimeIndex(days.unique()).get_indexer(days)
     want4 = S_day[di] / 3.0
+    mfac = np.ones((T, NC))
+    if mult_fn is not None:
+        mfac = np.asarray(mult_fn(pos, M, th), dtype=np.float64)
+        assert mfac.shape == (T, NC)
+        want4 = want4 * mfac
     if phantom:
         want4 = np.where(np.isfinite(want4), want4, notional * C / 3.0)
         cand = appr & (want4 > 0)
@@ -149,7 +158,9 @@ def era_arrays(tag, era, theta, C, today, notional=0.25, kappa=0.002, phantom=Fa
     p_scan = par.scan_off.to_numpy(np.int64)
     p_tpoff = par.tp_off.to_numpy(np.int64)
     p_tp = par.tp_spot.to_numpy(np.float64)
-    p_want = (np.minimum(notional * C, kappa * par.adv.fillna(0.0).to_numpy()) / 3.0)
+    p_wbase = (np.minimum(notional * C, kappa * par.adv.fillna(0.0).to_numpy()) / 3.0)
+    p_mult = mfac[p_t, p_c] if NP else np.ones(0)
+    p_want = p_wbase * p_mult                                   # deeper rungs: the multiplier at the parent's fill
     p_close = np.where(p_tpoff >= 0, p_t + p_tpoff + 1, p_t + 60)
     rows = {(t, c, k): i for i, t, c, k in zip(W.index, W.ts, W.coin, W.k)}
     p_row = np.zeros((NP, 3), np.int64)
@@ -187,7 +198,7 @@ def era_arrays(tag, era, theta, C, today, notional=0.25, kappa=0.002, phantom=Fa
     # research's first-fill index per rung (for the research policy) = path entry 0
     return dict(W=W, coins=coins, idx=idx, T=T, NC=NC, order=order, ncand=ncand, want4=want4, M=M, par=par,
                 NP=NP, p_t=p_t, p_c=p_c, p_in=p_in, p_scan=p_scan, p_tpoff=p_tpoff, p_tp=p_tp, p_want=p_want,
-                p_close=p_close, p_row=p_row, dp_start=dp_start, dp_len=dp_len, lvl_ok=lvl_ok, dp=dp, scale=scale,
+                p_wbase=p_wbase, p_mult=p_mult, mfac=mfac, p_close=p_close, p_row=p_row, dp_start=dp_start, dp_len=dp_len, lvl_ok=lvl_ok, dp=dp, scale=scale,
                 cand=cand, appr=appr, fresh=fresh, t_end=t_end)
 
 
@@ -222,8 +233,10 @@ _place = nb.njit(cache=True)(_place)
 def _core(T, NC, order, ncand, want4, M, NP, p_t, p_c, p_in, p_scan, p_tpoff, p_tp, p_want, p_close, dp_start,
           dp_len, lvl_ok, f_off, f_in, f_scan, f_tpoff, f_tp, E, theta, fee, instant, policy, busy_on, rem_hold,
           tp_release, late_fills, inst_new_first, prio_mode, alloc_first, rel_shift, busy_mode, mkt_check,
-          inst_retry_old, interleave):
+          inst_retry_old, interleave, rem_extra):
     """One era, one bound. policy 0 engine, 1 nocash, 2 research, 3 preempt (C1a).
+    rem_extra: minutes the part of a rung not sold at its take-profit stays held after the 60-minute mark (ladder v5
+    C3's passive exit; an upper bound on its cash effect: held to the end of the passive window).
     prio_mode 0: ladders in creation order (engine dict order), 1: parent fill order.
     alloc_first: (artifact test) the 4-sigma allocation runs before the deeper rungs are placed.
     Artifact switches (hsim's choices): rel_shift 1 releases take-profit, exit and closed-window cash one minute
@@ -294,7 +307,7 @@ def _core(T, NC, order, ncand, want4, M, NP, p_t, p_c, p_in, p_scan, p_tpoff, p_
                 ex_amt[q, 0] = F - tpF
             else:
                 ex_amt[q, 0] = F
-            ex_step[q, 0] = ts + 61 - rel_shift
+            ex_step[q, 0] = ts + 61 - rel_shift + (rem_extra if ex_amt[q, 0] > 0 else 0)
             if busy_mode == 1:
                 bu = ts + p_tpoff[q] + 1 if p_tpoff[q] >= 0 else ts + 61
             elif p_tpoff[q] >= 0 and tpF >= F - 1e-9 and tp_release:
@@ -358,7 +371,7 @@ def _core(T, NC, order, ncand, want4, M, NP, p_t, p_c, p_in, p_scan, p_tpoff, p_
                     ex_amt[q, k + 1] = F - tpF
                 else:
                     ex_amt[q, k + 1] = F
-                ex_step[q, k + 1] = max(t, f + 61 - rel_shift)
+                ex_step[q, k + 1] = max(t, f + 61 - rel_shift + (rem_extra if ex_amt[q, k + 1] > 0 else 0))
         # ================= _manage (ladders in creation order) and _allocate
         H4 = 0.0
         live4 = np.zeros(NC)
@@ -596,13 +609,14 @@ _core = nb.njit(cache=True)(_core)
 
 def replay(A, theta=0.5, C=250e3, bound="minute", policy="engine", busy_on=True, rem_hold=True, tp_release=True,
            late_fills=True, inst_new_first=True, prio_mode=0, alloc_first=False, rel_shift=0, busy_mode=0,
-           mkt_check=True, inst_retry_old=True, interleave=True):
+           mkt_check=True, inst_retry_old=True, interleave=True, rem_extra=0):
     dp = A["dp"]
     res = _core(A["T"], A["NC"], A["order"], A["ncand"], A["want4"], A["M"], A["NP"], A["p_t"], A["p_c"], A["p_in"],
                 A["p_scan"], A["p_tpoff"], A["p_tp"], A["p_want"], A["p_close"], A["dp_start"], A["dp_len"],
                 A["lvl_ok"], dp["off"], dp["inn"], dp["scan"], dp["tpoff"], dp["tp"], float(C), float(theta), FEE_M,
                 bound == "instant", POL[policy], busy_on and policy != "research", rem_hold, tp_release, late_fills,
-                inst_new_first, prio_mode, alloc_first, rel_shift, busy_mode, mkt_check, inst_retry_old, interleave)
+                inst_new_first, prio_mode, alloc_first, rel_shift, busy_mode, mkt_check, inst_retry_old, interleave,
+                int(rem_extra))
     keys = ("a4", "F4", "tpF4", "why4", "r_state", "r_usd", "r_fidx", "r_F", "r_tpF", "r_place", "r_ncash",
             "cash_short")
     return dict(zip(keys, res))
@@ -616,7 +630,7 @@ def to_frame(A, R):
     Q["mult"] = 0.0
     pr = A["p_row"]
     dp = A["dp"]
-    wf = A["p_want"]
+    wf = A["p_wbase"]
     mult = np.zeros(len(Q))
     pos = {ix: i for i, ix in enumerate(Q.index)}
     cols = {c: Q[c].to_numpy().copy() for c in ("f_off", "in_spot", "scan_off", "tp_off", "tp_spot", "g60", "g_tp",
