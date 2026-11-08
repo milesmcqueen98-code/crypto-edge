@@ -17,7 +17,7 @@ Checks:
 - the bot's equity equals the exchange's USD balance (every fill booked exactly once).
 
 Usage: python bot/spot/live_sim_test.py "2025-10-10 20:00" "2025-10-11 02:00" "--death=2025-10-10 21:10"
-       [--config=bot/spot/config.v5.json]   (default config.json; the v5 file turns on the ladder v5 options)
+       [--config=path/to/config.json]   (default bot/spot/config.json)
 """
 import os
 import random
@@ -238,7 +238,6 @@ def main(start, end, death=None, death_min=20, config=None):
     import json
     cfg = json.load(open(config or os.path.join(HERE, "config.json")))
     cfg.update(capital=cap, usd_reserve=0.0)
-    print("options:", {k: cfg.get(k) for k in ("passive_exit_min", "size_by_margin", "quote") if cfg.get(k)} or "none")
     sd = tempfile.mkdtemp(prefix="spot_live_")
     eng = E.Engine(mode="live", cfg=cfg, state_dir=sd, market=mkt, broker=ex, clock=now, echo=False)
     t0 = time.time()
