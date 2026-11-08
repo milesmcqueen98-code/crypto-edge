@@ -1,0 +1,18 @@
+frozen rule X2_wf6_h10: gates {'G1': False, 'G2': False, 'G3': False, 'G4': True, 'pass': False}
+  S_0.5: pooled t +0.52 (vol-matched -0.74), mean +0.16 bp/day
+    chk   inc  19.1% / 2.66  cand  18.9% / 2.37  t -0.06  mean -0.04 bp/day
+    early inc  11.1% / 1.91  cand  12.0% / 1.90  t +0.60  mean +0.22 bp/day
+  S_0.25: pooled t +0.60 (vol-matched -0.62), mean +0.19 bp/day
+    chk   inc  17.1% / 2.41  cand  17.4% / 2.20  t +0.12  mean +0.07 bp/day
+    early inc   9.8% / 1.66  cand  10.6% / 1.66  t +0.60  mean +0.22 bp/day
+  base_0.5: pooled t +0.73 (vol-matched +0.06), mean +0.28 bp/day
+    chk   inc  20.0% / 2.67  cand  20.9% / 2.53  t +0.39  mean +0.23 bp/day
+    early inc  13.5% / 2.21  cand  14.6% / 2.36  t +0.63  mean +0.30 bp/day
+  cap_1M: pooled t +0.83 (vol-matched -0.65), mean +0.15 bp/day
+    chk   inc   8.5% / 1.47  cand   8.8% / 1.33  t +0.22  mean +0.08 bp/day
+    early inc   5.1% / 0.73  cand   5.8% / 0.88  t +0.82  mean +0.17 bp/day
+for information, optimistic cash (no remainder blocks cash past 60):
+  S_0.5: pooled t +0.90, eras chk +0.07 bp/day, early +0.35 bp/day
+  S_0.25: pooled t +0.89, eras chk +0.13 bp/day, early +0.33 bp/day
+  base_0.5: pooled t +1.04, eras chk +0.21 bp/day, early +0.47 bp/day
+  cap_1M: pooled t +0.83, eras chk +0.08 bp/day, early +0.17 bp/day

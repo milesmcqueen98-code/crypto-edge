@@ -1,0 +1,330 @@
+{
+ "spec": {
+  "name": "X2_wf6_h10",
+  "lever": "X2",
+  "description": "Hold the part a take-profit has not sold past minute 60, take-profit still resting, while a linear prediction of the gain from holding to minute 120 (bp per remainder dollar, net of costs) is at least h; otherwise sell it at market at that minute's close; sell what is left at minute 120.",
+  "inputs": [
+   "mark",
+   "rec",
+   "k",
+   "btc",
+   "breadth",
+   "m"
+  ],
+  "inputs_meaning": {
+   "mark": "close vs the entry, bp",
+   "rec": "mark / (k sigma), sigma from the take-profit distance (g_tp / 0.6)",
+   "k": "rung depth",
+   "btc": "BTC close vs its close at the fill minute, bp",
+   "breadth": "coins with a research parent fill in minutes m-29..m",
+   "m": "minutes since the fill"
+  },
+  "weights": null,
+  "h": 10.0,
+  "horizon": 120,
+  "decision_minutes": "60..119",
+  "fit": "OLS, refit each quarter on the tranche-minutes of earlier quarters; out-of-sample eras: selection era plus the same era's earlier quarters (deviation log 20:16 UTC); training frame S* theta 0.5 instant bound",
+  "kappa": {
+   "2": 1.02462548355511,
+   "5": 1.1470472076391685,
+   "10": 1.165837654481643,
+   "20": 1.0971856875053791,
+   "30": 1.0145448028092667,
+   "45": 1.0322229372133802,
+   "60": 1.0
+  },
+  "cash_ext": 60,
+  "path": "return",
+  "selection_walk_forward": {
+   "S_0.5": {
+    "t": 0.62,
+    "d_ret_pp": 0.5,
+    "d_sharpe": -0.032,
+    "t_volmatched": -0.44
+   },
+   "S_0.25": {
+    "t": 0.45
+   },
+   "base_0.5": {
+    "t": -0.88
+   },
+   "cap_1M": {
+    "t": 1.05
+   }
+  },
+  "gates": "G1 pooled paired NW t >= 2 over check + 2022-23 at S* theta 0.5 (return path); G2 both eras' mean daily difference > 0 at S* theta 0.5; G3 theta 0.25 pooled t >= 2 and both eras positive; G4 base pooled mean > 0",
+  "reader": "scripts/ladder_v6x/oos.py (run once after this commit)"
+ },
+ "configs": {
+  "S_0.5": {
+   "eras": {
+    "chk": {
+     "inc_ret": 0.19053788170315583,
+     "inc_sharpe": 2.6609155677900613,
+     "ret": 0.1892248856874276,
+     "sharpe": 2.3742832011247366,
+     "d_ret": -0.001312996015728235,
+     "d_sharpe": -0.28663236666532477,
+     "mean_bp": -0.035947871751629015,
+     "t": -0.05942911746497444
+    },
+    "early": {
+     "inc_ret": 0.11139261095976243,
+     "inc_sharpe": 1.9131478566723346,
+     "ret": 0.11958435139413175,
+     "sharpe": 1.9015776050676165,
+     "d_ret": 0.008191740434369321,
+     "d_sharpe": -0.01157025160471803,
+     "mean_bp": 0.2242776299621992,
+     "t": 0.602593334036882
+    }
+   },
+   "pooled_t": 0.515402827776737,
+   "pooled_mean_bp": 0.1642255911051619,
+   "pooled_t_volmatched": -0.7445040049174306,
+   "era_means_volmatched_bp": {
+    "chk": -0.562266911428656,
+    "early": -0.10833993647209438
+   }
+  },
+  "S_0.25": {
+   "eras": {
+    "chk": {
+     "inc_ret": 0.17119172086865883,
+     "inc_sharpe": 2.4083858609954834,
+     "ret": 0.1736520273927852,
+     "sharpe": 2.2011281947801518,
+     "d_ret": 0.0024603065241263766,
+     "d_sharpe": -0.2072576662153316,
+     "mean_bp": 0.06735952153665677,
+     "t": 0.11758763482749254
+    },
+    "early": {
+     "inc_ret": 0.09781835599817429,
+     "inc_sharpe": 1.6555519551956681,
+     "ret": 0.10591287136284049,
+     "sharpe": 1.663623386726674,
+     "d_ret": 0.008094515364666197,
+     "d_sharpe": 0.00807143153100598,
+     "mean_bp": 0.2216157526260421,
+     "t": 0.6025393286987736
+    }
+   },
+   "pooled_t": 0.5955875246117389,
+   "pooled_mean_bp": 0.18601816083618397,
+   "pooled_t_volmatched": -0.6181004455139786,
+   "era_means_volmatched_bp": {
+    "chk": -0.4427703522193276,
+    "early": -0.08951980109398557
+   }
+  },
+  "base_0.5": {
+   "eras": {
+    "chk": {
+     "inc_ret": 0.20043549548903075,
+     "inc_sharpe": 2.6732591743183707,
+     "ret": 0.20893844690621852,
+     "sharpe": 2.5341359164327946,
+     "d_ret": 0.008502951417187765,
+     "d_sharpe": -0.1391232578855761,
+     "mean_bp": 0.23279812230493413,
+     "t": 0.385766852258078
+    },
+    "early": {
+     "inc_ret": 0.13506395282206973,
+     "inc_sharpe": 2.2093572753330215,
+     "ret": 0.14595522086271223,
+     "sharpe": 2.363487968928667,
+     "d_ret": 0.010891268040642499,
+     "d_sharpe": 0.15413069359564568,
+     "mean_bp": 0.298186667779398,
+     "t": 0.6300314003824036
+    }
+   },
+   "pooled_t": 0.7262703335623427,
+   "pooled_mean_bp": 0.28309700343913713,
+   "pooled_t_volmatched": 0.057830207980749,
+   "era_means_volmatched_bp": {
+    "chk": -0.1082017577079826,
+    "early": 0.05997913087843167
+   }
+  },
+  "cap_1M": {
+   "eras": {
+    "chk": {
+     "inc_ret": 0.08480212614247688,
+     "inc_sharpe": 1.4667438316172112,
+     "ret": 0.08757913526407704,
+     "sharpe": 1.3319187913853947,
+     "d_ret": 0.0027770091216001574,
+     "d_sharpe": -0.13482504023181652,
+     "mean_bp": 0.07603036609445982,
+     "t": 0.21707978278477735
+    },
+    "early": {
+     "inc_ret": 0.05140008193983862,
+     "inc_sharpe": 0.7340192519262155,
+     "ret": 0.0575266311270011,
+     "sharpe": 0.8773625314397571,
+     "d_ret": 0.006126549187162482,
+     "d_sharpe": 0.14334327951354153,
+     "mean_bp": 0.16773577514476315,
+     "t": 0.820384743153621
+    }
+   },
+   "pooled_t": 0.8287621203491318,
+   "pooled_mean_bp": 0.146572988440847,
+   "pooled_t_volmatched": -0.6478111084003036,
+   "era_means_volmatched_bp": {
+    "chk": -0.2604087541670888,
+    "early": -0.05325532175999837
+   }
+  }
+ },
+ "gates": {
+  "G1": false,
+  "G2": false,
+  "G3": false,
+  "G4": true,
+  "pass": false
+ },
+ "betas": {
+  "chk": {
+   "2026Q2": [
+    36.2106,
+    -0.3201,
+    85.6597,
+    -2.542,
+    -0.4098,
+    10.9557,
+    -0.353
+   ],
+   "2026Q3": [
+    32.6037,
+    -0.3167,
+    82.5293,
+    -1.7947,
+    -0.3898,
+    10.8892,
+    -0.3526
+   ],
+   "2026Q4": [
+    35.6581,
+    -0.2906,
+    77.9565,
+    -3.0931,
+    -0.362,
+    11.8989,
+    -0.3059
+   ]
+  },
+  "early": {
+   "2022Q1": [
+    36.2106,
+    -0.3201,
+    85.6597,
+    -2.542,
+    -0.4098,
+    10.9557,
+    -0.353
+   ],
+   "2022Q2": [
+    28.3886,
+    -0.3111,
+    80.5668,
+    -1.9799,
+    -0.3796,
+    10.9187,
+    -0.3371
+   ],
+   "2022Q3": [
+    26.8239,
+    -0.2859,
+    69.4321,
+    -1.8729,
+    -0.2459,
+    11.6556,
+    -0.331
+   ],
+   "2022Q4": [
+    24.9176,
+    -0.2863,
+    69.3513,
+    -1.9461,
+    -0.2343,
+    11.6677,
+    -0.299
+   ],
+   "2023Q1": [
+    12.0199,
+    -0.1851,
+    31.4222,
+    -0.8755,
+    -0.0459,
+    11.6873,
+    -0.2254
+   ],
+   "2023Q2": [
+    20.3378,
+    -0.1826,
+    31.9256,
+    -1.1084,
+    -0.0434,
+    11.7349,
+    -0.2742
+   ],
+   "2023Q3": [
+    20.7303,
+    -0.1835,
+    31.6395,
+    -0.6525,
+    -0.0408,
+    11.6261,
+    -0.2928
+   ],
+   "2023Q4": [
+    15.531,
+    -0.1737,
+    28.5654,
+    -0.1989,
+    -0.0316,
+    11.9228,
+    -0.2659
+   ]
+  }
+ },
+ "optimistic_cash": {
+  "S_0.5": {
+   "pooled_t": 0.8986044728338907,
+   "pooled_mean_bp": 0.2878107266495568,
+   "era_mean_bp": {
+    "chk": 0.07094039065493757,
+    "early": 0.35287182744794254
+   }
+  },
+  "S_0.25": {
+   "pooled_t": 0.892831817976279,
+   "pooled_mean_bp": 0.2815340227569605,
+   "era_mean_bp": {
+    "chk": 0.1252521455673384,
+    "early": 0.32841858591384715
+   }
+  },
+  "base_0.5": {
+   "pooled_t": 1.0412951495073908,
+   "pooled_mean_bp": 0.4076677446771253,
+   "era_mean_bp": {
+    "chk": 0.209751472082856,
+    "early": 0.4670426264554063
+   }
+  },
+  "cap_1M": {
+   "pooled_t": 0.8296439116039683,
+   "pooled_mean_bp": 0.14671717007905014,
+   "era_mean_bp": {
+    "chk": 0.07665515319333993,
+    "early": 0.16773577514476315
+   }
+  }
+ }
+}
