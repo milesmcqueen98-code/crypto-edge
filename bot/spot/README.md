@@ -59,7 +59,22 @@ Known differences from the research simulation:
 - The table counts Coinbase spot only. The research also counted the volume of Coinbase's US perp-style futures
   (mid-2025 on), which this bot can't fill on. Removing it costs the check period about 1.2–1.4 points a year.
 - Cash held by resting bids counts against the cash cap. Coinbase holds the cash for every resting buy. The research
-  ignored this, and the paper run measures how often it binds (`cash_short` events).
+  ignored this, and the paper run measures how often it binds (`cash_short` events). Ladder v5 measured it (below).
+
+**Ladder v5 corrections (Nov 7–8; `reports/ladder_v5_prereg.md` on branch `ladder/v5`, red-team branches
+`ladder/redteam`, `ladder/redteam2`):**
+- **Exits cost less than the table assumes.** The research charges each 60-minute market exit a 2 bp half-spread plus
+  square-root impact (y = 0.7). On 17.2M Coinbase trades around 2,053 such exits, the sale cost 2.9–5.4 bp per dollar
+  sold, against the model's 8.1–8.6.
+- **The cash rule costs the deeper rungs on crash days.** The table lets every rung use its full share of cash; the bot
+  funds the 4σ bids first. Replayed as the engine runs it (matched rung by rung on three crash windows), $250K live
+  with measured exit costs earns **25.5% / 20.0% / 13.5%** a year (Sharpe 2.66 / 2.67 / 2.21) against the table's
+  29.9% / 20.1% / 14.0%. Oct 10 2025 and Feb 3 2025 carry 69% of the selection period's cost. At $1M it costs
+  nothing.
+- **At today's volumes with unverified costs doubled:** $250K earns 22.8% / 19.1% / 11.1% (Sharpe 2.94 / 2.66 / 1.91);
+  $1M earns 15.0% / 8.5% / 5.1% (2.28 / 1.47 / 0.73).
+- No change to the trading rules passed (passive exits, margin sizing, deeper-rung priority, stress sizing, perps and
+  print-based filters were tested). Holding cash as USDC passed the backtest and waits for a live check (below).
 
 ## Set it up, in order (about 1.5 hours)
 
@@ -75,7 +90,7 @@ Get written clearance from Sculptor compliance before any live order. Ask four t
 ### 1. Coinbase: a separate portfolio holding only the bot's cash
 1. In Coinbase Advanced, open the portfolio menu and create a portfolio named `wickbot`.
 2. Move the pilot cash into it as **USD**: $10,000. Transfer it between portfolios, or deposit first by wire or ACH.
-   - The bot counts only USD as cash. It keeps $500 aside for fees and rounding.
+   - The bot counts only USD as cash (USDC only after the USDC check below). It keeps $500 aside for fees and rounding.
 3. Leave the BTC/ETH trend holdings in the default portfolio.
 
 ### 2. Alerts (5 minutes)
@@ -161,6 +176,9 @@ wickctl log               # follow the events (Ctrl-C stops watching; the bot ke
   - API calls time out after 10 s. An order whose create call timed out is found by its client id.
   - If candles or cash can't be fetched, exits and take-profits still run; only new bids pause.
   - The STOP file also stops the deeper bids that 1-second detection would place.
+- **No bid without a volume figure** (fixed Nov 8 after the ladder v5 red team): a coin with fewer than 10 days of
+  volume data (a failed fetch at first start, say) used to bid an uncapped 25% of equity ÷ 3, $20.8K at $250K, which
+  the research never priced. It now skips the coin until its volume is known (`no_adv` in the heartbeat counts).
 
 ## Go live in stages (rules fixed before any results)
 
@@ -184,6 +202,25 @@ wickctl log               # follow the events (Ctrl-C stops watching; the bot ke
     book.
   - Compare the pilot with paper before fees. The preflight and each start's `fee_tier` log line show your real tier.
 - At $250K the book reaches VIP 1 ($500K of 30-day volume) in about a week.
+
+## USDC cash (optional; ladder v5 C4, live check first)
+Coinbase pays nothing on USD but pays a reward on USDC, and the bot's cash sits idle most of the time. Holding it as USDC
+added about 1.6–1.75 points a year at $250K in the backtest with the reward halved (Sharpe +0.25 / +0.32 in the
+selection and check periods). On the $10K pilot that is about $350 a year at the published 3.5%, $300 after Coinbase
+One Basic. The `-USDC` products are aliases of the `-USD` books,
+so fills are the same. It is off (`"quote": "USD"`) because the backtest assumes a reward this account may not get:
+1. Rewards need Coinbase One (Basic $49.99 a year), and they were not offered in New York when Coinbase launched them
+   (2019). Confirm in the app that this account and the bot's API portfolio earn them, and set payouts to USDC.
+2. `python bot/spot/run.py usdc-check` (needs keys and the live switch; places and cancels one $10 bid far below the
+   market): a post-only `SOL-USDC` bid must preview with only USDC in the portfolio, and its hold must show on USDC.
+3. Set `"quote": "USDC"` in `config.live.json`, convert USD to USDC only at 1:1 with no fee, and run through at least
+   one weekly payout. Compare the reward paid with the heartbeats' `usdc_avail` and `usdc_hold`: A = average(both) ×
+   APY × days / 365 (held USDC earns), B = average(`usdc_avail`) × APY × days / 365 (it doesn't).
+4. Stop and switch back if the reward is below half of B, any `-USDC` order is rejected, or Coinbase changes the
+   program (the GENIUS Act takes effect Jan 18 2027). If USDC trades below 0.997 for 15 minutes or conversion pauses,
+   `wickctl pause` and hold the USDC: never sell it at a discount. Selling at the worst hour of the March 2023 depeg
+   would have wiped out the whole backtest gain.
+5. Switching back: pause, `wickctl cancel-all`, convert USDC to USD at 1:1, set `"quote": "USD"`, resume.
 
 ## Kill switches
 - `wickctl pause`: no new bids from the next minute. Open positions still exit by their rules. `wickctl resume` undoes
@@ -234,6 +271,9 @@ Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
     - 5% of take-profit placements fail with a server error.
   - It checks that no orders are orphaned, that coin balances return to zero, and that the bot's equity equals the
     exchange's USD balance.
+- **USDC quote:** `python bot/spot/usdc_test.py` checks, against a recording fake of the SDK, that with
+  `"quote": "USDC"` every order call (bids, take-profits, previews, market sells, the client-id lookup) goes to the
+  `-USDC` alias and cash is the available USDC, and that nothing changes with `"quote": "USD"`.
 - Results (Nov 6):
   - Parity: rung for rung identical on Oct 10–12 2025 (156 of 156) and Jun 1–3 2026 (33 of 33).
   - Live paths: books equal the fake exchange's to $0.0002 after 540 crash minutes with injected faults, with no
