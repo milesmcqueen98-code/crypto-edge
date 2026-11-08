@@ -9,6 +9,8 @@
   python bot/spot/run.py stop | resume                   kill switch: no new bids (exits still run) / remove it
   python bot/spot/run.py cancel-all [--flatten]          live: cancel every bot order; --flatten also sells every open rung
   python bot/spot/run.py reset-halt                      clear the drawdown stop after you have looked at why it fired
+  python bot/spot/run.py usdc-check                      ladder v5 C4: the pre-registered USDC verification (places and
+                                                         cancels one $10 bid far below the market; needs the live switch)
 """
 import argparse
 import json
@@ -21,7 +23,7 @@ sys.path.insert(0, ROOT)
 
 p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 p.add_argument("cmd", choices=["paper", "live", "preflight", "status", "report", "stop", "resume", "cancel-all",
-                               "reset-halt"])
+                               "reset-halt", "usdc-check"])
 p.add_argument("--minutes", type=float, default=None, help="how long to run (default: 345 paper, forever live)")
 p.add_argument("--config", default=os.path.join(HERE, "config.json"))
 p.add_argument("--capital", type=float, default=None, help="override the config's capital (first start only)")
@@ -31,7 +33,7 @@ a = p.parse_args()
 cfg = json.load(open(a.config))
 if a.capital:
     cfg["capital"] = a.capital
-live_cmds = ("live", "preflight", "cancel-all")
+live_cmds = ("live", "preflight", "cancel-all", "usdc-check")
 default_dir = "paper_spot" if a.cmd == "paper" or (a.cmd == "report" and not a.state_dir) else "live_spot"
 sd = os.path.abspath(a.state_dir or os.path.join(ROOT, default_dir))
 
@@ -58,7 +60,7 @@ elif a.cmd == "preflight":
     from bot import market
     from bot.spot.engine import LiveBroker, Spec, fmt, floor_to
     meta = json.load(open(os.path.join(ROOT, "bot", "v2", "model_meta.json")))
-    br = LiveBroker()
+    br = LiveBroker(quote=cfg.get("quote", "USD"))
     ok = True
     try:
         perm = br._d(br.c.get_api_key_permissions())
@@ -75,9 +77,9 @@ elif a.cmd == "preflight":
     try:
         bal = br.balances()
         print("balances (available, on hold):", {k: v for k, v in bal.items() if sum(v) > 0})
-        print(f"cash the bot can use: ${br.cash():,.0f} (config capital ${cfg['capital']:,.0f})")
+        print(f"cash the bot can use ({br.quote}): ${br.cash():,.0f} (config capital ${cfg['capital']:,.0f})")
         if br.cash() < 0.5 * cfg["capital"]:
-            print("  !! less than half the configured capital is available as USD in this portfolio")
+            print(f"  !! less than half the configured capital is available as {br.quote} in this portfolio")
         stray = [k for k, v in bal.items() if k not in ("USD", "USDC") and sum(v) > 0]
         if stray:
             print("  note: this portfolio also holds", stray, "- the bot's portfolio should hold only its own cash")
@@ -90,7 +92,7 @@ elif a.cmd == "preflight":
         print("could not read the fee tier:", repr(err)[:300])
     tradable, blocked, unknown, specs = [], {}, {}, {}
     for c in meta["coins"]:
-        pid = f"{c}-USD"
+        pid = br._p(f"{c}-USD")                                    # the -USDC alias when quote is USDC
         try:
             pr = br._d(br.c.get_product(pid))
             flags = {k: pr.get(k) for k in ("trading_disabled", "is_disabled", "view_only", "cancel_only", "limit_only",
@@ -109,7 +111,7 @@ elif a.cmd == "preflight":
                 blocked[c] = {"preview": errs}
             else:
                 tradable.append(c)
-                specs[c] = (Spec(pid, tick, lot), lim, size)
+                specs[c] = (Spec(f"{c}-USD", tick, lot), lim, size)
         except Exception as err:
             unknown[c] = repr(err)[:200]
     print(f"\ntradable for this account ({len(tradable)} of {len(meta['coins'])}):", tradable)
@@ -225,6 +227,57 @@ elif a.cmd == "cancel-all":
         print("NOT CONFIRMED, cancel these in the Coinbase app:", left)
     print("done: bot orders cancelled" + (" and open rungs sold" if a.flatten else "") +
           ". Start the service again only when you want it bidding.")
+
+elif a.cmd == "usdc-check":
+    # reports/ladder_v5_prereg.md, "USDC cash (C4), whatever its backtest: verify before use"
+    need_keys()
+    if os.environ.get("I_UNDERSTAND_LIVE_TRADING") != "yes":
+        sys.exit("usdc-check places (and cancels) one real $10 bid. Set I_UNDERSTAND_LIVE_TRADING=yes to run it.")
+    import time
+    import pandas as pd
+    from bot.spot.engine import LiveBroker, Spec, fmt, floor_to
+    br = LiveBroker(quote="USDC")
+    ok = True
+    bal = br.balances()
+    usd, usdc = bal.get("USD", (0.0, 0.0)), bal.get("USDC", (0.0, 0.0))
+    print(f"portfolio: USD {usd[0]:,.2f} available / {usd[1]:,.2f} on hold; USDC {usdc[0]:,.2f} / {usdc[1]:,.2f}")
+    if sum(usd) > 1.0:
+        print("  !! the portfolio still holds USD: convert it to USDC first, so the check shows what USDC alone can do")
+        ok = False
+    pr = br._d(br.c.get_product("SOL-USDC"))
+    print("SOL-USDC:", {k: pr.get(k) for k in ("product_id", "alias", "alias_to", "status", "trading_disabled",
+                                                "post_only", "limit_only") if k in pr})
+    px = float(pr.get("price") or 0)
+    tick, lot = float(pr["quote_increment"]), float(pr["base_increment"])
+    lim = floor_to(px * 0.5, tick)
+    size = max(floor_to(10.0 / lim, lot), float(pr.get("base_min_size") or lot))
+    sp = Spec("SOL-USD", tick, lot)
+    # 1. a post-only bid on SOL-USDC with only USDC must preview cleanly
+    pv = br._d(br.c.preview_limit_order_gtc_buy(product_id="SOL-USDC", base_size=fmt(size, lot),
+                                                limit_price=fmt(lim, tick), post_only=True))
+    print("1. preview of a post-only SOL-USDC bid:", "OK" if not pv.get("errs") else pv.get("errs"))
+    ok = ok and not pv.get("errs")
+    # 2. place and cancel a $10 bid far below the market: the hold must show on USDC
+    oid, err = br.place(sp, "BUY", lim, size)
+    if oid is None:
+        print("2. the -USDC bid was REJECTED:", err)
+        ok = False
+    else:
+        time.sleep(2)
+        hold = br.balances().get("USDC", (0.0, 0.0))[1] - usdc[1]
+        print(f"2. placed {oid}: USDC on hold rose by ${hold:,.2f} (expect about ${size * lim:,.2f})")
+        ok = ok and hold >= 0.9 * size * lim
+        br.c.cancel_orders(order_ids=[oid])
+        time.sleep(1)
+        st = br.status(oid)["status"]
+        print(f"   cancelled: status {st}")
+        ok = ok and st in br.TERMINAL
+    # 3. the rewards check needs one rewards period of history
+    print("3. after one rewards period, compare the USDC rewards Coinbase paid with the expected amount: the average of "
+          "the heartbeat 'usdc' field (available + on hold) x the advertised APY x days / 365 (python bot/spot/run.py "
+          "report). Stop C4 if rewards are below half the expected amount, if any -USDC order is rejected, or if the "
+          "rules change to end exchange rewards.")
+    print("\nusdc-check", "PASSED (steps 1-2)" if ok else "FAILED")
 
 elif a.cmd == "reset-halt":
     st_path = os.path.join(sd, "state.json")

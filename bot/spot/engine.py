@@ -12,6 +12,9 @@ The rule (reports/wick1m_prereg.md; findings doc, section "Wick catcher at $1M")
   - Option size_by_margin (ladder v5, C2a; null = off): the whole ladder of a signal is sized x0.5 / x1.0 / x1.5 by
     the AI's margin (prediction minus the threshold) below `lower`, between, or at or above `upper` (the margin's
     terciles over all earlier research parent fills; scripts/ladder_v5/margin_cutoffs.py, refreshed each quarter).
+  - Option quote = "USDC" (ladder v5, C4; default "USD"): the bot's cash is USDC and its orders go to the -USDC
+    products, which are aliases of the -USD books (same book, same fills; settlement in USDC, which earns Coinbase's
+    USDC rewards). Use it only after `python bot/spot/run.py usdc-check` passes (reports/ladder_v5_prereg.md).
   - Option passive_exit_min = N (ladder v5, C3; 0 = off): at the 60-minute mark the unsold part instead rests as a
     post-only sell at the last minute's close plus one tick, re-pegged every minute, for N minutes; whatever is left is
     then sold at market. While it rests the coin may bid again (its 4-sigma rung counts as closed, as in the research).
@@ -214,11 +217,21 @@ class LiveBroker:
     live = True
     TERMINAL = ("FILLED", "CANCELLED", "EXPIRED", "FAILED")
 
-    def __init__(self, count_usdc=False):
-        from coinbase.rest import RESTClient
-        secret = os.environ["COINBASE_API_SECRET"].replace("\\n", "\n")     # accept the one-line (\\n) form
-        self.c = RESTClient(api_key=os.environ["COINBASE_API_KEY"], api_secret=secret, timeout=10)   # no hung loop
+    def __init__(self, count_usdc=False, quote="USD", client=None):
+        if client is None:
+            from coinbase.rest import RESTClient
+            secret = os.environ["COINBASE_API_SECRET"].replace("\\n", "\n")     # accept the one-line (\\n) form
+            client = RESTClient(api_key=os.environ["COINBASE_API_KEY"], api_secret=secret, timeout=10)   # no hung loop
+        self.c = client
         self.count_usdc = count_usdc
+        self.quote = (quote or "USD").upper()             # ladder v5 C4: "USDC" trades the -USDC aliases
+        if self.quote not in ("USD", "USDC"):
+            raise ValueError(f"quote must be USD or USDC, not {quote}")
+        self.last_usdc = None
+
+    def _p(self, product):
+        """The product an order goes to: the -USDC alias of a -USD book when the bot's cash is USDC."""
+        return product[:-3] + self.quote if self.quote != "USD" and product.endswith("-USD") else product
 
     @staticmethod
     def _d(r):
@@ -235,14 +248,14 @@ class LiveBroker:
         cid = f"{ORDER_TAG}-{uuid.uuid4().hex[:20]}"
         try:
             if end_time is not None:
-                r = self._d(self.c.create_order(client_order_id=cid, product_id=spec.product, side=side,
+                r = self._d(self.c.create_order(client_order_id=cid, product_id=self._p(spec.product), side=side,
                                                 order_configuration=self._gtd(spec, px, size, end_time, post_only)))
             else:
-                args = dict(client_order_id=cid, product_id=spec.product, base_size=fmt(size, spec.lot),
+                args = dict(client_order_id=cid, product_id=self._p(spec.product), base_size=fmt(size, spec.lot),
                             limit_price=fmt(px, spec.tick), post_only=post_only)
                 r = self._d(self.c.limit_order_gtc_buy(**args) if side == "BUY" else self.c.limit_order_gtc_sell(**args))
         except Exception as err:
-            oid = self._find_by_client_id(spec.product, cid)  # a timed-out call may still have placed the order
+            oid = self._find_by_client_id(self._p(spec.product), cid)  # a timed-out call may still have placed it
             return (oid, None) if oid else (None, repr(err)[:300])
         if r.get("success"):
             return r["success_response"]["order_id"], None
@@ -263,7 +276,7 @@ class LiveBroker:
 
     def preview_gtd(self, spec, px, size, end_time):
         """Errors Coinbase would give a good-til-date bid (nothing is placed)."""
-        r = self._d(self.c.preview_order(product_id=spec.product, side="BUY",
+        r = self._d(self.c.preview_order(product_id=self._p(spec.product), side="BUY",
                                          order_configuration=self._gtd(spec, px, size, end_time)))
         return r.get("errs") or []
 
@@ -318,7 +331,7 @@ class LiveBroker:
     def market_sell(self, spec, size, ref_px, cost_px):
         try:
             r = self._d(self.c.market_order_sell(client_order_id=f"{ORDER_TAG}-{uuid.uuid4().hex[:20]}",
-                                                 product_id=spec.product, base_size=fmt(size, spec.lot)))
+                                                 product_id=self._p(spec.product), base_size=fmt(size, spec.lot)))
         except Exception as err:
             return None, None, 0.0, repr(err)[:300]
         if not r.get("success"):
@@ -350,6 +363,9 @@ class LiveBroker:
 
     def cash(self):
         b = self.balances()
+        if self.quote == "USDC":
+            self.last_usdc = sum(b.get("USDC", (0.0, 0.0)))   # available + on hold, for the USDC rewards check
+            return b.get("USDC", (0.0, 0.0))[0]           # orders on the -USDC aliases spend USDC only
         usd = b.get("USD", (0.0, 0.0))[0]
         return usd + (b.get("USDC", (0.0, 0.0))[0] if self.count_usdc else 0.0)
 
@@ -413,8 +429,8 @@ class Engine:
         self.log = Log(os.path.join(self.state_dir, "events.jsonl"), self.clock, echo=self.echo)
         self.state = self._load_state()
         if self.broker is None:
-            self.broker = (LiveBroker(self.cfg.get("count_usdc_as_cash", False)) if self.mode == "live"
-                           else PaperBroker(self.cfg.get("paper_capture", 0.5)))
+            self.broker = (LiveBroker(self.cfg.get("count_usdc_as_cash", False), self.cfg.get("quote", "USD"))
+                           if self.mode == "live" else PaperBroker(self.cfg.get("paper_capture", 0.5)))
         off = set(self.cfg.get("coins_disabled", []))
         self.tradable = [c for c in self.coins if c not in off]
         self.specs = {c: Spec(**v) for c, v in self.state.get("specs", {}).items()}
@@ -836,7 +852,8 @@ class Engine:
                      committed=round(self.committed()), free=round(free) if np.isfinite(free) else None,
                      armed=sorted(l["coin"] for l in self.ladders() if l["status"] == "armed"),
                      open=sorted(f"{l['coin']}:{'/'.join(sorted(l['tranches']))}" for l in self.ladders() if l["tranches"]),
-                     counts=self.counts)
+                     counts=self.counts, **({"usdc": round(self.broker.last_usdc, 2)}
+                                            if getattr(self.broker, "last_usdc", None) is not None else {}))
             self.counts = {}
         self.state["last_minute"] = t.isoformat()
         self.save()
