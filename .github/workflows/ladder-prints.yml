@@ -2,8 +2,8 @@ name: ladder-prints
 
 # Ladder v5 (reports/ladder_v5_prereg.md): per-event print statistics from the ladder-fetch trade artifacts. On branch
 # ladder/v6x-kappa: the kappa(m) measurement of ladder v6 exits (scripts/ladder_v6x/kappa/prints_kappa.py, then
-# kappa.py). Only derived per-event numbers leave the job, as the kappa-derived artifact (committed to the branch
-# afterwards); raw trades stay in the fetch run's artifacts.
+# kappa.py). Only derived per-event numbers are committed (and kept as the kappa-derived artifact); raw trades stay in
+# the fetch run's artifacts.
 on:
   workflow_dispatch:
     inputs:
@@ -18,7 +18,7 @@ on:
         default: "main"
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 jobs:
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -q pandas numpy pyarrow
+      - run: pip install -q pandas numpy pyarrow numba
       - uses: actions/download-artifact@v4
         with:
           run-id: ${{ inputs.run_id }}
@@ -55,3 +55,23 @@ jobs:
             reports/ladder_v6x/kappa/prints_log.txt
             reports/ladder_v6x/kappa/kappa_log.txt
           retention-days: 14
+      - name: Commit derived results
+        run: |
+          git config user.name "crypto-edge-bot"
+          git config user.email "crypto-edge-bot"
+          cd reports/ladder_v6x/kappa
+          git add prints_kappa.csv prints_kappa_clip.csv windows_cover.csv kappa.csv kappa_events.csv kappa_clip.csv \
+            prints_log.txt kappa_log.txt
+          git diff --cached --quiet && exit 0
+          git commit -q -F - <<'MSG'
+          Ladder v6 exits, kappa(m): per-event print measurements and the kappa table (derived on Actions; raw prints stay in artifacts)
+
+          Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+          Claude-Session: https://claude.ai/code/session_01AEZT6kPaLhVZQWa1uXmv5Y
+          MSG
+          ok=0
+          for i in 1 2 3 4 5; do
+            git pull -q --rebase origin ${GITHUB_REF_NAME} && git push -q origin HEAD:${GITHUB_REF_NAME} && { ok=1; break; }
+            sleep $((i*5))
+          done
+          [ "$ok" = 1 ]
