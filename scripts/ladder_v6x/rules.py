@@ -151,12 +151,14 @@ def changed_share(bk, rule):
 
 def log(row):
     row = dict(time_utc=pd.Timestamp.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), **row)
-    new = not os.path.exists(VAR)
     df = pd.DataFrame([row])
-    if not new:
-        cols = pd.read_csv(VAR, nrows=0).columns.tolist()
-        df = df.reindex(columns=cols + [c for c in df.columns if c not in cols])
-    df.to_csv(VAR, mode="a", header=new, index=False)
+    if os.path.exists(VAR):
+        old = pd.read_csv(VAR)
+        if [c for c in df.columns if c not in old.columns]:          # a new column: rewrite with one header
+            pd.concat([old, df], ignore_index=True).to_csv(VAR, index=False)
+            return
+        df = df.reindex(columns=old.columns)
+    df.to_csv(VAR, mode="a", header=not os.path.exists(VAR), index=False)
 
 
 def score(inc, cand, cfg="S_0.5", era="sel"):
