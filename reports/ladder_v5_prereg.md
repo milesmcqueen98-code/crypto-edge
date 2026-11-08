@@ -228,7 +228,7 @@ sizing (no US-accessible history: a forward log below).
   gates stay as run (hsim was frozen before any trial). Added check, not a new trial: red team 1 re-runs C2a, C3b, C4,
   J_c3b_c4 and J_c2a_c3b_c4 on its replay against its own incumbent. A winner whose S* θ 0.5 paired t falls below 2
   there, or whose sign flips in any era, is reported as simulator-dependent and drops to forward-test.
-- 2026-11-08 01:13 UTC. Verdicts after the red teams, by the rules above (adopt needs all gates, a confirming red team
+- 2026-11-08 00:40 UTC. Verdicts after the red teams, by the rules above (adopt needs all gates, a confirming red team
   and the joint re-test; forward-test needs t >= 1 with every era's sign right, or a question history cannot answer):
   - C3a, C3b: reject. Red team 2 measured the 60-minute market exit on 17.2M Coinbase prints: 3-6 bp per remainder
     dollar at S* (model 16-17); with print costs and print fills C3a/C3b pooled t -0.06 / +0.04, every gate fails, and
