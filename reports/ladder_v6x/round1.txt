@@ -1,0 +1,23 @@
+oracle X1 kappa1 cash0                 t  +4.02  dSharpe +1.429  dret +61.14pp  mean +16.74 bp/day  (3s)
+insample X1 kappa1 h0                  t  -1.77  dSharpe -0.680  dret  -4.45pp  mean  -1.22 bp/day  rows 100587 beta [21.583, -0.382, -59.75, 7.698, -0.013, 1.061, -1.107]
+insample X1 kappa1 h5                  t  -1.93  dSharpe -0.674  dret  -4.86pp  mean  -1.33 bp/day  rows 100587 beta [21.583, -0.382, -59.75, 7.698, -0.013, 1.061, -1.107]
+insample X1 kappa1 h10                 t  -2.01  dSharpe -0.669  dret  -5.17pp  mean  -1.42 bp/day  rows 100587 beta [21.583, -0.382, -59.75, 7.698, -0.013, 1.061, -1.107]
+oracle X2 kappa1 cash60                t  +4.35  dSharpe +1.824  dret +27.41pp  mean  +7.50 bp/day  (4s)
+oracle X2 kappa1 cash0                 t  +3.90  dSharpe +1.629  dret +30.11pp  mean  +8.24 bp/day  (4s)
+insample X2 kappa1 h0                  t  +1.54  dSharpe +0.486  dret  +4.69pp  mean  +1.28 bp/day  rows 49525 beta [36.211, -0.32, 85.66, -2.542, -0.41, 10.956, -0.353]
+insample X2 kappa1 h5                  t  +1.63  dSharpe +0.481  dret  +4.66pp  mean  +1.28 bp/day  rows 49525 beta [36.211, -0.32, 85.66, -2.542, -0.41, 10.956, -0.353]
+insample X2 kappa1 h10                 t  +1.79  dSharpe +0.553  dret  +5.14pp  mean  +1.41 bp/day  rows 49525 beta [36.211, -0.32, 85.66, -2.542, -0.41, 10.956, -0.353]
+oracle X12 kappa1 cash60               t  +4.78  dSharpe +1.928  dret +61.49pp  mean +16.83 bp/day  (4s)
+oracle X12 kappa1 cash0                t  +4.05  dSharpe +1.458  dret +68.51pp  mean +18.76 bp/day  (5s)
+insample X12 kappa1 h0                 t  +0.54  dSharpe -0.028  dret  +1.81pp  mean  +0.50 bp/day  rows 150112 beta [18.275, -0.354, -17.711, 7.838, -0.272, 2.908, -1.052]
+insample X12 kappa1 h5                 t  +0.28  dSharpe -0.089  dret  +0.94pp  mean  +0.26 bp/day  rows 150112 beta [18.275, -0.354, -17.711, 7.838, -0.272, 2.908, -1.052]
+insample X12 kappa1 h10                t  +0.34  dSharpe +0.049  dret  +1.16pp  mean  +0.32 bp/day  rows 150112 beta [18.275, -0.354, -17.711, 7.838, -0.272, 2.908, -1.052]
+oracle X1 kappa2 cash0                 t  +3.99  dSharpe +1.404  dret +59.60pp  mean +16.32 bp/day  (5s)
+insample X1 kappa2 h0                  t  -2.13  dSharpe -0.939  dret  -6.15pp  mean  -1.68 bp/day  rows 100587 beta [24.137, -0.387, -59.43, 7.903, -0.014, 1.098, -1.113]
+insample X1 kappa2 h5                  t  -2.39  dSharpe -0.968  dret  -6.54pp  mean  -1.79 bp/day  rows 100587 beta [24.137, -0.387, -59.43, 7.903, -0.014, 1.098, -1.113]
+insample X1 kappa2 h10                 t  -2.37  dSharpe -0.903  dret  -6.59pp  mean  -1.80 bp/day  rows 100587 beta [24.137, -0.387, -59.43, 7.903, -0.014, 1.098, -1.113]
+oracle X12 kappa2 cash60               t  +4.76  dSharpe +1.912  dret +60.48pp  mean +16.56 bp/day  (6s)
+oracle X12 kappa2 cash0                t  +4.03  dSharpe +1.441  dret +67.45pp  mean +18.47 bp/day  (6s)
+insample X12 kappa2 h0                 t  +0.32  dSharpe -0.176  dret  +1.05pp  mean  +0.29 bp/day  rows 150112 beta [22.159, -0.357, -17.547, 7.966, -0.272, 2.911, -1.099]
+insample X12 kappa2 h5                 t  +0.05  dSharpe -0.189  dret  +0.15pp  mean  +0.04 bp/day  rows 150112 beta [22.159, -0.357, -17.547, 7.966, -0.272, 2.911, -1.099]
+insample X12 kappa2 h10                t  -0.23  dSharpe -0.283  dret  -0.72pp  mean  -0.20 bp/day  rows 150112 beta [22.159, -0.357, -17.547, 7.966, -0.272, 2.911, -1.099]
