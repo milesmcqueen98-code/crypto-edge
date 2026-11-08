@@ -1,4 +1,4 @@
-# Crypto edge: findings and live rules (updated Nov 8, 2026, ladder v6 exits and sizing)
+# Crypto edge: findings and live rules (updated Nov 8, 2026, ladder v6 sizing; Gemini venue test)
 
 Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly signals, paper-trading bot)
 
@@ -10,6 +10,15 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   - Hindsight sizing is worth t +3.45 (+2.2 Sharpe). But the AI's prediction ranks outcome size and outcome variance
     together, and 55% of signal P&L falls on 20 cascade days.
   - At today's volumes only ETH, XRP and SOL have room to size up under the cap.
+- **Gemini venue test (Nov 8): Gemini is not a better venue and not worth adding; Coinbase stays the only spot venue
+  (section below).**
+  - The frozen R2-08 ladder on Gemini prints, AI-filtered, at $250K: −$1.8K a year net at Gemini's own fee tier (90%
+    interval −$6.9K to +$3.1K). The pre-registered bar was +$5K.
+  - On the same 23 sample days the incumbent's Coinbase fills earn +67 bp gross per dollar; Gemini's earn −5 bp, on
+    3% of the dollars.
+  - Gemini follows Coinbase: 87% of its fills are the same events, filled after Coinbase has moved (−8.8 bp vs the
+    synchronous Coinbase price one second later), so the rebound is gone.
+  - Gemini-only 4σ fills: 0.17 a day, $225 a day of sellers.
 - **Ladder v6, exits (Nov 8): no change; the bot keeps "take-profit, else market at minute 60" (section below).**
   - Selling early loses even with a rule fitted to the data it is scored on.
   - Holding past 60 had an in-sample edge from one quarter (Q1 2025). It failed walk-forward and failed out of sample:
@@ -130,6 +139,55 @@ reports/ladder_v6s/ README, rounds, variants, scorecard).
 - **Lead:** at research-era volumes (the base configuration), the cap leaves room to size up. There, edge sizing reads
   t +1.74 (+0.73 without its best 5 days) and breadth +1.82 (+0.88). Re-test sizing on new data if alt volumes
   recover.
+
+## Gemini venue test (Nov 8): not a better venue, and not worth adding
+Question (Miles): is Gemini, a thinner NY-licensed venue, more volatile and so more profitable for the wick ladder?
+Measure ≥4σ dislocations that happen on Gemini only, the dollars traded through the bids, and the rebound, with the
+frozen R2-08 ladder and a Coinbase-synchronous fair value. Pre-registered (reports/gemini_prereg.md) before any Gemini
+data was read. Record: branch gemini/venue; reports/gemini/README.md.
+
+**Data and checks**
+- **Sample.** Gemini's public API keeps only 7 days of trades, so the history is Tardis.dev's free first-of-month
+  files: 35 days, Jan 2024 – Nov 2026, prints on both venues. The AI-filtered test uses the 23 out-of-sample days.
+- **Prints enriched.** Every Gemini print carries Coinbase's last price that second, its low within ±60 s and its
+  marks to +1 h, plus Gemini's book (scripts/gemini/enrich.py, run on Actions).
+- **Coverage.** Gemini lists 13 of the 17 coins; XLM, HBAR, ENA and ONDO are missing.
+- **Parity.** The R2-08 model was rebuilt and matches the stored predictions and thresholds on all 1,568 trades
+  (difference 0).
+- **The sample is representative for the incumbent:** $67K a year at $250K on these days vs $71K over all days.
+
+**Results**
+- **Volume.** Gemini trades $19.9M a day in these coins against Coinbase's $758M (2.6%).
+- **Pure synchronous ≥4σ gaps** (Gemini print ≥ 4σ below r × Coinbase's same-second price):
+  - 0.59 episodes a day, with $18.9K of taker sells in all 34 days.
+  - 15 of 20 are in ZEC, BCH and AAVE, where Gemini's spread at the time was 240–540 bp.
+  - Gemini's own price does not rebound within a minute (median 0 bp).
+
+| 23 days, $250K, θ 0.5 | Gemini, AI-filtered | of which Gemini-only | Gemini, unfiltered | Coinbase incumbent |
+|---|---|---|---|---|
+| Parent fills a day | 1.30 | 0.17 | 3.13 | 1.74 |
+| Our fills, $ a day | $1,291 | $6 | $4,839 | $38,182 |
+| Gross, bp per dollar | −4.8 | −27 | +7.0 | +67.2 |
+| Net, bp per dollar | −38.4 (Gemini 12.5/25 bp tier) | −60 | −13.0 | +48.3 |
+| Net, $ a year | −$1,807 | −$12 | −$2,295 | +$67,261 |
+
+**Why**
+1. **Gemini follows Coinbase.**
+   - A Gemini bid set from the same t−1 level fills after Coinbase has already traded below it. The Coinbase price
+     one second later is a median −8.8 bp under the fill, and only +3 bp an hour later. The incumbent's own fills
+     show +51 bp at an hour.
+   - This is the stale-anchor pick-off of H6 and H10, seen from the follower's side.
+2. **Gemini-only holes are rare and mostly not holes.**
+   - BCH's are Gemini's persistent ~3.6% premium snapping back toward Coinbase.
+   - The one clean hole in the sample (SUI, Sep 1 2026) had $2.2K of sellers.
+3. **Fees.** Gemini's schedule is not Coinbase's:
+   - $0 60/120 bp, $10K 40/80, $25K 25/50, $75K 12.5/25, $250K 7.5/15, $500K 6/12.5, $1M 5/10 (maker/taker,
+     Sep 1 2026).
+   - The sleeve's $77K a month pays 12.5/25.
+4. **Dollars.** Even at the incumbent's +48 bp net, $1.3K a day of fills makes about $2.3K a year.
+
+**Limits:** crash days are not in the sample (cascade capacity on Gemini unmeasured, but bounded by the 2.6% volume
+ratio); Gemini ticks are today's; sizing used each coin's same-day Gemini volume as the 30-day median.
 
 ## Ladder v6, exits (Nov 8): no change; the rest of the rebound can't be predicted well enough to beat the current exit
 Question set by Miles: the 60-minute market sell costs 3–6 bp on prints, not the modeled 16–17. Does that change the
@@ -382,7 +440,8 @@ few, mechanism-led candidates. Code: scripts/wick_v4/. Results: reports/wick_v4/
 - Trade data agrees with the 1-minute candles on 98.4% of fills.
 
 **Venue: Coinbase.**
-- Gemini's fee schedule is identical, but its volume in these alts is far smaller.
+- Gemini: tested on prints Nov 8 and rejected (Gemini venue test section). Its volume in these coins is 2.6% of
+  Coinbase's, its fills come after Coinbase moves, and its fee schedule is not Coinbase's.
 - Bitstamp's fees eat the edge at our volume.
 - Kraken and Crypto.com don't serve New York.
 
@@ -1135,6 +1194,8 @@ sell at the lower of the last futures trade and the spot-implied price.
   - Not available in New York or Maine.
 - **Kraken Futures (global, non-US):** maker rebate −0.5 to −1 bp at $250M–$1B+ per month; taker 1.25–5 bp.
 - **Kalshi perps:** 5 bp maker / 12 bp taker at the base tier; 0.6 / 2.6 bp above $3B volume.
+- **Gemini ActiveTrader spot (Sep 1 2026 page; maker/taker by 30-day volume):** $0 60/120 bp, $10K 40/80, $25K 25/50,
+  $75K 12.5/25, $250K 7.5/15, $500K 6/12.5, $1M 5/10, $5M 4/8.5, $10M 2.5/6.5, $20M 1/5, $50M+ 0/3.5 → 0/2.
 - Our perps model: 0.04% per side, plus funding (Hyperliquid data 2023+, 8%/yr assumed before). Realistic nano-perp model
   (C3 upgrade round): BTC 2.5 bp, ETH 6.5 bp per side, whole contracts.
 - Coinbase Advanced REST API limit: 30 requests per second.
@@ -1502,7 +1563,7 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
   - 100% + market neutral: the wick catcher at 2x, only up to roughly $25–50K of capital.
   - $5M + market neutral: carry and basis trades, single-digit to low-teens returns.
   - $5M + high return: directional (C3 at 1.5x: ~60% a year in backtest, −33% drawdown).
-- Untested ways to raise capacity: more books for the same dips (the Coinbase spot long tail, since dip bids don't need perps, and other NY-licensed spot venues such as Gemini and Bitstamp); perp-vs-spot basis wicks (market neutral by construction); exits worked over several minutes.
+- Untested ways to raise capacity: more books for the same dips (the Coinbase spot long tail, since dip bids don't need perps, and other NY-licensed spot venues such as Gemini and Bitstamp; both since tested and rejected); perp-vs-spot basis wicks (market neutral by construction); exits worked over several minutes.
 
 ## Scale round 2 (Nov 6): highest Sharpe at $5M — multi-asset trend doesn't help
 - Goal set by Miles: $5M of capacity and high Sharpe; returns come from leverage.
