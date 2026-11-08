@@ -13,9 +13,8 @@ reports/ladder_v5/redteam/.
   modelling choices that differ from bot/spot/engine.py (deeper-rung priority by parent fill time instead of ladder
   creation order; deeper rungs placed and filled when the market is already at or below their level). An emulation of
   hsim's choices in my replay reproduces the claim within 0.1 point in every era at base (0.2 at S* and $1M). Three
-  engine runs on cascade
-  windows match my replay rung by rung (100% of deeper-fill counts on common parents on two of the three days) and do
-  not match hsim's choices.
+  engine runs on cascade windows match my replay rung by rung (100% of deeper-fill counts on common parents on two of
+  the three days) and do not match hsim's choices.
 - **C1a: partly confirmed.** The claimed result is reproduced under hsim's choices (pooled t +1.98 vs claimed +1.94;
   selection 19.3% -> 21.7%, check 15.0% -> 15.7%, 2022-23 10.35% -> 10.26%). Against the engine-faithful incumbent
   the pooled t is **+1.40** (selection 19.9% -> 22.4%, check 16.4% -> 17.3%, 2022-23 10.16% -> 10.14%), and +1.40
