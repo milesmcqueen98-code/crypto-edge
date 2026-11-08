@@ -9,6 +9,12 @@ The rule (reports/wick1m_prereg.md; findings doc, section "Wick catcher at $1M")
     they are cancelled when the 4-sigma take-profit first trades or 60 minutes after the fill.
   - Every filled rung gets its own post-only take-profit at 60% of its dislocation and is sold at market 60 minutes
     after its fill. A partly filled rung keeps resting while the price stays below it, for at most 15 more minutes.
+  - Option size_by_margin (ladder v5, C2a; null = off): the whole ladder of a signal is sized x0.5 / x1.0 / x1.5 by
+    the AI's margin (prediction minus the threshold) below `lower`, between, or at or above `upper` (the margin's
+    terciles over all earlier research parent fills; scripts/ladder_v5/margin_cutoffs.py, refreshed each quarter).
+  - Option passive_exit_min = N (ladder v5, C3; 0 = off): at the 60-minute mark the unsold part instead rests as a
+    post-only sell at the last minute's close plus one tick, re-pegged every minute, for N minutes; whatever is left is
+    then sold at market. While it rests the coin may bid again (its 4-sigma rung counts as closed, as in the research).
   - Every AI-approved coin may bid (no slot cap); one parent per coin at a time (a coin may bid again once its 4-sigma
     rung has closed, even while deeper rungs are still open, as in the research).
   - Cash: positions at cost + resting bids <= cash_cap x equity, because Coinbase holds cash for every resting spot
@@ -422,6 +428,8 @@ class Engine:
         # share of each signal per rung (default: thirds); e.g. {"4": 1, "6": 1, "8": 2} is the wick v4 W2 challenger
         w = {str(k): float(v) for k, v in (self.cfg.get("rung_weights") or {"4": 1, "6": 1, "8": 1}).items()}
         self.rung_w = {k: w.get(k, 0.0) / sum(w.values()) for k in ("4",) + DEEP}
+        self.passive_n = int(self.cfg.get("passive_exit_min") or 0)    # ladder v5 C3: passive time exit (0 = off)
+        self.margin_rule = self.cfg.get("size_by_margin") or None      # ladder v5 C2a: size by the AI's margin
 
     # ---------- state
     def _load_state(self):
@@ -535,6 +543,15 @@ class Engine:
             S = min(S, self.cfg["adv_frac"] * a)
         return S
 
+    def size_mult(self, pred):
+        """Ladder v5 C2a: multiplier of the signal's whole ladder from the AI's margin (1.0 when the option is off)."""
+        r = self.margin_rule
+        if not r:
+            return 1.0
+        lo, mid, hi = (float(x) for x in r.get("mult", (0.5, 1.0, 1.5)))
+        m = pred - self.thr
+        return lo if m < float(r["lower"]) else hi if m >= float(r["upper"]) else mid
+
     def mtm(self, before):
         u = 0.0
         for lad in self.ladders():
@@ -622,9 +639,10 @@ class Engine:
             self._tp_dirty.add((lad["id"], k))
         else:
             k = key[2:]
+            kind = "passive" if key.startswith("px") else "tp"
             tr = lad["tranches"].get(k)
             if tr is None or tr["size"] <= 0:
-                self.log("warning", t=minute, coin=c, msg="take-profit fill without an open rung", key=key, qty=q)
+                self.log("warning", t=minute, coin=c, msg=f"{kind} sell fill without an open rung", key=key, qty=q)
                 return
             share = min(1.0, q / tr["size"])
             cost, efee = tr["cost"] * share, tr["fees"] * share
@@ -634,9 +652,9 @@ class Engine:
             tr["fees"] -= efee
             self.state["equity"] += pnl
             lad["pnl"] = lad.get("pnl", 0.0) + pnl
-            if k == "4":
+            if k == "4" and kind == "tp":
                 lad["tp4_touched"] = True
-            self.log("fill_exit", t=minute, coin=c, ladder=lad["id"], rung=int(k), exit="tp", px=px,
+            self.log("fill_exit", t=minute, coin=c, ladder=lad["id"], rung=int(k), exit=kind, px=px,
                      entry_px=round(cost / q, 10) if q else None, size=q, pnl=round(pnl, 2),
                      net_bp=round(1e4 * pnl / cost, 1) if cost else None, equity=round(self.state["equity"], 2))
             if self._dust(tr, px, sp):
@@ -660,6 +678,8 @@ class Engine:
             tr = lad["tranches"].get(k)
             if not tr or tr.get("sell_order"):
                 continue
+            if self.passive_n and t >= pd.Timestamp(tr["exit_due"]):
+                continue                                    # past its 60 minutes: the exit owns the rung
             ok, err = self._place(lad, f"tp{k}", "SELL", tr["tp_px"], tr["size"], t)
             if not ok and err and "POST_ONLY" in str(err).upper():   # market already above the target: sell now
                 self._exit_market(lad, k, t, "tp_cross")
@@ -669,8 +689,9 @@ class Engine:
 
     def _exit_market(self, lad, k, t, reason):
         c, sp = lad["coin"], self.spec(lad["coin"])
-        if f"tp{k}" in lad["orders"] and not self._cancel(lad, f"tp{k}", t):   # live: books take-profit fills first
-            return                                         # take-profit still live: retry next minute
+        for key in (f"tp{k}", f"px{k}"):                   # live: books the resting sell's fills first
+            if key in lad["orders"] and not self._cancel(lad, key, t):
+                return                                     # a sell is still live: retry next minute
         tr = lad["tranches"].get(k)
         if tr is None:
             return
@@ -701,6 +722,52 @@ class Engine:
         if err:
             self.log("warning", t=t, coin=c, ladder=lad["id"], msg=err)
         self._book_sell(lad, k, tr, sold, px, fee, last, reason, imp, t)
+
+    def _in_passive(self, tr, t):
+        """The rung is in its passive exit window: from its 60-minute mark for passive_exit_min minutes."""
+        if not self.passive_n or tr.get("sell_order"):
+            return False
+        due = pd.Timestamp(tr["exit_due"])
+        return due <= t < due + pd.Timedelta(minutes=self.passive_n)
+
+    def _exit_passive(self, lad, k, t):
+        """Ladder v5 C3: the rung's unsold part rests as a post-only sell at the last minute's close plus one tick,
+        re-pegged every minute (kept, with its queue place, while the peg is unchanged)."""
+        c, sp = lad["coin"], self.spec(lad["coin"])
+        if f"tp{k}" in lad["orders"] and not self._cancel(lad, f"tp{k}", t):
+            return                                         # take-profit still live: retry next minute
+        tr = lad["tranches"].get(k)
+        if tr is None:
+            return
+        last = self.last_close(c, t)
+        if not np.isfinite(last):
+            return                                         # no price: keep what rests; the market exit still comes
+        peg = floor_to(last, sp.tick) + sp.tick
+        size = floor_size(tr["size"], sp.lot)
+        if self._dust(tr, last, sp) or size <= 0:
+            if f"px{k}" not in lad["orders"]:
+                lad["tranches"].pop(k, None)               # less than the exchange's minimum: nothing to sell
+            return
+        key = f"px{k}"
+        o = lad["orders"].get(key)
+        if o is not None:
+            if abs(o["px"] - peg) < sp.tick / 2 and abs((o["size"] - o["filled"]) - size) < sp.lot / 2:
+                return                                     # unchanged: keep the queue place
+            if not self._cancel(lad, key, t):
+                return                                     # still resting: retry next minute
+            tr = lad["tranches"].get(k)
+            if tr is None:
+                return                                     # it sold out before the cancel took effect
+            size = floor_size(tr["size"], sp.lot)
+            if self._dust(tr, last, sp) or size <= 0:
+                lad["tranches"].pop(k, None)
+                return
+        ok, err = self._place(lad, key, "SELL", peg, size, t)
+        if not ok and err and "POST_ONLY" in str(err).upper():   # the market is already above the peg: sell now
+            self._exit_market(lad, k, t, "passive_cross")
+        elif ok and o is None:
+            self.log("passive_exit", t=t, coin=c, ladder=lad["id"], rung=int(k), px=peg, size=size,
+                     until=(pd.Timestamp(tr["exit_due"]) + pd.Timedelta(minutes=self.passive_n)).isoformat())
 
     def _resolve_sell(self, lad, k, t):
         """Book a market sell whose outcome was unknown when it was sent. True once resolved."""
@@ -858,10 +925,13 @@ class Engine:
             for k, tr in list(lad["tranches"].items()):
                 if tr.get("sell_order"):
                     self._resolve_sell(lad, k, t)          # a sell sent earlier with an unknown outcome
+                elif self._in_passive(tr, t):
+                    self._exit_passive(lad, k, t)          # option passive_exit_min (ladder v5 C3)
                 elif t >= pd.Timestamp(tr["exit_due"]):
                     self._exit_market(lad, k, t, "time")
-            for key in [k for k, o in lad["orders"].items() if k.startswith("tp") and k[2:] not in lad["tranches"]]:
-                self._cancel(lad, key, t)                  # take-profit left over a closed rung (dust remainder)
+            for key in [k for k, o in lad["orders"].items()
+                        if k.startswith(("tp", "px")) and k[2:] not in lad["tranches"]]:
+                self._cancel(lad, key, t)                  # a sell left over a closed rung (dust remainder)
             for k, tr in lad["tranches"].items():
                 if f"tp{k}" not in lad["orders"] and not tr.get("sell_order") and t < pd.Timestamp(tr["exit_due"]):
                     self._tp_dirty.add((lad["id"], k))     # a take-profit lost to an error or cancelled by the exchange
@@ -950,7 +1020,7 @@ class Engine:
         for lad in self.ladders():
             if lad["status"] == "armed":
                 armed[lad["coin"]] = lad
-            elif "4" in lad["tranches"] or "e4" in lad["orders"]:
+            elif "e4" in lad["orders"] or ("4" in lad["tranches"] and not self._in_passive(lad["tranches"]["4"], t)):
                 busy.add(lad["coin"])
         halted = self._halted(t)
         prev = t - pd.Timedelta(minutes=1)
@@ -970,7 +1040,7 @@ class Engine:
         free = self.free_cash() + sum(self.hold_usd(l["orders"]["e4"]) for l in armed.values() if "e4" in l["orders"])
         alloc = {}
         for pred, c in cands:
-            want = self.signal_usd(c) * self.rung_w["4"]   # order notional; its hold adds the maker fee
+            want = self.signal_usd(c) * self.rung_w["4"] * self.size_mult(pred)   # order notional (+ maker fee held)
             need = want * (1 + self.fee_m())
             if need <= free:
                 alloc[c], free = want, free - need
@@ -1026,9 +1096,9 @@ class Engine:
         if new:
             self.state["seq"] += 1
             lad = dict(id=f"{c}-{self.state['seq']}", coin=c, status="armed", sig=float(row["sig"]), pred=pred,
-                       S=self.signal_usd(c), orders={}, tranches={}, pending=[], pnl=0.0)
+                       S=self.signal_usd(c) * self.size_mult(pred), orders={}, tranches={}, pending=[], pnl=0.0)
             self.state["ladders"][lad["id"]] = lad
-        lad["S"] = self.signal_usd(c)
+        lad["S"] = self.signal_usd(c) * self.size_mult(pred)     # the deeper rungs use the multiplier at the fill
         ok, err = self._place(lad, "e4", "BUY", px, size, t, open_rule=True)
         if not ok:
             if not lad["orders"]:
@@ -1044,7 +1114,8 @@ class Engine:
                     pass
             self.count("arm")
             self.log("arm", t=t, coin=c, ladder=lad["id"], px=px, usd=round(size * px), pred=round(pred, 1),
-                     sigma_bp=round(float(row["sig"]) * 1e4, 1), usd_bids_ahead=ahead)
+                     sigma_bp=round(float(row["sig"]) * 1e4, 1), usd_bids_ahead=ahead,
+                     **({"mult": self.size_mult(pred)} if self.margin_rule else {}))
 
     # ---------- risk
     def _new_day(self, t):

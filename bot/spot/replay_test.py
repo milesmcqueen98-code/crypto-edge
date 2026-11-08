@@ -7,7 +7,11 @@
 2. Descriptive: rerun with the default paper settings ($250K, capture 0.5, 20 bp ADV cap, VIP-1 fees), and count the
    deeper fills the research simulation would also have taken inside the parent's own minute (which the bot misses).
 
-Usage: python bot/spot/replay_test.py 2025-10-10 2025-10-12 [--skip-descriptive]
+3. Options (ladder v5): --passive=N adds a parity pass with passive_exit_min = N (both implementations re-peg a
+   post-only sell at the last close + 1 tick for N minutes after the 60-minute mark); --margin adds a parity pass with
+   size_by_margin from config.v5.json, checking every parent's size multiplier against the reference's prediction.
+
+Usage: python bot/spot/replay_test.py 2025-10-10 2025-10-12 [--skip-descriptive] [--passive=15] [--margin]
 """
 import json
 import math
@@ -106,8 +110,9 @@ def engine_rungs(ev):
     return ent.merge(ext, on=["ladder", "rung"], how="left")
 
 
-def reference(mkt, start, end, tradable):
-    """The engine's rules, written independently as one loop per coin (capacity and cash unlimited)."""
+def reference(mkt, start, end, tradable, passive=0):
+    """The engine's rules, written independently as one loop per coin (capacity and cash unlimited). passive = N:
+    from the 60-minute mark a post-only sell at the last close + 1 tick, re-pegged each minute, for N minutes."""
     w0, w1 = pd.Timestamp(start) - pd.Timedelta(minutes=E.WINDOW_MIN), pd.Timestamp(end) + pd.Timedelta(minutes=2 * H + 5)
     idx = pd.date_range(w0, w1, freq="min", inclusive="left")
     A = {}
@@ -156,7 +161,17 @@ def reference(mkt, start, end, tradable):
             for u in range(m + 1, min(m + H, n - 1) + 1):
                 if np.isfinite(h[u]) and h[u] >= tp + tick * (1 - 1e-9):
                     return u, "tp", tp
-            return m + H, "time", last_close(m + H + 1)
+            peg = None
+            for j in range(1, passive + 1):          # minute m+H+j: the sell placed at that step rests through it
+                s_ = m + H + j
+                if s_ >= n:
+                    break
+                lc = last_close(s_)
+                if np.isfinite(lc):
+                    peg = math.floor(lc / tick + 1e-9) * tick + tick
+                if peg is not None and np.isfinite(h[s_]) and h[s_] >= peg + tick * (1 - 1e-9):
+                    return s_, "passive", peg
+            return m + H + passive, "time", last_close(m + H + passive + 1)
 
         t = i0
         while t < i1:
@@ -168,7 +183,7 @@ def reference(mkt, start, end, tradable):
             sig = sg[t]
             fair = math.log(b) + K * sig
             u, ty, px = rung_exit(t, b, K, sig)
-            rows.append(dict(coin=c, rung=4, entry=idx[t], entry_px=b, exit_min=idx[u], exit=ty, exit_px=px))
+            rows.append(dict(coin=c, rung=4, entry=idx[t], entry_px=b, exit_min=idx[u], exit=ty, exit_px=px, pred=pred[t]))
             close_par = u if ty == "tp" else t + H
             for kk in (6.0, 8.0):
                 lk = math.floor(math.exp(fair - kk * sig) / tick + 1e-9) * tick
@@ -200,15 +215,16 @@ def research_same_minute(R, pn, idx, A, mkt):
     return n
 
 
-def main(start, end, skip_descriptive=False):
-    mkt = ReplayMarket(start, end)
-    print(f"window {start} .. {end}: {len(COINS)} coins")
+def parity(mkt, start, end, passive=0, margin=None):
     cfg = dict(capital=1e9, notional_frac=0.25, adv_frac=None, cash_cap=1e6, daily_loss_limit=1.0, max_drawdown=1.0,
-               fee_bp_maker=6.0, fee_bp_taker=12.5, half_spread_bp=0.0, impact_y=0.0)
-    ev, eng = run_engine(mkt, start, end, cfg, None, "parity")
+               fee_bp_maker=6.0, fee_bp_taker=12.5, half_spread_bp=0.0, impact_y=0.0, passive_exit_min=passive,
+               size_by_margin=margin)
+    tag = "parity" + (f"_passive{passive}" if passive else "") + ("_margin" if margin else "")
+    ev, eng = run_engine(mkt, start, end, cfg, None, tag)
     G = engine_rungs(ev)
-    R, pn, idx, A = reference(mkt, start, end, COINS)
-    print(f"engine: {len(G)} rungs ({(G.rung == 4).sum()} parents); reference: {len(R)} rungs ({(R.rung == 4).sum()} parents)")
+    R, pn, idx, A = reference(mkt, start, end, COINS, passive=passive)
+    print(f"[{tag}] engine: {len(G)} rungs ({(G.rung == 4).sum()} parents); reference: {len(R)} rungs "
+          f"({(R.rung == 4).sum()} parents); exits by type (engine): {G.exit.value_counts().to_dict()}")
     key = ["coin", "rung", "entry"]
     M = R.merge(G, on=key, how="outer", suffixes=("_ref", "_eng"), indicator=True)
     print(M._merge.value_counts().to_string())
@@ -216,12 +232,48 @@ def main(start, end, skip_descriptive=False):
     bad = both[(np.abs(both.entry_px_ref / both.entry_px_eng - 1) > 1e-9) | (both.exit_min_ref != both.exit_min_eng)
                | (both.exit_ref != both.exit_eng) | (np.abs(both.exit_px_ref / both.exit_px_eng - 1) > 1e-9)]
     mism = M[M._merge != "both"]
-    if len(mism) or len(bad):
+    ok = not (len(mism) or len(bad))
+    if not ok:
         pd.set_option("display.width", 250)
         print("MISMATCHES:")
         print(pd.concat([mism, bad]).head(30).to_string())
     else:
-        print("PARITY OK: every rung identical (entry minute and price, exit minute, type and price)")
+        print(f"[{tag}] PARITY OK: every rung identical (entry minute and price, exit minute, type and price)")
+    if margin:
+        ok = check_margin(ev, G, R, margin) and ok
+    return ok, R, pn, idx, A
+
+
+def check_margin(ev, G, R, margin):
+    """Every parent's 4-sigma fill / (25% x equity / 3) must equal the multiplier of the reference's own prediction at
+    its entry minute (unlimited capacity: the whole bid fills; equity moves by well under 1% in a replay)."""
+    lo, hi, mult = float(margin["lower"]), float(margin["upper"]), [float(x) for x in margin["mult"]]
+    usd = ev[(ev.kind == "fill_entry") & (ev.rung == 4)].groupby("ladder").usd.sum()
+    par = G[G.rung == 4].merge(R[R.rung == 4][["coin", "entry", "pred"]], on=["coin", "entry"], how="left")
+    unit = 1e9 * 0.25 / 3
+    bad, seen = 0, {x: 0 for x in mult}
+    for r in par.itertuples():
+        m = mult[0] if r.pred - THR < lo else mult[2] if r.pred - THR >= hi else mult[1]
+        got = usd.get(r.ladder, np.nan) / unit
+        seen[m] += 1
+        if not abs(got / m - 1) < 0.01:
+            bad += 1
+            print(f"  size mismatch {r.ladder}: x{got:.3f} vs x{m} (reference margin {r.pred - THR:.2f})")
+    print(f"[margin] {len(par)} parents, size multipliers {'OK' if not bad else f'{bad} WRONG'}; "
+          + ", ".join(f"x{k}: {v}" for k, v in seen.items()))
+    return bad == 0
+
+
+def main(start, end, skip_descriptive=False, passive=0, margin=False):
+    mkt = ReplayMarket(start, end)
+    print(f"window {start} .. {end}: {len(COINS)} coins")
+    ok, R, pn, idx, A = parity(mkt, start, end)
+    if passive:
+        ok = parity(mkt, start, end, passive=passive)[0] and ok
+    if margin:
+        v5 = json.load(open(os.path.join(HERE, "config.v5.json")))
+        ok = parity(mkt, start, end, margin=v5["size_by_margin"])[0] and ok
+    print("ALL PARITY CHECKS OK" if ok else "PARITY FAILED")
     same = research_same_minute(R, pn, idx, A, mkt)
     print(f"deeper rungs the research would also fill inside the parent's minute (the bot misses these): {same}")
     if skip_descriptive:
@@ -245,4 +297,5 @@ def main(start, end, skip_descriptive=False):
 
 if __name__ == "__main__":
     args = [x for x in sys.argv[1:] if not x.startswith("--")]
-    main(args[0], args[1], skip_descriptive="--skip-descriptive" in sys.argv)
+    pas = next((int(x.split("=")[1]) for x in sys.argv if x.startswith("--passive=")), 0)
+    main(args[0], args[1], skip_descriptive="--skip-descriptive" in sys.argv, passive=pas, margin="--margin" in sys.argv)
