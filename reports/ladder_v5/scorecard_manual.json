@@ -1,0 +1,112 @@
+{
+ "C1a_deeper_first": {
+  "realism": 13,
+  "mechanism": 10,
+  "implement": 7,
+  "why": {
+   "realism": "fills 3: entry-fill volume checked on prints (wick v4), the late deeper-fill path only against the engine on two cascade days; costs 5: no new cost; code 5: an ordering change in _allocate, parity-testable",
+   "mechanism": "4: expected value per dollar-minute of held cash (a deeper rung is worth about 100x a 4-sigma bid; Grossman-Miller pays most at the deepest dislocation); 3: the selection-era decomposition (deeper rungs net 46/83 bp vs 33); 3: structural (Coinbase holds cash for resting bids)",
+   "implement": "4: keeps every safety check; 3: small change; 0: puts more inventory at the bottom of a cascade"
+  }
+ },
+ "C1b_reserve50": {
+  "realism": 13,
+  "mechanism": 8,
+  "implement": 10,
+  "why": {
+   "realism": "as C1a",
+   "mechanism": "4 + 1 (a blunt version of the diagnosis: a fixed reserve idles cash on quiet days) + 3",
+   "implement": "4 + 3 + 3: a reserve only lowers exposure"
+  }
+ },
+ "C2a_margin_terciles": {
+  "realism": 13,
+  "mechanism": 10,
+  "implement": 9,
+  "why": {
+   "realism": "fills 3: entry fills checked on prints, the x1.5 orders not separately; costs 5: no new cost type (impact on the larger size is the incumbent's model); code 5: a multiplier in _allocate and _arm, parity-testable",
+   "mechanism": "4: meta-labeling (size by the secondary model's confidence); 3: the selection-era margin diagnosis; 3: a rule on the bot's own signal, nothing to crowd",
+   "implement": "4 + 3 + 2: x1.5 on the strongest signals concentrates size in the most violent dislocations"
+  }
+ },
+ "C2b_drop_bottom": {
+  "realism": 13,
+  "mechanism": 7,
+  "implement": 10,
+  "why": {
+   "realism": "as C2a",
+   "mechanism": "4 + 3 + 0: dropping a third of the signals discards diversification the margin cannot replace",
+   "implement": "4 + 3 + 3: lowers exposure"
+  }
+ },
+ "C3a_passive_5": {
+  "realism": 7,
+  "mechanism": 10,
+  "implement": 8,
+  "why": {
+   "realism": "PROVISIONAL until red team 2: fills 0 (passive fill model not checked on prints); costs 2 (the gain rests on the estimated exit impact); code 5 (an exit order in _manage, parity-testable)",
+   "mechanism": "4: patient liquidation vs immediate (Almgren-Chriss; maker 6 bp vs taker 12.5 bp); 3: diagnosis (taker fee + half-spread on time exits about 16% of gross); 3: the fee schedule's structure",
+   "implement": "4 + 2 (a new resting exit order with re-pegging and restart handling) + 2 (holds the remainder up to 5 more minutes)"
+  }
+ },
+ "C3b_passive_15": {
+  "realism": 7,
+  "mechanism": 10,
+  "implement": 7,
+  "why": {
+   "realism": "PROVISIONAL until red team 2: as C3a",
+   "mechanism": "as C3a",
+   "implement": "4 + 2 + 1 (holds the remainder up to 15 more minutes)"
+  }
+ },
+ "C4_usdc": {
+  "realism": 9,
+  "mechanism": 8,
+  "implement": 7,
+  "why": {
+   "realism": "PROVISIONAL until red team 3: fills 5 (the -USDC products are aliases of the -USD books: the incumbent's print-checked fill model carries over); costs 2 (the reward rate is unverified, halved in S*); code 2 (needs the USDC account set-up and the pre-registered live verification)",
+   "mechanism": "4: carry on idle collateral (exchange-paid stablecoin rewards); 3: the diagnosis (oracle O9, idle cash at T-bills, +0.37 Sharpe at $250K); 1: rewards are a policy that regulation may end (GENIUS Act)",
+   "implement": "4 + 3 + 0: puts the whole capital's cash on USDC's peg and issuer"
+  }
+ },
+ "C5_perp_venue": {
+  "realism": 4,
+  "mechanism": 7,
+  "implement": 0,
+  "why": {
+   "realism": "fills 0 (perp fills not checked on prints); costs 2 (perp fees and spreads unverified); code 2 (a new venue)",
+   "mechanism": "4: more liquidity at our price across venues; 0: oracle O8 (perp venue) showed no prize at 1x costs; 3: structural",
+   "implement": "0: needs perp margin, funding and liquidation safety checks that do not exist; 0: a new venue; 0: leverage and liquidation risk"
+  }
+ },
+ "C6_stress": {
+  "realism": 13,
+  "mechanism": 6,
+  "implement": 7,
+  "why": {
+   "realism": "as C2a",
+   "mechanism": "4: Nagel's evaporating liquidity (liquidity provision pays more in stress); 0: the selection-era markouts by BTC's prior move show no monotone premium (Spearman -0.01); 2: structural but widely known",
+   "implement": "4 + 3 + 0: x1.5 exactly when BTC is in stress"
+  }
+ },
+ "C7a_sweep_skip": {
+  "realism": 10,
+  "mechanism": 7,
+  "implement": 9,
+  "why": {
+   "realism": "fills 3 (sweep features from the print history); costs 5; code 2 (needs a live trades feed per coin)",
+   "mechanism": "4: Kyle / order-flow toxicity (informed sweeps); 3: the selection-era print pattern; 0: it did not replicate out of sample",
+   "implement": "4 + 2 (a live trades feed) + 3 (skipping lowers exposure)"
+  }
+ },
+ "C7b_sweep_tilt": {
+  "realism": 10,
+  "mechanism": 7,
+  "implement": 7,
+  "why": {
+   "realism": "as C7a",
+   "mechanism": "as C7a",
+   "implement": "4 + 2 + 1 (tilts size up on some signals)"
+  }
+ }
+}

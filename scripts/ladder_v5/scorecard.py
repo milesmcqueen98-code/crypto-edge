@@ -51,7 +51,7 @@ def main():
     allo = {}
     for f in glob.glob(os.path.join(fsim.OUT, "trials", "*.json")):
         o = json.load(open(f))
-        if o["name"].startswith("dryrun"):
+        if o["name"].startswith(("dryrun", "J_")):            # joint re-tests are reported on their own
             continue
         allo[o["name"]] = o
     man = json.load(open(os.path.join(fsim.OUT, "scorecard_manual.json"))) if os.path.exists(
@@ -62,7 +62,7 @@ def main():
         m = man.get(n, {})
         tot = a["evidence"] + a["robustness"] + a["prize"] + a["capacity"] + sum(m.get(k, 0) for k in ("realism", "mechanism", "implement"))
         rows.append(dict(name=n, total=tot, **a, **{k: m.get(k) for k in ("realism", "mechanism", "implement")},
-                         gates_pass=o["gates"].get("pass"), why=m.get("why", "")))
+                         gates_pass=o["gates"].get("pass"), why=json.dumps(m.get("why", ""))))
     S = pd.DataFrame(rows).sort_values("total", ascending=False)
     S.to_csv(os.path.join(fsim.OUT, "scorecard.csv"), index=False)
     pd.set_option("display.width", 220)
