@@ -1,11 +1,11 @@
 300 events, 100.0% inside a window; 269 windows
 trades_0.parquet: 1,021,631 prints; 350 event-minutes so far; 1s
 trades_1.parquet: 1,101,270 prints; 707 event-minutes so far; 1s
-trades_2.parquet: 1,132,531 prints; 1043 event-minutes so far; 2s
-trades_3.parquet: 993,925 prints; 1393 event-minutes so far; 3s
-trades_4.parquet: 1,063,520 prints; 1764 event-minutes so far; 3s
-trades_5.parquet: 1,167,538 prints; 2100 event-minutes so far; 4s
-6,480,415 prints in 6 files (0 duplicate trade ids dropped); 300 of 300 events with prints; windows with prints 269 of 269; 4s
+trades_2.parquet: 1,132,531 prints; 1043 event-minutes so far; 1s
+trades_3.parquet: 993,925 prints; 1393 event-minutes so far; 2s
+trades_4.parquet: 1,063,520 prints; 1764 event-minutes so far; 2s
+trades_5.parquet: 1,167,538 prints; 2100 event-minutes so far; 3s
+6,480,415 prints in 6 files (0 duplicate trade ids dropped); 300 of 300 events with prints; windows with prints 269 of 269; 3s
 windows without prints: []
 windows whose first print is > 2 min after the start or last print > 2 min before the end: [{'window_id': 70, 'product': 'ZEC-USD', 'start': Timestamp('2025-04-07 05:08:00'), 'n_prints': 620, 'first_gap_min': 0.5978049166666667, 'last_gap_min': 3.6108138166666666}]
      hs_n  hs_bp  roll_hs_bp  n_sell_orders  max_sell_usd  slip_1000  slip_5000  slip_20000  n_at_X  slip_at_X
