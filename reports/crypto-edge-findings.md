@@ -1,8 +1,33 @@
-# Crypto edge: findings and live rules (updated Nov 7, 2026, edge hunt)
+# Crypto edge: findings and live rules (updated Nov 8, 2026, ladder v6 exits and sizing)
 
 Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly signals, paper-trading bot)
 
 ## Status at a glance
+- **Ladder v6, sizing (Nov 8): no change; the bot keeps equal size per signal (section below).**
+  - Seven mechanism-led sizing families: Kelly, inverse variance, edge, cascade breadth, Kelly on the signal's own
+    predicted dispersion, book volatility targeting, diversification across armed coins.
+  - None reaches the bar inside the 0.2% ADV cap, and no rule's gain survives removing its 5 best days.
+  - Hindsight sizing is worth t +3.45 (+2.2 Sharpe). But the AI's prediction ranks outcome size and outcome variance
+    together, and 55% of signal P&L falls on 20 cascade days.
+  - At today's volumes only ETH, XRP and SOL have room to size up under the cap.
+- **Ladder v6, exits (Nov 8): no change; the bot keeps "take-profit, else market at minute 60" (section below).**
+  - Selling early loses even with a rule fitted to the data it is scored on.
+  - Holding past 60 had an in-sample edge from one quarter (Q1 2025). It failed walk-forward and failed out of sample:
+    pooled t +0.52, check era negative.
+  - Measured on Coinbase prints, selling before minute 60 costs 1–17% more than selling at 60 (2.8 bp median at 60).
+  - The hour-long markout rise is already captured: the take-profit sells 53% of the dollars by 60, and what is left
+    is the tranches that did not rebound.
+- **Ladder v5 (Nov 7–8): no trading change adopted; the live ladder is better than estimated; idle cash in USDC goes
+  to a live check (section below).**
+  - 11 pre-registered candidates against the spot ladder (cash priority, margin sizing, passive exits, USDC cash, perps,
+    stress sizing, print-based filters), then three independent red teams.
+  - The passive exit's backtest gain (t +7.7) was the cost model: on 17.2M Coinbase prints the 60-minute market sell
+    cost 3–6 bp per dollar, not 16–17. Rejected.
+  - Best estimate of the live bot at $250K (today's volumes, unverified costs doubled): 22.8% / 19.1% / 11.1% a year,
+    Sharpe 2.94 / 2.66 / 1.91 (selection / check / 2022–23); at $1M 2.28 / 1.47 / 0.73.
+  - USDC cash adds 1.6–1.75 points a year at $250K with the reward halved, if Coinbase pays this account (Coinbase One
+    required; New York eligibility unconfirmed). Margin sizing waits for new data.
+  - Bot: a coin with unknown volume no longer bids an uncapped size; optional USDC quote with its check.
 - **Edge hunt (Nov 7): no new sleeve; the book stays R2-08 alone at $100K (section below).**
   - 48 mechanism-first ideas; 13 built on trade-level data, each pre-registered, frozen, and read once on the Jun–Nov
     2026 hold-out.
@@ -65,6 +90,175 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   (section below).
 - **Maker round (Nov 6): rejected.** Two-sided quoting at the touch loses 0.7–0.9 bp per dollar before fees in all 36 setups.
 - **C3 upgrade round (Nov 6):** turnover cuts tie on Sharpe; C3 unchanged, still a paper-trade candidate.
+
+## Ladder v6, sizing (Nov 8): no change; nothing knowable at the minute sizes the ladder better than equal size
+Question set by Miles: perfect sizing is worth +2.6 Sharpe, and C2a's gain sat on a few days. Find a sizing rule
+whose gain is spread across many days, trying low-parameter, mechanism-led forms first. Report every result with the
+best 5 days removed, and check it against the 0.2% ADV cap. Record: branch ladder/v6-sizing (reports/ladder_v6s_prereg.md,
+reports/ladder_v6s/ README, rounds, variants, scorecard).
+
+**Protocol**
+- Same frozen simulator as ladder v6 exits, with sizes entering through the replay's multiplier hook (C2a's
+  semantics). With every multiplier at 1 it reproduces the incumbent exactly.
+- Up to 5 rounds on the selection era, declared on the Sharpe path. Every variant is run inside the ADV cap (the
+  candidate) and outside it (reported), and with its best 5 days removed.
+- Drop bar: in-sample t 1.4. Nothing reached it, so nothing was frozen, and the check era and 2022–23 stay unread
+  for sizing.
+
+**Findings** (selection era, S* θ 0.5)
+- **Headroom.** Hindsight ×2 / ×0.5 by realized sign reads t +3.45 inside the cap, and its gain is spread.
+- **Prediction.** μ̂ ranks net per dollar (Spearman +0.41) and its dispersion (+0.29). Mean/variance by quintile is
+  hump-shaped (×1e4: 11.6, 2.4, 19.9, 29.5, 13.3).
+- **Volatility.** Coin volatility is the wrong risk measure: high-volatility coins earn more per dollar (+12 bp → +90
+  bp by quintile), so 1/σ̂² tilts toward low edge.
+- **Concentration.** 41% of signal dollars and 55% of signal net P&L fall on the 20 largest days.
+
+| Family (best capped variant) | Sharpe-path t (best 5 out) | dSharpe | Score /100* |
+|---|---|---|---|
+| Z4 cascade breadth | +1.01 (−0.53) | +0.12 | 50 |
+| Z5 Kelly on the signal's predicted dispersion | +1.14 in-sample (−0.26); walk-forward −1.38 | +0.16 | 47 |
+| Z3 edge | +0.40 (−1.11) | +0.12 | 47 |
+| Z7 diversification across armed coins | +1.01 (−0.61) | +0.06 | 39 |
+| Z1 Kelly μ̂/σ̂² | −0.66 (−2.23) | −0.12 | 27 |
+| Z2 inverse variance | −1.27 (−2.36) | −0.60 | 25 |
+| Z6 book volatility targeting | −0.87 (−1.91) | −0.16 | 25 |
+
+\* Scored on the selection era (an in-sample upper bound). All are rejected.
+
+- **C2a on this simulator (reference):** Sharpe-path t +1.25 uncapped, +0.68 inside the cap. Both turn negative
+  without the best 5 days. It still waits for its forward re-test on new data.
+- **Lead:** at research-era volumes (the base configuration), the cap leaves room to size up. There, edge sizing reads
+  t +1.74 (+0.73 without its best 5 days) and breadth +1.82 (+0.88). Re-test sizing on new data if alt volumes
+  recover.
+
+## Ladder v6, exits (Nov 8): no change; the rest of the rebound can't be predicted well enough to beat the current exit
+Question set by Miles: the 60-minute market sell costs 3–6 bp on prints, not the modeled 16–17. Does that change the
+best exit? Start with a minute-by-minute hold-or-sell rule with few parameters, walk-forward. "No change" was a valid
+answer.
+
+Final report: the "Ladder v6: Exits Report" doc (https://claude.ai/artifact/9gPMndnptiS4KiizsZSdt3). Record: branch
+ladder/v6-exits. reports/ladder_v6x_prereg.md holds the plan and its deviation log; reports/ladder_v6x/ holds the
+README, rounds.md, variants.csv (1,187 logged runs), the scorecard and oos/.
+
+**Protocol**
+- Ladder v5's named simulator was frozen: the engine-faithful cash rule plus print-measured exit costs. It reproduces
+  the incumbent's best estimate exactly: 22.8% / 19.1% / 11.1% a year, Sharpe 2.94 / 2.66 / 1.91 (difference 1e-17).
+- The exit layer sells a tranche's unsold part at any minute from 0 to 120, with the take-profit resting. "Sell at 60"
+  reproduces the incumbent exactly in every configuration and era.
+- At most 5 rounds of hypothesis, test, read, refine, on the selection era only.
+- Drop rule: a lever goes if the best in-sample rule of its family scores t < 1.4. The family is every subset of 6
+  inputs × 3 hurdles. The inputs are the markout so far, the share of the dislocation recovered, rung depth, BTC's
+  move, cascade breadth and minutes since the fill.
+- The rule is then frozen and read once on the check era and 2022–23 against ladder v5's gates.
+
+**Exit cost by minute.** Measured on 6.48M Coinbase prints for 300 pre-drawn tranches, a market sale at minutes 2 /
+5 / 10 / 20 / 30 / 45 costs 1.02 / 1.15 / 1.17 / 1.10 / 1.01 / 1.03 times its cost at 60 (median 2.8 bp at 60).
+Half-spreads are 1.5–1.8x wider for 10 minutes after the fill; slippage is not.
+
+**Why rising markouts don't make a better exit.** The averages are dollar-weighted (S* θ 0.5, selection era).
+- Fills average +57 bp against the entry by minute 45.
+- By 60 the take-profit has sold 53% of the dollars.
+- The part still unsold at 60 is the tranches that did not rebound: −71 bp at 60, −117 at 120.
+- In hindsight, perfect timing within 0–120 minutes is worth +1.4 to +1.9 Sharpe. Ladder v5's +3.3 was measured
+  under the model's dearer exit costs.
+
+**Levers** (selection era, S* θ 0.5, pessimistic cash for holds past 60)
+
+| Lever | In-sample bound | Walk-forward | Verdict | Score /100 |
+|---|---|---|---|---|
+| X1 sell early (0–60) | t −0.72, best of 189 | +0.16 | reject (dropped at round 1) | 18* |
+| X12 hold-or-sell over 0–120 | +1.32, best of 189 | +0.46 | reject (dropped at round 1) | 46* |
+| X2 hold past 60, up to 120 | +1.79 (6 inputs) | best +0.62 of 27 variants | reject: frozen, fails out of sample | 33 |
+
+\* Scored on their in-sample bound because they were never frozen, so these scores are not comparable with X2's.
+
+- **X1.** The one strongly predictable state is "the price is above the take-profit with part of the remainder
+  unfilled". It cannot happen live: while our take-profit rests with size left, buyers fill it before the price can
+  trade higher. Selling the rest at those historical prices counts the same buyers twice.
+- **X2.** The in-sample edge was "remainders still deep under water at 60 keep recovering". That earned +164 bp a
+  dollar in Q1 2025, then −3, −46, −47 and +35. Holding every remainder an extra hour also costs 3.5 points a year in
+  cash, because the extensions come during cascades.
+- **X2 out of sample** (frozen 6-input rule, h 10, refit quarterly):
+  - Pooled t +0.52. The check era is −0.04 bp a day; 2022–23 is +0.22.
+  - Check-era Sharpe falls from 2.66 to 2.37.
+  - Gates: G1–G3 fail, G4 passes.
+  - No red team, forward test or patch, because nothing passed.
+
+**Leads, checked after the read and closed.**
+- **Take-profit fill share.** Only 4–5% of the dollars unsold at 60 come from tranches whose take-profit was
+  touched. Full take-profit fills would add at most +0.04 to +0.07 Sharpe. The paper broker uses the same 0.5
+  capture, so only live pilot fills can measure the real share.
+- **Cash-aware extension.** With no cash cost at all, the frozen rule reads out-of-sample t +0.90, short of the
+  gate's 2, so it was not built.
+- **Exit layer.** It matches a direct recomputation from the candles to 1e-7.
+
+## Ladder v5 (Nov 7–8): execution-trader round on the spot ladder — no trading change; USDC cash to a live check
+Goal set by Miles: work like an execution trader (markouts, queue position, adverse selection, expected value) and test
+whether any change raises the spot ladder's Sharpe, or its capacity at the same return and Sharpe. "No change" was a
+valid answer. Final report: the "Ladder v5: Execution Report" doc (https://claude.ai/artifact/VkE4Ym3fSd4CT6SvS9Za5j).
+Record: branch ladder/v5 (reports/ladder_v5_prereg.md with its deviation log, reports/ladder_v5/README.md, trials,
+scorecards, builder and red-team reports).
+
+**Protocol:**
+- Diagnosis first: markouts by fill type, hindsight oracles to bound each leak's prize, the live cash rule.
+- Pre-registered and frozen at 7ae53cb before any trial: simulators (fsim; hsim for the live cash rule), cost model,
+  dataset (SHA256), incumbent cache. Five builders in parallel; 11 candidate trials, then 4 joint trials; nothing else
+  logged.
+- Gates against the live incumbent: pooled paired Newey-West t ≥ 2 at today's volumes with unverified costs doubled
+  (S*), θ 0.5; every era positive; the same at θ 0.25; base positive. Then an independent red team and a joint re-test.
+- Eras: selection Jan 2025 – Mar 2026, check Apr – Nov 5 2026, 2022–23.
+
+**Diagnosis:**
+- Price recovers for an hour after our fills (+14 / +28 / +51 bp mid markout at 1 / 5 / 60 min): forced sellers
+  (Grossman–Miller). Net per dollar: 4σ 33 bp, 6σ 46 bp, 8σ 83 bp.
+- Nobody rests at our price in the fill minute: queue priority is worth +0.10 Sharpe even at the front.
+- Oracle prizes (Sharpe, selection, $250K): perfect exits +3.3, perfect sizing +2.6, perfect selection +2.3, zero costs
+  +1.0, idle cash at T-bills +0.37, perp venue −0.01.
+
+**Candidates (S* θ 0.5 pooled t as logged → red team → verdict; score /100 after red teams, as logged):**
+
+| Candidate | Logged t | Red team | Verdict | Score |
+|---|---|---|---|---|
+| C4 idle cash as USDC (-USDC alias books, T-bill − 0.5% halved) | +3.06, all gates | reproduces to 1e-14; payment to this account unverified | forward-test (live check) | 71 (78) |
+| C2a size ×0.5/1/1.5 by the AI margin's tercile | +2.21, all gates | out of sample +1.33; +1.91 with print exit costs | forward-test (re-test) | 57 (75) |
+| C1a deeper rungs get cash first | +1.94 | +1.40 on an engine-faithful replay | reject | 51 (53) |
+| C7b deeper rungs tilted by the first sweep's depth | +1.51 | — | forward-test by rule | 49 (49) |
+| C3b passive exit, 15 min | +7.71, all gates | +0.04 with print-measured costs and fills | reject | 37 (84) |
+| C3a passive exit, 5 min | +7.08, all gates | −0.06 | reject | 35 (85) |
+| C1b 50% reserve; C2b drop bottom tercile; C6 BTC-stress ×1.5; C7a sweep skip; C5 perp venue | −1.56; −0.41; −0.99; −1.37; −1.93 | — | reject | 34; 33; 28; 26; 21 |
+
+- **Joint re-test:** every set passed in the frozen simulator (C2a + C3b + C4 t +4.90), but no component is adopted.
+- **Red team 1 (cash rule):** hsim departs from the engine in two ways (deeper-rung cash order; deeper rungs filled when
+  the market had already passed them). An engine-faithful replay matched the engine rung by rung on three cascade
+  windows. Found a live safety gap: a coin with under 10 days of volume history bid an uncapped 25% of equity ÷ 3
+  (fixed).
+- **Red team 2 (prints):** 2,053 remainder exits on 17.2M prints. Market-sell cost 3.0–5.7 bp at S* (model 16.4–17.3);
+  implied impact constant 0.19–0.39 (model 0.7). The passive fill model was about right. C2a's gain sits on a few days.
+- **Red team 3 (USDC):** the pass holds for any reward ≥ ~1.1% a year paid on all USDC. Rewards need Coinbase One since
+  Dec 15 2025 (3.5–3.75% this autumn). -USDC products are live aliases. Selling USDC at the worst hour of the March
+  2023 depeg would have turned t to −0.53. GENIUS Act effective Jan 18 2027; OCC's final rule bans issuer-paid yield,
+  not exchange rewards outright. USDC rewards excluded New York at their 2019 launch; current status unconfirmed.
+
+**Best estimate of the live incumbent** (engine-faithful cash rule + print exit costs; S*, θ 0.5):
+
+| | Selection | Check | 2022–23 |
+|---|---|---|---|
+| Frozen simulator, $250K | 19.5% / 2.31 | 15.1% / 2.31 | 10.4% / 1.72 |
+| Best estimate, $250K | 22.8% / 2.94 | 19.1% / 2.66 | 11.1% / 1.91 |
+| Best estimate, $1M | 15.0% / 2.28 | 8.5% / 1.47 | 5.1% / 0.73 |
+
+At research volumes and 1× costs the best estimate is 25.5% / 20.0% / 13.5% (Sharpe 2.66 / 2.67 / 2.21), against the
+research simulator's 29.9% / 20.1% / 14.0%: the cash rule's cost, concentrated on Oct 10 2025 and Feb 3 2025.
+
+**Bot changes (main):** no bid when a coin's volume is unknown; optional `"quote": "USDC"` (orders on the -USDC
+aliases, cash in USDC), off by default, with `run.py usdc-check`; heartbeats log USDC available and on hold. Parity,
+fault and sandbox tests pass (bot/spot/README.md).
+
+**Forward tests:** C4 live check in the $10K pilot (eligibility, `usdc-check`, one weekly payout compared with
+expectations A and B; stop below half of B, on any rejected -USDC order or a program change; never sell USDC into a
+depeg). Queue measurement after 50 pilot rungs. Liquidation-feed shadow log needs a Coinalyze key. Next round: the
+engine-faithful cash rule and print-measured exit costs become the frozen simulator; C2a and C7b re-tested on data
+after Nov 5 2026.
 
 ## Edge hunt (Nov 7): 13 mechanism-first ideas against R2-08; none passes at 2× costs
 Goal set by Miles: the highest-Sharpe, AI-aided book for $100K on Coinbase spot and US perps, hunting edges too small
@@ -402,7 +596,8 @@ Run it at $250–500K and put the rest in C3.
     first weeks, so it is judged before fees (README).
   - At $250K the book passes the Intro and Advanced tiers in about a week. That ramp costs a few hundred dollars.
 - **Cash:** the bot counts only USD. Resting bids hold a large share of the cash at any time. Whether USDC can fund -USD
-  orders, and earn rewards while idle, is unverified.
+  orders, and earn rewards while idle, is unverified. (Ladder v5: the -USDC products are aliases of the -USD books; the
+  bot can now quote in USDC after a live check; rewards need Coinbase One.)
 - **Volumes are down.** The first live paper minutes (Nov 6) measured trailing 30-day Coinbase volume about 40–60% below
   the research's Sep–Nov 2026 levels for most alts (DOGE $8M a day vs $21M, LINK $9M vs $25M, XRP $104M vs $178M). The
   bot's own volume figures match a recomputation from stored data. The 0.2% cap therefore shrinks most positions.
@@ -1379,6 +1574,12 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
 - Binance open-interest and positioning metrics exist only from Dec 2021 for five coins, with top-trader ratios
   missing for most of 2022.
 - Wick at $1M: the share of through-volume we capture is assumed (a quarter or a half). Cash held by resting spot bids
-  isn't modelled. Spot ticks for added coins are estimated from price grids.
+  isn't modelled (ladder v5 modelled it: −7.6 points a year in selection at $250K against unlimited cash, nothing at
+  $1M). Spot ticks for added coins are estimated from price grids.
+- The research's exit costs (2 bp half-spread + 0.7 × daily vol × √(size / volume)) overstate the 60-minute market
+  sell 1.6–3× at 1× and 3–5× in the doubled-cost stress (ladder v5, 2,053 exits on prints).
 - Wick-catcher capacity is estimated from 1-minute candles (volume spread evenly over each candle's range); real depth
   during wicks is unobserved until the paper test logs it.
+- Take-profit fills assume we get half (θ 0.5) of the volume trading through the take-profit, in research and in the
+  paper broker alike. Only live pilot fills can measure the real share. The stakes are small: full fills would add at
+  most +0.04 to +0.07 Sharpe (ladder v6).
