@@ -1,0 +1,21 @@
+2053 events, 100.0% inside a window
+trades_0.parquet: 2,611,487 prints; 1023 exit rows so far; 2s
+trades_1.parquet: 2,751,014 prints; 2049 exit rows so far; 5s
+trades_2.parquet: 3,080,364 prints; 3117 exit rows so far; 7s
+trades_3.parquet: 2,679,558 prints; 4146 exit rows so far; 9s
+trades_4.parquet: 2,929,364 prints; 5148 exit rows so far; 12s
+trades_5.parquet: 3,117,640 prints; 6159 exit rows so far; 14s
+17,169,427 prints in 6 files; 2053 events with prints; 0 events without prints; 15s
+         hs_bp  roll_hs_bp  n_sell_orders  max_sell_usd  slip_1000  slip_5000  slip_20000
+era_tag                                                                                  
+early    1.430        1.43          140.0      8845.619        0.0      0.063       2.206
+main     0.572        0.49          272.5     20184.347        0.0      0.227       1.398
+        v_gt_mod   cap_u_mod  v_gt_real  cap_u_real
+count    30795.0     30795.0    30795.0     30795.0
+mean     57304.7     63014.4    62855.5     66260.3
+std     238853.4    248749.2   250009.9    254532.1
+min          0.0         0.0        0.0         0.0
+25%          0.0         0.0        5.1        69.3
+50%       2890.6      4868.2     3409.1      5361.7
+75%      23274.8     29567.4    25798.3     31693.6
+max    8951563.2  11369022.0  9002081.5  11436918.6
