@@ -33,6 +33,8 @@
  "common_parents": 54,
  "agreement": {
   "replay": {
+   "placement_minute_agree": 86,
+   "placement_compared": 108,
    "parents_funded": 57,
    "parent_status_agree": 68,
    "deeper_fills": 35,
@@ -40,6 +42,8 @@
    "abs_deeper_diff_on_common": 6
   },
   "fill_order": {
+   "placement_minute_agree": 77,
+   "placement_compared": 108,
    "parents_funded": 55,
    "parent_status_agree": 66,
    "deeper_fills": 35,
@@ -47,6 +51,8 @@
    "abs_deeper_diff_on_common": 8
   },
   "hsim_like": {
+   "placement_minute_agree": 53,
+   "placement_compared": 108,
    "parents_funded": 58,
    "parent_status_agree": 61,
    "deeper_fills": 41,
@@ -54,6 +60,8 @@
    "abs_deeper_diff_on_common": 15
   },
   "nocash": {
+   "placement_minute_agree": 35,
+   "placement_compared": 108,
    "parents_funded": 76,
    "parent_status_agree": 55,
    "deeper_fills": 61,
