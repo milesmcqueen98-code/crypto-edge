@@ -69,3 +69,34 @@ Rule (family Z5, low-parameter, fitted on earlier signals only):
 Variants:
 - λ 0.5 and 1, in-sample and walk-forward, capped and uncapped.
 - Plus, for information, inverse dispersion only (f = 1/ŝ²).
+
+### Round 2 read
+| Run (capped unless noted) | Sharpe-path t (best 5 out) | Return-path t (best 5 out) | dSharpe |
+|---|---|---|---|
+| Z5 Kelly, in-sample, λ 1 | +1.14 (−0.26) | +1.96 (+0.79) | +0.16 |
+| Z5 Kelly, in-sample, λ 0.5 | +0.98 (−1.03) | +2.06 (+1.26) | +0.12 |
+| Z5 Kelly, walk-forward, λ 0.5 / 1 | −1.47 / −1.38 | −1.49 / −1.55 | −0.05 / −0.09 |
+| Z5 Kelly, in-sample, uncapped, λ 0.5 / 1 | +0.49 / +0.04 | +0.78 / +0.42 | +0.05 / +0.02 |
+| Inverse dispersion, in-sample / walk-forward | −0.57 to −1.51 | −0.48 to −2.46 | −0.14 to −0.36 |
+
+- **Z5 is dropped:** its in-sample bound, +1.14, is below 1.4. Walk-forward it is negative.
+- **The fitted shape is not a hump.** In-sample, r̂ = −8.8 + 1.10·μ̂ and ŝ = 64.8 + 0.51·μ̂, so f rises with μ̂ and
+  flattens above μ̂ ≈ 100. Z5 is edge sizing with a ceiling, not the hump the quintile table suggested.
+- **The walk-forward fits made it worse.** The early fits run on 150–400 signals, and their noise costs more than
+  the shape gains.
+- **Same pattern as round 1:** no rule's gain survives the removal of its best 5 days.
+
+## Round 3: the book's own volatility (written before running)
+Hypothesis:
+- The rules so far move risk between signals, and most of the book's variance sits on a few cascade days. So their
+  differences are made on those days.
+- A rule that scales the whole book over weeks changes many days at once. Its gain, if any, would be spread.
+- Volatility management (Moreira and Muir) raises Sharpe when the book's volatility is predictable and its return
+  does not rise with it. Here the edge is largest in volatile cascades, so I predict it lowers Sharpe.
+
+Rule (family Z6, low-parameter):
+- m(day) = clip((σ_tgt / σ_w)^λ, 0.5, 2) for every coin that day, ADV-capped.
+- σ_w is the standard deviation of the incumbent's daily returns over the w days before the day.
+- σ_tgt is the median of σ_w over all earlier days. With fewer than 60 earlier days, m = 1.
+
+Variants: w 30 / 60, λ 0.5 / 1, capped and uncapped (8 runs).

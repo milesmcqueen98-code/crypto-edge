@@ -178,3 +178,97 @@ if __name__ == "__main__":
         diag()
     elif cmd == "round1":
         round1()
+
+
+# ------------------------------------------------------------------------------------------------ round 2 (Z5)
+def signals_with_mu(cfg="S_0.5", era="sel"):
+    S = signal_frame(cfg, era)
+    I = RL.inputs(fsim.ERAS[era][0])
+    cj = {c: j for j, c in enumerate(I["coins"])}
+    ip = I["pidx"].get_indexer(S.ts)
+    S["mu"] = [float(I["M"][i, cj[c]]) if i >= 0 else np.nan for i, c in zip(ip, S.coin)]
+    return S[np.isfinite(S.mu)].reset_index(drop=True)
+
+
+def z5_coefs(S):
+    A = np.column_stack([np.ones(len(S)), S.mu.to_numpy()])
+    ab = np.linalg.lstsq(A, S.r_bp.to_numpy(), rcond=None)[0]
+    res = np.abs(S.r_bp.to_numpy() - A @ ab)
+    cd = np.linalg.lstsq(A, res, rcond=None)[0]
+    return ab, cd
+
+
+def z5_f(mu, ab, cd, kind="kelly", floor=50.0):
+    rhat = ab[0] + ab[1] * mu
+    s = np.maximum(cd[0] + cd[1] * mu, floor)
+    if kind == "kelly":
+        return np.maximum(rhat, 0.0) / s ** 2
+    return 1.0 / s ** 2
+
+
+def z5_mult(cfg, era, lam, mode, kind="kelly", capped=True, train=None, lo=0.5, hi=2.0, min_train=150,
+            window_days=90, min_n=30):
+    """Monthly coefficients (in-sample: one fit on `train`; walk-forward: all signals of `train` that exited before
+    the month); f per minute from mu; fbar = trailing 90-day median of f over research parents (same coefficients)."""
+    X = ssim.inputs(cfg, era)
+    T, NC = X["M"].shape
+    m = np.ones((T, NC))
+    months = X["days"].to_period("M")
+    mo_codes = np.asarray(months.astype(str))
+    pts = pd.to_datetime(X["par_ts"])
+    coef_log = {}
+    for mo in sorted(set(mo_codes)):
+        start = pd.Period(mo, "M").start_time
+        if mode == "insample":
+            tr = train
+        else:
+            tr = train[train.ts + pd.Timedelta(minutes=121) <= start]
+        if len(tr) < min_train:
+            continue
+        ab, cd = z5_coefs(tr)
+        coef_log[mo] = (ab.round(4).tolist(), cd.round(4).tolist(), len(tr))
+        rows = np.nonzero(mo_codes == mo)[0]
+        f = z5_f(X["M"][rows], ab, cd, kind)
+        fp = z5_f(X["par_M"], ab, cd, kind)
+        okp = np.isfinite(fp) & (fp > 0)
+        s = pd.Series(fp[okp], index=pts[okp]).sort_index()
+        tv, vals = s.index.to_numpy(), s.to_numpy()
+        dsub = X["di"][rows]
+        fb_day = {}
+        for d in np.unique(dsub):
+            day = X["du"][d]
+            a_ = np.searchsorted(tv, (day - pd.Timedelta(days=window_days)).to_datetime64(), "left")
+            b_ = np.searchsorted(tv, day.to_datetime64(), "left")
+            fb_day[d] = np.median(vals[a_:b_]) if b_ - a_ >= min_n else np.nan
+        fb = np.array([fb_day[d] for d in dsub])[:, None]
+        with np.errstate(invalid="ignore", divide="ignore"):
+            mm = np.clip((f / fb) ** lam, lo, hi)
+        mm = np.where(np.isfinite(mm), mm, 1.0)
+        m[rows] = mm
+    if capped:
+        m = np.minimum(m, X["room"])
+    return m, coef_log
+
+
+def round2():
+    S = signals_with_mu("S_0.5", "sel")
+    lines = []
+    for kind in ("kelly", "invdisp"):
+        for mode in ("insample", "wf"):
+            for lam in (0.5, 1.0):
+                for capped in ((True, False) if kind == "kelly" else (True,)):
+                    m, cl = z5_mult("S_0.5", "sel", lam, mode, kind, capped, train=S)
+                    name = f"Z5 {kind} {mode} lam{lam:g} {'capped' if capped else 'uncapped'}"
+                    s, _ = run(name, m, 2, family=f"z5_{kind}", lam=lam, capped=capped, fit=mode,
+                               note=f"coefs first/last month: {list(cl.items())[:1]} {list(cl.items())[-1:]}")
+                    lines.append(line(name, s))
+                    print(lines[-1], flush=True)
+    ab, cd = z5_coefs(S)
+    lines.append(f"in-sample coefficients: mean a, b = {ab.round(3).tolist()}, dispersion c, d = {cd.round(3).tolist()}"
+                 f" over {len(S)} signals")
+    print(lines[-1])
+    open(os.path.join(OUT, "round2.txt"), "w").write("\n".join(lines) + "\n")
+
+
+if __name__ == "__main__" and sys.argv[1] == "round2":
+    round2()
