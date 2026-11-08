@@ -228,4 +228,26 @@ sizing (no US-accessible history: a forward log below).
   gates stay as run (hsim was frozen before any trial). Added check, not a new trial: red team 1 re-runs C2a, C3b, C4,
   J_c3b_c4 and J_c2a_c3b_c4 on its replay against its own incumbent. A winner whose S* θ 0.5 paired t falls below 2
   there, or whose sign flips in any era, is reported as simulator-dependent and drops to forward-test.
+- 2026-11-08 01:13 UTC. Verdicts after the red teams, by the rules above (adopt needs all gates, a confirming red team
+  and the joint re-test; forward-test needs t >= 1 with every era's sign right, or a question history cannot answer):
+  - C3a, C3b: reject. Red team 2 measured the 60-minute market exit on 17.2M Coinbase prints: 3-6 bp per remainder
+    dollar at S* (model 16-17); with print costs and print fills C3a/C3b pooled t -0.06 / +0.04, every gate fails, and
+    print costs doubled still leave the check era negative. The entry of 23:48 said C3's verdict weighs the red team's
+    print-based costs.
+  - C2a: forward-test. It reproduces exactly, but red team 2 found out-of-sample t +1.33 (vol-matched +0.02) and, with
+    print-measured exit costs, S* t +1.91 (G1 fails) with every era positive. History will not settle it soon (about
+    three years of data for t 2 at its effect size), so the forward test is a re-test of the frozen rule on data after
+    Nov 5 2026 at the next round, with measured exit costs; adopt only at out-of-sample t >= 2.
+  - C4: forward-test. Red team 3 reproduces it to 1e-14 and it does not depend on the exit-cost or cash-rule findings,
+    but whether this account is paid (eligibility, holds, alias orders) is a question history cannot answer. The live
+    verification (strengthened as red team 3 proposed) decides; the bot gets the option, off by default.
+  - C1a: reject (red team 1: +1.40 on an engine-faithful replay). C7b: forward-test by rule only (t +1.51, sign right
+    in every era); its prints pattern did not replicate out of sample and it needs a live trades feed: re-test at the
+    next round. C1b, C2b, C5, C6, C7a: reject.
+  - Joint: the sets passed (a) and (b), but no component is adopted, so nothing is re-tested together and no strategy
+    change reaches the live bot or paper_spot_v5.
+  - Not candidates, recorded for the incumbent: the frozen exit-cost model overstates the market exit 3-5x, so the
+    incumbent is better than the frozen estimate (red team 2, S* theta 0.5 with print costs: 22.5% / 17.7% / 11.4%,
+    Sharpe 2.76 / 2.83 / 1.95); hsim's cash rule departs from the engine (red team 1). A safety gap found by red team 1
+    (no volume cap for a coin with under 10 days of volume history) is fixed in the bot.
 
