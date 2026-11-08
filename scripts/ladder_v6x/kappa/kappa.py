@@ -10,9 +10,13 @@ fallback (fb_bp = 0): an event-minute without its own valid data is missing.
 Valid pair at m: cost(m) and cost(60) both finite and cost(60) > 0. kappa(m) = median over valid pairs of
 cost(m) / cost(60); with fewer than 100 valid pairs at a minute, kappa(m) = 2 (pre-registered).
 Writes reports/ladder_v6x/kappa/kappa.csv (by m: n_valid, kappa, and for information the median costs, the mean
-ratio, the dollar-weighted ratio sum(X cost(m)) / sum(X cost(60)), kappa by rung k, and a cross-check that prices X
-from the slippage measured at exactly X), kappa_events.csv (per event and m) and kappa_clip.csv (sensitivity, never
-used as kappa: m = 2 and 5 with prints before fill_t + 1 min dropped, against the same cost(60)).
+ratio, the dollar-weighted ratio sum(X cost(m)) / sum(X cost(60)), kappa by rung k, a cross-check that prices X from
+the slippage measured at exactly X, and the same statistics without the valid pairs whose cost(60) is below 1e-6 bp,
+i.e. floating-point residue of a zero cost: zero half-spread and the first X filled at one price, which still passes
+cost(60) > 0), kappa_events.csv (per event and m) and kappa_clip.csv (sensitivity, never used as kappa: m = 2 and 5
+with prints before fill_t + 1 min dropped, against the same cost(60)).
+The log also checks the cost function against the frozen PrintCost.cost and the minute-60 measurements against red
+team 2's committed T0 rows (reports/ladder_v5/prints_rt2_exit.csv) for the sample events it also measured.
 usage: python scripts/ladder_v6x/kappa/kappa.py
 """
 import os
@@ -29,6 +33,7 @@ MS = (2, 5, 10, 20, 30, 45, 60)
 MIN_N, MIN_HS = 3, 5                  # PrintCost: own slippage at a size when n >= 3; own half-spread when hs_n >= 5
 MIN_PAIRS, KAPPA_FEW = 100, 2.0       # pre-registered: fewer than 100 valid pairs at a minute -> kappa = 2
 RUNGS = (4, 6, 8)
+NOISE_BP = 1e-6                       # information only: a cost(60) below this is floating-point residue of zero
 
 
 def own_table(D):
@@ -134,8 +139,39 @@ def table(K, rule=True):
             row[f"n_k{k}"], row[f"kappa_k{k}"] = len(vk), med(vk.ratio)
         va = g[np.isfinite(g.ratio_atX)]
         row["n_valid_atX"], row["kappa_atX"] = len(va), med(va.ratio_atX)
+        vn = v[v.cost60_bp >= NOISE_BP]
+        row.update(n_noise60=n - len(vn), kappa_ex_noise=med(vn.ratio),
+                   mean_ratio_ex_noise=float(vn.ratio.mean()) if len(vn) else np.nan,
+                   dw_ratio_ex_noise=float((vn.X * vn.cost_bp).sum() / (vn.X * vn.cost60_bp).sum()) if len(vn)
+                   else np.nan)
         out.append(row)
     return pd.DataFrame(out)
+
+
+def missing(K):
+    """Why event-minutes have no cost: no own half-spread (hs_n < 5 or none), or no grid size with n >= 3."""
+    g = K.assign(no_hs=~np.isfinite(K.hs_own_bp), no_slip=K.n_sizes_own == 0)
+    return g.groupby("m").agg(finite=("cost_bp", lambda s: int(np.isfinite(s).sum())),
+                              no_hs=("no_hs", "sum"), no_slip=("no_slip", "sum"),
+                              zero=("cost_bp", lambda s: int((s == 0).sum())))
+
+
+def rt2_check(D):
+    """Minute 60 here vs red team 2's committed T0 (m = 0) rows for the same coin and fill minute."""
+    R = pd.read_csv(os.path.join(ROOT, "reports", "ladder_v5", "prints_rt2_exit.csv"), parse_dates=["fill_t"])
+    R = R[(R.m == 0) & (R.era_tag == "main")].drop(columns=["event_id", "m", "era_tag", "k", "X"], errors="ignore")
+    M = D[(D.m == 60) & (D.prints_in_window > 0)].merge(R, on=["coin", "fill_t"], suffixes=("", "_rt2"))
+    exact = ["close_px", "hs_n", "hs_bp", "roll_hs_bp", "n_sell_orders", "max_sell_usd"] + \
+        [f"n_{int(x)}" for x in XS]
+    same = [c for c in exact if (np.isclose(M[c], M[c + "_rt2"], rtol=1e-9, atol=1e-12) |
+                                 (M[c].isna() & M[c + "_rt2"].isna())).all()]
+    d = max(float(np.nanmax(np.abs(M[f"slip_{int(x)}"] - M[f"slip_{int(x)}_rt2"]))) if M[f"slip_{int(x)}"].notna().any()
+            else 0.0 for x in XS)
+    nan_same = all(((M[f"slip_{int(x)}"].isna()) == (M[f"slip_{int(x)}_rt2"].isna())).all() for x in XS)
+    return (f"{M.event_id.nunique()} sample events also measured by red team 2 (separate fetch); equal to 1e-9: "
+            f"{len(same)} of {len(exact)} price / spread / count columns"
+            f"{' (' + ', '.join(c for c in exact if c not in same) + ' differ)' if len(same) < len(exact) else ''}; "
+            f"first-X slippage max |difference| {d:.1e} bp, missing pattern identical: {nan_same}")
 
 
 def main():
@@ -145,6 +181,7 @@ def main():
     assert len(S) == 300 and S.event_id.is_unique
     K, tab = costs(D, S, MS)
     print("frozen PrintCost.cost cross-check:", frozen_check(tab, K))
+    print("red team 2 cross-check:", rt2_check(D))
     K = pair(K, K[K.m == 60])
     T = table(K)
     Kc, _ = costs(Dc, S, (2, 5))
@@ -158,6 +195,8 @@ def main():
     print(T.round(4).to_string(index=False))
     print("sensitivity (prints from fill_t + 1 min on; not kappa):")
     print(Tc.round(4).to_string(index=False))
+    print("event-minutes without a cost (no own half-spread / no own slippage; zero = cost exactly 0):")
+    print(missing(K).to_string())
     have = K.groupby("event_id").cost_bp.apply(lambda s: np.isfinite(s).any())
     print(f"events with a finite cost at some minute: {int(have.sum())} of {len(S)}; "
           f"with a finite cost(60): {int(np.isfinite(K[K.m == 60].cost_bp).sum())}; "
