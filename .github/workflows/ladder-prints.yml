@@ -1,22 +1,24 @@
 name: ladder-prints
 
-# Ladder v5 (reports/ladder_v5_prereg.md): per-fill print statistics from the wick v4 trade artifacts. Only derived
-# per-event numbers are committed; raw trades stay in the artifacts.
+# Ladder v5 (reports/ladder_v5_prereg.md): per-event print statistics from the ladder-fetch trade artifacts. On branch
+# ladder/v6x-kappa: the kappa(m) measurement of ladder v6 exits (scripts/ladder_v6x/kappa/prints_kappa.py, then
+# kappa.py). Only derived per-event numbers leave the job, as the kappa-derived artifact (committed to the branch
+# afterwards); raw trades stay in the fetch run's artifacts.
 on:
   workflow_dispatch:
     inputs:
       run_id:
-        description: "fetch-trades run id with trades-* artifacts"
+        description: "ladder-fetch run id with trades-* artifacts"
         required: true
       script:
         description: "analysis script"
-        default: "scripts/ladder_v5/prints.py"
+        default: "scripts/ladder_v6x/kappa/prints_kappa.py"
       era:
-        description: "main or early"
+        description: "main or early (unused by the kappa analysis)"
         default: "main"
 
 permissions:
-  contents: write
+  contents: read
   actions: read
 
 jobs:
@@ -36,12 +38,20 @@ jobs:
           pattern: trades-*
           path: art
       - name: Analyze
-        run: python ${{ inputs.script }} art ${{ inputs.era }} 2>&1 | tee reports/ladder_v5/prints_log_${{ inputs.era }}.txt
-      - name: Commit derived results
         run: |
-          git config user.name "crypto-edge-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add reports/ladder_v5/prints_*.csv reports/ladder_v5/prints_log*.txt
-          git diff --cached --quiet && exit 0
-          git commit -m "Ladder v5: per-fill print statistics (derived; raw trades stay in artifacts)"
-          for i in 1 2 3 4 5; do git pull --rebase origin ${GITHUB_REF_NAME} && git push origin HEAD:${GITHUB_REF_NAME} && break; sleep $((i*5)); done
+          set -o pipefail
+          python ${{ inputs.script }} art 2>&1 | tee reports/ladder_v6x/kappa/prints_log.txt
+          python scripts/ladder_v6x/kappa/kappa.py 2>&1 | tee reports/ladder_v6x/kappa/kappa_log.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kappa-derived
+          path: |
+            reports/ladder_v6x/kappa/prints_kappa.csv
+            reports/ladder_v6x/kappa/prints_kappa_clip.csv
+            reports/ladder_v6x/kappa/windows_cover.csv
+            reports/ladder_v6x/kappa/kappa.csv
+            reports/ladder_v6x/kappa/kappa_events.csv
+            reports/ladder_v6x/kappa/kappa_clip.csv
+            reports/ladder_v6x/kappa/prints_log.txt
+            reports/ladder_v6x/kappa/kappa_log.txt
+          retention-days: 14

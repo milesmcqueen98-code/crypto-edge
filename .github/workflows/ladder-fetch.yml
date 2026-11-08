@@ -1,7 +1,9 @@
 name: ladder-fetch
 
-# Ladder v5 (reports/ladder_v5_prereg.md): Coinbase trade-by-trade prints around the 2022-23 parent fills, for the
-# "who sold to us" candidate. Six shards in parallel; raw trades are uploaded as artifacts and never committed.
+# Ladder v5 (reports/ladder_v5_prereg.md): Coinbase trade-by-trade prints. On branch ladder/v6x-kappa this fetches the
+# windows around the 300 kappa(m) sample tranches of ladder v6 exits (reports/ladder_v6x/kappa/windows.csv; see
+# reports/ladder_v6x_prereg.md, "Exit costs at any minute"). Six shards in parallel; raw trades are uploaded as
+# artifacts, never committed.
 on:
   workflow_dispatch:
 
@@ -18,13 +20,14 @@ jobs:
         with:
           sparse-checkout: |
             scripts/ladder_v5
-            reports/ladder_v5
+            scripts/ladder_v6x/kappa
+            reports/ladder_v6x/kappa
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install pandas requests pyarrow
       - name: Fetch shard
-        run: python scripts/ladder_v5/fetch_trades_early.py ${{ matrix.shard }} 6
+        run: python scripts/ladder_v6x/kappa/fetch_prints.py ${{ matrix.shard }} 6
       - uses: actions/upload-artifact@v4
         with:
           name: trades-${{ matrix.shard }}
