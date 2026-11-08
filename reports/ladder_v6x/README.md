@@ -45,9 +45,10 @@ cleared the bar, and its costs do not use kappa. Walk-forward for X1 and X12 use
 after the freeze, for information only.
 
 The drop bar was t 1.4, so X1 and X12 were dropped. In X1's data, the one strongly predictable region is "the price
-is above the take-profit and part of the remainder is unfilled": holding then loses 14–256 bp a dollar. That region
-exists only because the model fills half (θ 0.5) of the volume that trades through the take-profit. A real resting
-order would mostly be filled, so this is a fill-model question, not an exit rule.
+is above the take-profit and part of the remainder is unfilled": holding then loses 14–256 bp a dollar. That state
+cannot happen live: while our take-profit rests with size left, buyers fill it before the price can trade higher. A
+rule that sells the rest at those historical prices counts the same buyers twice (corrected after the read; see the
+leads section).
 
 ## Rounds 2–4 on X2 (rounds.md, variants.csv)
 All rows below are walk-forward on the selection era, with the pessimistic cash bound the gates use.
@@ -86,12 +87,16 @@ Gates: G1 fail, G2 fail, G3 fail, G4 pass. With optimistic cash (information onl
 The X1 and X12 scores are computed on the data they were fitted to, so they are not comparable with X2's
 out-of-sample score. No red team, forward test or bot patch, because nothing passed.
 
-## Leads for a later round (not tested here)
-- **Take-profit fill share.** The model fills θ 0.5 of the volume that trades through the take-profit. If live fills
-  are closer to complete, the incumbent is better than estimated, and the only strong exit pattern found here
-  disappears. The paper bot's take-profit fills can answer this.
-- **Cash-aware extension.** Hold a remainder past 60 only while no new signal needs the cash. Testing it needs a
-  per-tranche cash rule in the replay (a simulator change, so it was out of scope here).
+## Leads checked after the read: both closed (rounds.md, last section)
+- **Take-profit fill share: small stakes.** Only 4–5% of the dollars unsold at 60 come from tranches whose
+  take-profit was touched. Even giving the take-profit all the volume traded above it lifts S* θ 0.5 Sharpe by only
+  +0.04 to +0.07. The paper broker uses the same 0.5 capture, so only live pilot fills can measure the real share.
+- **X1's pattern, corrected explanation.** While our take-profit rests with size left, buyers fill it before the
+  price can trade higher. "Price above the take-profit, part unfilled" cannot happen live, and selling the rest at
+  those historical prices counts the same buyers twice.
+- **Cash-aware extension: no need to build.** With no cash cost at all, the frozen rule reads out-of-sample t +0.90,
+  short of the gate's 2.
+- **Exit layer recomputed from the candles** for 6 random tranches at minutes 30 and 120: it matches to 1e-7.
 
 ## Files
 - `../ladder_v6x_prereg.md`: the pre-registration and its deviation log.

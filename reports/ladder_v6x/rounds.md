@@ -114,3 +114,29 @@ The round's one candidate, round 2's "X2 wf mark+rec+k+btc+breadth+m h10", is fr
 reports/ladder_v6x/frozen_rule.json with its hand scores (reports/ladder_v6x/scorecard_manual.json) before any
 out-of-sample number is computed. Selection era (walk-forward, pessimistic cash): S* theta 0.5 t +0.62, dret +0.50 pp,
 dSharpe -0.03 (vol-matched t -0.44); theta 0.25 +0.45; base -0.88; $1M +1.05.
+
+## After the read: the two leads checked, one explanation corrected (see the commit time)
+- **Take-profit fill share: closed, small stakes.**
+  - Only 4–5% of the remainder dollars still unsold at 60 belong to tranches whose take-profit was touched; the rest
+    never reached it.
+  - Upper bound: give the take-profit all the volume traded above it (θ_TP = 1). S* θ 0.5 Sharpe then goes 2.94 → 3.01,
+    2.66 → 2.70 and 1.91 → 1.97 (selection / check / 2022–23); θ 0.25 goes 2.76 → 2.93, 2.41 → 2.48, 1.66 → 1.75.
+  - The paper broker uses the same 0.5 capture for take-profits (bot/spot/engine.py PaperBroker), so paper fills
+    cannot measure the share. Only live pilot fills can. The README and findings said otherwise; corrected.
+- **X1's "above the take-profit" pattern, corrected explanation.**
+  - While our take-profit rests with size left, it is the best offer: buyers fill it before the price can trade
+    higher. So "price above the take-profit, part of it unfilled" cannot happen live.
+  - A rule that sells the rest at those historical prices counts the same buyers twice.
+  - Most such states in X1's data come from the exit layer spreading the take-profit fill over the minutes the volume
+    traded. X1 failed even with them in its favour.
+- **Cash-aware extension: closed by the read already made.**
+  - With no cash cost at all (the optimistic bound), the frozen rule's out-of-sample pooled t is +0.90, against the
+    gate's 2.
+  - Selling extended remainders whenever cash is needed can only approach that bound, so a per-tranche cash rule was
+    not built.
+- **Exit layer recomputed independently.** For 6 random tranches, exiting at minutes 30 and 120 was recomputed
+  directly from the minute candles. It matches the exit layer to 1e-7.
+- **Round 5 not run.**
+  - No hypothesis is left in the pre-registered family that would not be fishing.
+  - A new exit lever would need new information (order flow from prints) and out-of-sample data not yet read. The
+    check era and 2022–23 have now been read once.

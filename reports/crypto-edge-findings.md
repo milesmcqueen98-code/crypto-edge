@@ -126,8 +126,8 @@ Half-spreads are 1.5–1.8x wider for 10 minutes after the fill; slippage is not
 \* Scored on their in-sample bound because they were never frozen, so these scores are not comparable with X2's.
 
 - **X1.** The one strongly predictable state is "the price is above the take-profit with part of the remainder
-  unfilled". That state exists only because the model fills half (θ 0.5) of the volume trading through the
-  take-profit. It is a fill-model question, not an exit rule.
+  unfilled". It cannot happen live: while our take-profit rests with size left, buyers fill it before the price can
+  trade higher. Selling the rest at those historical prices counts the same buyers twice.
 - **X2.** The in-sample edge was "remainders still deep under water at 60 keep recovering". That earned +164 bp a
   dollar in Q1 2025, then −3, −46, −47 and +35. Holding every remainder an extra hour also costs 3.5 points a year in
   cash, because the extensions come during cascades.
@@ -137,9 +137,13 @@ Half-spreads are 1.5–1.8x wider for 10 minutes after the fill; slippage is not
   - Gates: G1–G3 fail, G4 passes.
   - No red team, forward test or patch, because nothing passed.
 
-**Leads.** (1) Measure the live take-profit fill share from paper fills. If it is near complete, the incumbent is
-better than estimated, and the only strong exit pattern disappears. (2) A cash-aware extension (hold past 60 only
-while no signal needs the cash) needs a per-tranche cash rule in the replay.
+**Leads, checked after the read and closed.**
+- **Take-profit fill share.** Only 4–5% of the dollars unsold at 60 come from tranches whose take-profit was
+  touched. Full take-profit fills would add at most +0.04 to +0.07 Sharpe. The paper broker uses the same 0.5
+  capture, so only live pilot fills can measure the real share.
+- **Cash-aware extension.** With no cash cost at all, the frozen rule reads out-of-sample t +0.90, short of the
+  gate's 2, so it was not built.
+- **Exit layer.** It matches a direct recomputation from the candles to 1e-7.
 
 ## Ladder v5 (Nov 7–8): execution-trader round on the spot ladder — no trading change; USDC cash to a live check
 Goal set by Miles: work like an execution trader (markouts, queue position, adverse selection, expected value) and test
@@ -1529,6 +1533,6 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
   sell 1.6–3× at 1× and 3–5× in the doubled-cost stress (ladder v5, 2,053 exits on prints).
 - Wick-catcher capacity is estimated from 1-minute candles (volume spread evenly over each candle's range); real depth
   during wicks is unobserved until the paper test logs it.
-- Take-profit fills assume we get half (θ 0.5) of the volume trading through the take-profit. The only strongly
-  predictable exit pattern in ladder v6 (sell the unfilled part once the price is above the take-profit) depends on
-  that haircut. Paper take-profit fills can measure the real share.
+- Take-profit fills assume we get half (θ 0.5) of the volume trading through the take-profit, in research and in the
+  paper broker alike. Only live pilot fills can measure the real share. The stakes are small: full fills would add at
+  most +0.04 to +0.07 Sharpe (ladder v6).
