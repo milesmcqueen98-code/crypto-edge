@@ -1,0 +1,15 @@
+frozen PrintCost.cost cross-check: 1967 event-minutes, max |difference| 1.42e-14 bp, missing pattern identical: True
+kappa(m):
+ m  n_valid  kappa  kappa_median  med_cost_m_bp  med_cost_60_bp   mean_ratio  dw_ratio  n_cost_m  n_k4  kappa_k4  n_k6  kappa_k6  n_k8  kappa_k8  n_valid_atX  kappa_atX
+ 2      263 1.0246        1.0246         2.9086          2.7994 1.322930e+10    1.0945       292   159    1.1180    68    1.0224    36    0.9935           87     1.0294
+ 5      262 1.1470        1.1470         3.5526          2.8046 1.324234e+10    1.3067       291   158    1.1668    68    1.0546    36    1.1577           83     1.1243
+10      261 1.1658        1.1658         3.6849          2.9413 1.331014e+10    1.2797       288   157    1.1126    68    1.2761    36    1.0045           77     1.0539
+20      261 1.0972        1.0972         3.3743          2.9413 1.058756e+07    1.0572       281   158    1.2339    67    1.0225    36    0.9072           76     0.9763
+30      257 1.0145        1.0145         3.4891          2.8098 1.363715e+10    1.1581       277   154    1.1021    68    1.0014    35    0.9925           65     1.0715
+45      252 1.0322        1.0322         2.8908          2.8756 2.067400e+00    1.0200       265   154    1.0906    65    1.0069    33    0.9914           62     1.1252
+60      264 1.0000        1.0000         2.8046          2.8046 1.000000e+00    1.0000       273   160    1.0000    68    1.0000    36    1.0000           95     1.0000
+sensitivity (prints from fill_t + 1 min on; not kappa):
+ m  n_valid  kappa_median  med_cost_m_bp  med_cost_60_bp   mean_ratio  dw_ratio  n_cost_m  n_k4  kappa_k4  n_k6  kappa_k6  n_k8  kappa_k8  n_valid_atX  kappa_atX
+ 2      259        1.1259         3.6949          2.9413 1.339233e+10    1.2328       283   157    1.1640    67    1.0916    35    1.2811           75     1.2012
+ 5      262        1.1470         3.5526          2.8046 1.324234e+10    1.3067       291   158    1.1606    68    1.0546    36    1.1577           83     1.1240
+events with a finite cost at some minute: 296 of 300; with a finite cost(60): 273; cost(60) > 0: 264
