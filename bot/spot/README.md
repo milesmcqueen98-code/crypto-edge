@@ -278,13 +278,19 @@ Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
   - Parity: rung for rung identical on Oct 10–12 2025 (156 of 156) and Jun 1–3 2026 (33 of 33).
   - Live paths: books equal the fake exchange's to $0.0002 after 540 crash minutes with injected faults, with no
     orphaned orders and no leftover coins.
+- Results (Nov 8, after the ladder v5 changes: the volume fix and the USDC option):
+  - Parity: 156 of 156 rungs identical on Oct 10–12 2025.
+  - Live paths, with a 20-minute server death in the crash: books equal the fake exchange's to $0.0002 after 540
+    minutes (187 unconfirmed cancels, 11 take-profit server errors, 4 unreadable market sells injected), no orphaned
+    orders, no leftover coins.
+  - USDC quote test: passed.
 - **Coinbase sandbox:** `python bot/spot/sandbox_test.py` (GitHub workflow `sandbox-test`) sends every live-broker
   call through the official SDK to Coinbase's Advanced Trade sandbox. The sandbox answers with static responses in the
   production format.
   - Calls covered: accounts, good-til-date and GTC post-only orders, get order, batch cancel, list orders, list fills,
     preview and market sell.
   - It also simulates insufficient funds and a failed cancel.
-  - Nov 7: 18 of 18 checks pass.
+  - Nov 7: 18 of 18 checks pass. Nov 8, with the USDC option: 18 of 18.
 - The sandbox's responses are static, so it can't show:
   - real order validation (post-only, the good-til-date minimum);
   - key permissions;
