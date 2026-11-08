@@ -1,0 +1,64 @@
+{
+ "window": "2026-01-31 00:00:00 .. 2026-02-01 00:00:00",
+ "capital": 250000.0,
+ "research_parents": 44,
+ "engine_parents": 39,
+ "engine_parents_in_research": 39,
+ "engine_only_parents": 0,
+ "replay_parents_funded": 39,
+ "both_funded": 39,
+ "replay_funded_engine_not": 0,
+ "engine_funded_replay_not": 0,
+ "engine_deeper_fills": 24,
+ "engine_deeper_fills_on_research_parents": 24,
+ "replay_deeper_fills_minute": 24,
+ "replay_deeper_fills_instant": 23,
+ "research_deeper_fills": 57,
+ "research_deeper_after_minute0": 26,
+ "engine_cash_short_events": 452,
+ "engine_counts": {
+  "arm": 325,
+  "reprice": 15886,
+  "disarm": 286,
+  "remainder_cancel": 4,
+  "deep_deferred_market": 171,
+  "deep_deferred_cash": 387,
+  "refresh": 271,
+  "deep_cancel": 18,
+  "cash_short": 452
+ },
+ "replay_cash_short": 463,
+ "alloc_minutes_compared": 864,
+ "alloc_minutes_identical": 864,
+ "common_parents": 39,
+ "agreement": {
+  "replay": {
+   "parents_funded": 39,
+   "parent_status_agree": 44,
+   "deeper_fills": 24,
+   "deeper_count_agree_on_common": 39,
+   "abs_deeper_diff_on_common": 0
+  },
+  "fill_order": {
+   "parents_funded": 39,
+   "parent_status_agree": 44,
+   "deeper_fills": 27,
+   "deeper_count_agree_on_common": 30,
+   "abs_deeper_diff_on_common": 9
+  },
+  "hsim_like": {
+   "parents_funded": 41,
+   "parent_status_agree": 42,
+   "deeper_fills": 24,
+   "deeper_count_agree_on_common": 31,
+   "abs_deeper_diff_on_common": 8
+  },
+  "nocash": {
+   "parents_funded": 44,
+   "parent_status_agree": 39,
+   "deeper_fills": 38,
+   "deeper_count_agree_on_common": 29,
+   "abs_deeper_diff_on_common": 11
+  }
+ }
+}

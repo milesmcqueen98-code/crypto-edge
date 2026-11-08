@@ -109,6 +109,8 @@ def run_engine(start, end, C, pan):
             print(f"  engine {t} ({time.time() - t0:.0f}s)", flush=True)
     ev = pd.read_json(os.path.join(sd, "events.jsonl"), lines=True)
     ev["ts"] = pd.to_datetime(ev.ts)
+    keep = ev[ev.kind.isin(["arm", "fill_entry", "fill_exit", "rung", "cash_short", "ladder_close"])]
+    keep.astype(str).to_csv(os.path.join(RL.OUT, f"engine_events_{start:%Y%m%d}.csv.gz"), index=False)
     return ev, PanelEngine.alloc_log, eng
 
 
@@ -153,15 +155,38 @@ def main(start, end, C=250e3):
     for name, RR in vres.items():
         rp[f"{name}_usd4"] = RR["a4"]
         rp[f"{name}_deep"] = (RR["r_state"] == 2).sum(axis=1)
-    cmp_ = rp.merge(par_e[["ts", "coin", "ladder", "usd", "eng_deep", "eng_deep_usd"]], on=["ts", "coin"], how="outer",
-                    indicator=True)
+    # deeper placement minute (engine "rung" events) per parent and rung
+    t0i = A["idx"][0]
+    for name, RR in [("rep", R)] + list(vres.items()):
+        for kk, k in enumerate((6, 8)):
+            pl = RR["r_place"][:, kk]
+            rp[f"{name}_place{k}"] = [t0i + pd.Timedelta(minutes=int(x)) if x >= 0 else pd.NaT for x in pl]
+    rg = ev[ev.kind == "rung"]
+    if len(rg):
+        rg = rg.assign(rung=rg.rung.astype(int)).groupby(["ladder", "rung"]).ts.min().unstack()
+        for k in (6, 8):
+            par_e[f"eng_place{k}"] = par_e.ladder.map(rg[k]) if k in rg.columns else pd.NaT
+    else:
+        for k in (6, 8):
+            par_e[f"eng_place{k}"] = pd.NaT
+    cmp_ = rp.merge(par_e[["ts", "coin", "ladder", "usd", "eng_deep", "eng_deep_usd", "eng_place6", "eng_place8"]],
+                    on=["ts", "coin"], how="outer", indicator=True)
     both = cmp_[cmp_._merge == "both"]
     agree = {}
     for name, col_u, col_d in [("replay", "rep_usd4", "rep_deep")] + [(n, f"{n}_usd4", f"{n}_deep") for n in vres]:
         fund_e = cmp_.usd.notna()
         fund_r = cmp_[col_u].fillna(0) > 0
         inres = cmp_._merge != "right_only"
-        agree[name] = dict(parents_funded=int(fund_r[inres].sum()),
+        pa = 0
+        pn_ = 0
+        pref = "rep" if name == "replay" else name
+        for k in (6, 8):
+            e_ = pd.to_datetime(both[f"eng_place{k}"])
+            r_ = pd.to_datetime(both[f"{pref}_place{k}"])
+            pa += int(((e_ == r_) | (e_.isna() & r_.isna())).sum())
+            pn_ += len(both)
+        agree[name] = dict(placement_minute_agree=pa, placement_compared=pn_,
+                           parents_funded=int(fund_r[inres].sum()),
                            parent_status_agree=int((fund_e[inres] == fund_r[inres]).sum()),
                            deeper_fills=int(cmp_.loc[inres, col_d].fillna(0).sum()),
                            deeper_count_agree_on_common=int((both[col_d].fillna(0) == both.eng_deep).sum()),
