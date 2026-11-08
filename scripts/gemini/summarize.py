@@ -93,9 +93,10 @@ def main():
     Dz = pd.read_csv(os.path.join(OUT, "dislocations.csv"))
     V = pd.read_csv(os.path.join(OUT, "volumes.csv"))
     inp = json.load(open(os.path.join(OUT, "inputs.json")))
-    all_days = [d for d in inp["days"]]
+    all_days = list(inp["days"])
+    lv_days = list(inp.get("days_with_levels", all_days))
     oos = [d for d in OOS_DAYS if d in all_days]
-    s = {"sample_days": len(all_days), "oos_days": len(oos)}
+    s = {"sample_days": len(all_days), "days_with_levels": len(lv_days), "oos_days": len(oos)}
 
     # volumes: Gemini vs Coinbase on the sample days
     vv = V[V.day.isin(oos)].groupby("coin")[["gem_usd", "cb_usd"]].mean()
@@ -105,11 +106,10 @@ def main():
     s["cb_alt_usd_day"] = float(V[V.day.isin(oos)].groupby("day").cb_usd.sum().mean())
 
     # pure synchronous dislocations (all sample days with levels)
-    lv_days = sorted(set(Dz.day)) if len(Dz) else []
     for k in (4, 6, 8):
         dk = Dz[Dz.worst_gap_sig <= -k] if len(Dz) else Dz
         fresh = dk[dk.cb_age_s <= 10] if len(dk) else dk
-        s[f"gap{k}"] = dict(episodes=int(len(dk)), per_day=len(dk) / max(1, len(all_days) - 1),
+        s[f"gap{k}"] = dict(episodes=int(len(dk)), per_day=len(dk) / max(1, len(lv_days)),
                             fresh_cb_episodes=int(len(fresh)),
                             usd=float(dk.usd.sum()) if len(dk) else 0.0, sell_usd=float(dk.sell_usd.sum()) if len(dk) else 0.0,
                             gem_rebound_60=float(dk.gem_vs_entry_60.median()) if len(dk) else np.nan,

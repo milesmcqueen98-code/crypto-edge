@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Gemini venue test (reports/gemini_prereg.md), step 2: the frozen R2-08 ladder on Gemini prints.
 
-Inputs: data/gemini/levels.parquet (scripts/gemini/levels.py) and the Tardis artifacts (scripts/gemini/fetch_tardis.py)
-in ART/<day>/{gem_trades,gem_quotes,cb_sec}.parquet and ART/meta/gemini_details.json.
+Inputs: data/gemini/levels.parquet (scripts/gemini/levels.py) and the enriched Gemini prints
+data/gemini/prints/<day>.parquet (scripts/gemini/enrich.py: each print carries Coinbase's synchronous last price,
+Coinbase's low within +-60 s, Coinbase and Gemini-book marks at +h seconds).
 
 Outputs in reports/gemini/: rungs.csv (one row per simulated rung fill), parents.csv, dislocations.csv (pure
-synchronous gap episodes), daily.csv, summary.json.
-Usage: python scripts/gemini/analyze.py ART
+synchronous gap episodes), volumes.csv, inputs.json.
+Usage: python scripts/gemini/analyze.py
 """
+import glob
 import json
 import os
 import sys
@@ -20,28 +22,12 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, os.path.join(ROOT, "scripts"))
 import wick_sim as ws  # noqa: E402
 
+DATA = os.path.join(ROOT, "data", "gemini")
 OUT = os.path.join(ROOT, "reports", "gemini")
 K = (4.0, 6.0, 8.0)
-TP_SHARE, HOLD_S, SCAN_S, SHARED_S, RATIO_MIN, RATIO_N = 0.6, 3600, 900, 60, 240, 3
+TP_SHARE, HOLD_S, SCAN_S, RATIO_MIN, RATIO_N = 0.6, 3600, 900, 240, 3
 MARKS = (1, 10, 60, 300, 3600)
 OOS0 = pd.Timestamp("2025-01-01")
-
-
-def load_day(art, day):
-    d = os.path.join(art, day)
-    if not os.path.exists(os.path.join(d, "gem_trades.parquet")):
-        return None, None, None
-    g = pd.read_parquet(os.path.join(d, "gem_trades.parquet"))
-    q = pd.read_parquet(os.path.join(d, "gem_quotes.parquet")) if os.path.exists(os.path.join(d, "gem_quotes.parquet")) else None
-    c = pd.read_parquet(os.path.join(d, "cb_sec.parquet")) if os.path.exists(os.path.join(d, "cb_sec.parquet")) else None
-    return g, q, c
-
-
-def asof(sec_arr, val_arr, t):
-    """Last value at or before second t (vectorised); NaN before the first."""
-    i = np.searchsorted(sec_arr, t, side="right") - 1
-    out = np.where(i >= 0, val_arr[np.maximum(i, 0)], np.nan)
-    return out, np.where(i >= 0, t - sec_arr[np.maximum(i, 0)], np.nan)
 
 
 def ratios(tsec, gpx, cb_last, minute0):
@@ -59,7 +45,7 @@ def ratios(tsec, gpx, cb_last, minute0):
 
 def through(tsec, px, usd, sell, i0, bid, tick):
     """USD of taker sells (and of all prints) at or below bid - tick from print i0 until a print at or above the bid,
-    at most SCAN_S seconds; and the index of the last print in that window."""
+    at most SCAN_S seconds; and the time of the last such print."""
     n = len(px)
     tot_s = tot_a = 0.0
     j, last = i0, tsec[i0]
@@ -80,36 +66,39 @@ def tp_hit(tsec, px, usd, buy, t_fill, tp, tick):
     a = np.searchsorted(tsec, t_fill, side="right")
     b = np.searchsorted(tsec, t_fill + HOLD_S, side="right")
     seg = px[a:b]
-    hit = np.nonzero(seg >= tp + tick - 1e-12)[0]
-    cap = float(usd[a:b][(seg >= tp + tick - 1e-12) & buy[a:b]].sum())
+    above = seg >= tp + tick - 1e-12
+    hit = np.nonzero(above)[0]
+    cap = float(usd[a:b][above & buy[a:b]].sum())
     return (float(tsec[a + hit[0]]) if len(hit) else np.nan), cap
 
 
-def run_coin(day, coin, G, Q, C, L, tick_g, ai):
+def mark(G, j, col):
+    return float(G[col].iat[j]) if col in G else np.nan
+
+
+def run_coin(day, coin, G, L, tick_g, ai):
     """Ladders on one coin-day. ai=True: parents only while armed (pred > thr)."""
-    G = G.sort_values(["timestamp", "id"])
-    tsec = G.timestamp.to_numpy() / 1e6
-    px = G.price.to_numpy().astype(float)
-    usd = px * G.amount.to_numpy().astype(float)
-    sell = (G.side.to_numpy() == "sell")
-    buy = (G.side.to_numpy() == "buy")
+    tsec = G.ts_us.to_numpy() / 1e6
+    px = G.price.to_numpy()
+    usd = px * G.amount.to_numpy()
+    sell = G.side.to_numpy() == "sell"
+    buy = G.side.to_numpy() == "buy"
+    cbl = G.cb_last.to_numpy() if "cb_last" in G else np.full(len(px), np.nan)
     minute0 = pd.Timestamp(day).timestamp()
-    cs = C.sec.to_numpy().astype(float) if C is not None else np.array([])
-    cb_last_t, cb_age = asof(cs, C["last"].to_numpy(), np.floor(tsec)) if C is not None and len(C) else (np.full(len(px), np.nan),) * 2
-    r = ratios(tsec, px, cb_last_t, minute0)
+    r = ratios(tsec, px, cbl, minute0)
     Lm = L.set_index("m")
     fair = Lm.fair_log.reindex(range(1440)).to_numpy()
     sig = Lm.sig.reindex(range(1440)).to_numpy()
     lvl4cb = Lm.lvl4.reindex(range(1440)).to_numpy()
-    armed = (Lm.pred > Lm.thr).reindex(range(1440)).fillna(False).to_numpy() if ai else np.ones(1440, bool)
+    pred = Lm.pred.reindex(range(1440)).to_numpy()
+    thr = Lm.thr.reindex(range(1440)).to_numpy()
+    armed = (pred > thr) if ai else np.ones(1440, bool)
     bids = {k: np.floor(np.exp(fair - k * sig) * r / tick_g + 1e-9) * tick_g for k in K}
     mins = ((tsec - minute0) // 60).astype(int)
-    qs = Q.sec.to_numpy().astype(float) if Q is not None and len(Q) else np.array([])
     cbtick = ws.spot_tick(coin)
     rungs, parents = [], []
     busy_until = -np.inf
-    i = 0
-    n = len(px)
+    i, n = 0, len(px)
     while i < n:
         m = mins[i]
         if m < 0 or m >= 1440 or tsec[i] < busy_until or not armed[m] or not np.isfinite(bids[4.0][m]):
@@ -119,24 +108,20 @@ def run_coin(day, coin, G, Q, C, L, tick_g, ai):
         if px[i] > b4 - tick_g + 1e-12:
             i += 1
             continue
-        tau = tsec[i]
-        s = sig[m]
+        tau, s = tsec[i], sig[m]
         tp4 = b4 * np.exp(TP_SHARE * 4.0 * s)
         t_tp4, _ = tp_hit(tsec, px, usd, buy, tau, tp4, tick_g)
         close = t_tp4 if np.isfinite(t_tp4) else tau + HOLD_S
-        # shared with Coinbase: Coinbase traded through its own 4-sigma level within tau +- 60 s
-        shared = False
-        if C is not None and len(C) and np.isfinite(lvl4cb[m]):
-            a, b = np.searchsorted(cs, np.floor(tau) - SHARED_S), np.searchsorted(cs, np.floor(tau) + SHARED_S, side="right")
-            lo = C["low"].to_numpy()[a:b]
-            shared = bool(len(lo) and np.nanmin(lo) <= lvl4cb[m] * (1 - cbtick / lvl4cb[m]) + 1e-12)
+        lo60 = mark(G, i, "cb_low_pm60")
+        shared = bool(np.isfinite(lo60) and np.isfinite(lvl4cb[m]) and lo60 <= lvl4cb[m] - cbtick + 1e-12)
         pid = f"{day}|{coin}|{int(tau)}"
-        parent_pool_s, parent_pool_a, pool_end = through(tsec, px, usd, sell, i, b4, tick_g)
+        pool_s, pool_a, pool_end = through(tsec, px, usd, sell, i, b4, tick_g)
         parents.append(dict(pid=pid, day=day, coin=coin, ts=pd.Timestamp(tau, unit="s"), minute=m, shared=shared,
-                            sig_bp=s * 1e4, bid=b4, ratio=r[m], cb_last=cb_last_t[i], cb_age=cb_age[i],
-                            gap_sig=np.log(px[i] / (r[m] * cb_last_t[i])) / s if np.isfinite(cb_last_t[i]) else np.nan,
-                            pool_sell=parent_pool_s, pool_all=parent_pool_a, pool_end=pool_end - tau, close=close - tau,
-                            pred=float(Lm.pred.get(m, np.nan)), thr=float(Lm.thr.get(m, np.nan))))
+                            sig_bp=s * 1e4, bid=b4, ratio=r[m], cb_last=cbl[i], cb_age=mark(G, i, "cb_age"),
+                            cb_low_pm60=lo60, cb_lvl4=lvl4cb[m],
+                            gap_sig=np.log(px[i] / (r[m] * cbl[i])) / s if np.isfinite(cbl[i]) else np.nan,
+                            pool_sell=pool_s, pool_all=pool_a, pool_end=pool_end - tau, close=close - tau,
+                            pred=pred[m], thr=thr[m]))
         for k in K:
             bk = bids[k][m]
             if k == 4.0:
@@ -154,97 +139,88 @@ def run_coin(day, coin, G, Q, C, L, tick_g, ai):
             t_tp, tp_cap = tp_hit(tsec, px, usd, buy, tf, tpk, tick_g)
             row = dict(pid=pid, day=day, coin=coin, k=k, ts=pd.Timestamp(tf, unit="s"), f_off=tf - tau, shared=shared,
                        bid=bk, sig_bp=s * 1e4, cap_sell=cap_s, cap_all=cap_a, tp=tpk, tp_hit=bool(np.isfinite(t_tp)),
-                       tp_secs=t_tp - tf if np.isfinite(t_tp) else np.nan, tp_cap=tp_cap,
-                       g_tp=1e4 * np.log(tpk / bk))
-            # exit at 60 minutes: Gemini's best bid then (half-spread included); markouts
+                       tp_secs=t_tp - tf if np.isfinite(t_tp) else np.nan, tp_cap=tp_cap, g_tp=1e4 * np.log(tpk / bk))
             for h in MARKS:
-                cb, _ = asof(cs, C["last"].to_numpy(), np.array([np.floor(tf + h)])) if C is not None and len(C) else (np.array([np.nan]), None)
-                row[f"m_cb_{h}"] = 1e4 * np.log(cb[0] * r[m] / bk) if np.isfinite(cb[0]) else np.nan
-                if len(qs):
-                    bb, _ = asof(qs, Q.bid_price.to_numpy(), np.array([np.floor(tf + h)]))
-                    aa, _ = asof(qs, Q.ask_price.to_numpy(), np.array([np.floor(tf + h)]))
-                    row[f"m_gem_{h}"] = 1e4 * np.log(0.5 * (bb[0] + aa[0]) / bk) if bb[0] > 0 and aa[0] > 0 else np.nan
-                    if h == HOLD_S:
-                        row["g60"] = 1e4 * np.log(bb[0] / bk) if bb[0] > 0 else np.nan
-                        row["hs60_bp"] = 1e4 * np.log(aa[0] / bb[0]) / 2 if bb[0] > 0 and aa[0] > 0 else np.nan
-            if not np.isfinite(row.get("g60", np.nan)):
+                cb = mark(G, j, f"cb_last_{h}")
+                row[f"m_cb_{h}"] = 1e4 * np.log(cb * r[m] / bk) if np.isfinite(cb) and cb > 0 else np.nan
+                bb, aa = mark(G, j, f"gbid_{h}"), mark(G, j, f"gask_{h}")
+                row[f"m_gem_{h}"] = 1e4 * np.log(0.5 * (bb + aa) / bk) if bb > 0 and aa > 0 else np.nan
+            bb, aa = mark(G, j, f"gbid_{HOLD_S}"), mark(G, j, f"gask_{HOLD_S}")
+            row["hs60_bp"] = 1e4 * np.log(aa / bb) / 2 if bb > 0 and aa > bb else np.nan
+            if bb > 0:
+                row["g60"] = 1e4 * np.log(bb / bk)                     # sold at Gemini's best bid at minute 60
+            else:
                 b60 = np.searchsorted(tsec, tf + HOLD_S, side="right") - 1
-                row["g60"] = 1e4 * np.log(px[b60] / bk) - 5.0       # last print less a 5 bp half-spread
+                row["g60"] = 1e4 * np.log(px[b60] / bk) - 5.0         # last print less a 5 bp half-spread
             rungs.append(row)
         busy_until = close
-        i = np.searchsorted(tsec, close, side="right")
+        i = int(np.searchsorted(tsec, close, side="right"))
     return rungs, parents
 
 
-def dislocations(day, coin, G, C, L):
-    """Pure synchronous gaps: Gemini prints at least k sigma below r x Coinbase's last price at that second."""
-    if C is None or not len(C):
+def dislocations(day, coin, G, L):
+    """Pure synchronous gaps: Gemini prints at least 4 sigma below r x Coinbase's last price at that second."""
+    if "cb_last" not in G:
         return []
-    G = G.sort_values(["timestamp", "id"])
-    tsec = G.timestamp.to_numpy() / 1e6
-    px = G.price.to_numpy().astype(float)
-    usd = px * G.amount.to_numpy().astype(float)
+    tsec = G.ts_us.to_numpy() / 1e6
+    px = G.price.to_numpy()
+    usd = px * G.amount.to_numpy()
     sell = G.side.to_numpy() == "sell"
+    cbl, age = G.cb_last.to_numpy(), G.cb_age.to_numpy()
     minute0 = pd.Timestamp(day).timestamp()
-    cs = C.sec.to_numpy().astype(float)
-    cbl, age = asof(cs, C["last"].to_numpy(), np.floor(tsec))
     r = ratios(tsec, px, cbl, minute0)
     mins = ((tsec - minute0) // 60).astype(int)
     sig = L.set_index("m").sig.reindex(range(1440)).to_numpy()
     ok = (mins >= 0) & (mins < 1440)
     gap = np.full(len(px), np.nan)
-    gap[ok] = np.log(px[ok] / (r[mins[ok]] * cbl[ok])) / sig[mins[ok]]
-    out = []
+    with np.errstate(invalid="ignore", divide="ignore"):
+        gap[ok] = np.log(px[ok] / (r[mins[ok]] * cbl[ok])) / sig[mins[ok]]
     hit = np.nonzero(np.nan_to_num(gap, nan=0.0) <= -4.0)[0]
+    out = []
     if not len(hit):
         return out
     ep = np.cumsum(np.r_[1, np.diff(tsec[hit]) > 60])
     for e in np.unique(ep):
         idx = hit[ep == e]
-        j0 = idx[0]
-        worst = idx[np.argmin(gap[idx])]
-        a = np.searchsorted(tsec, tsec[j0])
+        j0, worst = idx[0], idx[np.argmin(gap[idx])]
         mk = {}
         for h in (60, 300):
             b = np.searchsorted(tsec, tsec[j0] + h, side="right") - 1
-            cb_h, _ = asof(cs, C["last"].to_numpy(), np.array([np.floor(tsec[j0] + h)]))
-            mk[f"gem_vs_entry_{h}"] = 1e4 * np.log(px[b] / px[j0]) if b >= a else np.nan
-            mk[f"cb_vs_entry_{h}"] = 1e4 * np.log(cb_h[0] * r[mins[j0]] / px[j0])
+            cb_h = mark(G, j0, f"cb_last_{h}")
+            mk[f"gem_vs_entry_{h}"] = 1e4 * np.log(px[b] / px[j0])
+            mk[f"cb_vs_entry_{h}"] = 1e4 * np.log(cb_h * r[mins[j0]] / px[j0]) if np.isfinite(cb_h) else np.nan
+            bb, aa = mark(G, j0, f"gbid_{h}"), mark(G, j0, f"gask_{h}")
+            mk[f"gem_mid_vs_entry_{h}"] = 1e4 * np.log(0.5 * (bb + aa) / px[j0]) if bb > 0 and aa > 0 else np.nan
+        bb0, aa0 = mark(G, j0, "gbid_0"), mark(G, j0, "gask_0")
         out.append(dict(day=day, coin=coin, ts=pd.Timestamp(tsec[j0], unit="s"), n_prints=len(idx),
                         worst_gap_sig=float(gap[worst]), first_gap_sig=float(gap[j0]), sig_bp=sig[mins[j0]] * 1e4,
-                        usd=float(usd[idx].sum()), sell_usd=float(usd[idx][sell[idx]].sum()),
-                        cb_age_s=float(age[j0]), max_k=4 if gap[worst] > -6 else (6 if gap[worst] > -8 else 8), **mk))
+                        usd=float(usd[idx].sum()), sell_usd=float(usd[idx][sell[idx]].sum()), cb_age_s=float(age[j0]),
+                        gem_spread_bp=1e4 * np.log(aa0 / bb0) if bb0 > 0 and aa0 > 0 else np.nan, **mk))
     return out
 
 
-def main(art):
-    lv = pd.read_parquet(os.path.join(ROOT, "data", "gemini", "levels.parquet"))
+def main():
+    lv = pd.read_parquet(os.path.join(DATA, "levels.parquet"))
     lv["day"] = lv.ts.dt.floor("D")
     lv["m"] = (lv.ts - lv.day).dt.total_seconds().astype(int) // 60
-    det = json.load(open(os.path.join(art, "meta", "gemini_details.json")))
-    ticks = {c: float(v.get("quote_increment")) for c, v in det.items() if v.get("quote_increment")}
-    days = sorted(d for d in os.listdir(art) if d[:2] == "20")
-    R, P, Dz, Dv = [], [], [], []
-    for day in days:
-        g, q, c = load_day(art, day)
-        if g is None:
-            continue
+    metas = sorted(glob.glob(os.path.join(DATA, "meta_*_gemini_details.json")))
+    det = json.load(open(metas[-1]))
+    ticks = {c: float(v["quote_increment"]) for c, v in det.items() if v.get("quote_increment")}
+    files = sorted(glob.glob(os.path.join(DATA, "prints", "20*.parquet")))
+    R, P, Dz = [], [], []
+    for f in files:
+        day = os.path.basename(f)[:10]
+        g = pd.read_parquet(f)
         for coin in sorted(g.coin.unique()):
-            G = g[g.coin == coin]
-            Qc = q[q.coin == coin] if q is not None else None
-            Cc = c[c.coin == coin].sort_values("sec") if c is not None else None
+            G = g[g.coin == coin].sort_values(["ts_us", "id"]).reset_index(drop=True)
             L = lv[(lv.coin == coin) & (lv.day == pd.Timestamp(day))]
-            gem_usd = float((G.price * G.amount).sum())
-            cb_usd = float(Cc.usd.sum()) if Cc is not None else np.nan
-            Dv.append(dict(day=day, coin=coin, gem_usd=gem_usd, cb_usd=cb_usd, gem_prints=len(G),
-                           gem_sell_usd=float((G.price * G.amount)[G.side == "sell"].sum())))
             if not len(L) or coin not in ticks:
                 continue
-            Dz += dislocations(day, coin, G, Cc, L)
+            Dz += dislocations(day, coin, G, L)
             for ai in (False, True):
                 if ai and pd.Timestamp(day) < OOS0:
                     continue
-                rr, pp = run_coin(day, coin, G, Qc, Cc, L, ticks[coin], ai)
+                rr, pp = run_coin(day, coin, G, L, ticks[coin], ai)
                 for x in rr + pp:
                     x["ai"] = ai
                 R += rr
@@ -254,9 +230,12 @@ def main(art):
     pd.DataFrame(R).to_csv(os.path.join(OUT, "rungs.csv"), index=False)
     pd.DataFrame(P).to_csv(os.path.join(OUT, "parents.csv"), index=False)
     pd.DataFrame(Dz).to_csv(os.path.join(OUT, "dislocations.csv"), index=False)
-    pd.DataFrame(Dv).to_csv(os.path.join(OUT, "volumes.csv"), index=False)
-    json.dump({"days": days, "ticks": ticks}, open(os.path.join(OUT, "inputs.json"), "w"), indent=1)
+    V = pd.concat([pd.read_csv(v) for v in sorted(glob.glob(os.path.join(DATA, "volumes_*.csv")))], ignore_index=True)
+    V.sort_values(["day", "coin"]).to_csv(os.path.join(OUT, "volumes.csv"), index=False)
+    days_lv = sorted({os.path.basename(f)[:10] for f in files} & {d.strftime("%Y-%m-%d") for d in lv.day.unique()})
+    json.dump({"days": [os.path.basename(f)[:10] for f in files], "days_with_levels": days_lv, "ticks": ticks},
+              open(os.path.join(OUT, "inputs.json"), "w"), indent=1)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main()
