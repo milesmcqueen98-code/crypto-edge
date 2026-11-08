@@ -539,7 +539,10 @@ class Engine:
     def signal_usd(self, c):
         S = self.cfg.get("notional_frac", 0.25) * self.state["equity"]
         a = self.state["adv"].get(c)
-        if self.cfg.get("adv_frac") and a:
+        if self.cfg.get("adv_frac"):
+            if not a:
+                return 0.0           # volume cap set but the coin's volume unknown (< 10 days of data): no bid (ladder v5
+                                     # red team: it used to bid the uncapped 25%, which the research never priced)
             S = min(S, self.cfg["adv_frac"] * a)
         return S
 
@@ -1041,6 +1044,9 @@ class Engine:
         alloc = {}
         for pred, c in cands:
             want = self.signal_usd(c) * self.rung_w["4"] * self.size_mult(pred)   # order notional (+ maker fee held)
+            if want <= 0:
+                self.count("no_adv")
+                continue
             need = want * (1 + self.fee_m())
             if need <= free:
                 alloc[c], free = want, free - need
