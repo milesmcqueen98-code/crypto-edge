@@ -16,7 +16,8 @@ alone and C4 alone reproduce their logged trials' per-era return and Sharpe (rep
 from the builder branches, copied into reports/ladder_v5/joint/ref/).
 Each run also saves every combo's daily returns (reports/ladder_v5/joint/daily.parquet) and the marginal contribution
 of each component within the largest combo run (full set minus the set without it; joint/marginal.csv).
-usage: python scripts/ladder_v5/cand_joint.py check | run <combo> [<combo> ...]     combo e.g. c2a+c3b+c4
+usage: python scripts/ladder_v5/cand_joint.py check | run <combo> [<combo> ...] | decompose <combo> [...]
+       combo e.g. c2a+c3b+c4; decompose writes rule (b)'s marginal table for that set (joint/marginal_<set>.csv)
 """
 import json
 import os
@@ -142,15 +143,23 @@ def _capture(name, fn, rows):
     return g
 
 
-def marginal(daily):
-    """Each component's contribution within the largest combo run: full minus the combo without it (same days),
-    pooled Newey-West t (5 lags, fsim.nw_t) and mean by era, per configuration. Descriptive; the gates are run()'s."""
+ORDER = ("c2a", "c3a", "c3b", "c4")
+
+
+def jname(parts):
+    return "J_" + "_".join(p for p in ORDER if p in parts)
+
+
+def marginal(daily, full=None):
+    """Each component's contribution within a set (default: the largest combo run): the set minus the set without it
+    (same days), pooled Newey-West t (5 lags, fsim.nw_t) and mean by era, per configuration. Descriptive; the gates
+    are run()'s."""
     names = sorted(daily.name.unique(), key=lambda n: -len(n.split("_")))
-    full = names[0]
+    full = full or names[0]
     comps = full[2:].split("_")
     rows = []
     for c in comps:
-        loo = "J_" + "_".join(x for x in comps if x != c)
+        loo = jname([x for x in comps if x != c])
         if loo == "J_" or loo not in names:
             continue
         for cfg in daily.cfg.unique():
@@ -184,9 +193,46 @@ def run(combos):
         print(m.round(3).to_string(index=False), flush=True)
 
 
+def decompose(combo):
+    """Rule (b) of the joint re-test for the set `combo`: each component's marginal contribution within it. Sets not
+    already in joint/daily.parquet (run()'s saved trials) are computed here without logging: a set of one component is
+    that component's own logged trial, which check() reproduces exactly."""
+    CE.ensure_frozen()
+    parts = combo.split("+")
+    path = os.path.join(OUTD, "daily.parquet")
+    daily = pd.read_parquet(path)
+    have = set(daily.name.unique())
+    need = [jname(parts)] + [jname([x for x in parts if x != c]) for c in parts]
+    rows = []
+    for name in need:
+        if name in have or name == "J_":
+            continue
+        sizing, N, c4 = parse("+".join(name[2:].split("_")))
+        for cfg, kw in gates.CONFIGS.items():
+            for era in fsim.ERAS:
+                tag = fsim.ERAS[era][0]
+                P, pan = gates.data(tag)
+                inc = gates.incumbent_cached(era, cfg)
+                d = make(sizing, N, c4)(P, era, pan=pan, adv_=gates.adv(tag, era), **kw).reindex(inc.index, fill_value=0.0)
+                rows.append(pd.DataFrame(dict(name=name, cfg=cfg, era=era, date=d.index, r=d.to_numpy(float))))
+        print(f"computed {name} (not logged)", flush=True)
+    extra = pd.concat(rows, ignore_index=True) if rows else daily.iloc[:0]
+    m = marginal(pd.concat([daily, extra], ignore_index=True), full=jname(parts))
+    out = os.path.join(OUTD, f"marginal_{jname(parts)[2:]}.csv")
+    m.to_csv(out, index=False)
+    if len(extra):
+        extra.to_parquet(os.path.join(OUTD, f"daily_extra_{jname(parts)[2:]}.parquet"))
+    with pd.option_context("display.width", 200, "display.max_columns", 30):
+        print(m.round(3).to_string(index=False), flush=True)
+
+
 if __name__ == "__main__":
     if sys.argv[1] == "check":
         check()
     elif sys.argv[1] == "run":
         check(strict=True)
         run(sys.argv[2:])
+    elif sys.argv[1] == "decompose":
+        check(strict=True)
+        for combo in sys.argv[2:]:
+            decompose(combo)
