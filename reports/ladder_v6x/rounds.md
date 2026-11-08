@@ -28,3 +28,21 @@ Drop decisions: X2 now (its costs do not use kappa); X1 and X12 once kappa(m) is
   be filled, so an exit rule built on it may only re-earn what the model's capacity haircut takes away.
 - The drop rule reads "the best rule of its family": before deciding X1 and X12, the in-sample bound is completed over
   every subset of the 6 inputs (63) x h in {0, 5, 10} at kappa 1 and 2 (all logged).
+
+### Round 1 read, completed (2026-11-08 20:33 UTC)
+- Best in-sample rule of the family (63 input subsets x 3 hurdles, all logged): X1 t -0.60 at kappa 1 (-1.03 at
+  kappa 2); X12 +1.30 (rec + m, h 0) at kappa 1 (+1.12 at kappa 2). Both below 1.4, so both are dropped unless the
+  measured kappa(m) is below 1 (then their bound is re-run at the measured kappa). X2 goes on alone.
+- X2 in-sample (6 inputs, h 10) on the instant frame: 466 of 907 remainders extended (52% of remainder dollars), 37.5
+  minutes on average, 196 to 120. Gain $20.9K = take-profit fills after 60 $10.9K + drift on the part sold at market
+  $9.9K + cost change $0.1K (print costs barely move between 60 and 75). By the recovered share at 60, holding every
+  remainder to 120 gains +77 bp per dollar when still >= 0.6 k sigma below the entry, +16 between -0.6 and -0.3, about
+  0 to +5 above. By quarter: +43 (2025Q1), +31, +7, -7, +7.5 (2026Q1).
+
+## Round 2: X2 walk-forward (written 2026-11-08 20:33 UTC, before running)
+Hypothesis: X2's in-sample edge is mostly "a remainder still deep under water at 60 keeps recovering for another
+hour", which is one input (the recovered share), so a parsimonious fit should survive walk-forward better than the
+6-input fit. 2025Q1, the quarter where holding paid most, only trains, so expect walk-forward t of +0.5 to +1.5.
+Variants (OLS, refit quarterly on earlier quarters, 2025Q1 runs the incumbent, pessimistic cash): inputs {all 6},
+{rec}, {rec, m}, each at h 0 / 5 / 10. Reference, not a candidate: every remainder held to 120 (a plain hold time,
+already tried in wick v2), to separate the state-dependence from the extension itself.

@@ -237,3 +237,43 @@ def family_bound(levers=("X1", "X12"), kappas=(1.0, 2.0)):
 
 if __name__ == "__main__" and sys.argv[1] == "family":
     family_bound()
+
+
+def hold_all(lever):
+    H = LEVERS[lever][1]
+    return lambda x: np.full(len(x.Q), H)
+
+
+def run_round(rnd, specs, kappa=1.0, cfg="S_0.5"):
+    """specs: (name, lever, inputs, h, weights, fit) with fit 'wf' (walk-forward) or 'insample'."""
+    lines = []
+    train = books("S_0.5", "sel", kappa, 0)["instant"]
+    for name, lever, inputs, h, weights, fitk in specs:
+        if fitk == "hold":
+            inc = X.blended(books(cfg, "sel", kappa, 0), X.at60)
+            bk = books(cfg, "sel", kappa, 60)
+            rule = hold_all(lever)
+            cand = X.blended(bk, rule)
+            betas = None
+        else:
+            if fitk == "wf":
+                betas = wf_betas(train, lever, inputs, weights)
+            else:
+                betas = fit(train, lever, np.ones(len(train.Q), bool), inputs, weights)[0]
+            inc, cand, bk, rule = run_rule(lever, kappa, h, betas, inputs, cfg=cfg)
+        s = score(inc, cand, cfg)
+        lines.append(report_line(name, s))
+        print(lines[-1], flush=True)
+        log(dict(round=rnd, name=name, lever=lever, kappa=kappa, cash="ext60" if lever != "X1" else "ext0", fit=fitk,
+                 h=h, inputs="+".join(inputs), weights=weights or "ols", cfg=cfg,
+                 **{f"sel_{k}": v for k, v in s.items()}, moved=changed_share(bk, rule), note=""))
+    open(os.path.join(OUT, f"round{rnd}.txt"), "a").write("\n".join(lines) + "\n")
+    return lines
+
+
+ROUND2 = [("R2 hold-all-to-120 (reference)", "X2", (), np.nan, None, "hold")] + [
+    (f"R2 X2 wf {'+'.join(inp)} h{h:g}", "X2", inp, h, None, "wf")
+    for inp in (ALL, ("rec",), ("rec", "m")) for h in (0.0, 5.0, 10.0)]
+
+if __name__ == "__main__" and sys.argv[1] == "round2":
+    run_round(2, ROUND2)

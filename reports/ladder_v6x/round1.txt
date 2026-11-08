@@ -21,3 +21,7 @@ oracle X12 kappa2 cash0                t  +4.03  dSharpe +1.441  dret +67.45pp  
 insample X12 kappa2 h0                 t  +0.32  dSharpe -0.176  dret  +1.05pp  mean  +0.29 bp/day  rows 150112 beta [22.159, -0.357, -17.547, 7.966, -0.272, 2.911, -1.099]
 insample X12 kappa2 h5                 t  +0.05  dSharpe -0.189  dret  +0.15pp  mean  +0.04 bp/day  rows 150112 beta [22.159, -0.357, -17.547, 7.966, -0.272, 2.911, -1.099]
 insample X12 kappa2 h10                t  -0.23  dSharpe -0.283  dret  -0.72pp  mean  -0.20 bp/day  rows 150112 beta [22.159, -0.357, -17.547, 7.966, -0.272, 2.911, -1.099]
+family best X1 kappa1                  t  -0.60  dSharpe -0.349  dret  -1.37pp  mean  -0.37 bp/day  h 0 inputs rec+k+btc+breadth+m
+family best X12 kappa1                 t  +1.30  dSharpe +0.158  dret  +4.28pp  mean  +1.17 bp/day  h 0 inputs rec+m
+family best X1 kappa2                  t  -1.03  dSharpe -0.415  dret  -2.20pp  mean  -0.60 bp/day  h 0 inputs rec+k+breadth+m
+family best X12 kappa2                 t  +1.12  dSharpe +0.039  dret  +3.81pp  mean  +1.04 bp/day  h 0 inputs rec+breadth+m
