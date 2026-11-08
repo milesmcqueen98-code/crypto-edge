@@ -1,30 +1,121 @@
 {
- "Z1_kelly_vol": {"variant": "kelly lam0.25 capped", "verdict": "reject (dropped at round 1)",
-  "realism": {"score": 10, "reason": "Frozen engine-faithful simulator with print exit costs, inside the 0.2% ADV cap; resting-bid cash effects modelled; the prediction is the live model's."},
-  "mechanism": {"score": 2, "reason": "The variance proxy is wrong: net per dollar rises with the coin's volatility, so 1/sigma^2 tilts toward low-edge coins; the top Kelly quintile has the lowest mean/variance."},
-  "implementation": {"score": 7, "reason": "A per-minute multiplier from the prediction and the daily volatility; the C2a engine option generalises."}},
- "Z2_inverse_variance": {"variant": "invvar lam1 capped", "verdict": "reject (dropped at round 1)",
-  "realism": {"score": 10, "reason": "As Z1."},
-  "mechanism": {"score": 2, "reason": "The same flaw as Z1 with no edge term."},
-  "implementation": {"score": 8, "reason": "A daily per-coin multiplier."}},
- "Z3_edge": {"variant": "edge lam0.5 capped", "verdict": "reject (dropped at round 1)",
-  "realism": {"score": 10, "reason": "As Z1."},
-  "mechanism": {"score": 4, "reason": "The prediction ranks returns (Spearman +0.41) but also their dispersion; the gain sits on cascade days."},
-  "implementation": {"score": 8, "reason": "A continuous version of the C2a engine option."}},
- "Z4_breadth": {"variant": "breadth lam0.25 capped", "verdict": "reject (dropped at round 1)",
-  "realism": {"score": 9, "reason": "As Z1; side effect: resting bids are upsized at quiet minutes (breadth 0), within the cap."},
-  "mechanism": {"score": 4, "reason": "A risk budget per cascade is sound, but cascades carry the edge; gain concentrated."},
-  "implementation": {"score": 7, "reason": "Needs a cross-coin count of recent parent fills in the engine."}},
- "Z5_signal_kelly": {"variant": "Z5 kelly insample lam1 capped", "verdict": "reject (dropped at round 2)",
-  "realism": {"score": 8, "reason": "Scored on its in-sample fit; the walk-forward version, the implementable one, was negative."},
-  "mechanism": {"score": 4, "reason": "Kelly with dispersion predicted from the signal; the fitted shape is edge sizing with a ceiling."},
-  "implementation": {"score": 5, "reason": "Monthly regression refits on realised signal outcomes."}},
- "Z6_book_vol_target": {"variant": "Z6 voltarget w60 lam0.5 capped", "verdict": "reject (dropped at round 3)",
-  "realism": {"score": 10, "reason": "As Z1."},
-  "mechanism": {"score": 2, "reason": "The edge rises with the book's volatility, so shrinking after volatile weeks gives up more return than risk; predicted to fail and did."},
-  "implementation": {"score": 8, "reason": "One daily scalar from the bot's own trailing P&L."}},
- "Z7_armed_diversification": {"variant": "Z7 armed lam0.5 capped", "verdict": "reject (dropped at round 4)",
-  "realism": {"score": 9, "reason": "As Z1."},
-  "mechanism": {"score": 3, "reason": "Spreads cash across armed coins in cascades; small, concentrated effect."},
-  "implementation": {"score": 7, "reason": "A multiplier from the engine's own count of armed coins."}}
+ "Z1_kelly_vol": {
+  "variant": "kelly lam0.25 capped",
+  "verdict": "reject (dropped at round 1)",
+  "realism": {
+   "score": 10,
+   "reason": "Frozen engine-faithful simulator with print exit costs, inside the 0.2% ADV cap; resting-bid cash effects modelled; the prediction is the live model's."
+  },
+  "mechanism": {
+   "score": 2,
+   "reason": "The variance proxy is wrong: net per dollar rises with the coin's volatility, so 1/sigma^2 tilts toward low-edge coins; the top Kelly quintile has the lowest mean/variance."
+  },
+  "implementation": {
+   "score": 7,
+   "reason": "A per-minute multiplier from the prediction and the daily volatility; the C2a engine option generalises."
+  },
+  "record": "records/Z1_kelly_vol.json"
+ },
+ "Z2_inverse_variance": {
+  "variant": "invvar lam1 capped",
+  "verdict": "reject (dropped at round 1)",
+  "realism": {
+   "score": 10,
+   "reason": "As Z1."
+  },
+  "mechanism": {
+   "score": 2,
+   "reason": "The same flaw as Z1 with no edge term."
+  },
+  "implementation": {
+   "score": 8,
+   "reason": "A daily per-coin multiplier."
+  },
+  "record": "records/Z2_inverse_variance.json"
+ },
+ "Z3_edge": {
+  "variant": "edge lam0.5 capped",
+  "verdict": "reject (dropped at round 1)",
+  "realism": {
+   "score": 10,
+   "reason": "As Z1."
+  },
+  "mechanism": {
+   "score": 4,
+   "reason": "The prediction ranks returns (Spearman +0.41) but also their dispersion; the gain sits on cascade days."
+  },
+  "implementation": {
+   "score": 8,
+   "reason": "A continuous version of the C2a engine option."
+  },
+  "record": "records/Z3_edge.json"
+ },
+ "Z4_breadth": {
+  "variant": "breadth lam0.25 capped",
+  "verdict": "reject (dropped at round 1)",
+  "realism": {
+   "score": 9,
+   "reason": "As Z1; side effect: resting bids are upsized at quiet minutes (breadth 0), within the cap."
+  },
+  "mechanism": {
+   "score": 4,
+   "reason": "A risk budget per cascade is sound, but cascades carry the edge; gain concentrated."
+  },
+  "implementation": {
+   "score": 7,
+   "reason": "Needs a cross-coin count of recent parent fills in the engine."
+  },
+  "record": "records/Z4_breadth.json"
+ },
+ "Z5_signal_kelly": {
+  "variant": "Z5 kelly insample lam1 capped",
+  "verdict": "reject (dropped at round 2)",
+  "realism": {
+   "score": 8,
+   "reason": "Scored on its in-sample fit; the walk-forward version, the implementable one, was negative."
+  },
+  "mechanism": {
+   "score": 4,
+   "reason": "Kelly with dispersion predicted from the signal; the fitted shape is edge sizing with a ceiling."
+  },
+  "implementation": {
+   "score": 5,
+   "reason": "Monthly regression refits on realised signal outcomes."
+  },
+  "record": "records/Z5_signal_kelly.json"
+ },
+ "Z6_book_vol_target": {
+  "variant": "Z6 voltarget w60 lam0.5 capped",
+  "verdict": "reject (dropped at round 3)",
+  "realism": {
+   "score": 10,
+   "reason": "As Z1."
+  },
+  "mechanism": {
+   "score": 2,
+   "reason": "The edge rises with the book's volatility, so shrinking after volatile weeks gives up more return than risk; predicted to fail and did."
+  },
+  "implementation": {
+   "score": 8,
+   "reason": "One daily scalar from the bot's own trailing P&L."
+  },
+  "record": "records/Z6_book_vol_target.json"
+ },
+ "Z7_armed_diversification": {
+  "variant": "Z7 armed lam0.5 capped",
+  "verdict": "reject (dropped at round 4)",
+  "realism": {
+   "score": 9,
+   "reason": "As Z1."
+  },
+  "mechanism": {
+   "score": 3,
+   "reason": "Spreads cash across armed coins in cascades; small, concentrated effect."
+  },
+  "implementation": {
+   "score": 7,
+   "reason": "A multiplier from the engine's own count of armed coins."
+  },
+  "record": "records/Z7_armed_diversification.json"
+ }
 }

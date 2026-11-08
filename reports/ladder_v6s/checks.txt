@@ -1,0 +1,8 @@
+Checks (selection era, S* theta 0.5):
+- Reproduction through the sizing hook with every multiplier at 1: daily difference to the cached incumbent 0.0 in all
+  three eras (reproduce.txt).
+- ADV cap: in the capped runs no bid ever exceeds 0.2% of ADV / 3 (max ratio 1.000; e.g. edge lam 1). The uncapped
+  edge lam 1 breaches it on 22% of bid-minutes and 37% of deeper-rung wants, by up to 2x.
+- Room to upsize inside the cap (median over approved minutes): ETH 10.8, XRP 3.2, SOL 2.4; every other coin 1.0. So at
+  today's volumes a capped rule can only shrink the other 14 coins.
+- Determinism: re-running "breadth lam0.25 capped" reproduces its logged t to 1e-6.

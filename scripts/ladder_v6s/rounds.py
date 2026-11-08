@@ -384,3 +384,46 @@ def round4():
 
 if __name__ == "__main__" and sys.argv[1] == "round4":
     round4()
+
+
+# ------------------------------------------------------------------------------------------------ scorecard records
+def family_mult(name, cfg, era, S=None):
+    X = ssim.inputs(cfg, era)
+    if name == "Z1_kelly_vol":
+        return ssim.rule_mult(X, "kelly", 0.25, capped=True)
+    if name == "Z2_inverse_variance":
+        return ssim.rule_mult(X, "invvar", 1.0, capped=True)
+    if name == "Z3_edge":
+        return ssim.rule_mult(X, "edge", 0.5, capped=True)
+    if name == "Z4_breadth":
+        return ssim.rule_mult(X, "breadth", 0.25, capped=True)
+    if name == "Z5_signal_kelly":
+        return z5_mult(cfg, era, 1.0, "insample", "kelly", True, train=S)[0]
+    if name == "Z6_book_vol_target":
+        return z6_mult(cfg, era, 60, 0.5, True)
+    if name == "Z7_armed_diversification":
+        return z7_mult(cfg, era, 0.5, True)
+    raise KeyError(name)
+
+
+def records():
+    import json
+    S = signals_with_mu("S_0.5", "sel")
+    os.makedirs(os.path.join(OUT, "records"), exist_ok=True)
+    for name in ("Z1_kelly_vol", "Z2_inverse_variance", "Z3_edge", "Z4_breadth", "Z5_signal_kelly",
+                 "Z6_book_vol_target", "Z7_armed_diversification"):
+        rec = {"name": name, "spec": {"path": "sharpe"}, "basis": "selection era, best capped variant (in-sample upper "
+               "bound; dropped before any out-of-sample read)", "configs": {}}
+        for cfg in ("S_0.5", "S_0.25", "base_0.5", "cap_1M"):
+            m = family_mult(name, cfg, "sel", S)
+            cand = ssim.daily(cfg, "sel", m)
+            s = ssim.score(incumbent(cfg, "sel"), cand, cfg, "sel")
+            rec["configs"][cfg] = dict(eras={"sel": s}, pooled_t=s["t"], pooled_mean_bp=s["mean_bp"],
+                                       pooled_t_volmatched=s["t_vm"], era_means_volmatched_bp={"sel": s["mean_vm_bp"]})
+            print(name, cfg, f"t_vm {s['t_vm']:+.2f} (best 5 out {s['t_vm_ex5']:+.2f}) t {s['t']:+.2f} "
+                  f"dSharpe {s['d_sharpe']:+.3f}", flush=True)
+        json.dump(rec, open(os.path.join(OUT, "records", f"{name}.json"), "w"), indent=1, default=float)
+
+
+if __name__ == "__main__" and sys.argv[1] == "records":
+    records()

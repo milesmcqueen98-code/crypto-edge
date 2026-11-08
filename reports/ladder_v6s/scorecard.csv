@@ -1,0 +1,8 @@
+candidate,basis,total,evidence,robustness,prize,capacity,realism,mechanism,implementation,t,mean_dsharpe,cap_dsharpe,verdict
+Z4_breadth,"selection era, best capped variant (in-sample upper bound; dropped before any out-of-sample read)",50,8,15,5,2,9,4,7,1.01,0.121,0.014,reject (dropped at round 1)
+Z5_signal_kelly,"selection era, best capped variant (in-sample upper bound; dropped before any out-of-sample read)",47,8,15,5,2,8,4,5,1.14,0.155,0.057,reject (dropped at round 2)
+Z3_edge,"selection era, best capped variant (in-sample upper bound; dropped before any out-of-sample read)",47,3,15,5,2,10,4,8,0.4,0.117,0.071,reject (dropped at round 1)
+Z7_armed_diversification,"selection era, best capped variant (in-sample upper bound; dropped before any out-of-sample read)",39,8,10,2,0,9,3,7,1.01,0.064,-0.011,reject (dropped at round 4)
+Z1_kelly_vol,"selection era, best capped variant (in-sample upper bound; dropped before any out-of-sample read)",27,0,8,0,0,10,2,7,-0.66,-0.121,-0.12,reject (dropped at round 1)
+Z2_inverse_variance,"selection era, best capped variant (in-sample upper bound; dropped before any out-of-sample read)",25,0,5,0,0,10,2,8,-1.27,-0.598,-0.444,reject (dropped at round 1)
+Z6_book_vol_target,"selection era, best capped variant (in-sample upper bound; dropped before any out-of-sample read)",25,0,5,0,0,10,2,8,-0.87,-0.161,-0.213,reject (dropped at round 3)
