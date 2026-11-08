@@ -55,6 +55,9 @@ N_PASSIVE = 15
 WORLDS = {"faithful": (False, {}, 0), "faithful_c3cash": (False, {}, N_PASSIVE),
           "hsim_like": (True, dict(MX.HSIM, prio_mode=1), 0)}
 BOOKS = ["C2a", "C3b", "C4", "J_c3b_c4", "J_c2a_c4", "J_c2a_c3b", "J_c2a_c3b_c4"]
+# scope after red team 2 (print-measured exit costs remove C3's gain): C3b and every set containing it are not scored
+SCORED = ["C2a", "C4", "J_c2a_c4"]
+SCORED_WORLDS = ["faithful", "hsim_like"]
 CLAIM = {"C2a": "C2a_margin_terciles", "C3b": "C3b_passive_15", "C4": "C4_usdc"}
 _MF = {}
 
@@ -232,12 +235,31 @@ def marginal(D, world, full="J_c2a_c3b_c4"):
     return pd.DataFrame(rows)
 
 
+def marginal2(D, world, full="J_c2a_c4"):
+    """Each component's marginal within J_c2a_c4: the set minus the set without it (descriptive)."""
+    rows = []
+    for comp, without in (("c2a", "C4"), ("c4", "C2a")):
+        for cfg in CONFIGS:
+            parts, row = [], dict(world=world, component=comp, full=full, without=without, cfg=cfg)
+            for era in ERAS:
+                a, b = D[f"{world}|{cfg}|{era}|{full}"].dropna(), D[f"{world}|{cfg}|{era}|{without}"].dropna()
+                d = a - b.reindex(a.index, fill_value=0.0)
+                parts.append(d)
+                row[f"{era}_mean_bp"] = float(d.mean() * 1e4)
+                row[f"{era}_t"] = float(fsim.nw_t(d))
+            dd = pd.concat(parts)
+            row["pooled_t"] = float(fsim.nw_t(dd))
+            row["pooled_mean_bp"] = float(dd.mean() * 1e4)
+            rows.append(row)
+    return pd.DataFrame(rows)
+
+
 def score():
     D = pd.concat([pd.read_parquet(os.path.join(OUTD, f"daily_{cfg}.parquet")) for cfg in CONFIGS], axis=1)
     out = {}
-    for world in WORLDS:
+    for world in SCORED_WORLDS:
         out[world] = {}
-        for b in BOOKS:
+        for b in SCORED:
             res = {}
             for cfg, kw in CONFIGS.items():
                 inc = {e: D[f"{world}|{cfg}|{e}|inc"].dropna() for e in ERAS}
@@ -245,7 +267,7 @@ def score():
                 res[cfg] = score_one(inc, cand, kw["C"])
             out[world][b] = dict(configs=res, gates=gates_return(res))
     json.dump(out, open(os.path.join(OUTD, "scores.json"), "w"), indent=1, default=float)
-    M = pd.concat([marginal(D, w) for w in WORLDS], ignore_index=True)
+    M = pd.concat([marginal2(D, w) for w in SCORED_WORLDS], ignore_index=True)
     M.to_csv(os.path.join(OUTD, "marginal.csv"), index=False)
     # compact table
     rows = []
