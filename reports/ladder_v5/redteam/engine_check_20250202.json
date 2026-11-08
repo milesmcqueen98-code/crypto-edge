@@ -1,0 +1,72 @@
+{
+ "window": "2025-02-02 12:00:00 .. 2025-02-03 12:00:00",
+ "capital": 250000.0,
+ "research_parents": 81,
+ "engine_parents": 60,
+ "engine_parents_in_research": 53,
+ "engine_only_parents": 7,
+ "replay_parents_funded": 55,
+ "both_funded": 53,
+ "replay_funded_engine_not": 2,
+ "engine_funded_replay_not": 0,
+ "engine_deeper_fills": 30,
+ "engine_deeper_fills_on_research_parents": 27,
+ "replay_deeper_fills_minute": 29,
+ "replay_deeper_fills_instant": 29,
+ "research_deeper_fills": 82,
+ "research_deeper_after_minute0": 70,
+ "engine_cash_short_events": 1866,
+ "engine_counts": {
+  "arm": 262,
+  "reprice": 15553,
+  "disarm": 202,
+  "cash_short": 1866,
+  "refresh": 293,
+  "deep_cancel": 31,
+  "deep_deferred_cash": 1628,
+  "deep_deferred_market": 640,
+  "remainder_cancel": 12
+ },
+ "replay_cash_short": 1788,
+ "alloc_minutes_compared": 3,
+ "alloc_minutes_identical": 3,
+ "common_parents": 53,
+ "agreement": {
+  "replay": {
+   "placement_minute_agree": 96,
+   "placement_compared": 106,
+   "parents_funded": 55,
+   "parent_status_agree": 79,
+   "deeper_fills": 29,
+   "deeper_count_agree_on_common": 53,
+   "abs_deeper_diff_on_common": 0
+  },
+  "fill_order": {
+   "placement_minute_agree": 60,
+   "placement_compared": 106,
+   "parents_funded": 55,
+   "parent_status_agree": 71,
+   "deeper_fills": 30,
+   "deeper_count_agree_on_common": 44,
+   "abs_deeper_diff_on_common": 11
+  },
+  "hsim_like": {
+   "placement_minute_agree": 53,
+   "placement_compared": 106,
+   "parents_funded": 54,
+   "parent_status_agree": 74,
+   "deeper_fills": 35,
+   "deeper_count_agree_on_common": 42,
+   "abs_deeper_diff_on_common": 15
+  },
+  "nocash": {
+   "placement_minute_agree": 9,
+   "placement_compared": 106,
+   "parents_funded": 79,
+   "parent_status_agree": 55,
+   "deeper_fills": 76,
+   "deeper_count_agree_on_common": 37,
+   "abs_deeper_diff_on_common": 24
+  }
+ }
+}
