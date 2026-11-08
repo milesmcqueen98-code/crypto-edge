@@ -6,7 +6,8 @@
   "why": {
    "realism": "fills 3: entry-fill volume checked on prints (wick v4), the late deeper-fill path only against the engine on two cascade days; costs 5: no new cost; code 5: an ordering change in _allocate, parity-testable",
    "mechanism": "4: expected value per dollar-minute of held cash (a deeper rung is worth about 100x a 4-sigma bid; Grossman-Miller pays most at the deepest dislocation); 3: the selection-era decomposition (deeper rungs net 46/83 bp vs 33); 3: structural (Coinbase holds cash for resting bids)",
-   "implement": "4: keeps every safety check; 3: small change; 0: puts more inventory at the bottom of a cascade"
+   "implement": "4: keeps every safety check; 3: small change; 0: puts more inventory at the bottom of a cascade",
+   "red_team": "red team 1: on an engine-faithful replay the pooled t is +1.40 (+1.40 to +1.77 across variants); G1, G2 and G3 fail; further from the bar than logged"
   }
  },
  "C1b_reserve50": {
@@ -62,11 +63,12 @@
  "C4_usdc": {
   "realism": 9,
   "mechanism": 8,
-  "implement": 7,
+  "implement": 6,
   "why": {
-   "realism": "PROVISIONAL until red team 3: fills 5 (the -USDC products are aliases of the -USD books: the incumbent's print-checked fill model carries over); costs 2 (the reward rate is unverified, halved in S*); code 2 (needs the USDC account set-up and the pre-registered live verification)",
-   "mechanism": "4: carry on idle collateral (exchange-paid stablecoin rewards); 3: the diagnosis (oracle O9, idle cash at T-bills, +0.37 Sharpe at $250K); 1: rewards are a policy that regulation may end (GENIUS Act)",
-   "implement": "4 + 3 + 0: puts the whole capital's cash on USDC's peg and issuer"
+   "realism": "fills 5: the -USDC products are aliases of the -USD books (Coinbase's product API, Nov 8: BTC, ETH, SOL aliased and online), so the print-checked fill model carries over; costs 2: the reward is assumed (T-bill - 0.5%, halved in S*), Coinbase One required, the published rate was below the proxy in 2022-23; code 2: needs the USDC account set-up and live verification (eligibility, holds paid, alias orders)",
+   "mechanism": "4: carry on idle collateral (exchange-paid stablecoin rewards); 3: the diagnosis (oracle O9, idle cash at T-bills, +0.37 Sharpe at $250K); 1: a policy that regulation may end (GENIUS Act effective Jan 18 2027; the stalled CLARITY compromise would ban passive yield)",
+   "implement": "4: keeps every safety check; 2: needs a quote switch and a depeg rule (never sell USDC at a discount); 0: puts the whole capital's cash on USDC's peg and issuer (a forced sale at the Mar 2023 worst hourly close turns the pooled t to -0.53)",
+   "evidence_note": "logged t 3.06 (Bitstamp marks) scores 25; with Kraken marks the red team gets 2.9985, which would score 18"
   }
  },
  "C5_perp_venue": {
