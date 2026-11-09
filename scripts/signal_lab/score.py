@@ -130,18 +130,23 @@ def screenstats():
              f"{int(rej.sum())}", f"cross-spec SD of the improvement's annualized Sharpe {math.sqrt(var_d * 365):.3f}", "",
              R[["spec", "sharpe", "d_sharpe", "ret_yr", "maxdd", "trades", "share_kept", "overlap", "t_vm", "stepm",
                 "dsr_n", "dsr_n_plus_9700"]].round(3).to_string(index=False)]
-    S["h"] = S.spec.str.endswith("H")
-    piv = S[~S.h].pivot(index="label", columns="fset", values="d_sharpe").reindex(index=["R", "S4", "LD", "LS"])
+    S["plain"] = S.spec == S.label + S.fset
+    S["h"] = S.spec.str.endswith("H") & ~S.plain
+    piv = S[S.plain].pivot(index="label", columns="fset", values="d_sharpe").reindex(index=["R", "S4", "LD", "LS"])
     g1 = piv[["F0", "F1", "F2", "F3", "F4"]]
     lines += ["", "ΔSharpe vs the incumbent, label x feature set (no added history):", piv.round(3).to_string(),
               "", "Round-1 grid (F0-F4) mean by label: " + ", ".join(f"{k} {v:+.3f}" for k, v in g1.mean(1).items()),
               "Round-1 grid mean by feature set: " + ", ".join(f"{k} {v:+.3f}" for k, v in g1.mean(0).items())]
     H = S[S.h].copy()
     H["twin"] = H.spec.str[:-1]
-    H = H.merge(S[~S.h][["spec", "sharpe"]].rename(columns={"spec": "twin", "sharpe": "sharpe_twin"}), on="twin")
+    H = H.merge(S[S.plain][["spec", "sharpe"]].rename(columns={"spec": "twin", "sharpe": "sharpe_twin"}), on="twin")
     H["gain_from_history"] = H.sharpe - H.sharpe_twin
     lines += ["", "With the 2021-23 candidates added to training (H):",
               H[["spec", "sharpe", "d_sharpe", "sharpe_twin", "gain_from_history"]].round(3).to_string(index=False)]
+    O = S[~S.plain & ~S.h]
+    if len(O):
+        lines += ["", "Round 4 (arming threshold):",
+                  O[["spec", "sharpe", "d_sharpe", "ret_yr", "trades", "share_kept"]].round(3).to_string(index=False)]
     txt = "\n".join(lines) + "\n"
     open(os.path.join(OUT, "screen_stats.txt"), "w").write(txt)
     print(txt)

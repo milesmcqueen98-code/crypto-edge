@@ -213,3 +213,11 @@ unread.
      gates. Holm then runs over the four candidates read today (RF2, RF4, RF2H and this one).
    - **Known bias of the screen:** the frozen simulator does not charge resting bids for cash. A looser threshold rests
      more bids, so the engine-faithful result should be lower than the screen's.
+7. **Round 4 result and a seed-ensemble information run (Nov 9 2026, 15:52 ET).**
+   - **Round 4 failed on development**, so the holdout was not read for it: RF0Q50 -1.06, RF0Q40 -1.66, RF0Q30 -2.30,
+     RF0Q20 -2.72, S4F0A0 -2.82, S4F0Q40 -1.54 against the incumbent. The signals below R2-08's threshold lose money
+     on the selection era. The threshold stays.
+   - **Seed ensemble (information, logged before it ran):** one R2-08 model with 15 seeds, against the five 3-seed
+     models, on the frozen simulator in every era. It asks how much of a book's Sharpe is the luck of the seed draw, and
+     whether a larger ensemble removes it. It selects nothing: the claim under test is lower variance, not a higher
+     mean.

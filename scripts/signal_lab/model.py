@@ -448,16 +448,21 @@ def doseseeds(names):
     periods = pd.period_range(*core.WF_Q, freq="Q")
     eras = ERA_OF[BASE]
     rows = []
-    for seeds in ((7, 11, 23), (1, 2, 3), (4, 5, 6), (8, 9, 10), (12, 13, 14)):
+    triples = ((7, 11, 23), (1, 2, 3), (4, 5, 6), (8, 9, 10), (12, 13, 14))
+    union = tuple(x for t in triples for x in t)               # one 15-seed model (deviation 7)
+    sets = (union,) if os.environ.get("ONLY15") else (triples + ((union,) if os.environ.get("WITH15") else ()))
+    out = os.path.join(OUT, f"dose_seeds{'15' if os.environ.get('ONLY15') else ''}_{BASE}.csv")
+    for seeds in sets:
         for name in names:
             _, pred, thr, _ = L.fit(name, periods, seeds=seeds)
             tr = L.trades(pred, thr)
             _, d = book_of(tr, f"{BASE}_dose_seed", eras)
             for e in eras:
                 st = fsim.stats(d[e], CFG["C"], e)
-                rows.append(dict(spec=name, seeds=str(seeds), era=e, sharpe=st["sharpe"], ret_yr=st["ret_yr"]))
+                rows.append(dict(spec=name, seeds=str(seeds), n_seeds=len(seeds), era=e, sharpe=st["sharpe"],
+                                 ret_yr=st["ret_yr"]))
                 print(rows[-1], flush=True)
-            pd.DataFrame(rows).to_csv(os.path.join(OUT, f"dose_seeds_{BASE}.csv"), index=False)
+            pd.DataFrame(rows).to_csv(out, index=False)
 
 
 def noise(names):
