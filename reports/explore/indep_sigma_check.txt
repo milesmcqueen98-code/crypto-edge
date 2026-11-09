@@ -1,0 +1,5 @@
+era check: legacy rungs.run on pre_v4 with signals dropped below the floor vs xsim sig_min (minute book)
+$250K floor   0.0 bp: signals kept 1568 (xsim 412); legacy Sharpe 2.8664, xsim 2.8664; max daily diff 5.6e-18
+$250K floor  55.0 bp: signals kept 784 (xsim 154); legacy Sharpe 1.4989, xsim 1.4989; max daily diff 3.5e-18
+$1,000K floor   0.0 bp: signals kept 1568 (xsim 412); legacy Sharpe 1.5350, xsim 1.5350; max daily diff 4.3e-19
+$1,000K floor  55.0 bp: signals kept 784 (xsim 154); legacy Sharpe 0.3067, xsim 0.3067; max daily diff 8.7e-19
