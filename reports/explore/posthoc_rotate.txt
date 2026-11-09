@@ -1,0 +1,14 @@
+POST HOC (information only): tune on two eras, score on the third (ΔSharpe vs the incumbent, blended $250K)
+
+test era   rule           top 1  top 10  top 50  pick
+selection  mean          +0.222  -0.062  +0.054  rnd_0657
+selection  worst era     +0.038  +0.027  +0.070  r3g_R45678_2.0_1.0
+selection  one era       +0.113  +0.177  +0.171  r3g_R46812_0.5_1.0
+check      mean          -0.647  -1.445  -1.250  r2_rnd_0035_alpha_0.5
+check      worst era     -0.826  -1.007  -0.949  r2_rnd_0989_tp_f50
+check      one era       -2.923  -2.722  -2.582  r3c_r2_rnd_0306_tp_d40_100_sig_min_40.0
+2022-23    mean          -0.385  -0.409  -0.300  r2_rnd_0034_cash_cap_1.0
+2022-23    worst era     -0.365  -0.412  -0.275  r2_rnd_0034_slots_6
+2022-23    one era       -0.573  -0.820  -0.872  r3c_r2_rnd_0306_tp_d40_100_sig_min_40.0
+
+('one era' tunes on the selection era alone where it is a tuning era, else on the first tuning era.)

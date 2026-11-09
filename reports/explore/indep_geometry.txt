@@ -1,0 +1,10 @@
+Geometry with a 10-sigma rung (minute book, $250K): xsim against the legacy rungs.py, all eras (after the read)
+selection W3 {4.0: 1, 6.0: 1, 8.0: 1, 10.0: 1}: legacy 2.6010, xsim 2.6010, max daily diff 1.0e-17
+selection W4 {4.0: 4, 6.0: 6, 8.0: 8, 10.0: 10}: legacy 2.6159, xsim 2.6159, max daily diff 1.4e-17
+selection W1 {4.0: 2, 6.0: 3, 8.0: 4}: legacy 2.4597, xsim 2.4597, max daily diff 1.0e-17
+check     W3 {4.0: 1, 6.0: 1, 8.0: 1, 10.0: 1}: legacy 2.8296, xsim 2.8296, max daily diff 2.6e-18
+check     W4 {4.0: 4, 6.0: 6, 8.0: 8, 10.0: 10}: legacy 2.7722, xsim 2.7722, max daily diff 1.1e-18
+check     W1 {4.0: 2, 6.0: 3, 8.0: 4}: legacy 2.9950, xsim 2.9950, max daily diff 3.0e-18
+y2022_23  W3 {4.0: 1, 6.0: 1, 8.0: 1, 10.0: 1}: legacy 2.2776, xsim 2.2776, max daily diff 5.2e-18
+y2022_23  W4 {4.0: 4, 6.0: 6, 8.0: 8, 10.0: 10}: legacy 2.2831, xsim 2.2831, max daily diff 8.7e-19
+y2022_23  W1 {4.0: 2, 6.0: 3, 8.0: 4}: legacy 2.2062, xsim 2.2062, max daily diff 6.9e-18
