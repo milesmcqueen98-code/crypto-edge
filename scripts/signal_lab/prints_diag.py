@@ -8,7 +8,8 @@ rows with volume > 0, as the simulator loads them). Categories: match (relative 
 stored as float32), candle gap (prints but no candle row), print gap (a candle row but no print), mismatch (both, not
 equal), with the mismatches that an adjacent minute's opposite difference offsets counted apart (trades bucketed into
 the neighbouring minute). Also the size of every place where time decreases along trade id, and whether any such
-inversion straddles a window edge (the fetcher's stop rule assumes ids rise with time).
+inversion straddles a window edge (the fetcher's stop rule assumes ids rise with time); and gaps in trade id inside a
+window (Coinbase numbers each product's trades 1, 2, 3, ..., so a gap is a print the API did not return).
 usage: python scripts/signal_lab/prints_diag.py <art_dir> [<out_dir>]
 """
 import glob
@@ -46,7 +47,7 @@ def main(art_dir, out_dir=os.path.join(ROOT, "reports", "signal_lab", "prints"))
     W = pd.read_csv(os.path.join(ROOT, "reports", "signal_lab", "prints", "windows.csv"), parse_dates=["start", "end"])
     w_lo = W.start.to_numpy().astype("datetime64[ns]").view(np.int64)
     w_hi = W.end.to_numpy().astype("datetime64[ns]").view(np.int64)
-    rows, inv = [], []
+    rows, inv, id_gaps = [], [], []
     for product, g in W.groupby("product"):
         coin = product[:-4]
         raw, _ = PFE.load_coin(files, product)
@@ -55,7 +56,17 @@ def main(art_dir, out_dir=os.path.join(ROOT, "reports", "signal_lab", "prints"))
             continue
         o = np.argsort(raw["trade_id"], kind="stable")
         t, size, wid = raw["t"][o], raw["size"][o], raw["window_id"][o].astype(np.int64)
+        tid = raw["trade_id"][o]
         del raw
+        # trade-id gaps inside a window (ids run 1, 2, 3, ... per product, so a gap is a print the API did not return)
+        same_w = wid[1:] == wid[:-1]
+        step = np.diff(tid)[same_w]
+        gyear = pd.to_datetime(t[1:][same_w][step > 1]).year.to_numpy()
+        idg = dict(coin=coin, pairs=int(same_w.sum()), gaps=int((step > 1).sum()),
+                   missing_ids=int((step[step > 1] - 1).sum()), repeated_ids=int((step == 0).sum()),
+                   windows_with_gap=int(len(np.unique(wid[1:][same_w][step > 1]))),
+                   gaps_by_year={int(y): int(n) for y, n in zip(*np.unique(gyear, return_counts=True))})
+        id_gaps.append(idg)
         # time inversions along trade id
         d = np.diff(t)
         k = np.flatnonzero(d < 0)
@@ -120,6 +131,16 @@ def main(art_dir, out_dir=os.path.join(ROOT, "reports", "signal_lab", "prints"))
                              same_second=int(I.same_second.sum()) if len(I) else 0,
                              same_minute=int(I.same_minute.sum()) if len(I) else 0,
                              ms_quantiles=[float(x) for x in np.quantile(I.ms, [0.5, 0.9, 0.99, 1.0])] if len(I) else [])
+    G = pd.DataFrame(id_gaps)
+    by_year = {}
+    for d_ in id_gaps:
+        for y, n_ in d_["gaps_by_year"].items():
+            by_year[y] = by_year.get(y, 0) + n_
+    out["trade_id_gaps"] = dict(consecutive_pairs=int(G.pairs.sum()), gaps=int(G.gaps.sum()),
+                                missing_ids=int(G.missing_ids.sum()), repeated_ids=int(G.repeated_ids.sum()),
+                                windows_with_gap=int(G.windows_with_gap.sum()), by_year=by_year,
+                                by_coin={r.coin: [int(r.gaps), int(r.missing_ids), int(r.windows_with_gap)]
+                                         for r in G.itertuples()})
     os.makedirs(out_dir, exist_ok=True)
     with open(os.path.join(out_dir, "qa_diag.json"), "w") as fh:
         json.dump(out, fh, indent=1)
