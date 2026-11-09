@@ -1,0 +1,238 @@
+{
+ "fetch": [
+  {
+   "id": 42709727926,
+   "shard": 0,
+   "created": "2026-11-09T22:12:22Z",
+   "updated": "2026-11-09T23:01:00Z",
+   "artifact": "hunt2-f6fetch0-42709727926",
+   "artifact_bytes": 51224656,
+   "windows": 626,
+   "status": "{'complete': 626}",
+   "prints": 4760346,
+   "requests": 13319,
+   "seconds": 2881
+  },
+  {
+   "id": 42709739614,
+   "shard": 1,
+   "created": "2026-11-09T22:12:26Z",
+   "updated": "2026-11-09T23:13:47Z",
+   "artifact": "hunt2-f6fetch1-42709739614",
+   "artifact_bytes": 54450744,
+   "windows": 627,
+   "status": "{'complete': 627}",
+   "prints": 5006866,
+   "requests": 13520,
+   "seconds": 3641
+  },
+  {
+   "id": 42709751047,
+   "shard": 2,
+   "created": "2026-11-09T22:12:30Z",
+   "updated": "2026-11-09T23:16:30Z",
+   "artifact": "hunt2-f6fetch2-42709751047",
+   "artifact_bytes": 51673747,
+   "windows": 627,
+   "status": "{'complete': 627}",
+   "prints": 4810301,
+   "requests": 13398,
+   "seconds": 3807
+  },
+  {
+   "id": 42709763051,
+   "shard": 3,
+   "created": "2026-11-09T22:12:34Z",
+   "updated": "2026-11-09T23:13:26Z",
+   "artifact": "hunt2-f6fetch3-42709763051",
+   "artifact_bytes": 53540728,
+   "windows": 628,
+   "status": "{'complete': 628}",
+   "prints": 4878175,
+   "requests": 13486,
+   "seconds": 3613
+  },
+  {
+   "id": 42709772505,
+   "shard": 4,
+   "created": "2026-11-09T22:12:38Z",
+   "updated": "2026-11-09T23:15:33Z",
+   "artifact": "hunt2-f6fetch4-42709772505",
+   "artifact_bytes": 54399149,
+   "windows": 628,
+   "status": "{'complete': 628}",
+   "prints": 4983863,
+   "requests": 13466,
+   "seconds": 3734
+  },
+  {
+   "id": 42709783166,
+   "shard": 5,
+   "created": "2026-11-09T22:12:42Z",
+   "updated": "2026-11-09T23:01:20Z",
+   "artifact": "hunt2-f6fetch5-42709783166",
+   "artifact_bytes": 50799416,
+   "windows": 628,
+   "status": "{'complete': 628}",
+   "prints": 4626014,
+   "requests": 13259,
+   "seconds": 2880
+  },
+  {
+   "id": 42709793618,
+   "shard": 6,
+   "created": "2026-11-09T22:12:46Z",
+   "updated": "2026-11-09T23:18:59Z",
+   "artifact": "hunt2-f6fetch6-42709793618",
+   "artifact_bytes": 56385521,
+   "windows": 628,
+   "status": "{'complete': 628}",
+   "prints": 5095497,
+   "requests": 13437,
+   "seconds": 3931
+  },
+  {
+   "id": 42709803316,
+   "shard": 7,
+   "created": "2026-11-09T22:12:50Z",
+   "updated": "2026-11-09T23:06:39Z",
+   "artifact": "hunt2-f6fetch7-42709803316",
+   "artifact_bytes": 54892828,
+   "windows": 628,
+   "status": "{'complete': 628}",
+   "prints": 5005209,
+   "requests": 13686,
+   "seconds": 3193
+  },
+  {
+   "id": 42709814456,
+   "shard": 8,
+   "created": "2026-11-09T22:12:54Z",
+   "updated": "2026-11-09T23:16:23Z",
+   "artifact": "hunt2-f6fetch8-42709814456",
+   "artifact_bytes": 53822668,
+   "windows": 628,
+   "status": "{'complete': 628}",
+   "prints": 5009819,
+   "requests": 13492,
+   "seconds": 3770
+  },
+  {
+   "id": 42709824752,
+   "shard": 9,
+   "created": "2026-11-09T22:12:59Z",
+   "updated": "2026-11-09T23:14:06Z",
+   "artifact": "hunt2-f6fetch9-42709824752",
+   "artifact_bytes": 53721292,
+   "windows": 628,
+   "status": "{'complete': 628}",
+   "prints": 4932201,
+   "requests": 13484,
+   "seconds": 3625
+  },
+  {
+   "id": 42709835361,
+   "shard": 10,
+   "created": "2026-11-09T22:13:03Z",
+   "updated": "2026-11-09T23:05:06Z",
+   "artifact": "hunt2-f6fetch10-42709835361",
+   "artifact_bytes": 53732322,
+   "windows": 628,
+   "status": "{'complete': 628}",
+   "prints": 4915509,
+   "requests": 13471,
+   "seconds": 3093
+  },
+  {
+   "id": 42709847396,
+   "shard": 11,
+   "created": "2026-11-09T22:13:07Z",
+   "updated": "2026-11-09T23:16:43Z",
+   "artifact": "hunt2-f6fetch11-42709847396",
+   "artifact_bytes": 56443582,
+   "windows": 627,
+   "status": "{'complete': 627}",
+   "prints": 5145717,
+   "requests": 13561,
+   "seconds": 3779
+  },
+  {
+   "id": 42709860136,
+   "shard": 12,
+   "created": "2026-11-09T22:13:12Z",
+   "updated": "2026-11-09T23:02:49Z",
+   "artifact": "hunt2-f6fetch12-42709860136",
+   "artifact_bytes": 53046125,
+   "windows": 628,
+   "status": "{'complete': 628}",
+   "prints": 4875890,
+   "requests": 13301,
+   "seconds": 2939
+  },
+  {
+   "id": 42709871348,
+   "shard": 13,
+   "created": "2026-11-09T22:13:16Z",
+   "updated": "2026-11-09T23:03:27Z",
+   "artifact": "hunt2-f6fetch13-42709871348",
+   "artifact_bytes": 56002001,
+   "windows": 628,
+   "status": "{'complete': 628}",
+   "prints": 5120709,
+   "requests": 13811,
+   "seconds": 2971
+  },
+  {
+   "id": 42709882545,
+   "shard": 14,
+   "created": "2026-11-09T22:13:20Z",
+   "updated": "2026-11-09T23:15:01Z",
+   "artifact": "hunt2-f6fetch14-42709882545",
+   "artifact_bytes": 55720619,
+   "windows": 627,
+   "status": "{'complete': 627}",
+   "prints": 5092722,
+   "requests": 13656,
+   "seconds": 3666
+  },
+  {
+   "id": 42709892707,
+   "shard": 15,
+   "created": "2026-11-09T22:13:24Z",
+   "updated": "2026-11-09T23:02:37Z",
+   "artifact": "hunt2-f6fetch15-42709892707",
+   "artifact_bytes": 51924860,
+   "windows": 628,
+   "status": "{'complete': 628}",
+   "prints": 4803954,
+   "requests": 13345,
+   "seconds": 2914
+  }
+ ],
+ "features": {
+  "id": 42719994947,
+  "created": "2026-11-09T23:22:59Z",
+  "updated": "2026-11-09T23:25:07Z",
+  "commit": "3da6805"
+ },
+ "smoke": {
+  "fetch": 42708575844,
+  "features": [
+   42709244030,
+   42709567854
+  ],
+  "note": "17 windows (reports/signal_lab/prints/windows_smoke.csv); outputs not committed"
+ },
+ "totals": {
+  "windows": 10042,
+  "prints_fetched": 79062792,
+  "requests": 215692
+ },
+ "wall": "fetch 22:12-23:19 UTC Nov 9 (66 min; 16 shards in parallel, 48-66 min each, 216k requests at the fetcher's 7 per second); features 23:23-23:25 UTC (2 min)",
+ "diagnostic": {
+  "id": 42721109133,
+  "created": "2026-11-09T23:31:16Z",
+  "commit": "0e7eb5e",
+  "note": "prints_diag.py; first version 42720709951 (commit bf0b420) lacked the trade-id gap count"
+ }
+}

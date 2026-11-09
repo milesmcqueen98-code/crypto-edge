@@ -92,7 +92,8 @@ def main(out=PR):
         f"windows of one product merged); {tot_prints:,} distinct prints fetched.")
     if runs:
         add(f"- **Runs:** fetch {', '.join(str(r['id']) for r in runs.get('fetch', []))}; features "
-            f"{runs.get('features', {}).get('id', 'n/a')}. Wall-clock: {runs.get('wall', 'n/a')}.")
+            f"{runs.get('features', {}).get('id', 'n/a')}; diagnostic {runs.get('diagnostic', {}).get('id', 'n/a')}. "
+            f"Wall-clock: {runs.get('wall', 'n/a')}.")
     add("")
 
     # ----------------------------------------------------------------------------------- gate
@@ -149,6 +150,48 @@ def main(out=PR):
             cells += [f"{int(m.sum()):,}", fmt(med), f"{100 * j.complete.mean():.1f}%"]
         add(f"| {c} | " + " | ".join(cells) + " |")
     add("")
+
+    # ----------------------------------------------------------------------------------- minute diagnostic
+    dpath = os.path.join(out, "qa_diag.json")
+    if os.path.exists(dpath):
+        D = json.load(open(dpath))
+        add("## Where prints and candles differ (scripts/signal_lab/prints_diag.py, qa_diag.json)")
+        add("")
+        add("The window ratio's tails come from the candles, not from missing prints. Minute by minute over every "
+            "minute of the merged windows, print base volume against the repo's candle volume (equal = within "
+            "1e-5 relative; candle volume is stored as float32):")
+        add("")
+        add("| Era | Minutes | Equal | Candle has volume, no print | Print, no candle row (share of print "
+            "volume) | Both, unequal (offset by the next or previous minute) | Prints above / below candle | "
+            "Net print / candle volume |")
+        add("|---|---|---|---|---|---|---|---|")
+        for e in ERAS + tuple(k for k in sorted(D) if k.isdigit()):
+            v = D[e]
+            m = v["minutes"]
+            add(f"| {e} | {m:,} | {100 * v['match'] / m:.1f}% | {v['print_gap']:,} | {v['candle_gap']:,} "
+                f"({100 * v['print_vol_in_candle_gaps_share']:.2f}%) | {v['mismatch']:,} "
+                f"({v['mismatch_offset_by_neighbour']:,}) | {v['mismatch_prints_above']:,} / "
+                f"{v['mismatch_prints_below']:,} | {v['net_vol_ratio']:.4f} |")
+        add("")
+        g = D.get("trade_id_gaps")
+        inv = D.get("inversions", {})
+        if g:
+            add(f"- **Trade-id gaps inside windows** (Coinbase numbers each product's trades 1, 2, 3, ...): "
+                f"{g['gaps']:,} gaps ({g['missing_ids']:,} ids never returned) in {g['windows_with_gap']:,} windows, "
+                f"over {g['consecutive_pairs']:,} consecutive pairs" + (f"; by year {g['by_year']}." if g["by_year"] else "."))
+        add(f"- **Time against trade id:** {inv.get('n')} places where time decreases along trade id, all within the "
+            f"same second (largest {inv.get('ms_quantiles', [None])[-1]} ms), {inv.get('straddle_window_edge')} "
+            "across a window edge. The fetcher's stop rule (ids rise with time) holds, so no print at a window edge "
+            "can be lost.")
+        yrs = {k: D[k]["match"] / D[k]["minutes"] for k in D if k.isdigit()}
+        worst = sorted(yrs, key=yrs.get)[:2]
+        add("- **Reading:** every window is a contiguous run of trade ids read past both edges, and no minute has "
+            "candle volume without prints, so the print side is complete. The differences are candles missing a "
+            "minute (prints, no candle row) and volume the candles put in a neighbouring minute (most unequal minutes "
+            "are offset by the next or previous minute). They are largest in " + " and ".join(
+                f"{y} ({100 * yrs[y]:.0f}% of minutes equal)" for y in sorted(worst)) + ". They do not touch the F6 "
+            "rows, which use only prints; they widen the tails of the gate's ratio, not its median.")
+        add("")
 
     # ----------------------------------------------------------------------------------- tests
     add("## Look-ahead unit test (synthetic prints)")
@@ -226,8 +269,9 @@ def main(out=PR):
     add(f"- **ADV:** one continuous daily series per coin (data/minute_early before 2024, data/minute after), so "
         f"January 2024 uses December 2023. The simulator's era-bounded index (sim.py PERIODS) would instead leave "
         f"{bounded_nan} main candidates without ADV and give {differ} others a shorter window (all in January "
-        "2024); the early era is identical either way. ADV is missing where a coin has under 10 days of history "
-        "(first days of 2021 or of a listing).")
+        "2024); the early era is identical either way. ADV is missing where a coin has under 10 days of candles in "
+        "the 30 before (the first days of the data in January 2021, of a listing, or of XRP's July 2023 "
+        "relisting).")
     add("")
 
     # ----------------------------------------------------------------------------------- definitions
