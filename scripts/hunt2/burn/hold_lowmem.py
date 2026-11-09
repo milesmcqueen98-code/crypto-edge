@@ -6,6 +6,7 @@ other builders' HOLD reads shared the machine; it had built the three eras' arra
 series or P&L. Nothing in the rule, the variant or the gate code changes.
 usage: python scripts/hunt2/burn/hold_lowmem.py
 """
+import gc
 import json
 import os
 import sys
@@ -29,6 +30,9 @@ class LazyM(dict):
         if era != self.cur:
             self.m = None
             F._A.clear()
+            if self.cur is not None and F.fsim.ERAS[self.cur][0] != F.fsim.ERAS[era][0]:
+                F.RL._IN.clear()                       # the other tag's inputs (a cache) are no longer needed
+            gc.collect()
             m, Fl, Tg = burn.mult(era, self.p["m"], self.p["C_hours"], self.p["scope"])
             sk, n_par = burn.skipped(era, m)
             self.extra[f"n_fail_{era}"], self.extra[f"n_triggers_{era}"] = len(Fl), len(Tg)
