@@ -6,6 +6,7 @@ skips against the ones it keeps, from the frozen dataset's rung records:
 DEV (sel): every grid variant of both ideas; HOLD eras (chk, early): the frozen variant of each idea only.
 usage: python scripts/hunt2/burn/explain.py    -> reports/hunt2/burn/explain.csv, reports/hunt2/mac/explain.csv
 """
+import gc
 import json
 import os
 import sys
@@ -68,6 +69,9 @@ def main():
             sk, _ = mac.skipped(era, m)
             rows_m.append(row("mac", mac.name(a, b, ev), era, G4, sk))
         F._A.clear()
+        if era == "chk":
+            F.RL._IN.clear()          # the main tag's input cache is not needed for the early era
+        gc.collect()
     for rows, idea in ((rows_b, "burn"), (rows_m, "mac")):
         D = pd.DataFrame(rows)
         D.round(3).to_csv(os.path.join(burn.WT, "reports", "hunt2", idea, "explain.csv"), index=False)
