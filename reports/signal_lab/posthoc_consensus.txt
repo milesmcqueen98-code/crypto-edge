@@ -1,0 +1,7 @@
+POST HOC (information only): R2-08 cut to the signals a second model also approves; frozen simulator, S*
+
+R2-08 and RF0H  sel   : Sharpe 3.342 vs 2.363 (+0.978); return 25.2% vs 21.2%; trades 882 of 1155
+R2-08 and RF0H  chk   : Sharpe 2.235 vs 2.569 (-0.335); return 15.8% vs 17.6%; trades 280 of 413
+R2-08 and RF2H  sel   : Sharpe 3.286 vs 2.363 (+0.922); return 23.9% vs 21.2%; trades 803 of 1155
+R2-08 and RF2H  chk   : Sharpe 2.273 vs 2.569 (-0.296); return 15.7% vs 17.6%; trades 280 of 413
+R2-08 and RF2   early : Sharpe 1.713 vs 1.736 (-0.023); return 10.4% vs 10.4%; trades 564 of 744

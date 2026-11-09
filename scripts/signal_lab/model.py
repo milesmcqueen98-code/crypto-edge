@@ -64,9 +64,16 @@ def split(name):
       H     the 2021-23 candidates are added to every training set (main era only)
       H23   only the 2023 candidates are added; H22: 2022-23 (dose-response of H)
       W365  a rolling 365-day training window instead of the expanding one (less history)
-    Returns (label, feature set, history start or None/False, window days or None)."""
-    hist, window = False, None
+      Q50 / Q40 / Q30 / Q20   the arming threshold is that percentile of the training predictions (R2-08: 60th)
+      A0    arm when the predicted net is above 0 bp
+    Returns (label, feature set, history start or False, window days or None, threshold override or None)."""
+    hist, window, thr = False, None, None
     core_name = name
+    for suf, t in (("Q50", ("q", 0.5)), ("Q40", ("q", 0.4)), ("Q30", ("q", 0.3)), ("Q20", ("q", 0.2)), ("A0", ("abs", 0.0))):
+        if name.endswith(suf):
+            name, thr = name[:-len(suf)], t
+            core_name = name
+            break
     if name.endswith("W365"):
         core_name, window = name[:-4], 365
     elif name.endswith("H23"):
@@ -77,7 +84,7 @@ def split(name):
         core_name, hist = name[:-1], "2021-01-01"
     for l in sorted(LABELS, key=len, reverse=True):
         if core_name.startswith(l) and core_name[len(l):] in FSETS:
-            return l, core_name[len(l):], hist, window
+            return l, core_name[len(l):], hist, window, thr
     raise ValueError(name)
 
 
@@ -222,7 +229,8 @@ def memory_arrays(L):
 
 
 # ------------------------------------------------------------------------------------------------ walk-forward
-def wf(X, y, feats, periods, thr_q=0.6, seeds=(7, 11, 23), keep_models=False, hist=None, window_days=None):
+def wf(X, y, feats, periods, thr_q=0.6, seeds=(7, 11, 23), keep_models=False, hist=None, window_days=None,
+       thr_abs=None):
     """core.walk_forward at R2-08's settings (episode weights, Huber, 250 rounds), also returning the models."""
     params = dict(wick.PARAMS)
     pred = pd.Series(np.nan, index=X.index)
@@ -248,6 +256,8 @@ def wf(X, y, feats, periods, thr_q=0.6, seeds=(7, 11, 23), keep_models=False, hi
                         num_boost_round=wick.ROUNDS) for s in seeds]
         pred[te.index] = np.mean([m.predict(te[feats]) for m in ms], axis=0)
         t_ = float(np.quantile(np.mean([m.predict(tr[feats]) for m in ms], axis=0), thr_q))
+        if thr_abs is not None:
+            t_ = float(thr_abs)
         thr[te.index] = t_
         if keep_models:
             models[str(per)] = (ms, t_)
@@ -290,7 +300,9 @@ class Lab:
         print(f"lab ready: {len(self.X):,} candidates, {len(self.ls.coins)} coins ({time.time() - t0:.0f}s)", flush=True)
 
     def fit(self, name, periods, keep_models=False, seeds=(7, 11, 23)):
-        l, f, use_hist, window = split(name)
+        l, f, use_hist, window, thr_o = split(name)
+        thr_q = self.ai_d.get("thr_q", 0.5) if not (thr_o and thr_o[0] == "q") else thr_o[1]
+        thr_abs = thr_o[1] if (thr_o and thr_o[0] == "abs") else None
         feats = list(wick.FEATS) + FSETS[f]
         y = label_of(l, self.lab, self.sp)
         hist = None
@@ -298,8 +310,8 @@ class Lab:
             hy = self.hist[f"y_{l}"]
             okh = hy.notna().to_numpy() & (self.hist.ts >= pd.Timestamp(use_hist)).to_numpy()
             hist = (self.hist[okh], hy.to_numpy()[okh])
-        pred, thr, models = wf(self.X, y, feats, periods, thr_q=self.ai_d.get("thr_q", 0.5), keep_models=keep_models,
-                               hist=hist, seeds=seeds, window_days=window)
+        pred, thr, models = wf(self.X, y, feats, periods, thr_q=thr_q, keep_models=keep_models,
+                               hist=hist, seeds=seeds, window_days=window, thr_abs=thr_abs)
         return feats, pred, thr, models
 
     def export(self):

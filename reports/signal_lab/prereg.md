@@ -187,3 +187,29 @@ unread.
      - Size: 12 of about 750 trades differ; engine-faithful Sharpe 1.645 against the frozen 1.684.
      - The registered comparison stays against the frozen R2-08. Like for like, RF2's 2022-23 gain is +0.21, not
        +0.17. No verdict depends on it.
+6. **Round 4, the arming threshold (Nov 9 2026, 15:48 ET).** Logged before any round-4 spec ran.
+   - **Results since deviation 5** (information runs):
+     - A rolling 365-day training window lost about 1.0 Sharpe in both holdout eras (-1.09 and -0.95, frozen
+       simulator).
+     - Adding 2023, 2022-23 or 2021-23 to R2-08's training moved the check era by +0.15, +0.24 and -0.02. There is no
+       dose-response, so "more history" is not established.
+     - A consensus rule (take only signals two models approve; posthoc_consensus.txt) scored +0.98 on development and
+       -0.30 to -0.34 in the check era.
+   - **Why the threshold:** every cut of R2-08's marginal signals has failed out of sample today (strictness, sigma
+     floor, consensus, and the feature models, which arm less). The marginal signals earn their costs out of sample.
+     - R2-08 arms a bid only when the prediction is above the 60th percentile of its training predictions. That rule
+       was chosen for a $10K perp book with 6 slots, where capital was scarce.
+     - The $250K spot ladder is the opposite: the 0.2% ADV cap binds and cash sits idle. First principles say such a
+       book should take every signal with a positive expected net, so the threshold should be lower.
+     - Explore v1 only tested stricter thresholds.
+   - **Disclosed prior from the holdout eras:** the 50th-percentile variant beat the 60th in the check era in the
+     wick v2 lab's diagnostics (a $10K perp book). The lowest predicted-edge tercile above the threshold was profitable
+     in both holdout eras (sizing lab). So the check era is not blind to this idea; 2022-23 is nearly so.
+   - **Trials (6, N = 37):**
+     - RF0Q50, RF0Q40, RF0Q30, RF0Q20: R2-08's model, armed above the 50th / 40th / 30th / 20th percentile.
+     - S4F0A0: the spot-cost label, armed when the predicted net is above 0 bp.
+     - S4F0Q40: the spot-cost label at the 40th percentile.
+   - **Finalist:** the highest screen Sharpe of the six, if above the incumbent's. It gets the same binding test and
+     gates. Holm then runs over the four candidates read today (RF2, RF4, RF2H and this one).
+   - **Known bias of the screen:** the frozen simulator does not charge resting bids for cash. A looser threshold rests
+     more bids, so the engine-faithful result should be lower than the screen's.
