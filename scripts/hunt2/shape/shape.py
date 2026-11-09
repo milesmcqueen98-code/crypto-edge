@@ -129,6 +129,7 @@ def dev():
         thr = rules.threshold(F[col], side, s)
         m = rules.skip_mask(F[col], side, thr)
         cells = F.loc[m, ["ts", "coin"]].reset_index(drop=True)
+        rules.check_cells("sel", cells)
         v = variant_name(f, s)
         scr, d = pathA.dev_trial(IDEA, v, cells, note=f"skip {side} {col}, share {s}",
                                  feature=f, col=col, side=side, share=s, thr=thr, realised_share=float(m.mean()))
@@ -177,6 +178,7 @@ def hold():
         F = load_features(era)
         m = rules.skip_mask(F[fz["col"]], fz["side"], fz["thr"])
         cells[era] = F.loc[m, ["ts", "coin"]].reset_index(drop=True)
+        rules.check_cells(era, cells[era])
         print(f"{era}: {len(F)} parents, {int(m.sum())} skipped ({m.mean():.3f})", flush=True)
     g = pathA.hold_read(IDEA, cells, OUT)
     g["n_skipped"] = {e: int(len(c)) for e, c in cells.items()}

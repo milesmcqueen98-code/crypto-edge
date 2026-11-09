@@ -43,6 +43,20 @@ def skip_mask(x, side, thr):
     return m & ~np.isnan(x)
 
 
+def check_cells(era, cells):
+    """Integrity check before a run: pathA.mult_for silently ignores cells it cannot place, so assert that every skip
+    cell is a research parent of the simulator's arrays for this era (fill minute, coin)."""
+    import frozen_sim as F
+    A = F.arrays(era)
+    par = set(zip(pd.DatetimeIndex(A["par"].ts), A["par"].coin))
+    pos = A["idx"].get_indexer(pd.DatetimeIndex(cells["ts"]))
+    assert (pos >= 0).all(), f"{era}: {(pos < 0).sum()} skip cells outside the simulator's minute index"
+    assert all(c in list(A["coins"]) for c in cells["coin"]), f"{era}: unknown coin in skip cells"
+    miss = [k for k in zip(pd.DatetimeIndex(cells["ts"]), cells["coin"]) if k not in par]
+    assert not miss, f"{era}: {len(miss)} skip cells are not research parents, e.g. {miss[:3]}"
+    return len(cells)
+
+
 def git_head(path=WT):
     return subprocess.check_output(["git", "-C", path, "rev-parse", "HEAD"], text=True).strip()
 
