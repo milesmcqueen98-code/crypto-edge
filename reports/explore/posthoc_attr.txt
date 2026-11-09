@@ -1,0 +1,59 @@
+POST HOC (information only): the incumbent's minute book at $250K, net bp per dollar and P&L share
+
+-- by sigma vs 55 bp
+      n_selection  bp_selection  share_selection  n_check  bp_check  share_check  n_y2022_23  bp_y2022_23  share_y2022_23
+<55           779         -9.71           -0.128      388    27.863        0.449         446       31.010           0.253
+>=55          822         84.88            1.128      216    65.969        0.551         686       70.774           0.747
+
+-- by sigma vs 57.6 bp
+        n_selection  bp_selection  share_selection  n_check  bp_check  share_check  n_y2022_23  bp_y2022_23  share_y2022_23
+<57.6           841        -4.490           -0.065      396    28.508        0.468         483       33.741           0.296
+>=57.6          760        87.966            1.065      208    66.131        0.532         649       70.856           0.704
+
+-- by AI ratio
+             n_selection  bp_selection  share_selection  n_check  bp_check  share_check  n_y2022_23  bp_y2022_23  share_y2022_23
+ratio                                                                                                                           
+[0.0, 1.1)           213         1.168            0.004       94     3.664        0.012         191       21.098           0.078
+[1.1, 1.2)           162        -0.531           -0.001       71    24.715        0.082         132       33.077           0.065
+[1.2, 1.5)           397        17.265            0.115      179    17.170        0.121         312       29.023           0.160
+[1.5, 2.0)           352        12.793            0.080      151    41.831        0.256         209       44.646           0.143
+[2.0, 99.0)          477       101.699            0.802      109   112.760        0.529         288      128.500           0.553
+
+-- by rung
+     n_selection  bp_selection  share_selection  n_check  bp_check  share_check  n_y2022_23  bp_y2022_23  share_y2022_23
+k                                                                                                                       
+4.0         1109        33.344            0.606      409    32.331        0.548         736       29.295           0.342
+6.0          320        33.971            0.188      124    28.485        0.134         256       67.962           0.309
+8.0          172        73.898            0.206       71   112.660        0.318         140      140.507           0.349
+
+-- by deeper fill minute
+          n_selection  bp_selection  share_selection  n_check  bp_check  share_check  n_y2022_23  bp_y2022_23  share_y2022_23
+(-1, 1]            92       122.351            0.184       49   109.192        0.191          67      182.221           0.232
+(1, 5]             99        45.108            0.080       52    39.906        0.085         112       97.807           0.170
+(20, 60]          126        25.369            0.053       49    60.260        0.118          82       52.913           0.083
+(5, 20]           175        26.186            0.078       45    34.556        0.059         135       70.608           0.173
+parent           1109        33.344            0.606      409    32.331        0.548         736       29.295           0.342
+
+-- by take-profit hit
+         n_selection  bp_selection  share_selection  n_check  bp_check  share_check  n_y2022_23  bp_y2022_23  share_y2022_23
+hit              830       160.571            2.238      306   124.348        1.617         587      168.455           1.776
+not hit          771       -98.502           -1.238      298   -53.776       -0.617         545      -95.054          -0.776
+
+selection: fills 1601, median sigma 56.0 bp, share of fills with sigma >= 55: 51%, median AI ratio 1.53
+check: fills 604, median sigma 44.0 bp, share of fills with sigma >= 55: 36%, median AI ratio 1.41
+y2022_23: fills 1132, median sigma 62.1 bp, share of fills with sigma >= 55: 61%, median AI ratio 1.41
+
+Knock-out of Best's knobs (revert one to the incumbent's), blended $250K Sharpe:
+                        book  selection  check  y2022_23
+                        Best      4.030  0.032     1.697
+    Best, rungs as incumbent      3.604 -0.296     1.476
+       Best, tp as incumbent      3.619  1.042     1.902
+        Best, H as incumbent      2.968  1.026     1.264
+    Best, r_min as incumbent      3.692 -0.162     1.940
+Best, adv_floor as incumbent      4.032 -0.363     1.729
+    Best, slots as incumbent      3.996  0.254     1.699
+    Best, kappa as incumbent      3.816  0.170     1.804
+Best, per_trade as incumbent      3.898 -0.017     1.545
+ Best, cash_cap as incumbent      4.109  0.032     1.702
+  Best, sig_min as incumbent      3.788  1.063     1.541
+                   incumbent      2.399  2.955     2.270

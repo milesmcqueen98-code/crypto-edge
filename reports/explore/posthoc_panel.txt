@@ -1,0 +1,92 @@
+POST HOC (information only): all variants on the holdout eras, blended $250K
+
+check: incumbent 2.955; Spearman(selection, check) across 4691 variants -0.052; share above the incumbent 5.8%
+   selection top   10: mean check ΔSharpe -2.722, share > incumbent 0%
+   selection top   50: mean check ΔSharpe -2.582, share > incumbent 0%
+   selection top  200: mean check ΔSharpe -2.116, share > incumbent 0%
+   selection top 1000: mean check ΔSharpe -1.843, share > incumbent 2%
+y2022_23: incumbent 2.270; Spearman(selection, y2022_23) across 4691 variants 0.204; share above the incumbent 9.4%
+   selection top   10: mean y2022_23 ΔSharpe -0.820, share > incumbent 0%
+   selection top   50: mean y2022_23 ΔSharpe -0.872, share > incumbent 0%
+   selection top  200: mean y2022_23 ΔSharpe -0.785, share > incumbent 2%
+   selection top 1000: mean y2022_23 ΔSharpe -0.716, share > incumbent 6%
+
+OLS partial effects on blended $250K Sharpe (random variants), selection vs holdout eras:
+                      selection  check  y2022_23  same_sign_all
+sig_min=70.0             -0.606 -2.360    -1.464           True
+p4=0.0                   -0.515 -0.398    -0.173           True
+H=30                     -0.467 -0.905    -0.291           True
+alpha=1.5                -0.467 -0.209    -0.409           True
+alpha=3.0                -0.452 -0.328    -0.433           True
+rungset=R46              -0.395 -1.397    -0.281           True
+tp=f100                  -0.367 -0.039    -0.212           True
+rungset=R4812            -0.337 -0.243    -0.815           True
+alpha=2.0                -0.337 -0.178    -0.336           True
+slots=4                  -0.335 -0.882    -0.272           True
+rungset=R46912           -0.306 -0.299    -0.446           True
+tp=f30                   -0.288 -1.259    -0.751           True
+alpha=1.0                -0.287 -0.155    -0.228           True
+tp=f40                   -0.270 -0.720    -0.559           True
+per_trade=0.15           -0.248 -0.467    -0.508           True
+rungset=R46812           -0.240 -0.167    -0.351           True
+rungset=R4568012         -0.226 -0.187    -0.262           True
+bid_to=2                 -0.218 -1.141    -1.336           True
+p4=0.5                   -0.216 -0.157    -0.084           True
+sig_min=60.0             -0.193 -2.085    -0.710           True
+rungset=R4710            -0.164  0.168    -0.202          False
+tp=d60_40                -0.157 -0.316    -0.336           True
+bid_to=5                 -0.150 -0.859    -0.616           True
+rungset=R46810           -0.149 -0.031    -0.219           True
+alpha=0.5                -0.144 -0.078    -0.106           True
+tp=f50                   -0.141 -0.249    -0.123           True
+r_min=1.5                -0.135 -0.189    -0.702           True
+tp=d40_80                -0.131 -0.407    -0.133           True
+slots=6                  -0.120 -0.704    -0.065           True
+per_trade=0.2            -0.107 -0.097    -0.173           True
+tp=d40_60                -0.096 -0.231    -0.101           True
+tp=d40_100               -0.083 -0.320    -0.103           True
+tp=d80_40                -0.080 -0.697    -0.376           True
+bid_to=10                -0.061 -0.858    -0.184           True
+bid_to=20                -0.058 -0.650    -0.091           True
+sig_min=55.0             -0.058 -1.858    -0.528           True
+cancel=none              -0.052  0.108     0.163          False
+rungset=R48              -0.043  0.081    -0.270          False
+tp=d80_60                -0.040 -0.194    -0.029           True
+tp=d80_100               -0.040 -0.231    -0.106           True
+tp=d60_80                -0.034  0.074    -0.027          False
+tp=L3                    -0.034 -0.227    -0.231           True
+tp=f80                   -0.034 -0.171    -0.038           True
+kappa=0.0015             -0.033 -0.207    -0.309           True
+slots=8                  -0.024 -0.430     0.027          False
+rungset=R45710           -0.016  0.214     0.033          False
+cancel_f=0.3             -0.015 -0.120     0.002          False
+tp=f70                   -0.013 -0.108    -0.025           True
+tp=L2lo                  -0.003 -0.473    -0.172           True
+cash_cap=0.8             -0.001 -0.024    -0.027           True
+tp=L2                    -0.000 -0.155    -0.068           True
+tp=d60_100                0.003  0.114    -0.069          False
+adv_floor=3000000.0       0.006  0.187     0.018           True
+kappa=0.004               0.010  0.251     0.229           True
+rungset=R45678            0.013  0.258     0.236           True
+H=55                      0.013 -0.226    -0.053          False
+rungset=R4610             0.021 -0.312    -0.212          False
+r_min=1.2                 0.021 -0.164    -0.392          False
+cancel_f=0.5              0.027 -0.117     0.018          False
+adv_floor=10000000.0      0.028  0.404    -0.050          False
+tp=L3w                    0.031 -0.095    -0.139          False
+kappa=0.003               0.031  0.241     0.202           True
+cancel_f=1.0              0.036  0.085     0.108           True
+r_min=1.3                 0.040 -0.310    -0.570          False
+cancel_f=0.8              0.040  0.042     0.102           True
+sig_min=50.0              0.041 -1.449    -0.371          False
+cancel_f=0.4              0.064 -0.034     0.011          False
+H=40                      0.064 -0.637     0.083          False
+r_min=1.05                0.066  0.081    -0.060          False
+r_min=1.1                 0.068  0.021    -0.184          False
+H=50                      0.079 -0.329    -0.055          False
+H=45                      0.080 -0.584     0.115          False
+per_trade=0.33            0.111  0.167     0.121           True
+sig_min=40.0              0.126 -1.402    -0.122          False
+alpha=-1.0                0.210 -0.003     0.052          False
+
+Correlation of effects, selection vs check 0.38, vs 2022-23 0.60
