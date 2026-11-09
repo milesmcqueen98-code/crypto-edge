@@ -163,4 +163,11 @@ Total budget: 98 DEV trials. Next in line if a build is blocked (score 9, Path A
 simulator): XV, LIQW, HAWK, TSC, ONE, then MACB.
 
 ## Deviation log
-(none yet)
+- **2026-11-08 20:15 ET, shared feature file, before any IMP trial (found by the IMP builder on DEV, no outcomes
+  used).** scripts/hunt2/parent_features.py computes `ret_bp_W` and `dist_lvl_bp_W` on prints stored newest-first (the
+  Exchange-API fetcher walks backward), so `ln(1 + ret_bp_W/1e4)` is exactly minus the window's log return and
+  `dist_lvl_bp_W` uses the window's oldest print, not its latest. Every other feature is order-free (orders are
+  re-sorted; `t_fill` is a minimum; sums, min/max, the 1-second EWMA grid, and Roll's lag-1 autocovariance are
+  unchanged by reversal). The shared code is left as it is, so the DEV and HOLD files keep one convention; IMP uses
+  `r_W = -ln(1 + ret_bp_W/1e4)`, which is exact. No other build uses either feature. To be fixed in the code after
+  the round, with the files regenerated.
