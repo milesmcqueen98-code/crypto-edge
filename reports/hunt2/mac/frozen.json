@@ -1,0 +1,39 @@
+{
+ "idea": "mac",
+ "path": "A",
+ "variant": "CPI_a2_b10",
+ "params": {
+  "a": 2,
+  "b": 10,
+  "events": "CPI",
+  "event_set": [
+   "CPI"
+  ]
+ },
+ "rule": "every coin's 4-sigma multiplier = frozen_sim.SKIP in minute rows [release - a, release + b] (inclusive) of each release in the event set (data/hunt2/macro/releases.csv)",
+ "code_commit": "fa94d368a8a7a465682f2f4278265b57bbb91583",
+ "trials_code_commit": [
+  "fa94d368a8a7a465682f2f4278265b57bbb91583"
+ ],
+ "selection": "highest DEV paired HAC t at X2 among variants skipping >= 10 DEV parents; ties -> the narrower window",
+ "dev": {
+  "t_diff": 0.8017551696508001,
+  "mean_diff_bp": 0.2374459709428551,
+  "d_sharpe": 0.1764811310873673,
+  "cand_sharpe": 1.7998464091445388,
+  "inc_sharpe": 1.6233652780571717,
+  "n_skip": 17,
+  "n_dev_parents": 1155,
+  "top5_share": 1.2310641329446794
+ },
+ "n_trials": 6,
+ "eligible": [
+  "CPI_a2_b10",
+  "CPI_a5_b30",
+  "CPI_a5_b120",
+  "ALL_a2_b10",
+  "ALL_a5_b30",
+  "ALL_a5_b120"
+ ],
+ "frozen_utc": "2026-11-09T01:21:42Z"
+}
