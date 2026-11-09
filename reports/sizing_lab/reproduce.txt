@@ -1,0 +1,16 @@
+rungs.csv (W0, W2) and spot_only.csv (W0) through rungs.run, mult=None: largest difference 5.6e-17
+mult = 1 (ADV-capped and uncapped) vs mult=None, daily returns: largest difference 0.0e+00
+
+Flat baselines of the lab (spot-only capacity, theta 0.5, bot-like):
+selection      $  250K main  return 27.73%  Sharpe 2.383  max DD -4.32%  fills 1601
+selection      $  250K W2    return 27.86%  Sharpe 2.496  max DD -4.04%  fills 1655
+selection      $1,000K main  return 19.17%  Sharpe 2.433  max DD -3.66%  fills 1796
+selection      $1,000K W2    return 19.19%  Sharpe 2.454  max DD -3.32%  fills 1802
+check          $  250K main  return 18.36%  Sharpe 2.866  max DD -0.76%  fills 604
+check          $  250K W2    return 18.33%  Sharpe 2.988  max DD -0.64%  fills 603
+check          $1,000K main  return  8.09%  Sharpe 1.535  max DD -0.49%  fills 611
+check          $1,000K W2    return  8.84%  Sharpe 1.860  max DD -0.44%  fills 611
+fresh_2022_23  $  250K main  return 12.17%  Sharpe 2.020  max DD -1.82%  fills 1132
+fresh_2022_23  $  250K W2    return 12.88%  Sharpe 2.223  max DD -1.19%  fills 1136
+fresh_2022_23  $1,000K main  return  5.99%  Sharpe 1.018  max DD -1.58%  fills 1148
+fresh_2022_23  $1,000K W2    return  6.30%  Sharpe 1.113  max DD -1.36%  fills 1148

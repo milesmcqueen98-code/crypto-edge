@@ -21,10 +21,15 @@ def window(P, lo, hi):
     return P[(P.ts >= lo) & (P.ts < pd.Timestamp(hi) + pd.Timedelta(days=1))]
 
 
-def run(P, w, lo, hi, theta, C, drop=True, mtm=False):
+def run(P, w, lo, hi, theta, C, drop=True, mtm=False, mult=None, mult_cap=True, out=None):
+    """mult / mult_cap: the sizing lab's optional per-row size multiplier (scripts/wick1m/sim.py evaluate); None keeps
+    the original sizing. out: a dict that receives the tranche table Q and info, if given."""
     days = (pd.Timestamp(hi) - pd.Timestamp(lo)).days + 1
     Q, daily, info = sim.evaluate(window(P, lo, hi), kappa=0.002, trade_list="all", theta=theta, C=C, days=days,
-                                  gross_cap=1.0, drop_same_minute=drop, weights=w, mtm=mtm)
+                                  gross_cap=1.0, drop_same_minute=drop, weights=w, mtm=mtm, mult=mult,
+                                  mult_cap=mult_cap)
+    if out is not None:
+        out.update(Q=Q, info=info)
     st = sim.period_stats(daily, C, lo, hi, equity=info.get("equity"))
     st.update(fills=int((Q.fill > 0).sum()), fill_musd=float(Q.fill.sum()) / 1e6, v30_musd=info["v30"] / 1e6)
     idx = pd.date_range(lo, hi, freq="D")

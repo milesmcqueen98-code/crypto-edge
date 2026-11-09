@@ -230,8 +230,12 @@ def perp_cost():
 
 def evaluate(P, kappa=None, ladder=False, exit_rule="E0", trade_list="bot", theta=0.5, C=1e6, gross_cap=1.0,
              per_trade=0.25, days=None, tiers=SPOT_TIERS, drop_same_minute=False, use_bitstamp=True, mtm=False,
-             weights=None):
-    """Per-tranche USD P&L, daily returns (P&L booked on the exit day) and, with mtm=True, minute-level equity."""
+             weights=None, mult=None, mult_cap=True):
+    """Per-tranche USD P&L, daily returns (P&L booked on the exit day) and, with mtm=True, minute-level equity.
+
+    mult (sizing lab, reports/sizing_lab/prereg.md): a function of the sorted tranche table Q returning one size
+    multiplier per row (>= 0); it scales the signal's size min(per_trade x C, kappa x ADV). With mult_cap the result is
+    capped again at kappa x ADV. mult=None is the original code path."""
     if exit_rule != "E0":
         raise ValueError("version 2 implements the market exit (E0) only")
     fee_perp, hs_perp = perp_cost()
@@ -252,6 +256,13 @@ def evaluate(P, kappa=None, ladder=False, exit_rule="E0", trade_list="bot", thet
     want_tot = np.full(len(Q), per_trade * C)
     if kappa is not None:
         want_tot = np.minimum(want_tot, kappa * Q.adv.fillna(0.0).to_numpy())
+    if mult is not None:
+        m = np.asarray(mult(Q), dtype=np.float64)
+        if m.shape != (len(Q),) or not np.all(np.isfinite(m)) or (m < 0).any():
+            raise ValueError("mult must return one finite multiplier >= 0 per row")
+        want_tot = want_tot * m
+        if mult_cap and kappa is not None:
+            want_tot = np.minimum(want_tot, kappa * Q.adv.fillna(0.0).to_numpy())
     want = want_tot / nk
     if weights is not None:
         wsum = float(sum(weights.values()))
