@@ -165,23 +165,28 @@ def freeze():
     print(json.dumps({k: fz[k] for k in ("variant", "rule", "code_commit", "dev")}, indent=1, default=float))
 
 
-def hold():
-    """After the freeze commit only: HOLD features from candles, then the frozen variant on every era."""
+def hold_era(era, tmp):
+    """One era of the HOLD read (a subprocess of `hold`): the frozen rule's skip cells, then pathA.hold_read."""
     import pathA
+    rules.require_frozen(IDEA, era)
     fz = json.load(open(os.path.join(OUT, "frozen.json")))
+    F = load_features(era)
+    m = rules.skip_mask(F[fz["col"]], fz["side"], fz["thr"])
+    cells = F.loc[m, ["ts", "coin"]].reset_index(drop=True)
+    rules.check_cells(era, cells)
+    print(f"{era}: {len(F)} parents, {int(m.sum())} skipped ({m.mean():.3f})", flush=True)
+    pathA.hold_read(IDEA, {era: cells}, tmp, eras=(era,))
+    json.dump(dict(n_parents=len(F), n_skipped=int(m.sum())), open(os.path.join(tmp, "counts.json"), "w"))
+
+
+def hold(tmp_root):
+    """After the freeze commit only: HOLD features from candles, then the frozen variant on every era (one
+    subprocess per era), daily.parquet and gates.json."""
     for era in ("chk", "early"):
         rules.require_frozen(IDEA, era)
         if not os.path.exists(os.path.join(OUT, f"features_{era}.csv")):
             features(era)
-    cells = {}
-    for era in ("sel", "chk", "early"):
-        F = load_features(era)
-        m = rules.skip_mask(F[fz["col"]], fz["side"], fz["thr"])
-        cells[era] = F.loc[m, ["ts", "coin"]].reset_index(drop=True)
-        rules.check_cells(era, cells[era])
-        print(f"{era}: {len(F)} parents, {int(m.sum())} skipped ({m.mean():.3f})", flush=True)
-    g = pathA.hold_read(IDEA, cells, OUT)
-    g["n_skipped"] = {e: int(len(c)) for e, c in cells.items()}
+    g = rules.hold_split(os.path.abspath(__file__), IDEA, OUT, tmp_root)
     json.dump(g, open(os.path.join(OUT, "gates.json"), "w"), indent=1, default=str)
     print(json.dumps(g, indent=1, default=str))
 
@@ -195,4 +200,6 @@ if __name__ == "__main__":
     elif cmd == "freeze":
         freeze()
     elif cmd == "hold":
-        hold()
+        hold(sys.argv[2])
+    elif cmd == "hold-era":
+        hold_era(sys.argv[2], sys.argv[3])

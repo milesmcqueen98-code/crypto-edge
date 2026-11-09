@@ -57,6 +57,30 @@ def check_cells(era, cells):
     return len(cells)
 
 
+def hold_split(script, idea, out_dir, tmp_root, eras=("sel", "chk", "early")):
+    """pathA.hold_read, one era per subprocess (`<script> hold-era <era> <tmp>`: the shared machine ran out of memory
+    holding every era's inputs and arrays in one process), then combined exactly as hold_read combines its eras:
+    concat, sort, drop duplicate days, daily.parquet (x2, x1, s), h2gates.path_a on every scored day."""
+    import json
+    import subprocess
+    import sys
+    import h2gates as G
+    parts, counts = [], {}
+    for era in eras:
+        tmp = os.path.join(tmp_root, f"{idea}_{era}")
+        subprocess.run([sys.executable, "-u", script, "hold-era", era, tmp], check=True)
+        parts.append(pd.read_parquet(os.path.join(tmp, "daily.parquet")))
+        counts[era] = json.load(open(os.path.join(tmp, "counts.json")))
+    D = pd.concat(parts).sort_index()
+    D = D[~D.index.duplicated()]
+    os.makedirs(out_dir, exist_ok=True)
+    D.to_parquet(os.path.join(out_dir, "daily.parquet"))
+    g = G.path_a(D["x2"], D["x1"], D.index)
+    g["n_parents"] = {e: c["n_parents"] for e, c in counts.items()}
+    g["n_skipped"] = {e: c["n_skipped"] for e, c in counts.items()}
+    return g
+
+
 def git_head(path=WT):
     return subprocess.check_output(["git", "-C", path, "rev-parse", "HEAD"], text=True).strip()
 
