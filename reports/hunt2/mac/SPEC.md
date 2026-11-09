@@ -15,8 +15,8 @@
 - **Live inputs and orders:** the BLS/Fed calendars; cancel resting bids before the window, no new bids inside it.
 - **Rule (frozen grid, 6 trials):** no 4σ bid rests in any coin during [release − a, release + b] (the multiplier
   of every coin's 4σ bid is SKIP in those minutes, so a parent filling there does not exist; ladders armed earlier keep
-  their deeper rungs): (a, b) ∈ {(5, 30), (5, 120), (30, 240)} minutes × event set ∈ {CPI+NFP+FOMC,
-  CPI+NFP+FOMC+PPI}.
+  their deeper rungs): (a, b) ∈ {(2, 10), (5, 30), (5, 120)} minutes × event set ∈ {CPI only, CPI+NFP+PPI+FOMC}.
+  (Memo R2: only CPI moves BTC reliably over 30–60 minutes; its suggested blackout is −2/+10 minutes.)
 - **Minimum events:** a variant must skip ≥ 10 DEV parents to be eligible; if no variant does, the idea is reported
   as untestable at this power and not frozen.
 - **Costs:** frozen simulator at X2 (selection, gates), X1 (gate A2), S (reported).

@@ -23,9 +23,12 @@
   (to day d-1) is >= $50M. US trading days only (NYSE calendar). Monday's r runs from Friday's 4 pm.
 - **Rule (frozen grid, 12 trials):** at 15:45 ET, r = ln(P(15:44) / P(previous trading day 16:00)); sigma = 30-day
   daily volatility to the previous close. If |r| >= k x sigma:
-  - momentum leg: enter sign(r) at 15:46 (taker), exit at 16:00 (taker);
-  - reversal leg: enter -sign(r) at 16:01 (taker), exit at 17:00 (taker).
-  Grid: k in {1, 2} x leg in {momentum, reversal, both} x assets in {BTC only, BTC+ETH+SOL+XRP}.
+  - momentum (taker): enter sign(r) at 15:46, exit at 16:00 (CME settles on 15:59–16:00 ET);
+  - reversal (taker): enter -sign(r) at 16:01, exit at 17:00;
+  - reversal (maker, liquidity to the rebalancer): at 15:55 rest a post-only order on the side opposite the flow
+    (a bid on down days, an offer on up days) 10 bp beyond the 15:54 close; cancel at 16:00 if unfilled; exit at 17:00
+    (taker) or earlier on a post-only take-profit at the 15:54 close.
+  Grid: k in {1, 2} x leg in {momentum, reversal-taker, reversal-maker} x assets in {BTC only, BTC+ETH+SOL+XRP}.
 - **Size:** each signal's notional = 1.0 x sleeve capital / (number of assets signalling that day), whole contracts;
   gross <= 2x sleeve capital.
 - **Costs:** scripts/hunt2/costs.py perps at 2x ($0.15 per contract + 2 bp commission + 1.5x measured half-spread
