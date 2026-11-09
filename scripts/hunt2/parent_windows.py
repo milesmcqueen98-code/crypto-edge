@@ -22,7 +22,8 @@ def main(pre=30, post=2):
         par = P[(P.k == 4.0) & P.filled].copy()
         for r in par.itertuples():
             rows.append(dict(product=f"{r.coin}-USD", start=r.ts - pd.Timedelta(minutes=pre),
-                             end=r.ts + pd.Timedelta(minutes=post), coin=r.coin, ts=r.ts, lvl=r.lvl))
+                             end=r.ts + pd.Timedelta(minutes=post), coin=r.coin, ts=r.ts, lvl=r.lvl, adv=r.adv,
+                             vol_d=r.vol_d))
     W = pd.DataFrame(rows).sort_values("ts").reset_index(drop=True)
     W["era"] = G.era_of(W.ts.dt.floor("D"))
     W = W[W.era != ""].reset_index(drop=True)

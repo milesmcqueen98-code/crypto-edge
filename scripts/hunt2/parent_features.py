@@ -48,7 +48,7 @@ def is_round(x, tol=0.005):
     return (np.abs(x / ROUND[None, :] - 1.0) <= tol).any(axis=1)
 
 
-def feats(p, t_fill, lvl):
+def feats(p, t_fill, lvl, adv=np.nan):
     out = {}
     if p.empty:
         return out
@@ -75,6 +75,8 @@ def feats(p, t_fill, lvl):
             out[f"sell_max_order_{W}"] = float(sn.max())
             out[f"sell_big10k_share_{W}"] = float(sn[sn >= 10e3].sum() / sn.sum())
             out[f"sell_big50k_share_{W}"] = float(sn[sn >= 50e3].sum() / sn.sum())
+            if adv == adv and adv > 0:                       # blocks relative to the coin's 30-day ADV (5 bp of ADV)
+                out[f"sell_bigadv_share_{W}"] = float(sn[sn >= 5e-4 * adv].sum() / sn.sum())
             out[f"sell_small1k_share_{W}"] = float(sn[sn < 1e3].sum() / sn.sum())
             out[f"sell_round_share_{W}"] = float(is_round(sn).mean())
             out[f"sell_hhi_{W}"] = float(((sn / sn.sum()) ** 2).sum())
@@ -83,6 +85,10 @@ def feats(p, t_fill, lvl):
             out[f"sell_orders_{W}"] = 0
         bo = oo[oo.side == "SELL"] if len(oo) else oo
         out[f"buy_orders_{W}"] = len(bo)
+        if len(q) >= 3:
+            dp = np.diff(q.price.to_numpy())
+            c = np.cov(dp[1:], dp[:-1])[0, 1] if len(dp) > 2 else np.nan
+            out[f"roll_bp_{W}"] = 1e4 * 2 * np.sqrt(-c) / q.price.mean() if c == c and c < 0 else 0.0
         if len(q) >= 2:
             px = q.price.to_numpy()
             out[f"ret_bp_{W}"] = 1e4 * (px[-1] / px[0] - 1.0)
@@ -123,7 +129,7 @@ def main(art_dir, out_dir):
         cov["fill_found"] += r["flag"] != "no_touch"
         r["t_fill"] = t_fill
         r["n_prints_window"] = len(p)
-        r.update(feats(p, t_fill, w.lvl))
+        r.update(feats(p, t_fill, w.lvl, getattr(w, "adv", np.nan)))
         rows.append(r)
     F = pd.DataFrame(rows)
     dev = F.era == "sel"
