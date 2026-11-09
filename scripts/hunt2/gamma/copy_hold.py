@@ -3,7 +3,7 @@
 (downloaded by hunt2.yml into art/<run_id>/...) into the repo, unchanged, so the HOLD read uses exactly the file the
 pre-freeze derive run produced.
 
-usage: python scripts/hunt2/gamma/copy_hold.py <art_dir> <file name> <destination path>
+usage: python scripts/hunt2/gamma/copy_hold.py <art_dir> <file name> <destination path> [...]
 """
 import glob
 import hashlib
@@ -11,9 +11,12 @@ import os
 import shutil
 import sys
 
-art, name, dest = sys.argv[1:4]
-fs = glob.glob(os.path.join(art, "**", "hold_out", name), recursive=True)
-assert len(fs) == 1, fs
-os.makedirs(os.path.dirname(dest), exist_ok=True)
-shutil.copy(fs[0], dest)
-print("copied", fs[0], "->", dest, os.path.getsize(dest), "bytes, sha256", hashlib.sha256(open(dest, "rb").read()).hexdigest())
+art, pairs = sys.argv[1], sys.argv[2:]
+assert len(pairs) % 2 == 0, "pairs of <file name> <destination path>"
+for name, dest in zip(pairs[0::2], pairs[1::2]):
+    fs = glob.glob(os.path.join(art, "**", "hold_out", name), recursive=True)
+    assert len(fs) == 1, fs
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    shutil.copy(fs[0], dest)
+    print("copied", fs[0], "->", dest, os.path.getsize(dest), "bytes, sha256",
+          hashlib.sha256(open(dest, "rb").read()).hexdigest())
