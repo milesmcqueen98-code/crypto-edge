@@ -65,7 +65,7 @@ honest test or trade now) · **dead** (an earlier round killed the mechanism) ·
 ## D. Cross-venue, basis and funding
 | # | Id | Idea | Who is forced or eager; why we are paid | Data | Path | M T L N C | Score | Status |
 |---|---|---|---|---|---|---|---|---|
-| 31 | XV | Local or global? Skip dislocations that Bitstamp shows too | A Coinbase-only dip is a local liquidity shock repaid by slow cross-venue arbitrage; a global one is a new price | Coinbase + Bitstamp 1-min (2024–26) | A | 2 2 2 1 2 | 9 | **BUILD** (tie-break: cross-venue category) |
+| 31 | XV | Local or global? Skip dislocations that Bitstamp shows too | A Coinbase-only dip is a local liquidity shock repaid by slow cross-venue arbitrage; a global one is a new price | Coinbase + Bitstamp 1-min (2024–26) | A | 2 2 2 1 2 | 9 | alt (displaced by IMP, score 12, from memo R1) |
 | 32 | CROWD | Funding crowding: skip bids when shorts are crowded | Long-crowded selloffs liquidate longs (forced); short-crowded selloffs are voluntary | Hyperliquid funding (2023-05 ..) | A | 2 2 2 2 2 | 10 | **BUILD** |
 | 33 | HLB | Perp-led vs spot-led drop (Hyperliquid basis) | Liquidated longs drag spot via basis arbitrage | HL archive (requester-pays) | A | 3 0 2 2 2 | 9 | blocked (no free history; forward-collect) |
 | 34 | HLOI | Hyperliquid OI depletion during the drop | Longs closing = fuel spent | HL archive | A | 3 0 2 2 2 | 9 | blocked |
@@ -105,13 +105,35 @@ honest test or trade now) · **dead** (an earlier round killed the mechanism) ·
 | 60 | POST | Post-fill model for deeper rungs/exits | — | — | — | — | — | dead (ladder v5 C7, v6 exits) |
 | 61 | PGATE | R2-08's gate on CFM perps | — | — | — | — | — | dead (ladder v5 C5) |
 
-(Microstructure additions from memo R1 are appended below when it arrives.)
+## G. Additions from memo R1 (microstructure)
+| # | Id | Idea | Who is forced or eager; why we are paid | Data | Path | M T L N C | Score | Status |
+|---|---|---|---|---|---|---|---|---|
+| 62 | IMP | Was the drop paid for by selling? Residual drop ÷ square-root-law impact of the net aggressive selling | Flow-explained impact of forced selling relaxes; a drop the flow can't explain is quote revision on information (about ⅔ stays) | Parent prints + candles, all eras | A | 3 3 2 2 2 | 12 | **BUILD** |
+| 63 | HLF | Hyperliquid forced-flow label: liquidation fills and OI change during the dislocation | Liquidated longs, observed directly | HL node data / paid indexers | A | 3 0 2 2 2 | 9 | blocked (forward-collect) |
+| 64 | HLL | Hyperliquid lead gate: HL mark minus Coinbase mid at the fill | Arbitrage still carrying HL liquidations | HL candles (3.5 days) | A | 2 0 2 1 2 | 7 | blocked |
+| 65 | ENDO | Endogenous vs exogenous: volatility ramp before the move, Hawkes n̂, single-coin vs broad | Feedback moves relax; news moves persist (Marcaccioli et al. 2022) | Prints, candles | A | 2 2 2 1 2 | 9 | merged (SHAPE's drift, WHO's frenzy ratio, the AI's breadth features); HAWK alt |
+| 66 | LPS | Liquidity-provider scarcity: Kyle λ and Roll vs 6-month medians | LPs depleted after cascades charge more | Prints | A | 2 2 2 1 2 | 9 | merged into LIQW (alt) |
+| 67 | VTIME | Exits in volume time | Decay runs in volume time | Prints | A | 1 2 2 1 1 | 7 | low (exits closed in ladder v6) |
+| 68 | HTWAP | Scheduled sellers: public HL TWAPs, periodic child orders on Coinbase | Announced algorithmic sellers | HL TWAP history (key) | A/B | 2 1 1 2 1 | 7 | low |
+| 69 | CXL | Bid-cancellation bursts in the full feed as a rung kill switch | MMs pulling on offshore information | Full feed (no history) | A | 2 0 2 2 2 | 8 | blocked |
+| 70 | MIRROR | Post-only ask ladder on CFM alt perps for short squeezes | Liquidated shorts | Spot proxy, CFM prints | B | 2 2 2 0 1 | 7 | dead (wick v2 lab: sell-the-rip mirror 0.32) |
+| 71 | WKND | Weekend non-crypto perps faded toward Hyperliquid prices | Weekend hedgers in thin books | CFM index perps from Jun/Aug 2026 | B | 2 0 2 2 1 | 7 | blocked (no DEV history) |
+| 72 | XMARG | Cross-margin spill-over wicks in CFM non-crypto perps on cascade days | Liquidated multi-asset accounts | Same | B | 2 0 2 2 1 | 7 | blocked |
+| 73 | BRRNY | Liquidity to predicted ETF flow in the 3–4 pm benchmark hour | ETF issuers/APs on BRRNY | Candles, ETF flows | B | 1 2 2 1 1 | 7 | merged (LETF; NAV dead after in-kind) |
 
 ## The ten builds
-| Build | Path | Category | Builder |
-|---|---|---|---|
-| WHO, EXH | A, A | microstructure / order flow | builder 1 |
-| MAC, BURN | A, A | events / adaptive | builder 2 |
-| SHAPE, XV | A, A | statistics / cross-venue | builder 3 |
-| GAMMA, EXP | A, B | options / settlement flows | builder 4 |
-| LETF, CROWD | B, A | ETF flows / funding | builder 5 |
+| Build | Path | Category | Score | Builder |
+|---|---|---|---|---|
+| IMP | A | microstructure (impact) | 12 | builder 3 |
+| WHO | A | microstructure (order flow) | 11 | builder 1 |
+| EXH | A | microstructure (order flow) | 10 | builder 1 |
+| MAC | A | events | 11 | builder 2 |
+| BURN | A | statistics / adaptive | 11 | builder 2 |
+| SHAPE | A | statistics (path shape) | 11 | builder 3 |
+| GAMMA | A | options (dealer gamma) | 11 | builder 4 |
+| EXP | B | options / settlement flows | 10 | builder 4 |
+| LETF | B | ETF flows | 11 | builder 5 |
+| CROWD | A | funding / positioning | 10 | builder 5 |
+
+73 ideas in all: 10 built, 8 next in line (alt), 7 merged into a build, 20 low power or prior, 12 blocked by data, 14 killed by earlier rounds, 2 out of scope for this account. Categories without a build (cross-venue
+locality XV, liquidity withdrawal LIQW, macro overshoot MACB) are next in line.

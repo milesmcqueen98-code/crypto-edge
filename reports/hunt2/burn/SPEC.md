@@ -1,4 +1,4 @@
-# BURN: a coin whose last ladder failed to rebound is informed-selling territory (own-outcome filter) — DRAFT, not frozen
+# BURN: a coin whose last ladder failed to rebound is informed-selling territory (own-outcome filter)
 
 - **Path:** A (the live bot skipping new ladders in a coin for a while after its last ladder failed; frozen simulator).
 - **Who is forced or eager, and why we are paid (or not):** the ladder is paid when the selling is forced and

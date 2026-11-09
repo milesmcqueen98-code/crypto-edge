@@ -1,4 +1,4 @@
-# GAMMA: dealer gamma regime (Deribit) as a filter on the ladder — DRAFT, not frozen
+# GAMMA: dealer gamma regime (Deribit) as a filter on the ladder
 
 - **Path:** A (the live bot skipping bids while option dealers are short gamma; frozen simulator).
 - **Who is forced or eager, and why we are paid (or not):** option dealers delta-hedge. When they are net LONG gamma

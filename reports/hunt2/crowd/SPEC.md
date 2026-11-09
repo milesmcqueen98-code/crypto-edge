@@ -1,4 +1,4 @@
-# CROWD: leverage crowding (perp funding) as a filter on the ladder — DRAFT, not frozen
+# CROWD: leverage crowding (perp funding) as a filter on the ladder
 
 - **Path:** A (the live bot, bids skipped when crowding says a selloff is unlikely to be forced; frozen simulator).
 - **Who is forced or eager, and why we are paid:** perpetual funding prices net leverage demand. When funding is

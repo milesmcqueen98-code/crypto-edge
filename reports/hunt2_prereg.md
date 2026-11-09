@@ -1,8 +1,8 @@
 # Edge hunt 2: a desk-style round against R2-08 (pre-registration)
 
-**STATUS: DRAFT, not frozen.** Written 2026-11-09 (UTC) before any hunt-2 build or test. The freeze point is the
-commit whose hash is recorded in reports/hunt2/frozen_prereg.txt (the commit that removes this DRAFT line); drafts
-committed before it bind nothing. Deviations after the freeze go in the log at the bottom, with a reason and a time.
+Frozen 2026-11-09 (UTC), before any hunt-2 build or test. The freeze point is the commit that changed this line
+from DRAFT to frozen; its hash is recorded in reports/hunt2/frozen_prereg.txt. Drafts committed before it bound
+nothing. Deviations after the freeze go in the log at the bottom, with a reason and a time.
 
 ## Goal (Miles, Nov 8 2026, ET)
 Think like researchers from HRT (microstructure), SIG (options, game theory) and Renaissance (many weak signals, one
@@ -24,8 +24,10 @@ vs R2-08 or +0.5 book Sharpe, no losing year. Rank on a 100-point scorecard.
   selection era (sweeps, taker-sell share, first-sweep depth); ladder v6's selection-era markouts of unsold
   remainders (−71 bp at minute 60, −117 at 120) and its hold-past-60 rule read once out of sample; the execution
   round's daily-loss-limit result; the wick v4 post-hoc lead that fills with BTC flat are the weakest (seen in every
-  era, so it is NOT used as an idea here). Input data downloaded for this round (prints around parent fills, ETF
-  prices, calendars) has had no statistic computed on it except coverage counts.
+  era, so it is NOT used as an idea here). Input data downloaded for this round (prints around parent fills,
+  Deribit option trades, ETF prices, calendars) has had no statistic computed on it except coverage counts and, for
+  the DEV era only, the quartiles of the parent print features (no outcomes). The incumbent's ten worst and best DEV
+  days were looked at (its own DEV series).
 
 ## The incumbent (benchmark)
 - **What:** the live spot bot (bot/spot): R2-08's signal, the 4/6/8σ ladder in thirds, each signal capped at 0.2% of
@@ -113,6 +115,14 @@ frozen variant re-run once; no redesign after reading HOLD.
 - AI variants (LightGBM) are walk-forward: trained only on data before each test quarter, with at least 6 months of
   history before the first scored quarter; they count as trials.
 
+## Multiple testing and combinations
+- Eight Path A filters are read on the same HOLD. Under the null each has about a 2.3% chance of t ≥ 2, so about
+  0.2 false passes are expected across the eight; a single pass just above t = 2 is weak evidence on its own. The
+  deflated Sharpe (N = 4,500 + every hunt-2 trial) and the scorecard report this; the red team checks any pass.
+- No post-hoc combination is a pass. If two or more Path A builds pass every gate, their union (skip when any of
+  them fires) is computed once and reported as descriptive, because which filters to combine was chosen on HOLD; a
+  combined candidate needs its own pre-registered test on new data.
+
 ## Scorecard (weights fixed now; 100 points; scripts/hunt2/scorecard.py)
 | Criterion | Points | Full marks |
 |---|---|---|
@@ -129,7 +139,7 @@ The gates decide pass or fail; the score ranks and explains. Hand-scored parts g
 with a reason for each.
 
 ## Ideas
-The full list, its scoring rubric (prior 0–12: mechanism, testable on trade data, live from New York, new, clears 2×
+The full list (73 ideas), its scoring rubric (prior 0–12: mechanism, testable on trade data, live from New York, new, clears 2×
 costs) and every score are in reports/hunt2/ideas.md, fixed with this file. Research memos: reports/hunt2/research/
 (R1 microstructure, R2 options/events/flows, R3 ML/statistics, R4 venue facts).
 
@@ -143,14 +153,14 @@ costs) and every score are in reports/hunt2/ideas.md, fixed with this file. Rese
 | MAC | A | Pull the ladder around CPI/NFP/PPI/FOMC releases (information, not forced flow) | Official calendars; parent prints for fill times | 6 |
 | BURN | A | After a coin's ladder fails to rebound, skip that coin (or the market) for hours | The frozen dataset's own outcomes | 12 |
 | SHAPE | A | Skip dislocations that arrive as a grind (high path efficiency, no air pocket, multi-hour drift) | Coinbase 1-minute candles, all eras | 8 |
-| XV | A | Skip dislocations that Bitstamp shows too (global repricing, not a local liquidity shock) | Coinbase and Bitstamp 1-minute candles, 2024–26 | 8 |
+| IMP | A | Skip fills whose residual drop is larger than the square-root-law impact of the net aggressive selling (quote revision on information, not forced flow) | Same prints + candles | 8 |
 | CROWD | A | Skip bids when perp funding says shorts, not longs, are crowded (no forced long liquidation) | Hyperliquid daily funding, 2023-05 .. | 8 |
 | GAMMA | A | Skip bids while option dealers are net short gamma (they sell into falls) | Every Deribit BTC option trade from 2021 (dealer inventory) | 8 |
 | LETF | B | Trade the leveraged-ETF rebalancing flow into CME's 4 pm settlement, and provide liquidity to it | Coinbase candles and prints 15:44–17:01 ET, ETF data, CFM perps | 12 |
 | EXP | B | Trade the dealers' predicted hedge unwind in Deribit's Friday 08:00 UTC settlement window, or fade it after | Deribit option trades, Coinbase candles and prints, CFM perps | 12 |
 
 Total budget: 98 DEV trials. Next in line if a build is blocked (score 9, Path A first, buildable on this
-simulator): LIQW, HAWK, TSC, ONE, then MACB.
+simulator): XV, LIQW, HAWK, TSC, ONE, then MACB.
 
 ## Deviation log
 (none yet)

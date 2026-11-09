@@ -1,4 +1,4 @@
-# EXP: the Deribit Friday expiry unwind (dealer hedges come off during the 08:00 UTC settlement window) — DRAFT, not frozen
+# EXP: the Deribit Friday expiry unwind (dealer hedges come off during the 08:00 UTC settlement window)
 
 - **Path:** B (a sleeve on Coinbase US perps: BTC, ETH).
 - **Who is forced or eager, and why we are paid:** Deribit options settle at 08:00 UTC to a 30-minute TWAP of its

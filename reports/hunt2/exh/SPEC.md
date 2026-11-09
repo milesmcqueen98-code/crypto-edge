@@ -1,4 +1,4 @@
-# EXH: is the forced selling spent? (sell-flow exhaustion filter for the ladder) — DRAFT, not frozen
+# EXH: is the forced selling spent? (sell-flow exhaustion filter for the ladder)
 
 - **Path:** A (the live bot skipping fills that arrive while the selling is still accelerating; frozen simulator).
 - **Who is forced or eager, and why we are paid (or not):** forced selling is front-loaded: in the Oct 10 2025 cascade

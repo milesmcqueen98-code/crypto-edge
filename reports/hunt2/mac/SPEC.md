@@ -1,4 +1,4 @@
-# MAC: scheduled US macro releases (blackout filter for the ladder) — DRAFT, not frozen
+# MAC: scheduled US macro releases (blackout filter for the ladder)
 
 - **Path:** A (the live bot with its bids pulled around scheduled releases, on the frozen simulator at $250K).
 - **Who is forced or eager, and why we are paid (or not):** at a scheduled release (CPI, NFP, PPI at 08:30 ET; FOMC

@@ -1,4 +1,4 @@
-# SHAPE: air pocket or grind? The drop's shape as a filter on the ladder — DRAFT, not frozen
+# SHAPE: air pocket or grind? The drop's shape as a filter on the ladder
 
 - **Path:** A (the live bot skipping dislocations that arrive as a steady grind; frozen simulator).
 - **Who is forced or eager, and why we are paid (or not):** a forced seller with no price limit (a liquidation engine,

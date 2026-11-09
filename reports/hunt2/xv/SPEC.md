@@ -1,4 +1,4 @@
-# XV: is the selling local or global? (cross-venue confirmation filter for the ladder) — DRAFT, not frozen
+# XV: is the selling local or global? (cross-venue confirmation filter for the ladder) — ALT (displaced by IMP), DRAFT
 
 - **Path:** A (the live bot skipping dislocations that are not Coinbase-local; frozen simulator).
 - **Who is forced or eager, and why we are paid:** a Coinbase dip below the BTC-adjusted fair value can come from a

@@ -1,4 +1,4 @@
-# WHO: who sold into our bid (pre-fill order-flow composition filter) — DRAFT, not frozen
+# WHO: who sold into our bid (pre-fill order-flow composition filter)
 
 - **Path:** A (a modification of the live bot, run on the frozen simulator at $250K).
 - **Who is forced or eager, and why we are paid:** the ladder is paid by forced, uninformed sellers: liquidation

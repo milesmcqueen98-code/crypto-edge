@@ -1,4 +1,4 @@
-# LETF: leveraged-ETF rebalancing flow into the US close — DRAFT, not frozen
+# LETF: leveraged-ETF rebalancing flow into the US close
 
 - **Path:** B (a sleeve on Coinbase US perps beside the incumbent).
 - **Who is forced or eager, and why we are paid:** 2x and -2x (and -1x) crypto ETFs (BTC: BITX, BITU, SBIT, BTCL,
