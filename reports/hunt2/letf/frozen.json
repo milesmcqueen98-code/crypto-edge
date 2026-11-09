@@ -1,0 +1,59 @@
+{
+ "idea": "letf",
+ "path": "B",
+ "variant": "rev_k2_all",
+ "params": {
+  "leg": "rev",
+  "k": 2,
+  "universe": "all",
+  "assets": [
+   "BTC",
+   "ETH",
+   "SOL",
+   "XRP"
+  ],
+  "theta": 0.5
+ },
+ "code_commit": "b5b01725d35c8d35cda86b23f155a54a64a8d395",
+ "model": "scripts/hunt2/letf/letf.py (pre-trial definitions in its docstring)",
+ "selection": "highest DEV alpha t (h2gates.dev_screen_b, sleeve $50K at 2x) among DEV trials with >= 40 trades; ties -> BTC only, then k = 2",
+ "dev": {
+  "trades": 41,
+  "t_alpha": -1.2604618604539342,
+  "sleeve_sharpe_2x": -1.9103293657406912,
+  "sleeve_sharpe_1x": -1.5090526202067456,
+  "book_gain_2x": -0.5346019275404763,
+  "book_gain_1x": -0.4149962650118253,
+  "t_alpha_1x": -0.7849819761868936,
+  "mean_gross_bp": -10.86643339671333,
+  "mean_net_bp": -41.60614174479455,
+  "mean_net_bp_1x": -26.23628757075393,
+  "corr": -0.3075750066811068,
+  "active_days": 26,
+  "pnl_2x": -5731.749851050355,
+  "pnl_1x": -3794.1112328982217,
+  "scored_days": 455
+ },
+ "runner_up": {
+  "variant": "rev_k1_all",
+  "trades": 282,
+  "t_alpha": -2.520266350542366
+ },
+ "eligible": [
+  "rev_k2_all",
+  "rev_k1_all",
+  "rev_k1_btc",
+  "mom_k2_all",
+  "mkr_k1_btc",
+  "mkr_k1_all",
+  "mom_k1_all",
+  "mom_k1_btc"
+ ],
+ "ineligible": [
+  "mom_k2_btc",
+  "rev_k2_btc",
+  "mkr_k2_btc",
+  "mkr_k2_all"
+ ],
+ "n_trials_logged": 12
+}

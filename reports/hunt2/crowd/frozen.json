@@ -1,0 +1,46 @@
+{
+ "idea": "crowd",
+ "path": "A",
+ "variant": "btc_prev_q25",
+ "params": {
+  "source": "btc",
+  "statistic": "prev",
+  "threshold_kind": "q25",
+  "threshold": 0.0002306986,
+  "rule": "skip every 4-sigma bid of a coin on UTC day d when the statistic for d (from d - 1) < threshold"
+ },
+ "code_commit": "b5b01725d35c8d35cda86b23f155a54a64a8d395",
+ "model": "scripts/hunt2/crowd/crowd.py (pre-trial definitions in its docstring)",
+ "selection": "highest DEV paired HAC t at X2 among variants skipping 10%..50% of DEV parents; ties -> previous-day, then threshold 0",
+ "dev": {
+  "t_diff": -0.0432863117376269,
+  "mean_diff_bp": -0.0306230863398486,
+  "d_sharpe": 0.1949899254004865,
+  "cand_sharpe": 1.818355203457658,
+  "inc_sharpe": 1.6233652780571717,
+  "n_skipped": 280,
+  "n_parents": 1155,
+  "skip_share": 0.2424242424242424,
+  "coin_days_skipped": 3009,
+  "n_days": 455
+ },
+ "runner_up": {
+  "variant": "btc_m7_q25",
+  "t_diff": -1.330939508386507,
+  "skip_share": 0.2666666666666666
+ },
+ "eligible": [
+  "btc_prev_q25",
+  "btc_m7_q25",
+  "coin_prev_q25",
+  "coin_prev_0",
+  "coin_m7_0",
+  "coin_m7_q25"
+ ],
+ "ineligible": [
+  "btc_prev_0",
+  "btc_m7_0"
+ ],
+ "n_trials_logged": 8,
+ "scored_days": "sel 2025-01-01..2026-03-31, chk 2026-04-01..2026-11-05, early 2023-05-13..2023-12-31"
+}
