@@ -1,0 +1,272 @@
+{
+ "print_files": 16,
+ "status_files": 16,
+ "coins": {
+  "AAVE": {
+   "n_in": 1561154,
+   "n_dup": 0,
+   "time_decreasing_along_id": 3,
+   "outside_own_window": 0,
+   "windows_with_prints": 684,
+   "prints": 1561154,
+   "sides": {
+    "BUY": 912890,
+    "SELL": 648264
+   },
+   "usd_total": 661895969.3235689
+  },
+  "BCH": {
+   "n_in": 1780756,
+   "n_dup": 0,
+   "time_decreasing_along_id": 2,
+   "outside_own_window": 0,
+   "windows_with_prints": 828,
+   "prints": 1780756,
+   "sides": {
+    "SELL": 834291,
+    "BUY": 946465
+   },
+   "usd_total": 1027027592.165086
+  },
+  "DOGE": {
+   "n_in": 6649878,
+   "n_dup": 0,
+   "time_decreasing_along_id": 11,
+   "outside_own_window": 0,
+   "windows_with_prints": 951,
+   "prints": 6649878,
+   "sides": {
+    "SELL": 3290414,
+    "BUY": 3359464
+   },
+   "usd_total": 4475408768.885225
+  },
+  "ENA": {
+   "n_in": 212827,
+   "n_dup": 0,
+   "time_decreasing_along_id": 0,
+   "outside_own_window": 0,
+   "windows_with_prints": 135,
+   "prints": 212827,
+   "sides": {
+    "BUY": 113899,
+    "SELL": 98928
+   },
+   "usd_total": 57438622.22877
+  },
+  "ETH": {
+   "n_in": 31736665,
+   "n_dup": 0,
+   "time_decreasing_along_id": 41,
+   "outside_own_window": 0,
+   "windows_with_prints": 1375,
+   "prints": 31736665,
+   "sides": {
+    "BUY": 15718183,
+    "SELL": 16018482
+   },
+   "usd_total": 49230297774.528824
+  },
+  "HBAR": {
+   "n_in": 1660981,
+   "n_dup": 0,
+   "time_decreasing_along_id": 3,
+   "outside_own_window": 0,
+   "windows_with_prints": 468,
+   "prints": 1660981,
+   "sides": {
+    "BUY": 859622,
+    "SELL": 801359
+   },
+   "usd_total": 668626397.4215311
+  },
+  "HYPE": {
+   "n_in": 163551,
+   "n_dup": 0,
+   "time_decreasing_along_id": 0,
+   "outside_own_window": 0,
+   "windows_with_prints": 60,
+   "prints": 163551,
+   "sides": {
+    "SELL": 66707,
+    "BUY": 96844
+   },
+   "usd_total": 151015047.61833
+  },
+  "LINK": {
+   "n_in": 3994352,
+   "n_dup": 0,
+   "time_decreasing_along_id": 6,
+   "outside_own_window": 0,
+   "windows_with_prints": 736,
+   "prints": 3994352,
+   "sides": {
+    "BUY": 2156008,
+    "SELL": 1838344
+   },
+   "usd_total": 2812867476.1905975
+  },
+  "LTC": {
+   "n_in": 4124536,
+   "n_dup": 0,
+   "time_decreasing_along_id": 8,
+   "outside_own_window": 0,
+   "windows_with_prints": 905,
+   "prints": 4124536,
+   "sides": {
+    "SELL": 2044903,
+    "BUY": 2079633
+   },
+   "usd_total": 2316703850.921434
+  },
+  "NEAR": {
+   "n_in": 636625,
+   "n_dup": 0,
+   "time_decreasing_along_id": 4,
+   "outside_own_window": 0,
+   "windows_with_prints": 446,
+   "prints": 636625,
+   "sides": {
+    "SELL": 272520,
+    "BUY": 364105
+   },
+   "usd_total": 262283318.64977857
+  },
+  "ONDO": {
+   "n_in": 1245321,
+   "n_dup": 0,
+   "time_decreasing_along_id": 9,
+   "outside_own_window": 0,
+   "windows_with_prints": 265,
+   "prints": 1245321,
+   "sides": {
+    "BUY": 669330,
+    "SELL": 575991
+   },
+   "usd_total": 386897139.6781155
+  },
+  "PEPE": {
+   "n_in": 517808,
+   "n_dup": 0,
+   "time_decreasing_along_id": 1,
+   "outside_own_window": 0,
+   "windows_with_prints": 178,
+   "prints": 517808,
+   "sides": {
+    "BUY": 272546,
+    "SELL": 245262
+   },
+   "usd_total": 350487882.320647
+  },
+  "SOL": {
+   "n_in": 9064225,
+   "n_dup": 0,
+   "time_decreasing_along_id": 63,
+   "outside_own_window": 0,
+   "windows_with_prints": 780,
+   "prints": 9064225,
+   "sides": {
+    "SELL": 4615205,
+    "BUY": 4449020
+   },
+   "usd_total": 8958664405.840958
+  },
+  "SUI": {
+   "n_in": 2102200,
+   "n_dup": 0,
+   "time_decreasing_along_id": 12,
+   "outside_own_window": 0,
+   "windows_with_prints": 425,
+   "prints": 2102200,
+   "sides": {
+    "SELL": 973067,
+    "BUY": 1129133
+   },
+   "usd_total": 1212761870.48598
+  },
+  "XLM": {
+   "n_in": 3229199,
+   "n_dup": 0,
+   "time_decreasing_along_id": 1,
+   "outside_own_window": 0,
+   "windows_with_prints": 670,
+   "prints": 3229199,
+   "sides": {
+    "SELL": 1617376,
+    "BUY": 1611823
+   },
+   "usd_total": 1688281388.1963558
+  },
+  "XRP": {
+   "n_in": 8841572,
+   "n_dup": 0,
+   "time_decreasing_along_id": 36,
+   "outside_own_window": 0,
+   "windows_with_prints": 541,
+   "prints": 8841572,
+   "sides": {
+    "BUY": 4255330,
+    "SELL": 4586242
+   },
+   "usd_total": 8910800819.643188
+  },
+  "ZEC": {
+   "n_in": 1541142,
+   "n_dup": 0,
+   "time_decreasing_along_id": 2,
+   "outside_own_window": 0,
+   "windows_with_prints": 595,
+   "prints": 1541142,
+   "sides": {
+    "SELL": 714209,
+    "BUY": 826933
+   },
+   "usd_total": 1037175012.3973141
+  }
+ },
+ "window_status": {
+  "main": {
+   "complete": 5433
+  },
+  "early": {
+   "complete": 4609
+  }
+ },
+ "thr_rule_counts": {
+  "main": {
+   "1": 17345,
+   "2": 158,
+   "0": 24
+  },
+  "early": {
+   "1": 14225,
+   "2": 265,
+   "0": 73
+  }
+ },
+ "candle_check": {
+  "main": {
+   "n": 17527,
+   "usd_ratio_q": [
+    0.9910864668407603,
+    0.9994706055812181,
+    1.0002024227915047,
+    1.00269666867715,
+    1.0775016236411787
+   ],
+   "vol_ratio_median": 1.0000000009896353
+  },
+  "early": {
+   "n": 14563,
+   "usd_ratio_q": [
+    0.9856237935144065,
+    0.9993145017533587,
+    1.0001737877443564,
+    1.0019212989739619,
+    1.0231894910975174
+   ],
+   "vol_ratio_median": 1.0
+  }
+ },
+ "seconds": 43.5
+}
