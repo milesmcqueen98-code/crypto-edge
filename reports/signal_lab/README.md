@@ -12,7 +12,7 @@ Final report: the "Signal Lab: Report" doc (https://claude.ai/artifact/69u1BHtZs
 - **Goal (Miles):** raise R2-08's out-of-sample Sharpe at $250K by improving what the model knows. Develop on Jan 2025 -
   Mar 2026 (the selection era), read the other eras once, count every trial, score on the engine-faithful simulator,
   beat R2-08 in every era.
-- **Plan:** prereg.md, committed at ed5d42d before any candidate ran. Its deviation log has eight entries, each written
+- **Plan:** prereg.md, committed at ed5d42d before any candidate ran. Its deviation log has nine entries, each written
   before the runs it covers.
 - **Pipeline:** scripts/signal_lab/model.py runs the wick lab's own code with a choice of label, feature set, training
   history and threshold. The incumbent spec reproduces R2-08's trade list and daily series exactly.
@@ -31,6 +31,11 @@ Final report: the "Signal Lab: Report" doc (https://claude.ai/artifact/69u1BHtZs
 
 - **With the 2021-23 candidates added to training (H):** RF0H +0.39, S4F0H +0.42, LDF0H +0.01, LSF0H -1.53, RF2H +0.82,
   S4F2H +0.71, RF4H +0.16.
+- **Labels, seed-averaged** (five seed triples, frozen simulator, after the read; dose_seeds_main_label.csv,
+  dose_seeds_early_label.csv), development / Apr - Nov 2026 / 2022-23:
+  - S4 (spot costs): -0.06 / +0.30 / -0.06. Positive in all five triples in Apr - Nov 2026, negative in all five in
+    2022-23. Not a consistent gain.
+  - LD (the whole ladder): -0.28 / -0.41 / +0.07.
 - **Looser thresholds (round 4):** 50th percentile -1.06, 40th -1.66, 30th -2.30, 20th -2.72; predicted net above 0 bp
   -2.82. The signals below R2-08's 60th-percentile threshold lose money, so the holdout was not read for this idea.
 - **Multiple testing:** SPA p 0.14 against R2-08; StepM: none significantly better; deflated Sharpe of the improvement
@@ -102,7 +107,9 @@ Final report: the "Signal Lab: Report" doc (https://claude.ai/artifact/69u1BHtZs
 ## Next
 1. **Method:** average at least five seed triples per arm in every future model comparison.
 2. **Next model test:** forced-selling features from Coinbase trade prints for every candidate (edge hunt 2's EXH was
-   the closest miss as a filter), with this lab's pipeline, gates and seed averaging. It needs a data job.
+   the closest miss as a filter), with this lab's pipeline, gates and seed averaging. It is pre-registered in
+   prospective_prereg.md, written before any print is fetched. It needs a data job (candidate lists:
+   candidates_main.csv.gz and candidates_early.csv.gz).
 3. **Leave the bot's training as it is.** bot/train_v2.py already uses a growing window from 2024, five seeds, and
    drops unlabelled rows. Never switch to a rolling window. Optional: 15 seeds at the next retrain (same expected
    Sharpe, less seed noise). The research walk-forward (scripts/lab/core.py) should drop unlabelled rows when next

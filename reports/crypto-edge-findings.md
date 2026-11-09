@@ -145,7 +145,7 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
 Goal set by Miles: raise R2-08's out-of-sample Sharpe at $250K by improving what the model knows (features, labels,
 US-accessible data), since the execution ladder is exhausted. Final report: the "Signal Lab: Report" doc
 (https://claude.ai/artifact/69u1BHtZsDwEZNXdRwQUUF). Record: branch signal-lab. reports/signal_lab/prereg.md holds the
-plan and its eight-entry deviation log; reports/signal_lab/README.md holds the results.
+plan and its nine-entry deviation log; reports/signal_lab/README.md holds the results.
 
 **Protocol**
 - Pre-registered (ed5d42d) before any candidate ran; frozen (00a6992) before any holdout number.
@@ -170,6 +170,8 @@ plan and its eight-entry deviation log; reports/signal_lab/README.md holds the r
 
 - With the 2021–23 candidates added to training: +0.39 (R2-08's label and features), +0.82 (with position and regime).
 - Looser thresholds: 50th percentile −1.06, 40th −1.66, predicted net above 0 bp −2.82. Not read on the holdout.
+- Labels, averaged over five seed triples after the read (development / Apr – Nov 2026 / 2022–23): spot costs −0.06 /
+  +0.30 / −0.06; the whole ladder −0.28 / −0.41 / +0.07. No consistent gain.
 - SPA p 0.14; StepM: none significantly better.
 
 **Binding test** (ΔSharpe against R2-08, development / Apr – Nov 2026 / 2022–23; score /100):
@@ -210,7 +212,8 @@ plan and its eight-entry deviation log; reports/signal_lab/README.md holds the r
 **Next**
 1. Average at least five seed triples per arm in every future model comparison.
 2. Next model test: forced-selling features from Coinbase trade prints for every candidate (edge hunt 2's EXH), with
-   this lab's pipeline and gates. It needs a data job.
+   this lab's pipeline and gates and seed-averaged arms. Pre-registered in reports/signal_lab/prospective_prereg.md
+   before any print is fetched. It needs a data job.
 3. Leave the bot's training as it is: a growing window from 2024, five seeds, unlabelled rows dropped
    (bot/train_v2.py). Never switch to a rolling window. Optional: 15 seeds at the next retrain.
 4. Forward data: open interest and funding logs for a model test in about six months.

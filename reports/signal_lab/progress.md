@@ -70,3 +70,8 @@ Code: scripts/signal_lab/. Trial ledger: reports/signal_lab/screen.csv.
 - 16:15 Post-hoc split of the feature set (deviation 8): the coin-position half and the BTC-regime half both fail in
   the check era without the history (-0.64, -0.58) and recover with it (-0.12, +0.02). So the bear-market explanation
   for the regime features is not specific; any added features need the longer history. 41 specs in all.
+- 16:23 Seed-averaged label check (deviation 9): the ladder label stays negative (-0.28 development, -0.41 check). The
+  spot-cost label is mixed: -0.06 development, +0.30 check (5 of 5 seed triples), -0.06 in 2022-23 (0 of 5). Not a
+  consistent gain.
+- 16:24 Next test pre-registered before any data is fetched (prospective_prereg.md): five forced-selling features from
+  Coinbase trade prints, two candidates, seed-averaged arms. Candidate lists exported for the data job.
