@@ -73,6 +73,13 @@ Final report: the "Signal Lab: Report" doc (https://claude.ai/artifact/69u1BHtZs
   - **One 15-seed model lands on the seed average** (dose_seeds15_main.csv): R2-08 scores 2.34 / 2.62 against the
     five-triple means of 2.40 / 2.61. With 15 seeds, features + history is +0.10 in Apr - Nov 2026 and history only
     -0.06. A larger ensemble removes the seed lottery without changing the expected Sharpe.
+  - **2022-23** (dose_seeds_early.csv): the position-and-regime features gain +0.19 on average over five seed triples
+    (range -0.03 to +0.29) and +0.32 with 15 seeds, against R2-08 rebuilt by the lab.
+  - **The reversals are not seed luck** (dose_seeds_main_feat.csv): averaged over five seed triples, RF2 is +0.62 on
+    development and -0.84 in Apr - Nov 2026 (every triple negative); RF4 is +0.21 and -0.72.
+  - **History rescues the features:** adding 2021-23 moves RF2's Apr - Nov 2026 result from -0.84 to +0.13. A likely
+    reason, formed after the read: its regime features were otherwise learned on 2024-25 alone, and 2021-23 adds a
+    bear market.
 
 ## Checks
 - **Parity:** the incumbent spec gives R2-08's trades and frozen-simulator daily series exactly, on development and on
@@ -93,5 +100,8 @@ Final report: the "Signal Lab: Report" doc (https://claude.ai/artifact/69u1BHtZs
 1. **Method:** average at least five seed triples per arm in every future model comparison.
 2. **Next model test:** forced-selling features from Coinbase trade prints for every candidate (edge hunt 2's EXH was
    the closest miss as a filter), with this lab's pipeline, gates and seed averaging. It needs a data job.
-3. **Training fixes with no expected change:** drop the two unlabelled rows; keep the growing window.
+3. **Leave the bot's training as it is.** bot/train_v2.py already uses a growing window from 2024, five seeds, and
+   drops unlabelled rows. Never switch to a rolling window. Optional: 15 seeds at the next retrain (same expected
+   Sharpe, less seed noise). The research walk-forward (scripts/lab/core.py) should drop unlabelled rows when next
+   touched.
 4. **Forward data:** open interest and funding logs (hunt 3's hourly logger) for a model test in about six months.

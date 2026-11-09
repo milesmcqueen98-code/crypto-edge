@@ -453,7 +453,7 @@ def doseseeds(names):
     triples = ((7, 11, 23), (1, 2, 3), (4, 5, 6), (8, 9, 10), (12, 13, 14))
     union = tuple(x for t in triples for x in t)               # one 15-seed model (deviation 7)
     sets = (union,) if os.environ.get("ONLY15") else (triples + ((union,) if os.environ.get("WITH15") else ()))
-    out = os.path.join(OUT, f"dose_seeds{'15' if os.environ.get('ONLY15') else ''}_{BASE}.csv")
+    out = os.path.join(OUT, f"dose_seeds{'15' if os.environ.get('ONLY15') else ''}_{BASE}{os.environ.get('TAGOUT', '')}.csv")
     for seeds in sets:
         for name in names:
             _, pred, thr, _ = L.fit(name, periods, seeds=seeds)

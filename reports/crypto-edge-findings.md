@@ -194,19 +194,24 @@ plan and its seven-entry deviation log; reports/signal_lab/README.md holds the r
 - Seed noise (five seed triples): R2-08's Sharpe has a standard deviation of 0.13 (development) and 0.15 (Apr – Nov
   2026). Averaged over seeds, history only gains −0.03 in Apr – Nov 2026 and features + history +0.13. More history
   cuts the seed spread to 0.04.
+- The feature reversals are not seed luck: averaged over seeds the features model is +0.62 on development and −0.84 in
+  Apr – Nov 2026, the new-data model +0.21 and −0.72. Adding the 2021–23 history moves the features model from −0.84 to
+  +0.13 there (a bear market in the training data is the likely reason; formed after the read).
 
 **Checks**
 - Incumbent parity exact on development and Apr – Nov 2026. Every-minute panels match candidate predictions to 1e-5;
   deep paths 0 mismatches.
-- R2-08's original pipeline kept two candidate rows without a label (BCH and XLM, Mar 4 2023; LightGBM reads them as
-  0). Dropping them changes 12 of about 750 trades in 2023 (engine-faithful Sharpe 1.645 against 1.684).
+- R2-08's research walk-forward kept two candidate rows without a label (BCH and XLM, Mar 4 2023; LightGBM reads them
+  as 0). Dropping them changes 12 of about 750 trades in 2023 (engine-faithful Sharpe 1.645 against 1.684). The bot's
+  own training already drops such rows.
 - An independent read-only review found no look-ahead and nothing that changes a verdict.
 
 **Next**
 1. Average at least five seed triples per arm in every future model comparison.
 2. Next model test: forced-selling features from Coinbase trade prints for every candidate (edge hunt 2's EXH), with
    this lab's pipeline and gates. It needs a data job.
-3. Training fixes with no expected change: drop the two unlabelled rows; keep the growing window.
+3. Leave the bot's training as it is: a growing window from 2024, five seeds, unlabelled rows dropped
+   (bot/train_v2.py). Never switch to a rolling window. Optional: 15 seeds at the next retrain.
 4. Forward data: open interest and funding logs for a model test in about six months.
 
 ## Explore v1 (Nov 9): 4,691 variants of the spot ladder; nothing held out of sample

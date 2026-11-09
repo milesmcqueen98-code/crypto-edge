@@ -58,3 +58,12 @@ Code: scripts/signal_lab/. Trial ledger: reports/signal_lab/screen.csv.
 - 15:57 Independent review back: no look-ahead, nothing that changes a verdict; six minor notes (README).
 - 16:02 Mistake: a queued job waited on itself and never started (10 minutes of idle CPU). Restarted directly: one
   15-seed R2-08 model against the five 3-seed models, all eras.
+- 16:06 15-seed models land on the seed averages (R2-08 2.34 / 2.62 against 2.40 / 2.61). A larger ensemble removes
+  the seed lottery and leaves the expected Sharpe unchanged.
+- 16:09 2022-23, five seed triples: the features gain +0.19 on average (range -0.03 to +0.29).
+- 16:12 Seed-averaged check of the reversals: features +0.62 on development and -0.84 in the check era; new data +0.21
+  and -0.72. Not seed luck. Adding history moves the features from -0.84 to +0.13 in the check era.
+- 16:13 Deliverables: report doc filled (verdict, binding test, development, why, next test, record); README and
+  findings section written; everything committed and pushed.
+- Verdict: no change. Best scorer: features + history, 51.6 / 100 (above R2-08 in all 12 cells, under the +0.20 bar in
+  both holdout eras, p 0.27).
