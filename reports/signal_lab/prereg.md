@@ -231,3 +231,12 @@ unread.
    - **Reading it:** if the story is right, RF2b should fail in the check era without the history and recover with it,
      and RF2a should depend on the history much less.
    - These four specs select nothing. They count toward N (41) and shape only the next pre-registered test.
+9. **Seed-averaged check of the label result (Nov 9 2026, 16:18 ET; information only, logged before it ran).**
+   - **Result of deviation 8:** the coin-position half and the BTC-regime half of F2 both fail in the check era
+     without the history (-0.64, -0.58) and recover with it (-0.12, +0.02). The bear-market explanation is not
+     specific to the regime features.
+   - **Why this check:** the screen compared single seed triples, and R2-08's seed noise turned out to be 0.13 Sharpe.
+     The label results on base features (S4 -0.11, LD -0.27) are within about two standard deviations of that noise,
+     so "the label fix did not help" needs a seed-averaged reading.
+   - **Runs:** S4F0 and LDF0 with five seed triples, frozen simulator, every era. They select nothing and cannot
+     become candidates today; a consistent gain would only shape the next pre-registered test.
