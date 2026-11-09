@@ -50,3 +50,9 @@ print fetcher).
     to the history model (RF6H against RF0H: SD 0.03, 5 of 5). Most of RF6H's +0.43 is the added history (+0.37),
     which did not carry out of sample in the first lab.
   - This table's windows end at the candidate minute, so the reading stands only if the boundary diagnostic clears it.
+- 18:59 Audit's first report: pass with conditions. No look-ahead in the feature code, ADV, join, walk-forward, mixed
+  panel, lock or scorer (all checked directly; candidate timestamps are candle starts). One major finding, the candle
+  clock: trades stamped before the candidate minute sit in its candle for 0.1-0.3% of candidates, and 0.6% / 1.6% /
+  1.6% (selection / Apr - Nov 2026 / 2022-23) once candidates with a missing previous candle are counted. Deviation 3
+  logged: the 0.5% bar per read era, missing previous candles count as leaks under 0 s and 5 s, one margin for every
+  row, and a second audit pass on the margin code before the lock is created.

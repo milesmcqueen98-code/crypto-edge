@@ -130,3 +130,24 @@ A candidate with no prints in its window gets missing values (LightGBM handles t
      - the 0 s table on the selection era only (if it is not the primary), to measure what the boundary adds.
      - The binding test runs the primary table only. Gates and scorecard use the primary table only.
    - **Unchanged:** candidates, seeds, gates, scorecard, hand scores and the order of reads.
+3. **After the audit's first report (Nov 9 2026, 18:59 ET).** Written before the boundary diagnostic has reported and
+   before any holdout number exists.
+   - **Audit: pass with conditions.** No look-ahead found in the feature code, the ADV, the join, the walk-forward,
+     the mixed panel, the holdout lock or the scorer. One major finding, the candle clock of deviation 2.
+   - **Its estimates at the candidate's own boundary** (share of candidates with trades stamped before q in the
+     candle of q): 0.08-0.14% in the selection era, 0.20-0.32% in Apr - Nov 2026, under 0.05% in 2022-23. With
+     candidates whose previous candle is missing: 0.6%, 1.6% and 1.6%.
+   - **Conditions adopted. They tighten deviation 2's rule:**
+     - The 0.5% bar applies in each read era (selection, Apr - Nov 2026, 2022-23), not in each data era.
+     - A candidate whose candle of q-1 is missing while prints exist in that minute leaks under 0 s and 5 s. The
+       bid's reference price is then stale, so the real crossing may sit in the missing minute, which those windows
+       include. Under 60 s the same holds when the candles of q-1 and q-2 are both missing with prints in q-2.
+     - One margin for every row. No row is masked: a mask built from the candle of q would itself leak.
+     - Every step reads the chosen table from its own folder, and the table's sha256 is logged.
+     - The frozen-simulator and all-armed sensitivities are reported beside the binding result (as declared).
+     - Nobody computes statistics of the print features against labels on holdout rows before the read.
+     - RF6H's result is read beside RF6's and the first lab's history-only model: against R2-08 it also carries the
+       2021-23 history.
+   - **Before the lock file is created,** the auditor checks the margin code and the leak counts.
+   - **Selection reading on the 0 s table** (run under deviation 2; test2_m0/): information unless the rule picks
+     0 s.
