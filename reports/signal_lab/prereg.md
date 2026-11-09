@@ -174,3 +174,16 @@ unread.
    - **Seed noise:** RF0, RF2 and RF0H refit with four other seed triples on the selection era.
    - These runs select nothing and cannot become candidates. They read the check era and 2022-23 on the frozen
      simulator for non-candidates, as information. The three new specs count toward N (31).
+5. **After the read (Nov 9 2026, 15:44 ET): seed robustness of the history result, and a pipeline difference found.**
+   - **The read is done** (holdout.txt). No finalist passed. RF2H was positive in all 12 cells but below +0.20 in both
+     holdout eras; RF0H was +0.12 in the check era.
+   - **Seed robustness (information):** RF0 and RF0H refit with five seed triples over the whole walk-forward, on the
+     frozen simulator, selection and check. Logged before it ran. It asks whether the history gain is larger than the
+     noise from the model's random seeds. It selects nothing.
+   - **Pipeline difference in 2022-23:** R2-08 rebuilt through this lab's pipeline equals the frozen book through
+     2023Q1 and differs slightly from 2023Q2.
+     - Cause: two candidate rows (BCH and XLM, Mar 4 2023) have no label. The lab drops them from training; the
+       original pipeline kept them.
+     - Size: 12 of about 750 trades differ; engine-faithful Sharpe 1.645 against the frozen 1.684.
+     - The registered comparison stays against the frozen R2-08. Like for like, RF2's 2022-23 gain is +0.21, not
+       +0.17. No verdict depends on it.

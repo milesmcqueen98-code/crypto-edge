@@ -1,0 +1,72 @@
+Signal lab: binding test on the engine-faithful simulator (model-priced exits unless stated)
+
+== RF2: FAIL  (gates 1-5: False False False True False); score 32.4/100
+era         sel    chk  early
+cfg                          
+S_0.5     0.634 -0.589  0.167
+S_0.25    0.693 -0.572  0.207
+cap_1M    0.252  0.086  0.380
+base_0.5  0.842 -0.475  0.094
+primary cells (Sharpe, incumbent, return, incumbent, max DD, incumbent, worst day, incumbent):
+       sharpe  sharpe_inc     ret  ret_inc   maxdd  maxdd_inc   worst  worst_inc
+era                                                                             
+sel    3.1277      2.4941  0.2210   0.1990 -0.0133    -0.0413 -0.0133    -0.0226
+chk    1.6266      2.2159  0.1344   0.1640 -0.0224    -0.0104 -0.0191    -0.0104
+early  1.8506      1.6836  0.1104   0.1016 -0.0241    -0.0221 -0.0226    -0.0221
+pooled holdout: bootstrap t -0.02, p 0.482, Holm 0.964; top-5-day share of the gain nan; by year {"2022": 0.1226, "2023": 0.098, "2025": 0.2106, "2026": 0.1452}
+print-priced (information): sel +0.485, chk -0.674, early +0.113
+
+== RF4: FAIL  (gates 1-5: False False False True False); score 19.3/100
+era         sel    chk  early
+cfg                          
+S_0.5     0.340 -0.457 -0.437
+S_0.25    0.373 -0.429 -0.377
+cap_1M    0.185 -0.206 -0.462
+base_0.5  0.129 -0.510 -0.479
+primary cells (Sharpe, incumbent, return, incumbent, max DD, incumbent, worst day, incumbent):
+       sharpe  sharpe_inc     ret  ret_inc   maxdd  maxdd_inc   worst  worst_inc
+era                                                                             
+sel    2.8337      2.4941  0.2076   0.1990 -0.0216    -0.0413 -0.0097    -0.0226
+chk    1.7589      2.2159  0.1371   0.1640 -0.0117    -0.0104 -0.0080    -0.0104
+early  1.2467      1.6836  0.0920   0.1016 -0.0245    -0.0221 -0.0239    -0.0221
+pooled holdout: bootstrap t -1.50, p 0.946, Holm 0.964; top-5-day share of the gain nan; by year {"2022": 0.1071, "2023": 0.0768, "2025": 0.2154, "2026": 0.1255}
+print-priced (information): sel +0.212, chk -0.503, early -0.521
+
+== RF2H: FAIL  (gates 1-5: False True True True False); score 51.6/100
+era         sel    chk  early
+cfg                          
+S_0.5     0.794  0.158  0.167
+S_0.25    0.892  0.228  0.207
+cap_1M    0.719  0.214  0.380
+base_0.5  0.292  0.323  0.094
+primary cells (Sharpe, incumbent, return, incumbent, max DD, incumbent, worst day, incumbent):
+       sharpe  sharpe_inc     ret  ret_inc   maxdd  maxdd_inc   worst  worst_inc
+era                                                                             
+sel    3.2880      2.4941  0.2331   0.1990 -0.0137    -0.0413 -0.0099    -0.0226
+chk    2.3744      2.2159  0.1550   0.1640 -0.0103    -0.0104 -0.0103    -0.0104
+early  1.8506      1.6836  0.1104   0.1016 -0.0241    -0.0221 -0.0226    -0.0221
+pooled holdout: bootstrap t 0.56, p 0.269, Holm 0.808; top-5-day share of the gain 3.17; by year {"2022": 0.1226, "2023": 0.098, "2025": 0.2432, "2026": 0.1402}
+print-priced (information): sel +0.639, chk +0.056, early +0.113
+
+== RF0H: FAIL  (gates 1-5: False False True True False); score 33.7/100
+era         sel    chk  early
+cfg                          
+S_0.5     0.352  0.122    0.0
+S_0.25    0.448  0.189    0.0
+cap_1M    0.525  0.014    0.0
+base_0.5 -0.032  0.147    0.0
+primary cells (Sharpe, incumbent, return, incumbent, max DD, incumbent, worst day, incumbent):
+       sharpe  sharpe_inc     ret  ret_inc   maxdd  maxdd_inc   worst  worst_inc
+era                                                                             
+sel    2.8460      2.4941  0.2170   0.1990 -0.0247    -0.0413 -0.0169    -0.0226
+chk    2.3379      2.2159  0.1669   0.1640 -0.0107    -0.0104 -0.0107    -0.0104
+early  1.6836      1.6836  0.1016   0.1016 -0.0221    -0.0221 -0.0221    -0.0221
+pooled holdout: bootstrap t 0.50, p 0.287, Holm 0.287; top-5-day share of the gain 8.16; by year {"2022": 0.095, "2023": 0.1081, "2025": 0.2204, "2026": 0.1499}
+print-priced (information): sel +0.212, chk -0.010, early +0.000
+
+Scorecard:
+spec  sharpe  capacity  consistency  evidence  spread  risk  mechanism  implementation  total
+ RF2     0.0       5.8         11.2       0.0     0.0   7.3        4.0             4.0   32.4
+ RF4     0.0       0.0          5.0       0.0     0.0   7.3        5.0             2.0   19.3
+RF2H    10.2       7.4         15.0       0.0     0.0  10.0        6.0             3.0   51.6
+RF0H     3.8       0.2          8.8       0.0     0.0  10.0        7.0             4.0   33.7

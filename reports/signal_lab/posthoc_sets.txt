@@ -1,0 +1,47 @@
+POST HOC (information only): signals kept by both models, only R2-08, only the finalist
+ladder_bp = gross per dollar of the whole signal (thirds), before costs and capacity
+
+== RF2
+  era           set   n  ladder_bp   sum_bp  deep_per_signal
+  sel          both 777      54.25 42155.45             0.69
+  sel    only R2-08 378      14.63  5530.61             0.76
+  sel only finalist 176      24.42  4298.50             0.88
+  chk          both 334      40.90 13660.52             0.66
+  chk    only R2-08  78      28.13  2194.11             0.64
+  chk only finalist  69       4.06   280.30             0.90
+early          both 564      52.33 29512.72             0.74
+early    only R2-08 180      19.26  3467.60             0.51
+early only finalist 174      22.66  3943.37             0.75
+
+== RF4
+  era           set   n  ladder_bp   sum_bp  deep_per_signal
+  sel          both 846      51.79 43815.42             0.70
+  sel    only R2-08 309      12.53  3870.65             0.75
+  sel only finalist 192       7.47  1434.04             0.81
+  chk          both 340      41.27 14032.97             0.65
+  chk    only R2-08  72      25.30  1821.66             0.69
+  chk only finalist  51      15.02   766.19             0.73
+early          both 510      50.73 25872.04             0.70
+early    only R2-08 234      30.38  7108.29             0.67
+early only finalist 112      23.70  2654.94             0.81
+
+== RF2H
+  era           set   n  ladder_bp   sum_bp  deep_per_signal
+  sel          both 803      54.56 43811.98             0.70
+  sel    only R2-08 352      11.01  3874.09             0.75
+  sel only finalist 233      11.42  2660.11             0.74
+  chk          both 280      48.47 13572.12             0.68
+  chk    only R2-08 132      17.29  2282.51             0.63
+  chk only finalist  88      26.92  2368.72             0.58
+early          both 564      52.33 29512.72             0.74
+early    only R2-08 180      19.26  3467.60             0.51
+early only finalist 174      22.66  3943.37             0.75
+
+== RF0H
+era           set   n  ladder_bp   sum_bp  deep_per_signal
+sel          both 882      51.02 45000.47             0.69
+sel    only R2-08 273       9.84  2685.59             0.80
+sel only finalist 243       3.74   909.27             0.72
+chk          both 279      48.71 13589.73             0.65
+chk    only R2-08 133      17.03  2264.90             0.68
+chk only finalist  90      23.96  2156.80             0.58

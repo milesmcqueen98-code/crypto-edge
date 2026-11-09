@@ -428,6 +428,26 @@ def dose(names):
         pd.DataFrame(rows).to_csv(path, index=False)
 
 
+def doseseeds(names):
+    """Seed robustness of a read (deviation log): each spec refit with five seed triples over the whole walk-forward,
+    frozen-simulator Sharpe per era at S*. Information only."""
+    L = Lab()
+    fix_scale()
+    periods = pd.period_range(*core.WF_Q, freq="Q")
+    eras = ERA_OF[BASE]
+    rows = []
+    for seeds in ((7, 11, 23), (1, 2, 3), (4, 5, 6), (8, 9, 10), (12, 13, 14)):
+        for name in names:
+            _, pred, thr, _ = L.fit(name, periods, seeds=seeds)
+            tr = L.trades(pred, thr)
+            _, d = book_of(tr, f"{BASE}_dose_seed", eras)
+            for e in eras:
+                st = fsim.stats(d[e], CFG["C"], e)
+                rows.append(dict(spec=name, seeds=str(seeds), era=e, sharpe=st["sharpe"], ret_yr=st["ret_yr"]))
+                print(rows[-1], flush=True)
+            pd.DataFrame(rows).to_csv(os.path.join(OUT, f"dose_seeds_{BASE}.csv"), index=False)
+
+
 def noise(names):
     """Seed-noise calibration of the screen (information only; not trials): each spec refit with other seed triples."""
     L = Lab()
@@ -673,3 +693,5 @@ if __name__ == "__main__":
         noise(sys.argv[3:])
     elif mode == "dose":
         dose(sys.argv[3:])
+    elif mode == "doseseeds":
+        doseseeds(sys.argv[3:])
