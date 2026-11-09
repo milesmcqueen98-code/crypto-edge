@@ -11,6 +11,8 @@ Rules (no-harm = minute Sharpe at $250K >= the incumbent's and blended $1M Sharp
   Ensemble  the 10 best no-harm variants, daily returns averaged (each at full capital)
   Family bests (geometry, exits, filters): the best no-harm variant that changes only that family's dimensions, not
   already listed.
+  Best single change (deviation log entry 3): the best no-harm variant that changes exactly one dimension from the
+  incumbent, not already listed.
 Writes reports/explore/finalists.json.
 """
 import json
@@ -43,7 +45,26 @@ def picks():
         if len(g):
             fam.append((f"Best {f}", g.iloc[0]))
             listed.add(g.iloc[0].id)
+    nch = n_changed(S)
+    g = nh[(nch[nh.index] == 1) & ~nh.id.isin(listed)].sort_values("sharpe_b250", ascending=False)
+    if len(g):
+        fam.append(("Best single change", g.iloc[0]))
     return S, out, ens, fam
+
+
+def n_changed(S):
+    """Number of design dimensions changed from the incumbent (-1 if the design is not a full one)."""
+    out = []
+    for x in S.design:
+        d = json.loads(x) if isinstance(x, str) else {}
+        d.pop("note", None)
+        if not set(select_rules.variants_r3.V1.DIMS) <= set(d):
+            out.append(-1)
+            continue
+        f = dict(select_rules.variants_r3.BASE3)
+        f.update(d)
+        out.append(sum(f[k] != select_rules.variants_r3.BASE3[k] for k in f))
+    return pd.Series(out, index=S.index)
 
 
 def main():

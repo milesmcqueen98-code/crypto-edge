@@ -191,3 +191,33 @@ Scored on check and 2022-23, the "binding cells".
    - **Verification:** xsim's sigma floor matches the legacy path (wick_v4 rungs.run with the dropped signals removed from
      its input) to 2e-17 on the selection era (indep_sigma_selection.txt).
    - All round-3b variants count toward N.
+3. **Freeze (Nov 9 2026, 09:16 ET), before the holdout read.** 4,691 variants were run on the selection era (rounds 1, 2, 3
+   and 3b). The short list is in finalists.json, built by freeze.py.
+   - **A 7th finalist, "Best single change":** the best no-harm variant that changes exactly one dimension. It is a sigma
+     floor of 55 bp, with everything else at the incumbent.
+     - Why: the six registered slots change 4-11 dimensions each, except geometry (2).
+     - Inside the selection era, CSCV shows that picks changing many dimensions keep 14-46% of their in-sample gain.
+       The single-change rule keeps 57% (select_rules_r123.txt).
+     - A one-knob change is also the cheapest to check forward.
+     - Holm runs over all 7 finalists.
+   - **Hand scores** (mechanism /10, implementation /5) are in finalists.json, with reasons, assigned now.
+   - **Expectations, recorded before the read.** Blended ΔSharpe at $250K that each pick should keep out of sample, from
+     the selection-era CSCV retention of its rule:
+
+     | Finalist | Expected ΔSharpe |
+     |---|---|
+     | Best | +0.57 |
+     | Robust | +0.53 |
+     | Ensemble | +0.79 |
+     | Best geometry | -0.09 |
+     | Best exits | +0.14 |
+     | Best filters | +0.55 |
+     | Best single change | +0.55 |
+
+     - The holdout eras differ in regime, so expect less than this.
+     - The sizing lab's holdout argues against the strictness part of Best, Robust, Ensemble and Best filters.
+   - **Selection-era statistics** (all 4,691 variants):
+     - PBO 0.23. SPA p 0.067 against the incumbent. StepM: 0 rejections.
+     - Deflated Sharpe of the improvement (the vol-matched difference against the incumbent), with N = 4,691: 0.02-0.24
+       for the six non-geometry finalists (dsr.txt).
+     - So nothing is significant in-sample once the search is counted. The holdout decides.

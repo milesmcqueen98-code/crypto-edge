@@ -14,6 +14,7 @@ out-of-sample half Sharpe. Rules:
   ens10_nh  equal-weight average of the 10 best in-sample no-harm variants' daily returns
   ens10_ols same, the 10 best by OLS fitted value
   fam_<f>   highest in-sample Sharpe among the variants that change only family f (geometry / exits / filters)
+  single_nh highest in-sample Sharpe among no-harm variants that change exactly one dimension
 Information for choosing and describing the short list; the binding test stays the single holdout read.
 Writes reports/explore/select_rules_r<rounds>.txt.
 """
@@ -73,6 +74,20 @@ def family_of(V):
     return np.array(out)
 
 
+def n_changed(V):
+    out = []
+    for x in V.design:
+        d = json.loads(x) if isinstance(x, str) else {}
+        d.pop("note", None)
+        if not set(variants_r3.V1.DIMS) <= set(d):
+            out.append(-1)
+            continue
+        f = dict(variants_r3.BASE3)
+        f.update(d)
+        out.append(sum(f[k] != variants_r3.BASE3[k] for k in f))
+    return np.array(out)
+
+
 def main(rounds):
     V, cols, E = analyze.load()
     V = V.set_index("id").loc[cols].reset_index()
@@ -85,6 +100,7 @@ def main(rounds):
     rnd = (V.origin.to_numpy() == "random") & has_d
     Xr_pinv = np.linalg.pinv(X[rnd])
     fam = family_of(V)
+    nch = n_changed(V)
     n, N = E.shape
     S = 16
     blocks = np.array_split(np.arange(n), S)
@@ -115,7 +131,8 @@ def main(rounds):
     def sharpe_series(x):
         return x.mean() / x.std(ddof=1) * ann
 
-    rules = ["max_all", "max_nh", "lcb_nh", "ols_nh", "shr50_nh", "ens10_nh", "ens10_ols"] + [f"fam_{f}" for f in FAM_DIMS]
+    rules = (["max_all", "max_nh", "lcb_nh", "ols_nh", "shr50_nh", "ens10_nh", "ens10_ols"] + [f"fam_{f}" for f in FAM_DIMS]
+             + ["single_nh"])
     res = {r: [] for r in rules}
     is_gain = {r: [] for r in rules}
     picks = {r: {} for r in rules}
@@ -142,6 +159,7 @@ def main(rounds):
         for f in FAM_DIMS:
             mk = (fam == f) | (np.arange(N) == j0)
             choice[f"fam_{f}"] = arg(si, mk)
+        choice["single_nh"] = arg(si, (nch == 1) & nh)
         for r, j in choice.items():
             res[r].append(so[j] - so[j0])
             is_gain[r].append(si[j] - si[j0])

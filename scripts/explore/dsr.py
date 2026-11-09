@@ -66,6 +66,26 @@ def main():
             p, sr, g3, g4 = dsr(e, s0)
             parts.append(f"{s0 * math.sqrt(365):14.2f} {p:6.3f}")
         lines.append(f"{name:16s} {sr * math.sqrt(365):8.3f} {g3:6.2f} {g4:6.1f} " + " ".join(parts))
+    # the same deflation on the improvement: the vol-matched daily difference against the incumbent
+    j0 = cols.index("base")
+    Zv = E / E.std(0, ddof=1)
+    D = Zv - Zv[:, [j0]]
+    D = np.delete(D, j0, axis=1)
+    srd = D.mean(0) / D.std(0, ddof=1)
+    var_d = float(np.var(srd, ddof=1))
+    lines += ["", "Deflated improvement: the vol-matched daily difference vs the incumbent (d_t = r_v / sd_v - r_0 / sd_0),",
+              f"cross-variant variance of its daily Sharpe {var_d:.3e} (annualized SD {math.sqrt(var_d * 365):.3f})",
+              f"{'finalist':16s} {'SR_d(ann)':>9s} " + " ".join(f"{k + ' SR0':>14s} {'DSR':>6s}" for k in Ns)]
+    e0 = holdout.excess(holdout.series({"spec": {}}, "selection", 250e3), "selection")
+    for name, f in rows[1:]:
+        e = holdout.excess(holdout.series(f, "selection", 250e3), "selection")
+        d = e / e.std(ddof=1) - e0 / e0.std(ddof=1)
+        parts = []
+        for k, n in Ns.items():
+            s0 = sr0(var_d, n)
+            p, sr, _, _ = dsr(d, s0)
+            parts.append(f"{s0 * math.sqrt(365):14.2f} {p:6.3f}")
+        lines.append(f"{name:16s} {sr * math.sqrt(365):9.3f} " + " ".join(parts))
     txt = "\n".join(lines) + "\n"
     open(os.path.join(OUT, "dsr.txt"), "w").write(txt)
     print(txt)

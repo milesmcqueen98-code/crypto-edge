@@ -1,0 +1,748 @@
+{
+ "incumbent": {
+  "spec": {}
+ },
+ "finalists": [
+  {
+   "name": "Best",
+   "id": "r3c_r2_rnd_0306_tp_d40_100_sig_min_40.0",
+   "spec": {
+    "rungs": {
+     "4.0": 1.0,
+     "6.0": 0.6666666666666666,
+     "9.0": 0.4444444444444444,
+     "12.0": 0.3333333333333333
+    },
+    "tp": {
+     "4.0": [
+      [
+       0.4,
+       1
+      ]
+     ],
+     "6.0": [
+      [
+       1.0,
+       1
+      ]
+     ],
+     "9.0": [
+      [
+       1.0,
+       1
+      ]
+     ],
+     "12.0": [
+      [
+       1.0,
+       1
+      ]
+     ]
+    },
+    "H": 45,
+    "cancel": "parent_tp",
+    "r_min": 1.2,
+    "adv_floor": 3000000.0,
+    "slots": 8,
+    "kappa": 0.0015,
+    "per_trade": 0.33,
+    "cash_cap": 0.8,
+    "sig_min": 40.0
+   },
+   "hand": [
+    4,
+    2
+   ],
+   "why": "Mechanism 4: parts have support (deeper rungs held for the full reversion of forced selling; a mild sigma floor), but strictness 1.2 runs against the sizing lab's holdout evidence on the AI's low tercile, and the 11-knob combination is the local optimum of one random draw's neighbourhood. Implementation 2: new depths (9, 12), take-profit by depth, 45-minute hold, strictness, ADV floor, slot limit and sigma floor in the engine.",
+   "sel": {
+    "sharpe_b250": 4.030151972302889,
+    "lcb": 3.2896563114219872,
+    "sharpe_m250": 3.798940312876522,
+    "sharpe_b1m": 3.355486420139482
+   }
+  },
+  {
+   "name": "Robust",
+   "id": "r3b_r3c_r2_rnd_0306_tp_L2lo_bid_to_5_tpA14",
+   "spec": {
+    "rungs": {
+     "4.0": 1.0,
+     "6.0": 0.6666666666666666,
+     "9.0": 0.4444444444444444,
+     "12.0": 0.3333333333333333
+    },
+    "tp": {
+     "4.0": [
+      [
+       0.4,
+       1
+      ],
+      [
+       0.6,
+       1
+      ],
+      [
+       0.8,
+       1
+      ]
+     ],
+     "6.0": [
+      [
+       0.6,
+       1
+      ],
+      [
+       0.8,
+       1
+      ],
+      [
+       1.0,
+       1
+      ]
+     ],
+     "9.0": [
+      [
+       0.6,
+       1
+      ],
+      [
+       0.8,
+       1
+      ],
+      [
+       1.0,
+       1
+      ]
+     ],
+     "12.0": [
+      [
+       0.6,
+       1
+      ],
+      [
+       0.8,
+       1
+      ],
+      [
+       1.0,
+       1
+      ]
+     ]
+    },
+    "H": 45,
+    "cancel": "parent_tp",
+    "r_min": 1.2,
+    "adv_floor": 3000000.0,
+    "slots": 8,
+    "kappa": 0.0015,
+    "per_trade": 0.33,
+    "cash_cap": 0.8,
+    "bid_to": 5
+   },
+   "hand": [
+    4,
+    2
+   ],
+   "why": "Mechanism 4: same core as Best, plus scale-out take-profits (Gueant-Lehalle-Fernandez-Tapia) and a 5-minute deeper-bid timeout (forced selling is front-loaded). Implementation 2: as Best, plus take-profit ladders and the bid timeout.",
+   "sel": {
+    "sharpe_b250": 4.003960218252008,
+    "lcb": 3.3589185695839747,
+    "sharpe_m250": 3.8523367146090406,
+    "sharpe_b1m": 3.532853698375781
+   }
+  },
+  {
+   "name": "Ensemble",
+   "ids": [
+    "r3c_r2_rnd_0306_tp_d40_100_sig_min_40.0",
+    "r3c_r2_rnd_0306_tp_d40_100_bid_to_5",
+    "r3b_r3c_r2_rnd_0306_tp_L2lo_bid_to_5_tpA14",
+    "r3b_r3c_r2_rnd_0306_tp_L2lo_bid_to_5_tpA4_40_70_100",
+    "r3b_r3c_r2_rnd_0306_tp_d40_100_sig_min_40.0_A5_to30",
+    "r3c_r2_rnd_0306_tp_L2lo_bid_to_5",
+    "r3c_r2_rnd_0306_tp_d40_100_bid_to_10",
+    "r3c_r2_rnd_0306_tp_L3w_bid_to_5",
+    "r3b_r3c_r2_rnd_0306_tp_d40_100_sig_min_40.0_tpA4_40_70_100",
+    "r3c_r2_rnd_0306_tp_d40_80_bid_to_5"
+   ],
+   "members": [
+    {
+     "rungs": {
+      "4.0": 1.0,
+      "6.0": 0.6666666666666666,
+      "9.0": 0.4444444444444444,
+      "12.0": 0.3333333333333333
+     },
+     "tp": {
+      "4.0": [
+       [
+        0.4,
+        1
+       ]
+      ],
+      "6.0": [
+       [
+        1.0,
+        1
+       ]
+      ],
+      "9.0": [
+       [
+        1.0,
+        1
+       ]
+      ],
+      "12.0": [
+       [
+        1.0,
+        1
+       ]
+      ]
+     },
+     "H": 45,
+     "cancel": "parent_tp",
+     "r_min": 1.2,
+     "adv_floor": 3000000.0,
+     "slots": 8,
+     "kappa": 0.0015,
+     "per_trade": 0.33,
+     "cash_cap": 0.8,
+     "sig_min": 40.0
+    },
+    {
+     "rungs": {
+      "4.0": 1.0,
+      "6.0": 0.6666666666666666,
+      "9.0": 0.4444444444444444,
+      "12.0": 0.3333333333333333
+     },
+     "tp": {
+      "4.0": [
+       [
+        0.4,
+        1
+       ]
+      ],
+      "6.0": [
+       [
+        1.0,
+        1
+       ]
+      ],
+      "9.0": [
+       [
+        1.0,
+        1
+       ]
+      ],
+      "12.0": [
+       [
+        1.0,
+        1
+       ]
+      ]
+     },
+     "H": 45,
+     "cancel": "parent_tp",
+     "r_min": 1.2,
+     "adv_floor": 3000000.0,
+     "slots": 8,
+     "kappa": 0.0015,
+     "per_trade": 0.33,
+     "cash_cap": 0.8,
+     "bid_to": 5
+    },
+    {
+     "rungs": {
+      "4.0": 1.0,
+      "6.0": 0.6666666666666666,
+      "9.0": 0.4444444444444444,
+      "12.0": 0.3333333333333333
+     },
+     "tp": {
+      "4.0": [
+       [
+        0.4,
+        1
+       ],
+       [
+        0.6,
+        1
+       ],
+       [
+        0.8,
+        1
+       ]
+      ],
+      "6.0": [
+       [
+        0.6,
+        1
+       ],
+       [
+        0.8,
+        1
+       ],
+       [
+        1.0,
+        1
+       ]
+      ],
+      "9.0": [
+       [
+        0.6,
+        1
+       ],
+       [
+        0.8,
+        1
+       ],
+       [
+        1.0,
+        1
+       ]
+      ],
+      "12.0": [
+       [
+        0.6,
+        1
+       ],
+       [
+        0.8,
+        1
+       ],
+       [
+        1.0,
+        1
+       ]
+      ]
+     },
+     "H": 45,
+     "cancel": "parent_tp",
+     "r_min": 1.2,
+     "adv_floor": 3000000.0,
+     "slots": 8,
+     "kappa": 0.0015,
+     "per_trade": 0.33,
+     "cash_cap": 0.8,
+     "bid_to": 5
+    },
+    {
+     "rungs": {
+      "4.0": 1.0,
+      "6.0": 0.6666666666666666,
+      "9.0": 0.4444444444444444,
+      "12.0": 0.3333333333333333
+     },
+     "tp": [
+      [
+       0.4,
+       1
+      ],
+      [
+       0.7,
+       1
+      ],
+      [
+       1.0,
+       1
+      ]
+     ],
+     "H": 45,
+     "cancel": "parent_tp",
+     "r_min": 1.2,
+     "adv_floor": 3000000.0,
+     "slots": 8,
+     "kappa": 0.0015,
+     "per_trade": 0.33,
+     "cash_cap": 0.8,
+     "bid_to": 5
+    },
+    {
+     "rungs": {
+      "4.0": 1.0,
+      "6.0": 0.6666666666666666,
+      "9.0": 0.4444444444444444,
+      "12.0": 0.3333333333333333
+     },
+     "tp": {
+      "4.0": [
+       [
+        0.4,
+        1
+       ]
+      ],
+      "6.0": [
+       [
+        1.0,
+        1
+       ]
+      ],
+      "9.0": [
+       [
+        1.0,
+        1
+       ]
+      ],
+      "12.0": [
+       [
+        1.0,
+        1
+       ]
+      ]
+     },
+     "H": 45,
+     "cancel": "parent_tp",
+     "r_min": 1.2,
+     "adv_floor": 3000000.0,
+     "slots": 8,
+     "kappa": 0.0015,
+     "per_trade": 0.33,
+     "cash_cap": 0.8,
+     "sig_min": 40.0,
+     "bid_to": 30
+    },
+    {
+     "rungs": {
+      "4.0": 1.0,
+      "6.0": 0.6666666666666666,
+      "9.0": 0.4444444444444444,
+      "12.0": 0.3333333333333333
+     },
+     "tp": [
+      [
+       0.4,
+       1
+      ],
+      [
+       0.7,
+       1
+      ]
+     ],
+     "H": 45,
+     "cancel": "parent_tp",
+     "r_min": 1.2,
+     "adv_floor": 3000000.0,
+     "slots": 8,
+     "kappa": 0.0015,
+     "per_trade": 0.33,
+     "cash_cap": 0.8,
+     "bid_to": 5
+    },
+    {
+     "rungs": {
+      "4.0": 1.0,
+      "6.0": 0.6666666666666666,
+      "9.0": 0.4444444444444444,
+      "12.0": 0.3333333333333333
+     },
+     "tp": {
+      "4.0": [
+       [
+        0.4,
+        1
+       ]
+      ],
+      "6.0": [
+       [
+        1.0,
+        1
+       ]
+      ],
+      "9.0": [
+       [
+        1.0,
+        1
+       ]
+      ],
+      "12.0": [
+       [
+        1.0,
+        1
+       ]
+      ]
+     },
+     "H": 45,
+     "cancel": "parent_tp",
+     "r_min": 1.2,
+     "adv_floor": 3000000.0,
+     "slots": 8,
+     "kappa": 0.0015,
+     "per_trade": 0.33,
+     "cash_cap": 0.8,
+     "bid_to": 10
+    },
+    {
+     "rungs": {
+      "4.0": 1.0,
+      "6.0": 0.6666666666666666,
+      "9.0": 0.4444444444444444,
+      "12.0": 0.3333333333333333
+     },
+     "tp": [
+      [
+       0.3,
+       1
+      ],
+      [
+       0.6,
+       2
+      ],
+      [
+       1.0,
+       1
+      ]
+     ],
+     "H": 45,
+     "cancel": "parent_tp",
+     "r_min": 1.2,
+     "adv_floor": 3000000.0,
+     "slots": 8,
+     "kappa": 0.0015,
+     "per_trade": 0.33,
+     "cash_cap": 0.8,
+     "bid_to": 5
+    },
+    {
+     "rungs": {
+      "4.0": 1.0,
+      "6.0": 0.6666666666666666,
+      "9.0": 0.4444444444444444,
+      "12.0": 0.3333333333333333
+     },
+     "tp": [
+      [
+       0.4,
+       1
+      ],
+      [
+       0.7,
+       1
+      ],
+      [
+       1.0,
+       1
+      ]
+     ],
+     "H": 45,
+     "cancel": "parent_tp",
+     "r_min": 1.2,
+     "adv_floor": 3000000.0,
+     "slots": 8,
+     "kappa": 0.0015,
+     "per_trade": 0.33,
+     "cash_cap": 0.8,
+     "sig_min": 40.0
+    },
+    {
+     "rungs": {
+      "4.0": 1.0,
+      "6.0": 0.6666666666666666,
+      "9.0": 0.4444444444444444,
+      "12.0": 0.3333333333333333
+     },
+     "tp": {
+      "4.0": [
+       [
+        0.4,
+        1
+       ]
+      ],
+      "6.0": [
+       [
+        0.8,
+        1
+       ]
+      ],
+      "9.0": [
+       [
+        0.8,
+        1
+       ]
+      ],
+      "12.0": [
+       [
+        0.8,
+        1
+       ]
+      ]
+     },
+     "H": 45,
+     "cancel": "parent_tp",
+     "r_min": 1.2,
+     "adv_floor": 3000000.0,
+     "slots": 8,
+     "kappa": 0.0015,
+     "per_trade": 0.33,
+     "cash_cap": 0.8,
+     "bid_to": 5
+    }
+   ],
+   "hand": [
+    4,
+    1
+   ],
+   "why": "Mechanism 4: parameter averaging cuts estimation error (forecast-combination evidence), but all 10 members share one core (strictness 1.2, R46912, 45-minute hold), so little diversification. Implementation 1: 10 parameter sets per signal."
+  },
+  {
+   "name": "Best geometry",
+   "id": "r3g_R4568012_0.5_1.0",
+   "spec": {
+    "rungs": {
+     "4.0": 1.0,
+     "5.0": 1.118033988749895,
+     "6.0": 1.224744871391589,
+     "8.0": 1.4142135623730951,
+     "10.0": 1.5811388300841898,
+     "12.0": 1.7320508075688772
+    },
+    "tp": [
+     [
+      0.6,
+      1
+     ]
+    ],
+    "H": 60,
+    "cancel": "parent_tp",
+    "r_min": 1.0,
+    "adv_floor": 0.0,
+    "slots": null,
+    "kappa": 0.002,
+    "per_trade": 0.25,
+    "cash_cap": 1.0
+   },
+   "hand": [
+    5,
+    4
+   ],
+   "why": "Mechanism 5: a finer, deeper ladder (4/5/6/8/10/12, weights rising with depth) buys more of the capitulation; the in-sample gain is small and geometry-only picks did not generalize inside the selection era. Implementation 4: a configurable depth list; weights are already config.",
+   "sel": {
+    "sharpe_b250": 2.6090183221622523,
+    "lcb": 1.9506544660642509,
+    "sharpe_m250": 2.6908731668249257,
+    "sharpe_b1m": 2.5773564671716844
+   }
+  },
+  {
+   "name": "Best exits",
+   "id": "r3e_0339",
+   "spec": {
+    "rungs": {
+     "4.0": 1.0,
+     "6.0": 1.0,
+     "8.0": 1.0
+    },
+    "tp": [
+     [
+      0.3,
+      1
+     ],
+     [
+      0.6,
+      2
+     ],
+     [
+      1.0,
+      1
+     ]
+    ],
+    "H": 45,
+    "cancel": "parent_tp",
+    "r_min": 1.0,
+    "adv_floor": 0.0,
+    "slots": null,
+    "kappa": 0.002,
+    "per_trade": 0.25,
+    "cash_cap": 1.0,
+    "bid_to": 5,
+    "cancel_f": 0.8
+   },
+   "hand": [
+    5,
+    3
+   ],
+   "why": "Mechanism 5: scale-out 0.3/0.6/1.0 (1:2:1), 45-minute hold, deeper bids only in the first 5 minutes and cancelled at 80% parent recovery; ladder v6 found exit-timing rules did not hold out of sample, a prior against. Implementation 3: take-profit ladder, hold, bid timeout and cancel fraction in the engine.",
+   "sel": {
+    "sharpe_b250": 3.3724063348190234,
+    "lcb": 2.7609610174874986,
+    "sharpe_m250": 3.291831026601008,
+    "sharpe_b1m": 3.310022874300354
+   }
+  },
+  {
+   "name": "Best filters",
+   "id": "r3f_0013",
+   "spec": {
+    "rungs": {
+     "4.0": 1.0,
+     "6.0": 1.0,
+     "8.0": 1.0
+    },
+    "tp": [
+     [
+      0.6,
+      1
+     ]
+    ],
+    "H": 60,
+    "cancel": "parent_tp",
+    "r_min": 1.1,
+    "adv_floor": 3000000.0,
+    "slots": 6,
+    "kappa": 0.003,
+    "per_trade": 0.33,
+    "cash_cap": 1.0,
+    "sig_min": 55.0
+   },
+   "hand": [
+    5,
+    4
+   ],
+   "why": "Mechanism 5: the sigma floor (55 bp) carries most of it; strictness 1.1 has contrary evidence; the larger size and ADV cap use idle capital. Implementation 4: config for size and cap; simple engine filters for strictness, ADV floor, slots and sigma.",
+   "sel": {
+    "sharpe_b250": 3.7973999228533786,
+    "lcb": 3.2152554066009604,
+    "sharpe_m250": 3.837819211207928,
+    "sharpe_b1m": 3.519601351683722
+   }
+  },
+  {
+   "name": "Best single change",
+   "id": "r3c_base_sig_min_55.0",
+   "spec": {
+    "rungs": {
+     "4.0": 1.0,
+     "6.0": 1.0,
+     "8.0": 1.0
+    },
+    "tp": [
+     [
+      0.6,
+      1
+     ]
+    ],
+    "H": 60,
+    "cancel": "parent_tp",
+    "r_min": 1.0,
+    "adv_floor": 0.0,
+    "slots": null,
+    "kappa": 0.002,
+    "per_trade": 0.25,
+    "cash_cap": 1.0,
+    "sig_min": 55.0
+   },
+   "hand": [
+    7,
+    4
+   ],
+   "why": "Mechanism 7: in the selection era the P&L lives in high-sigma signals. Below the median sigma, fills made -41 to +19 bp per dollar by quarter (about 0 overall); above it, 19 to 166 bp, higher in every quarter and every ADV tercile. The sizing lab found the same for high-volatility regimes. The floor is far above the fee floor, so it selects regime, not just costs. Risk: an absolute floor keeps fewer signals in calm eras. Implementation 4: one config key and a one-line filter where the engine already reads sigma.",
+   "sel": {
+    "sharpe_b250": 3.3680875913751263,
+    "lcb": 2.8263576932316328,
+    "sharpe_m250": 3.4837396419418245,
+    "sharpe_b1m": 3.2953075359075314
+   }
+  }
+ ],
+ "note": "Frozen from the selection era only (rounds 1-3) by scripts/explore/freeze.py; hand scores (mechanism /10, implementation /5) assigned before the holdout read."
+}

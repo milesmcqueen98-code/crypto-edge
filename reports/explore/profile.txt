@@ -1,0 +1,30 @@
+Selection-era profile (blended, $250K): Sharpe, return, Sharpe without the best k days, paired test
+book              Sharpe  ret/yr    -1d    -3d    -5d   -10d    ΔSR  t(vm)
+incumbent          2.399   0.299   2.34   1.98   1.59   0.75   0.00    nan
+Best               4.030   0.273   3.95   3.76   3.54   2.91   1.63   3.05
+Robust             4.004   0.299   3.94   3.80   3.64   3.06   1.61   2.86
+Ensemble           4.108   0.280   4.05   3.90   3.72   3.12   1.71   2.96
+Best geometry      2.609   0.303   2.69   2.37   2.00   0.97   0.21   0.66
+Best exits         3.372   0.285   3.30   3.14   2.89   2.11   0.97   1.99
+Best filters       3.797   0.411   3.78   3.63   3.43   2.83   1.40   2.65
+Best single change   3.368   0.370   3.62   3.51   3.33   2.69   0.97   2.21
+
+ΔSharpe vs the incumbent by calendar quarter (selection era):
+incumbent        2025Q1:+0.00 2025Q2:+0.00 2025Q3:+0.00 2025Q4:+0.00 2026Q1:+0.00
+Best             2025Q1:+1.90 2025Q2:+4.35 2025Q3:+0.47 2025Q4:+2.13 2026Q1:+0.03
+Robust           2025Q1:+2.87 2025Q2:+3.84 2025Q3:+0.05 2025Q4:+0.83 2026Q1:+1.05
+Ensemble         2025Q1:+2.60 2025Q2:+4.22 2025Q3:+0.19 2025Q4:+1.34 2026Q1:+0.72
+Best geometry    2025Q1:+0.36 2025Q2:+2.65 2025Q3:+0.12 2025Q4:-0.31 2026Q1:+0.52
+Best exits       2025Q1:+1.93 2025Q2:+3.31 2025Q3:-0.69 2025Q4:+0.28 2026Q1:+0.81
+Best filters     2025Q1:+2.53 2025Q2:+1.83 2025Q3:+0.53 2025Q4:+1.38 2026Q1:+0.85
+Best single change 2025Q1:+2.34 2025Q2:+1.64 2025Q3:+0.43 2025Q4:+0.37 2026Q1:+0.77
+
+Minute book at $250K: signals kept, fills, fill dollars (each member for the ensemble, averaged):
+incumbent        signals    1155  fills    1601  fill $   22.9M  maker 6.0 bp
+Best             signals     781  fills    1009  fill $   16.9M  maker 6.0 bp
+Robust           signals     884  fills    2868  fill $   17.8M  maker 6.0 bp
+Ensemble         signals     853  fills    1838  fill $   17.5M  maker 6.0 bp
+Best geometry    signals    1155  fills    2379  fill $   15.1M  maker 6.0 bp
+Best exits       signals    1155  fills    4029  fill $   19.1M  maker 6.0 bp
+Best filters     signals     568  fills     739  fill $   14.2M  maker 6.0 bp
+Best single change signals     630  fills     900  fill $   12.4M  maker 6.0 bp

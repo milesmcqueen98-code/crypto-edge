@@ -1,0 +1,24 @@
+Deflated Sharpe (selection era, blended $250K, daily excess returns), 4691 variants
+cross-variant variance of the daily Sharpe 9.596e-04 (annualized SD 0.592)
+effective N: participation ratio 1.7; mean pairwise correlation 0.730 -> 1266
+
+finalist          SR(ann)   skew   kurt          N SR0    DSR     N+5000 SR0    DSR  N_eff(PR) SR0    DSR N_eff(rho) SR0    DSR
+incumbent           2.399   5.64   72.6           2.17  0.630           2.28  0.569           0.31  0.999           1.97  0.738
+Best                4.030   3.27   20.9           2.17  0.998           2.28  0.996           0.31  1.000           1.97  0.999
+Robust              4.004   4.29   27.9           2.17  0.999           2.28  0.999           0.31  1.000           1.97  1.000
+Ensemble            4.108   3.90   24.3           2.17  1.000           2.28  0.999           0.31  1.000           1.97  1.000
+Best geometry       2.609   7.55   97.7           2.17  0.774           2.28  0.714           0.31  1.000           1.97  0.866
+Best exits          3.372   5.23   40.1           2.17  0.985           2.28  0.976           0.31  1.000           1.97  0.994
+Best filters        3.797   5.09   36.3           2.17  0.999           2.28  0.998           0.31  1.000           1.97  1.000
+Best single change    3.368   7.78   86.4           2.17  0.993           2.28  0.988           0.31  1.000           1.97  0.998
+
+Deflated improvement: the vol-matched daily difference vs the incumbent (d_t = r_v / sd_v - r_0 / sd_0),
+cross-variant variance of its daily Sharpe 2.256e-03 (annualized SD 0.907)
+finalist         SR_d(ann)          N SR0    DSR     N+5000 SR0    DSR  N_eff(PR) SR0    DSR N_eff(rho) SR0    DSR
+Best                 2.589           3.33  0.232           3.50  0.185           0.47  0.982           3.01  0.337
+Robust               2.321           3.33  0.132           3.50  0.097           0.47  0.979           3.01  0.222
+Ensemble             2.639           3.33  0.239           3.50  0.190           0.47  0.987           3.01  0.351
+Best geometry        0.568           3.33  0.001           3.50  0.000           0.47  0.545           3.01  0.002
+Best exits           1.812           3.33  0.027           3.50  0.017           0.47  0.955           3.01  0.064
+Best filters         2.551           3.33  0.159           3.50  0.113           0.47  0.996           3.01  0.277
+Best single change     1.914           3.33  0.018           3.50  0.010           0.47  0.983           3.01  0.052
