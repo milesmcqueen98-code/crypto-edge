@@ -11,7 +11,9 @@
 - **Prior evidence and what has been seen:** the creative round found Shen–Urquhart–Wang intraday momentum (UTC
   days) never worked on Coinbase hourly data; that is a different clock and no LETF conditioning. Nothing computed on
   any era for this rule. Leveraged-ETF dollar volume (data/hunt2/etf, inputs only): BTC complex ~$6M/day in 2023,
-  $267M in 2024, $661M in 2025; ETH from mid-2024; SOL and XRP from spring 2025.
+  $267M in 2024, $661M in 2025; ETH from mid-2024; SOL and XRP from spring 2025. AUM now (memo R4): BITX $989M,
+  BITU $462M, ETHU $852M, ETHT $211M, SOLT $136M, XXRP $142M, so a 5% day implies about $145M of BTC and $106M of ETH
+  rebalancing (2 x AUM x return); relative to each market's liquidity, ETH's is the largest.
 - **Data:** Coinbase spot 1-minute candles (signal and spot-priced fills before each perp launched: BTC/ETH
   2025-07-19, SOL/XRP 2025-08-16); CFM perp 1-minute candles after launch; Coinbase prints around every DEV signal
   window (15:44–17:01 ET) to check entry/exit prices and spreads; ETF daily prices/volumes (Yahoo) for gating.
@@ -26,7 +28,7 @@
   Grid: k in {1, 2} x leg in {momentum, reversal, both} x assets in {BTC only, BTC+ETH+SOL+XRP}.
 - **Size:** each signal's notional = 1.0 x sleeve capital / (number of assets signalling that day), whole contracts;
   gross <= 2x sleeve capital.
-- **Costs:** scripts/hunt/common.py perps at 2x (fee per contract at the trade's price + 1.5x measured half-spread
+- **Costs:** scripts/hunt2/costs.py perps at 2x ($0.15 per contract + 2 bp commission + 1.5x measured half-spread
   per side, funding 1 bp per 8 h); 1x reported. Contracts must be worth >= $150.
 - **Fills:** taker at the open of the decision minute + 1 (candles), made worse by 1.5x the half-spread; checked
   against prints (first print >= 2 s after the decision) on DEV signal days.

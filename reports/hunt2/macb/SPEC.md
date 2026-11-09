@@ -23,6 +23,6 @@
   while the price stays beyond it (prints); whole contracts; the Fair Value Limit (orders more than 5% from spot are
   rejected) caps the depth.
 - **Size:** each order's notional = 0.5 x sleeve capital / 4 assets x 2 (gross <= 2x).
-- **Costs:** common.py perps at 2x; 1x reported.
+- **Costs:** scripts/hunt2/costs.py perps at 2x; 1x reported.
 - **Selection statistic:** highest DEV alpha t with >= 20 fills; ties -> bid only, then k = 5.
 - **Capital:** $25K/$50K/$75K/$125K. **Outputs:** reports/hunt2/macb/.

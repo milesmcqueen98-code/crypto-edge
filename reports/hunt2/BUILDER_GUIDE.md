@@ -16,8 +16,8 @@ engineering judgement, written down in your REPORT.
   files under ~50 MB; raw prints stay in workflow artifacts).
 - **Shared code (import, never edit):** scripts/hunt2/h2gates.py (every test, the ledger), scripts/hunt2/frozen_sim.py
   (the frozen ladder simulator with cost settings S/X1/X2 and the multiplier hook, for Path A),
-  scripts/hunt2/prints.py (trade prints for a windows file, on Actions), scripts/hunt/common.py (loaders, the cost
-  model for sleeves, perp products). If a shared file has a bug, stop and report it in your final message.
+  scripts/hunt2/prints.py (trade prints for a windows file, on Actions), scripts/hunt2/costs.py (the sleeve cost
+  model and loaders, built on scripts/hunt/common.py). If a shared file has a bug, stop and report it in your final message.
 
 ## Heavy work runs on GitHub Actions
 This machine has 2 CPUs and 7 GB shared by several builders. Anything over ~3 minutes of CPU, and any internet access,
@@ -84,9 +84,10 @@ API with curl and $GH_TOKEN:
   signal sets m = frozen_sim.SKIP in that (minute, coin) cell; a size change sets m in (0, 2] and must respect the
   0.2% ADV cap (m above 1 only where the ladder v6 sizing `room` allows; prefer filters, m <= 1).
   Features for minute t use information available at t-1 minute (candles) or >= 1 second before the decision (prints).
-- **Path B costs:** scripts/hunt/common.py only (spot VIP 1 0.06% maker / 0.125% taker + 2 bp half-spread on market
-  orders; perps $0.20 per contract per side + 1.5x the measured half-spread on market orders; funding 1 bp per 8 h).
-  2x for every gate; 1x for information. Perps only where the contract is worth >= $150 (common.contract_ok).
+- **Path B costs:** scripts/hunt2/costs.py only: spot VIP 1 0.06% maker / 0.125% taker + 2 bp half-spread on market
+  orders (common.spot_cost_bp); perps $0.15 per contract per side + 2 bp commission (maker and taker) + 1.5x the
+  measured half-spread on market orders (`costs.perp_cost_bp`), funding 1 bp per 8 h (`costs.perp_funding_bp`).
+  2x for every gate; 1x for information. Perps only where the contract is worth >= $150 (`costs.contract_ok`).
 - **Fills, resting orders:** the price must trade through the level by at least one tick; size <= theta x the volume
   strictly beyond the level while the price stays beyond it (prints where you have them; candles spread each minute's
   volume evenly over its range); theta 0.5, also report 0.25.

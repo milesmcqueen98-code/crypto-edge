@@ -61,12 +61,15 @@ Calendar years at X2: 2022 +6.8%, 2023 +8.9%, 2025 +15.6%, 2026 YTD +9.2%.
 ## Cost model
 - **Path A** (modifications of the live bot): only through the frozen simulator, at X2 for selection and gates, X1 for
   gate A2, S reported.
-- **Path B** (sleeves): scripts/hunt/common.py, unchanged from the first hunt. Spot: VIP 1, 0.06% maker / 0.125%
-  taker (the shared account reaches it), plus a 2 bp half-spread on market orders. Perps: $0.20 per contract per
-  side, maker or taker, plus 1.5× the measured median half-spread on market orders; funding 1 bp per 8 h either side;
-  contracts worth ≥ $150 only. **2× = every term doubled; every gate is at 2×.** 1× is reported.
-- The all-in CFM perp commission is still unverified (the first hunt's open item); $0.20 is the pre-registered
-  estimate, and 2× ($0.40) is the gate.
+- **Path B** (sleeves): scripts/hunt2/costs.py. Spot (unchanged from the first hunt): VIP 1, 0.06% maker / 0.125%
+  taker (the shared account reaches it), plus a 2 bp half-spread on market orders. Perps, from the documented fee
+  structure (research memo R4): a flat **$0.15 per contract per side** (exchange $0.10 + NFA $0.01 + clearing) **plus
+  Coinbase's commission, taken as 2 bp per side for maker and taker alike**, plus 1.5× the measured median
+  half-spread on market orders; funding 1 bp per 8 h either side; contracts worth ≥ $150 only. **2× = every term
+  doubled; every gate is at 2×.** 1× is reported.
+  - Per side at Nov 8 prices, taker 1× / 2×: BTC 5.0 / 10.0 bp, ETH 12.4 / 24.9, SOL 8.0 / 15.9, XRP 6.6 / 13.2.
+  - Against the first hunt's $0.20 per contract this is dearer for BTC, SOL and XRP and about equal for ETH. Coinbase's
+    retail commission tier is still unverified; one order preview settles it.
 
 ## Fill and latency rules
 - **Resting orders:** fill only on a print (or candle) strictly beyond the level by at least one tick; size ≤ θ × the

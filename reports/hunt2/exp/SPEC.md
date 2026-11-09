@@ -21,7 +21,7 @@
   exit after H minutes (taker). Grid: event set in {Deribit all Fridays, Deribit monthly+quarterly, CME monthly,
   US options monthly} x k in {1, 2} x H in {60, 240}; assets BTC and ETH, half the notional each.
 - **Size:** notional per event = 1.0 x sleeve capital (gross <= 2x), whole contracts.
-- **Costs:** common.py perps at 2x (1x reported); ETH's $0.20 contract fee is ~6.7 bp at $3,000, so ETH may be
+- **Costs:** scripts/hunt2/costs.py perps at 2x (1x reported); ETH's $0.15 contract fee is ~7 bp at today's price, so ETH may be
   dropped by the selection rule only through its trials (no separate asset grid).
 - **Selection statistic:** highest DEV alpha t with >= 20 events (Deribit) or >= 10 events (monthly sets); ties ->
   k = 2, then H = 60.
