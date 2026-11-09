@@ -145,7 +145,7 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
 Goal set by Miles: raise R2-08's out-of-sample Sharpe at $250K by improving what the model knows (features, labels,
 US-accessible data), since the execution ladder is exhausted. Final report: the "Signal Lab: Report" doc
 (https://claude.ai/artifact/69u1BHtZsDwEZNXdRwQUUF). Record: branch signal-lab. reports/signal_lab/prereg.md holds the
-plan and its nine-entry deviation log; reports/signal_lab/README.md holds the results.
+plan and its ten-entry deviation log; reports/signal_lab/README.md holds the results.
 
 **Protocol**
 - Pre-registered (ed5d42d) before any candidate ran; frozen (00a6992) before any holdout number.
@@ -195,7 +195,8 @@ plan and its nine-entry deviation log; reports/signal_lab/README.md holds the re
   too short; beyond R2-08's growing window there is no dose-response.
 - Seed noise (five seed triples): R2-08's Sharpe has a standard deviation of 0.13 (development) and 0.15 (Apr – Nov
   2026). Averaged over seeds, history only gains −0.03 in Apr – Nov 2026 and features + history +0.13. More history
-  cuts the seed spread to 0.04.
+  cuts the seed spread to 0.04. With the bot's own five seeds R2-08 scores 2.42 / 2.63 / 1.60 against the research
+  book's 2.36 / 2.57 / 1.70, so the research book is representative.
 - The feature reversals are not seed luck: averaged over seeds the features model is +0.62 on development and −0.84 in
   Apr – Nov 2026, the new-data model +0.21 and −0.72. Adding the 2021–23 history moves the features model from −0.84 to
   +0.13 there. Splitting the set shows it is not the BTC-regime features in particular: the coin-position half and

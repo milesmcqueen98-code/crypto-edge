@@ -12,7 +12,7 @@ Final report: the "Signal Lab: Report" doc (https://claude.ai/artifact/69u1BHtZs
 - **Goal (Miles):** raise R2-08's out-of-sample Sharpe at $250K by improving what the model knows. Develop on Jan 2025 -
   Mar 2026 (the selection era), read the other eras once, count every trial, score on the engine-faithful simulator,
   beat R2-08 in every era.
-- **Plan:** prereg.md, committed at ed5d42d before any candidate ran. Its deviation log has nine entries, each written
+- **Plan:** prereg.md, committed at ed5d42d before any candidate ran. Its deviation log has ten entries, each written
   before the runs it covers.
 - **Pipeline:** scripts/signal_lab/model.py runs the wick lab's own code with a choice of label, feature set, training
   history and threshold. The incumbent spec reproduces R2-08's trade list and daily series exactly.
@@ -78,6 +78,9 @@ Final report: the "Signal Lab: Report" doc (https://claude.ai/artifact/69u1BHtZs
   - **One 15-seed model lands on the seed average** (dose_seeds15_main.csv): R2-08 scores 2.34 / 2.62 against the
     five-triple means of 2.40 / 2.61. With 15 seeds, features + history is +0.10 in Apr - Nov 2026 and history only
     -0.06. A larger ensemble removes the seed lottery without changing the expected Sharpe.
+  - **The bot's own five seeds** (7, 11, 23, 42, 101; dose_seeds_main_bot5.csv, dose_seeds_early_bot5.csv) give 2.42 /
+    2.63 / 1.60 (development / Apr - Nov 2026 / 2022-23) against the research book's 2.36 / 2.57 / 1.70. The research
+    book is representative of the model the bot trains.
   - **2022-23** (dose_seeds_early.csv): the position-and-regime features gain +0.19 on average over five seed triples
     (range -0.03 to +0.29) and +0.32 with 15 seeds, against R2-08 rebuilt by the lab.
   - **The reversals are not seed luck** (dose_seeds_main_feat.csv): averaged over five seed triples, RF2 is +0.62 on

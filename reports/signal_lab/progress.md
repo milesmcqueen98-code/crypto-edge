@@ -75,3 +75,7 @@ Code: scripts/signal_lab/. Trial ledger: reports/signal_lab/screen.csv.
   consistent gain.
 - 16:24 Next test pre-registered before any data is fetched (prospective_prereg.md): five forced-selling features from
   Coinbase trade prints, two candidates, seed-averaged arms. Candidate lists exported for the data job.
+- 16:26 R2-08 with the bot's own five seeds (deviation 10): 2.42 / 2.63 / 1.60 against the research book's 2.36 / 2.57
+  / 1.70. Representative.
+- 16:27 Final state: verdict no change; report doc, README, findings section and next-test pre-registration done;
+  branch signal-lab pushed.
