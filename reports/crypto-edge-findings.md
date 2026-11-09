@@ -1,8 +1,48 @@
-# Crypto edge: findings and live rules (updated Nov 8, 2026, ladder v5)
+# Crypto edge: findings and live rules (updated Nov 9, 2026, sizing lab; edge hunt 2; ladder v6 sizing; Gemini venue test)
 
 Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly signals, paper-trading bot)
 
 ## Status at a glance
+- **Sizing lab (Nov 9): no durable sizing edge; both paper books keep flat sizing (section below).**
+  - Nine pre-registered candidates in three families: calendar (day of week, Sunday 4–7 pm ET, CPI / FOMC days), R2-08's
+    predicted edge (halves, terciles, quintiles) and guards (BTC still falling, coins filling at once, vol regime).
+    Run in wick v4's rungs.py with spot-only capacity, on the main and W2 books, at $250K and $1M.
+  - Each family's best lost Sharpe out of sample. B2 (predicted-edge terciles) went from +0.31 in selection to −0.25 /
+    −0.30 at $250K. A2 (Sunday window) went to −0.03 to −0.06, and C1 (BTC still falling) to −0.9 to −1.5. Holm p 1.0;
+    scores B2 22.5, A2 19.0, C1 15.5 /100.
+  - The cap binds: at $1M a same-capital sizing rule can mostly only shrink, and it held 0.90–0.95 of flat capital.
+    Next test: the cap level at $1M with exits priced on prints.
+- **Edge hunt 2 (Nov 8): nothing beat R2-08; the live bot is unchanged (section below).**
+  - 73 ideas, each naming who is forced to trade and why we are paid; the ten best built on trade data,
+    pre-registered, frozen and read once on two hold-outs (Apr–Nov 2026 and 2022–23).
+  - The bar at 2× costs: paired t ≥ 2 against R2-08, or +0.5 book Sharpe, with no losing year. None passed.
+  - Closest: EXH (skip fills that come before much forced selling has traded), hold-out t 1.51, and MAC (pull bids
+    around CPI), t 1.08. Both are positive in every era and at 1× costs, but a few days carry each gain.
+  - Three hypotheses ran backwards: fills after a failed ladder, on short-crowded days and while dealers are short
+    gamma were good fills, not bad ones.
+- **Ladder v6, sizing (Nov 8): no change; the bot keeps equal size per signal (section below).**
+  - Seven mechanism-led sizing families: Kelly, inverse variance, edge, cascade breadth, Kelly on the signal's own
+    predicted dispersion, book volatility targeting, diversification across armed coins.
+  - None reaches the bar inside the 0.2% ADV cap, and no rule's gain survives removing its 5 best days.
+  - Hindsight sizing is worth t +3.45 (+2.2 Sharpe). But the AI's prediction ranks outcome size and outcome variance
+    together, and 55% of signal P&L falls on 20 cascade days.
+  - At today's volumes only ETH, XRP and SOL have room to size up under the cap.
+- **Gemini venue test (Nov 8): Gemini is not a better venue and not worth adding; Coinbase stays the only spot venue
+  (section below).**
+  - The frozen R2-08 ladder on Gemini prints, AI-filtered, at $250K: −$1.8K a year net at Gemini's own fee tier (90%
+    interval −$6.9K to +$3.1K). The pre-registered bar was +$5K.
+  - On the same 23 sample days the incumbent's Coinbase fills earn +67 bp gross per dollar; Gemini's earn −5 bp, on
+    3% of the dollars.
+  - Gemini follows Coinbase: 87% of its fills are the same events, filled after Coinbase has moved (−8.8 bp vs the
+    synchronous Coinbase price one second later), so the rebound is gone.
+  - Gemini-only 4σ fills: 0.17 a day, $225 a day of sellers.
+- **Ladder v6, exits (Nov 8): no change; the bot keeps "take-profit, else market at minute 60" (section below).**
+  - Selling early loses even with a rule fitted to the data it is scored on.
+  - Holding past 60 had an in-sample edge from one quarter (Q1 2025). It failed walk-forward and failed out of sample:
+    pooled t +0.52, check era negative.
+  - Measured on Coinbase prints, selling before minute 60 costs 1–17% more than selling at 60 (2.8 bp median at 60).
+  - The hour-long markout rise is already captured: the take-profit sells 53% of the dollars by 60, and what is left
+    is the tranches that did not rebound.
 - **Ladder v5 (Nov 7–8): no trading change adopted; the live ladder is better than estimated; idle cash in USDC goes
   to a live check (section below).**
   - 11 pre-registered candidates against the spot ladder (cash priority, margin sizing, passive exits, USDC cash, perps,
@@ -76,6 +116,285 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   (section below).
 - **Maker round (Nov 6): rejected.** Two-sided quoting at the touch loses 0.7–0.9 bp per dollar before fees in all 36 setups.
 - **C3 upgrade round (Nov 6):** turnover cuts tie on Sharpe; C3 unchanged, still a paper-trade candidate.
+
+## Sizing lab (Nov 9): no durable sizing edge for the R2-08 ladder; both paper books keep flat sizing
+Goal set by Miles: a durable sizing edge for the R2-08 spot ladder, main and W2 books, optimizing Sharpe and capacity,
+not return. Final report: the "Sizing Lab: Report" doc (https://claude.ai/artifact/MD8K9cnSUdebLjbTXKNKQr). Record:
+branch sizing-lab. reports/sizing_lab/prereg.md holds the plan and its deviation log; reports/sizing_lab/README.md
+holds the results.
+
+**Protocol**
+- Pre-registered (77e8763) before any candidate ran. Frozen (5f08f43) before the holdout, which was read once.
+- **Candidates,** at most 3 per family:
+  - A, calendar: day of week; Sunday 4–7 pm ET; CPI and FOMC days.
+  - B, R2-08's walk-forward prediction over its threshold: halves, terciles and quintiles of its 90-day trailing rank.
+  - C, guards: no deeper rung right after a BTC drop of more than 1σ; no new parent once 3+ other coins have
+    signalled in 30 minutes; no new parent while BTC's 24-hour volatility is above 2× its yearly median.
+- **Simulator:** wick v4's rungs.py with an optional sizing hook, which reproduces the flat books exactly with no
+  multiplier.
+  - Spot-only capacity, θ 0.5, the 0.2% ADV cap, and the simulator's costs.
+  - Main and W2 books, at $250K and $1M.
+- **Multiplier:** proportional to the bucket's shrunk μ/σ², relative to the pool, clipped to 0.5–1.5×, then re-capped at
+  0.2% of ADV (guards: 0). One constant matches flat's average capital on the selection era.
+- **Pass, for each book:**
+  - +0.20 Sharpe in every era and at both capitals.
+  - No worse drawdown (daily and marked to market), worst day or CVaR 5%.
+  - Still +0.20 with any single day left out.
+  - No losing year.
+  - Holm-corrected event-cluster bootstrap p ≤ 0.05.
+  - A calendar rule must also beat B on top of B.
+
+**Results** (ΔSharpe against flat, main / W2; the selection column is the mean of the 4 cells)
+
+| Candidate | Selection | $250K check | $250K 2022–23 | $1M check | $1M 2022–23 | Score /100 |
+|---|---|---|---|---|---|---|
+| A1 day of week | −0.07 | | | | | |
+| **A2 Sunday 4–7 pm ET** | +0.02 | −0.06 / −0.06 | −0.03 / −0.03 | −0.04 / −0.04 | +0.02 / +0.02 | 19.0 |
+| A3 CPI / FOMC days | −0.05 | | | | | |
+| B1 halves | +0.12 | | | | | |
+| **B2 terciles** | +0.18 | −0.25 / −0.30 | −0.25 / −0.28 | −0.21 / −0.30 | +0.02 / +0.03 | 22.5 |
+| B3 quintiles | +0.12 | | | | | |
+| **C1 BTC still falling** | −0.11 | −0.90 / −1.13 | −0.96 / −1.18 | −1.13 / −1.44 | −1.33 / −1.50 | 15.5 |
+| C2 coins filling at once | −0.59 | | | | | |
+| C3 vol regime | −1.13 | | | | | |
+
+- Bold rows are the finalists. All three are rejected (Holm p 1.0), and no new paper book opens.
+- A2 on top of B2 added 0.00 to +0.02 against B2. With the capital constant at its bound the overlay nearly equals
+  B2, so that test measured little.
+- A3 sizes whole CPI and FOMC days. It is not edge hunt 2's MAC, which pulls bids for 12 minutes around CPI.
+
+**Why** (post hoc, reports/sizing_lab/posthoc.txt)
+- **B:** the lowest predicted-edge tercile lost 3.9 bp per dollar in selection but made +9.0 (check) and +13.4
+  (2022–23). Its μ/σ² beat the middle tercile in both holdout eras. As in ladder v6 and C2a, the prediction ranks
+  risk along with return.
+- **C1:** the deeper rungs bought right after a BTC drop are the best fills: 83 vs 30 bp per dollar in check, 96 vs
+  88 in 2022–23.
+- **C2, C3:** broad cascades and high-volatility regimes earn more per dollar (C3's guarded signals +63 bp vs +6), so
+  the guards cost 0.3–1.3 Sharpe even in-sample.
+- **Capacity:** at $1M most signals sit at the 0.2% ADV cap, so a same-capital rule can mostly only shrink. B2
+  collapsed to a step (×0.5 lowest tercile, ×1.5 capped for the rest) and still held only 0.90–0.95 of flat capital.
+
+**Next test:** the cap level at $1M — 0.2%, 0.3% and 0.4% of ADV — with exits priced on Coinbase prints, at this lab's
+bar.
+- Prints put the market exit at 3–6 bp and the impact constant at 0.19–0.39 (ladder v5), against the model's 16–17 bp
+  and 0.7 under which 0.2% was chosen.
+- Watch the adverse selection by size that set the cap.
+- Information-only hint: B2 allowed past the cap gained +0.15 to +0.27 at $1M in both holdout eras.
+
+## Edge hunt 2 (Nov 8): ten desk-style builds against R2-08; none passes at 2× costs
+Goal set by Miles: think like HRT (microstructure), SIG (options, game theory) and Renaissance (many weak signals,
+one model), limited to one NY retail Coinbase Advanced account (spot plus CFM perps, REST/WebSocket, 30 requests/s, no
+colocation or rebates, about $250K), and beat R2-08. Final report: the "Edge Hunt 2 vs R2-08" doc
+(https://claude.ai/artifact/4Z4j3NUvwGFLKHAxCzzYS5). Record: branch hunt2. reports/hunt2_prereg.md holds the protocol
+and the deviation log. reports/hunt2/ holds ideas.md (73 ideas), one folder per build (SPEC, REPORT, frozen.json,
+gates.json, daily.parquet), trials.csv (98 trials), central_gates.json, central_checks.json and scorecard.csv.
+
+**Protocol**
+- Pre-registered and frozen (commit 88b5894) before any build: ten specs with fixed grids (98 trials, at most 16 per
+  idea), selection by the highest DEV statistic, a freeze commit per idea, then one HOLD read.
+- DEV = Jan 2025 – Mar 2026. HOLD = Apr 1 – Nov 5 2026 and 2022–23. Simulator: ladder v6's frozen one (engine-faithful
+  cash rule, print-measured exits, 1-second blend), reproducing the incumbent exactly.
+- **Path A** (filters on R2-08): A1 HOLD paired Newey–West t ≥ 2 against R2-08 at 2× costs; A2 HOLD gain > 0 at 1×;
+  A3 positive in each HOLD era; A4 no losing year.
+- **Path B** (perp sleeves): book = a × R2-08 + (1 − a) × sleeve, a picked on DEV. B1 HOLD book Sharpe gain ≥ +0.5;
+  B2 alpha t ≥ 2; B3 positive in each HOLD era; B4 no losing year.
+- **Costs at 2×:** every term doubled (fee tiers, model spread and impact, print-measured exit costs). CFM perps: $0.15
+  a contract plus 2 bp commission per side, 1.5× the half-spread for market orders.
+- **The bar:** R2-08 at 2× costs on $250K made 13.8% (Sharpe 1.62) on DEV, 12.6% (1.61) on the 2026 hold-out and 7.8%
+  (1.13) in 2022–23.
+
+**Results** (score /100; HOLD at 2× costs, 1× in brackets; filter gains in bp of $250K a day):
+
+| Build | Path | Score | HOLD | Gates 1–4 | Read |
+|---|---|---|---|---|---|
+| MAC: pull bids from 2 min before to 10 min after CPI | A | 74 | t 1.08, +0.25 (+0.22) | ✗✓✓✓ | One release day carries each era |
+| EXH: skip fills before 1.69% of 30-day volume has been sold aggressively in 30 min | A | 72 | t 1.51, +0.21 (+0.10) | ✗✓✓✓ | Four Oct 2026 days carry it; the cut skips 4% of parents in 2022–23, 24% in 2026 |
+| WHO: skip fills whose pre-fill selling looks informed | A | 53 | t 0.59, +0.11 (−0.02) | ✗✗✗✓ | All 16 DEV variants negative: informed-looking tails were the better fills |
+| SHAPE: skip grinds, keep air pockets | A | 46 | t −1.12, −0.43 (−0.71) | ✗✗✗✓ | Its DEV gain existed only at 2× costs |
+| IMP: skip drops larger than the square-root law explains | A | 46 | t −1.50, −0.57 (−0.79) | ✗✗✗✓ | Helped in 2026, hurt in 2022–23 |
+| CROWD: skip when perp funding says shorts are crowded | A | 46 | t −1.83, −0.99 (−1.44) | ✗✗✗✓ | Coin-level funding ran backwards on DEV |
+| GAMMA: skip while Deribit dealers are short gamma | A | 44 | t −1.62, −0.14 (−0.20) | ✗✗✗✓ | Short-gamma dips were profitable |
+| BURN: cool a coin down after a failed ladder | A | 41 | t −1.04, −0.21 (−0.28) | ✗✗✗✓ | The next ladder after a failure earned 83 vs 38 bp gross on DEV |
+| LETF: leveraged-ETF rebalancing around the 4 pm close (perps) | B | 34 | book Sharpe −0.40 (−0.32) | ✗✗✗✓ | 23 trades lost 58 bp each at 2×; negative before the ETFs existed |
+| EXP: Deribit Friday expiry unwind (perps) | B | 31 | book Sharpe −0.04 (−0.03) | ✗✗✗✓ | 7 trades lost before costs |
+
+**What it says**
+- Rules built to screen out informed selling mostly screened out profitable fills. The ladder is paid most when the
+  selling looks worst: after failed ladders, on short-crowded days, and while dealers are short gamma.
+- Thresholds fixed in absolute units drift between regimes (EXH 4% → 24% of parents; CROWD 24% → 44%; GAMMA 25% →
+  4–9% of hours).
+- The two consistent signs (EXH, MAC) are thin and rest on a few days. They are forward-test candidates as new
+  pre-registered ideas, not changes to the bot.
+
+**Checks**
+- A central recomputation of every gate matches the builders'. Every HOLD run's DEV slice reproduces its logged trial
+  exactly; every DEV trial was logged before its freeze commit and every HOLD output came after it; every filter
+  changed results in every era (central_checks.json). Deflated Sharpe of the filters: 0.04–0.25 (N = 4,598).
+- Deviations (all logged): two shared print features were computed newest-first (IMP corrected the sign exactly; no
+  other build used them); the shared machine's memory limit killed eight HOLD-read processes before any output was
+  seen; the instructed HOLD-feature dispatch could not commit and was re-run into a fresh folder (DEV reproduced byte
+  for byte); the scorecard reads Path B's deflated Sharpe and years on the sleeve, not on the 90%-incumbent book.
+- Simulator limits: a skipped bid keeps its coin busy for up to 61 minutes (at most 2.4% of parents could be
+  affected); gate B2 books idle sleeve cash at 0%, which drives a sparse sleeve's alpha t far negative (EXP −10.2,
+  −2.1 with idle cash at T-bills). Neither changes a verdict.
+- Blocked, worth forward-collecting: Hyperliquid liquidation, open-interest and wallet history (HLB, HLOI, HLW, HLF:
+  the best flow-identity ideas on paper) and order-book history (queue, book resilience, cancellation bursts).
+
+**Next**
+1. Keep R2-08 unchanged; the pilot plan stands.
+2. Shadow-log EXH's csv_30 (aggressive selling over 30 minutes ÷ 30-day volume) and MAC's CPI blackout in the paper
+   bot, for a new pre-registered test on data after Nov 5 2026.
+3. Forward-collect Hyperliquid liquidations, open interest and wallet fills for the blocked flow-identity ideas.
+
+## Ladder v6, sizing (Nov 8): no change; nothing knowable at the minute sizes the ladder better than equal size
+Question set by Miles: perfect sizing is worth +2.6 Sharpe, and C2a's gain sat on a few days. Find a sizing rule
+whose gain is spread across many days, trying low-parameter, mechanism-led forms first. Report every result with the
+best 5 days removed, and check it against the 0.2% ADV cap. Record: branch ladder/v6-sizing (reports/ladder_v6s_prereg.md,
+reports/ladder_v6s/ README, rounds, variants, scorecard).
+
+**Protocol**
+- Same frozen simulator as ladder v6 exits, with sizes entering through the replay's multiplier hook (C2a's
+  semantics). With every multiplier at 1 it reproduces the incumbent exactly.
+- Up to 5 rounds on the selection era, declared on the Sharpe path. Every variant is run inside the ADV cap (the
+  candidate) and outside it (reported), and with its best 5 days removed.
+- Drop bar: in-sample t 1.4. Nothing reached it, so nothing was frozen, and the check era and 2022–23 stay unread
+  for sizing.
+
+**Findings** (selection era, S* θ 0.5)
+- **Headroom.** Hindsight ×2 / ×0.5 by realized sign reads t +3.45 inside the cap, and its gain is spread.
+- **Prediction.** μ̂ ranks net per dollar (Spearman +0.41) and its dispersion (+0.29). Mean/variance by quintile is
+  hump-shaped (×1e4: 11.6, 2.4, 19.9, 29.5, 13.3).
+- **Volatility.** Coin volatility is the wrong risk measure: high-volatility coins earn more per dollar (+12 bp → +90
+  bp by quintile), so 1/σ̂² tilts toward low edge.
+- **Concentration.** 41% of signal dollars and 55% of signal net P&L fall on the 20 largest days.
+
+| Family (best capped variant) | Sharpe-path t (best 5 out) | dSharpe | Score /100* |
+|---|---|---|---|
+| Z4 cascade breadth | +1.01 (−0.53) | +0.12 | 50 |
+| Z5 Kelly on the signal's predicted dispersion | +1.14 in-sample (−0.26); walk-forward −1.38 | +0.16 | 47 |
+| Z3 edge | +0.40 (−1.11) | +0.12 | 47 |
+| Z7 diversification across armed coins | +1.01 (−0.61) | +0.06 | 39 |
+| Z1 Kelly μ̂/σ̂² | −0.66 (−2.23) | −0.12 | 27 |
+| Z2 inverse variance | −1.27 (−2.36) | −0.60 | 25 |
+| Z6 book volatility targeting | −0.87 (−1.91) | −0.16 | 25 |
+
+\* Scored on the selection era (an in-sample upper bound). All are rejected.
+
+- **C2a on this simulator (reference):** Sharpe-path t +1.25 uncapped, +0.68 inside the cap. Both turn negative
+  without the best 5 days. It still waits for its forward re-test on new data.
+- **Lead:** at research-era volumes (the base configuration), the cap leaves room to size up. There, edge sizing reads
+  t +1.74 (+0.73 without its best 5 days) and breadth +1.82 (+0.88). Re-test sizing on new data if alt volumes
+  recover.
+
+## Gemini venue test (Nov 8): not a better venue, and not worth adding
+Question (Miles): is Gemini, a thinner NY-licensed venue, more volatile and so more profitable for the wick ladder?
+Measure ≥4σ dislocations that happen on Gemini only, the dollars traded through the bids, and the rebound, with the
+frozen R2-08 ladder and a Coinbase-synchronous fair value. Pre-registered (reports/gemini_prereg.md) before any Gemini
+data was read. Record: branch gemini/venue; reports/gemini/README.md.
+
+**Data and checks**
+- **Sample.** Gemini's public API keeps only 7 days of trades, so the history is Tardis.dev's free first-of-month
+  files: 35 days, Jan 2024 – Nov 2026, prints on both venues. The AI-filtered test uses the 23 out-of-sample days.
+- **Prints enriched.** Every Gemini print carries Coinbase's last price that second, its low within ±60 s and its
+  marks to +1 h, plus Gemini's book (scripts/gemini/enrich.py, run on Actions).
+- **Coverage.** Gemini lists 13 of the 17 coins; XLM, HBAR, ENA and ONDO are missing.
+- **Parity.** The R2-08 model was rebuilt and matches the stored predictions and thresholds on all 1,568 trades
+  (difference 0).
+- **The sample is representative for the incumbent:** $67K a year at $250K on these days vs $71K over all days.
+
+**Results**
+- **Volume.** Gemini trades $19.9M a day in these coins against Coinbase's $758M (2.6%).
+- **Pure synchronous ≥4σ gaps** (Gemini print ≥ 4σ below r × Coinbase's same-second price):
+  - 0.59 episodes a day, with $18.9K of taker sells in all 34 days.
+  - 15 of 20 are in ZEC, BCH and AAVE, where Gemini's spread at the time was 240–540 bp.
+  - Gemini's own price does not rebound within a minute (median 0 bp).
+
+| 23 days, $250K, θ 0.5 | Gemini, AI-filtered | of which Gemini-only | Gemini, unfiltered | Coinbase incumbent |
+|---|---|---|---|---|
+| Parent fills a day | 1.30 | 0.17 | 3.13 | 1.74 |
+| Our fills, $ a day | $1,291 | $6 | $4,839 | $38,182 |
+| Gross, bp per dollar | −4.8 | −27 | +7.0 | +67.2 |
+| Net, bp per dollar | −38.4 (Gemini 12.5/25 bp tier) | −60 | −13.0 | +48.3 |
+| Net, $ a year | −$1,807 | −$12 | −$2,295 | +$67,261 |
+
+**Why**
+1. **Gemini follows Coinbase.**
+   - A Gemini bid set from the same t−1 level fills after Coinbase has already traded below it. The Coinbase price
+     one second later is a median −8.8 bp under the fill, and only +3 bp an hour later. The incumbent's own fills
+     show +51 bp at an hour.
+   - This is the stale-anchor pick-off of H6 and H10, seen from the follower's side.
+2. **Gemini-only holes are rare and mostly not holes.**
+   - BCH's are Gemini's persistent ~3.6% premium snapping back toward Coinbase.
+   - The one clean hole in the sample (SUI, Sep 1 2026) had $2.2K of sellers.
+3. **Fees.** Gemini's schedule is not Coinbase's:
+   - $0 60/120 bp, $10K 40/80, $25K 25/50, $75K 12.5/25, $250K 7.5/15, $500K 6/12.5, $1M 5/10 (maker/taker,
+     Sep 1 2026).
+   - The sleeve's $77K a month pays 12.5/25.
+4. **Dollars.** Even at the incumbent's +48 bp net, $1.3K a day of fills makes about $2.3K a year.
+
+**Limits:** crash days are not in the sample (cascade capacity on Gemini unmeasured, but bounded by the 2.6% volume
+ratio); Gemini ticks are today's; sizing used each coin's same-day Gemini volume as the 30-day median.
+
+## Ladder v6, exits (Nov 8): no change; the rest of the rebound can't be predicted well enough to beat the current exit
+Question set by Miles: the 60-minute market sell costs 3–6 bp on prints, not the modeled 16–17. Does that change the
+best exit? Start with a minute-by-minute hold-or-sell rule with few parameters, walk-forward. "No change" was a valid
+answer.
+
+Final report: the "Ladder v6: Exits Report" doc (https://claude.ai/artifact/9gPMndnptiS4KiizsZSdt3). Record: branch
+ladder/v6-exits. reports/ladder_v6x_prereg.md holds the plan and its deviation log; reports/ladder_v6x/ holds the
+README, rounds.md, variants.csv (1,187 logged runs), the scorecard and oos/.
+
+**Protocol**
+- Ladder v5's named simulator was frozen: the engine-faithful cash rule plus print-measured exit costs. It reproduces
+  the incumbent's best estimate exactly: 22.8% / 19.1% / 11.1% a year, Sharpe 2.94 / 2.66 / 1.91 (difference 1e-17).
+- The exit layer sells a tranche's unsold part at any minute from 0 to 120, with the take-profit resting. "Sell at 60"
+  reproduces the incumbent exactly in every configuration and era.
+- At most 5 rounds of hypothesis, test, read, refine, on the selection era only.
+- Drop rule: a lever goes if the best in-sample rule of its family scores t < 1.4. The family is every subset of 6
+  inputs × 3 hurdles. The inputs are the markout so far, the share of the dislocation recovered, rung depth, BTC's
+  move, cascade breadth and minutes since the fill.
+- The rule is then frozen and read once on the check era and 2022–23 against ladder v5's gates.
+
+**Exit cost by minute.** Measured on 6.48M Coinbase prints for 300 pre-drawn tranches, a market sale at minutes 2 /
+5 / 10 / 20 / 30 / 45 costs 1.02 / 1.15 / 1.17 / 1.10 / 1.01 / 1.03 times its cost at 60 (median 2.8 bp at 60).
+Half-spreads are 1.5–1.8x wider for 10 minutes after the fill; slippage is not.
+
+**Why rising markouts don't make a better exit.** The averages are dollar-weighted (S* θ 0.5, selection era).
+- Fills average +57 bp against the entry by minute 45.
+- By 60 the take-profit has sold 53% of the dollars.
+- The part still unsold at 60 is the tranches that did not rebound: −71 bp at 60, −117 at 120.
+- In hindsight, perfect timing within 0–120 minutes is worth +1.4 to +1.9 Sharpe. Ladder v5's +3.3 was measured
+  under the model's dearer exit costs.
+
+**Levers** (selection era, S* θ 0.5, pessimistic cash for holds past 60)
+
+| Lever | In-sample bound | Walk-forward | Verdict | Score /100 |
+|---|---|---|---|---|
+| X1 sell early (0–60) | t −0.72, best of 189 | +0.16 | reject (dropped at round 1) | 18* |
+| X12 hold-or-sell over 0–120 | +1.32, best of 189 | +0.46 | reject (dropped at round 1) | 46* |
+| X2 hold past 60, up to 120 | +1.79 (6 inputs) | best +0.62 of 27 variants | reject: frozen, fails out of sample | 33 |
+
+\* Scored on their in-sample bound because they were never frozen, so these scores are not comparable with X2's.
+
+- **X1.** The one strongly predictable state is "the price is above the take-profit with part of the remainder
+  unfilled". It cannot happen live: while our take-profit rests with size left, buyers fill it before the price can
+  trade higher. Selling the rest at those historical prices counts the same buyers twice.
+- **X2.** The in-sample edge was "remainders still deep under water at 60 keep recovering". That earned +164 bp a
+  dollar in Q1 2025, then −3, −46, −47 and +35. Holding every remainder an extra hour also costs 3.5 points a year in
+  cash, because the extensions come during cascades.
+- **X2 out of sample** (frozen 6-input rule, h 10, refit quarterly):
+  - Pooled t +0.52. The check era is −0.04 bp a day; 2022–23 is +0.22.
+  - Check-era Sharpe falls from 2.66 to 2.37.
+  - Gates: G1–G3 fail, G4 passes.
+  - No red team, forward test or patch, because nothing passed.
+
+**Leads, checked after the read and closed.**
+- **Take-profit fill share.** Only 4–5% of the dollars unsold at 60 come from tranches whose take-profit was
+  touched. Full take-profit fills would add at most +0.04 to +0.07 Sharpe. The paper broker uses the same 0.5
+  capture, so only live pilot fills can measure the real share.
+- **Cash-aware extension.** With no cash cost at all, the frozen rule reads out-of-sample t +0.90, short of the
+  gate's 2, so it was not built.
+- **Exit layer.** It matches a direct recomputation from the candles to 1e-7.
 
 ## Ladder v5 (Nov 7–8): execution-trader round on the spot ladder — no trading change; USDC cash to a live check
 Goal set by Miles: work like an execution trader (markouts, queue position, adverse selection, expected value) and test
@@ -267,7 +586,8 @@ few, mechanism-led candidates. Code: scripts/wick_v4/. Results: reports/wick_v4/
 - Trade data agrees with the 1-minute candles on 98.4% of fills.
 
 **Venue: Coinbase.**
-- Gemini's fee schedule is identical, but its volume in these alts is far smaller.
+- Gemini: tested on prints Nov 8 and rejected (Gemini venue test section). Its volume in these coins is 2.6% of
+  Coinbase's, its fills come after Coinbase moves, and its fee schedule is not Coinbase's.
 - Bitstamp's fees eat the edge at our volume.
 - Kraken and Crypto.com don't serve New York.
 
@@ -1020,6 +1340,8 @@ sell at the lower of the last futures trade and the spot-implied price.
   - Not available in New York or Maine.
 - **Kraken Futures (global, non-US):** maker rebate −0.5 to −1 bp at $250M–$1B+ per month; taker 1.25–5 bp.
 - **Kalshi perps:** 5 bp maker / 12 bp taker at the base tier; 0.6 / 2.6 bp above $3B volume.
+- **Gemini ActiveTrader spot (Sep 1 2026 page; maker/taker by 30-day volume):** $0 60/120 bp, $10K 40/80, $25K 25/50,
+  $75K 12.5/25, $250K 7.5/15, $500K 6/12.5, $1M 5/10, $5M 4/8.5, $10M 2.5/6.5, $20M 1/5, $50M+ 0/3.5 → 0/2.
 - Our perps model: 0.04% per side, plus funding (Hyperliquid data 2023+, 8%/yr assumed before). Realistic nano-perp model
   (C3 upgrade round): BTC 2.5 bp, ETH 6.5 bp per side, whole contracts.
 - Coinbase Advanced REST API limit: 30 requests per second.
@@ -1387,7 +1709,7 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
   - 100% + market neutral: the wick catcher at 2x, only up to roughly $25–50K of capital.
   - $5M + market neutral: carry and basis trades, single-digit to low-teens returns.
   - $5M + high return: directional (C3 at 1.5x: ~60% a year in backtest, −33% drawdown).
-- Untested ways to raise capacity: more books for the same dips (the Coinbase spot long tail, since dip bids don't need perps, and other NY-licensed spot venues such as Gemini and Bitstamp); perp-vs-spot basis wicks (market neutral by construction); exits worked over several minutes.
+- Untested ways to raise capacity: more books for the same dips (the Coinbase spot long tail, since dip bids don't need perps, and other NY-licensed spot venues such as Gemini and Bitstamp; both since tested and rejected); perp-vs-spot basis wicks (market neutral by construction); exits worked over several minutes.
 
 ## Scale round 2 (Nov 6): highest Sharpe at $5M — multi-asset trend doesn't help
 - Goal set by Miles: $5M of capacity and high Sharpe; returns come from leverage.
@@ -1443,6 +1765,8 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
   CI runner.
 
 ## Known gaps
+- Hyperliquid liquidation, open-interest and wallet history isn't free, so the flow-identity ideas (who was
+  liquidated vs who is informed) wait for forward-collected data (edge hunt 2).
 - Coinbase Financial Markets' own commission on perps is unverified; with it, H1 (edge hunt) passes or fails. One authenticated order preview settles it.
 - Coins delisted from Coinbase are missing (survivorship bias favors the alt strategies).
 - Taxes are excluded.
@@ -1465,3 +1789,6 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
   sell 1.6–3× at 1× and 3–5× in the doubled-cost stress (ladder v5, 2,053 exits on prints).
 - Wick-catcher capacity is estimated from 1-minute candles (volume spread evenly over each candle's range); real depth
   during wicks is unobserved until the paper test logs it.
+- Take-profit fills assume we get half (θ 0.5) of the volume trading through the take-profit, in research and in the
+  paper broker alike. Only live pilot fills can measure the real share. The stakes are small: full fills would add at
+  most +0.04 to +0.07 Sharpe (ladder v6).
