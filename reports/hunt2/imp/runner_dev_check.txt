@@ -1,0 +1,4 @@
+rows: committed 1155, runner 1155
+same columns in order: True
+same window ids: True
+columns compared: 94; columns with a relative difference > 1e-9 or NaN mismatch: 0
