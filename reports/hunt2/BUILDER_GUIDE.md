@@ -5,7 +5,7 @@ You build one or two ideas end to end under the pre-registration (reports/hunt2_
 engineering judgement, written down in your REPORT.
 
 ## Where you work
-- **Your worktree:** /home/claude/wt/<id>, branch hunt2/<id>, created from branch hunt2 at the freeze commit. It is a
+- **Your worktree:** /home/claude/wt/<id>, branch h2/<id>, created from branch hunt2 at the freeze commit. It is a
   sparse checkout without the big data folders.
 - **Data (read-only):** the main clone at **/home/claude/crypto-edge** (branch hunt2): data/minute (Coinbase spot
   1-minute, 2024-01 .. 2026-11-05, 39 coins), data/minute_early (2021 .. 2023, 14 coins), data/cfm (Coinbase perp
@@ -23,13 +23,13 @@ engineering judgement, written down in your REPORT.
 This machine has 2 CPUs and 7 GB shared by several builders. Anything over ~3 minutes of CPU, and any internet access,
 runs on Actions. Exchange APIs are unreachable from here; only GitHub is. `gh` is not authenticated here; use the REST
 API with curl and $GH_TOKEN:
-1. Commit and push your branch: `git -C /home/claude/wt/<id> push -u origin hunt2/<id>`.
+1. Commit and push your branch: `git -C /home/claude/wt/<id> push -u origin h2/<id>`.
 2. Dispatch the generic runner hunt2.yml (it can also download earlier runs' artifacts):
    ```
    curl -sS -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
      -H "Content-Type: application/json" \
      https://api.github.com/repos/milesmcqueen98-code/crypto-edge/actions/workflows/hunt2.yml/dispatches \
-     -d '{"ref":"hunt2/<id>","inputs":{"script":"scripts/hunt2/prints.py","args":"reports/hunt2/<id>/windows.csv 0 6 out","commit":"","artifact":"out","tag":"<id>-p0","sparse":"scripts/hunt2 scripts/hunt scripts/wick_v4/fetch_trades.py reports/hunt2/<id>"}}'
+     -d '{"ref":"h2/<id>","inputs":{"script":"scripts/hunt2/prints.py","args":"reports/hunt2/<id>/windows.csv 0 6 out","commit":"","artifact":"out","tag":"<id>-p0","sparse":"scripts/hunt2 scripts/hunt scripts/wick_v4/fetch_trades.py reports/hunt2/<id>"}}'
    ```
    Inputs: `script`, `args`, `pip` (extra packages), `commit` (space-separated paths committed back to your branch:
    derived, small files), `artifact` (paths uploaded instead: raw prints; kept 21 days), `tag`, `sparse` (repo-relative
@@ -38,10 +38,10 @@ API with curl and $GH_TOKEN:
    The run's id is not returned by the dispatch call: list runs on your branch right after dispatching.
    - Shard long fetches (args `<shard> <n>`) and dispatch the shards in parallel; each runner has its own IP and rate
      limit (Coinbase public endpoints allow ~10 requests/s per IP; the fetchers pace at 7).
-3. Watch: `curl -sS -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/milesmcqueen98-code/crypto-edge/actions/runs?branch=hunt2/<id>&per_page=5"`.
+3. Watch: `curl -sS -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/milesmcqueen98-code/crypto-edge/actions/runs?branch=h2/<id>&per_page=5"`.
    Logs: `.../actions/runs/<run_id>/logs` (zip). Wait with the Monitor tool (an until-loop on the run's status), not
    with sleep chains.
-4. Get committed outputs: `git -C /home/claude/wt/<id> pull --rebase origin hunt2/<id>`. **Artifacts cannot be
+4. Get committed outputs: `git -C /home/claude/wt/<id> pull --rebase origin h2/<id>`. **Artifacts cannot be
    downloaded to this machine** (their storage host is blocked); run logs can (`.../actions/runs/<run_id>/logs`, a zip).
    So raw prints never come here: fetch them in one run (`artifact` = the raw files), then process them in a second
    hunt2.yml run with `"art_runs":"<run ids>"` (they land in art/<run_id>/), committing only derived per-event files.
