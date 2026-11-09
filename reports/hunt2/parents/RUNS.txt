@@ -1,0 +1,3 @@
+Parent prints (reports/hunt2/parents/windows.csv), fetched 2026-11-08 23:57 UTC on Actions (hunt2.yml, scripts/hunt2/prints.py, 8 shards):
+42537622614 42537624642 42537626414 42537628224 42537629939 42537631911 42537633661 42537635363
+Artifacts: hunt2-parents-<shard>-<run id> (out/prints_<shard>.parquet), kept 21 days.
