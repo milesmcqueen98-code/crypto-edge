@@ -284,6 +284,22 @@ def main(art_dir, out_dir=PR):
     qa["thr_rule_counts"] = {era: pd.Series(ex["thr_rule"][(C.era == era).to_numpy()]).value_counts().to_dict()
                              for era in ("main", "early")}
     qa["thr_rule_counts"] = {e_: {int(k): int(v) for k, v in d_.items()} for e_, d_ in qa["thr_rule_counts"].items()}
+    cu_path = os.path.join(PR, "candle_usd.csv.gz")           # print USD against candle USD (QA.md recomputes it)
+    if os.path.exists(cu_path):
+        CU = pd.read_csv(cu_path, parse_dates=["ts"])
+        CU["ts"] = CU.ts.astype("datetime64[ns]")
+        key = pd.MultiIndex.from_arrays([F.coin, F.ts])
+        cu = CU.set_index(["coin", "ts"]).reindex(key)
+        ok = F.complete.to_numpy() & (cu.candle_usd_30.to_numpy() > 0)
+        r_usd = F.usd_30.to_numpy() / cu.candle_usd_30.to_numpy()
+        r_vol = ex["vol_30"] / cu.candle_vol_30.to_numpy()
+        qa["candle_check"] = {}
+        for era in ("main", "early"):
+            m = ok & (C.era == era).to_numpy()
+            qa["candle_check"][era] = dict(
+                n=int(m.sum()), usd_ratio_q=[float(x) for x in np.quantile(r_usd[m], [0.01, 0.1, 0.5, 0.9, 0.99])]
+                if m.any() else [], vol_ratio_median=float(np.median(r_vol[m])) if m.any() else None)
+            print(f"candle check {era}: {qa['candle_check'][era]}", flush=True)
     qa["seconds"] = round(time.time() - t0, 1)
     with open(os.path.join(out_dir, "qa_runner.json"), "w") as fh:
         json.dump(qa, fh, indent=1, default=str)
