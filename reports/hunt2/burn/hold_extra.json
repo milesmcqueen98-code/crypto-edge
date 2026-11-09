@@ -1,0 +1,17 @@
+{
+ "freeze_commit": "d23f099ed72667ce478c0a310be2a0404727247c",
+ "variant": "coin_m0.5_C6",
+ "runner": "scripts/hunt2/burn/hold_lowmem.py (the first burn.py hold was OOM-killed before any output)",
+ "n_fail_sel": 164,
+ "n_triggers_sel": 164,
+ "n_skip_sel": 89,
+ "n_parents_sel": 1155,
+ "n_fail_chk": 47,
+ "n_triggers_chk": 47,
+ "n_skip_chk": 12,
+ "n_parents_chk": 412,
+ "n_fail_early": 95,
+ "n_triggers_early": 95,
+ "n_skip_early": 36,
+ "n_parents_early": 744
+}
