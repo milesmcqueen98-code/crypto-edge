@@ -117,9 +117,9 @@ def skip_mask(x, thr, side):
     return m & np.isfinite(x)                      # missing features: kept
 
 
-def check_cells(era, cells):
+def check_cells(era, cells, theta=0.5):
     """Every skip cell must land on one of the frozen simulator's parents of the era (else the skip would be silent)."""
-    A = F.arrays(era)
+    A = F.arrays(era, theta)
     idx, coins = A["idx"], list(A["coins"])
     pos = idx.get_indexer(pd.DatetimeIndex(cells["ts"]))
     col = np.array([coins.index(c) if c in coins else -1 for c in cells["coin"]], dtype=np.int64)
@@ -195,13 +195,36 @@ def cmd_select(idea):
 
 
 # ------------------------------------------------------------------ HOLD (after both freezes, once)
+def _headroom_gb():
+    """Free memory for this process: the smaller of the machine's MemAvailable and the headroom of this process's
+    memory cgroup (cgroup v1: limit - (usage - inactive file cache)); the builders share one cgroup (6.26 GB)."""
+    kb = [int(x.split()[1]) for x in open("/proc/meminfo") if x.startswith("MemAvailable")][0]
+    free = kb / 1e6
+    try:
+        cg = [x.split(":", 2)[2].strip() for x in open("/proc/self/cgroup") if x.split(":")[1] == "memory"][0]
+        d = "/sys/fs/cgroup/memory" + cg
+        lim = int(open(d + "/memory.limit_in_bytes").read())
+        use = int(open(d + "/memory.usage_in_bytes").read())
+        st = dict(x.split() for x in open(d + "/memory.stat"))
+        free = min(free, (lim - use + int(st.get("total_inactive_file", 0))) / 1e9)
+    except (OSError, IndexError, ValueError):
+        pass
+    return free
+
+
 def _wait_mem(gb):
-    """The machine is shared (7 GB, five builders): wait until `gb` GB are available before loading more."""
+    """The machine is shared by five builders: wait until `gb` GB are free before loading more. This process also
+    volunteers as the first victim of an out-of-memory kill (oom_score_adj 1000), so it never takes another
+    builder's job down."""
+    try:
+        open("/proc/self/oom_score_adj", "w").write("1000")
+    except OSError:
+        pass
     while True:
-        kb = [int(x.split()[1]) for x in open("/proc/meminfo") if x.startswith("MemAvailable")][0]
-        if kb / 1e6 >= gb:
+        h = _headroom_gb()
+        if h >= gb:
             return
-        print(f"waiting for memory: {kb / 1e6:.1f} GB available, need {gb}", flush=True)
+        print(f"waiting for memory: {h:.2f} GB free, need {gb}", flush=True)
         time.sleep(30)
 
 
@@ -225,9 +248,33 @@ def _lowmem_run_cells():
 
     def run_cells(era, *a, **kw):
         _free_except(era, kw.get("theta", 0.5))
-        _wait_mem(1.5)
+        _wait_mem(MEM_GB)
         return orig(era, *a, **kw)
+    run_cells._lowmem = True
     pathA.run_cells = run_cells
+
+
+MEM_GB = 1.9            # one era of the frozen simulator peaks at ~1.6 GB (the WHO HOLD read's process)
+
+
+def _hold_cells(fz, theta=0.5):
+    """The frozen rule's skip cells and counts in every era (sel from the DEV file, chk/early from the HOLD file),
+    each checked against the simulator's parents (arrays at `theta`, the ones the next run uses)."""
+    cells, counts = {}, {}
+    for era in ("sel", "chk", "early"):
+        _free_except(era, theta)
+        _wait_mem(MEM_GB)
+        J = table(era)
+        x = J[fz["feature"]]
+        m = skip_mask(x, fz["threshold"], fz["side"])
+        cells[era] = J.loc[m, ["ts", "coin"]].reset_index(drop=True)
+        check_cells(era, cells[era], theta)
+        counts[era] = dict(parents=len(J), skipped=int(m.sum()), skip_share=float(m.mean()),
+                           missing=int(x.isna().sum()), no_prints=int((J.flag == "no_prints").sum()),
+                           no_touch=int((J.flag == "no_touch").sum()))
+        print(era, counts[era], flush=True)
+    assert counts["sel"]["skipped"] == fz["dev"]["n_skipped"], "DEV cells differ from the frozen DEV trial"
+    return cells, counts
 
 
 def cmd_hold(idea):
@@ -240,25 +287,36 @@ def cmd_hold(idea):
     if os.path.exists(os.path.join(od, "gates.json")):
         raise SystemExit("gates.json exists: HOLD is read once")
     fz = json.load(open(os.path.join(od, "frozen.json")))
-    cells, counts = {}, {}
-    _wait_mem(2.2)
-    for era in ("sel", "chk", "early"):
-        _free_except(era)
-        _wait_mem(1.5)
-        J = table(era)
-        x = J[fz["feature"]]
-        m = skip_mask(x, fz["threshold"], fz["side"])
-        cells[era] = J.loc[m, ["ts", "coin"]].reset_index(drop=True)
-        check_cells(era, cells[era])
-        counts[era] = dict(parents=len(J), skipped=int(m.sum()), skip_share=float(m.mean()),
-                           missing=int(x.isna().sum()), no_prints=int((J.flag == "no_prints").sum()),
-                           no_touch=int((J.flag == "no_touch").sum()))
-        print(era, counts[era], flush=True)
-    assert counts["sel"]["skipped"] == fz["dev"]["n_skipped"], "DEV cells differ from the frozen DEV trial"
+    cells, counts = _hold_cells(fz)
     t0 = time.time()
     _lowmem_run_cells()
     g = pathA.hold_read(idea, cells, od)
     print(f"hold_read {time.time() - t0:.0f}s", flush=True)
+    keys = ("A1", "A2", "A3", "A4", "pass", "hold_t_x2", "hold_mean_bp_x2", "hold_mean_bp_x1", "chk_mean_bp_x2",
+            "early_mean_bp_x2", "chk_t_x2", "early_t_x2", "dev_t_x2", "dsr", "years_x2", "hold_top5_share_x2")
+    print(json.dumps({k: g.get(k) for k in keys}, indent=1, default=str), flush=True)
+    _extras(idea, fz, fc, cells, counts)
+
+
+def cmd_extras(idea):
+    """Reported-only numbers of the frozen variant (theta 0.25 at S, years, the incumbent's worst DEV days), for an
+    idea whose HOLD read (gates.json, daily.parquet) is done but whose extras were not written (WHO: the read's
+    process was killed by the cgroup's out-of-memory killer after hold_read had written its files)."""
+    fc = frozen_commit(idea)
+    od = out_dir(idea)
+    if not fc or not os.path.exists(os.path.join(od, "gates.json")):
+        raise SystemExit("extras only after the HOLD read (gates.json)")
+    if os.path.exists(os.path.join(od, "hold_extra.json")):
+        raise SystemExit("hold_extra.json exists")
+    fz = json.load(open(os.path.join(od, "frozen.json")))
+    _lowmem_run_cells()
+    cells, counts = _hold_cells(fz, theta=0.25)
+    _extras(idea, fz, fc, cells, counts)
+
+
+def _extras(idea, fz, fc, cells, counts):
+    od = out_dir(idea)
+    _lowmem_run_cells() if not getattr(pathA.run_cells, "_lowmem", False) else None
     # reported, not gated: theta 0.25 at S against the incumbent's S|0.25
     th = {}
     parts = []
@@ -297,9 +355,6 @@ def cmd_hold(idea):
                  theta025=th, years=yrs, incumbent_worst10_dev=worst,
                  time=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
     json.dump(extra, open(os.path.join(od, "hold_extra.json"), "w"), indent=1, default=str)
-    keys = ("A1", "A2", "A3", "A4", "pass", "hold_t_x2", "hold_mean_bp_x2", "hold_mean_bp_x1", "chk_mean_bp_x2",
-            "early_mean_bp_x2", "chk_t_x2", "early_t_x2", "dev_t_x2", "dsr", "years_x2", "hold_top5_share_x2")
-    print(json.dumps({k: g.get(k) for k in keys}, indent=1, default=str))
     print(json.dumps(th, indent=1))
 
 
@@ -312,5 +367,7 @@ def main(idea, argv):
         cmd_select(idea)
     elif cmd == "hold":
         cmd_hold(idea)
+    elif cmd == "extras":
+        cmd_extras(idea)
     else:
         raise SystemExit(__doc__)
