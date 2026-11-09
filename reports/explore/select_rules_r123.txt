@@ -1,0 +1,14 @@
+Selection-rule tournament (CSCV, 16 blocks, 12,870 half-splits); rounds [1, 2, 3]; 4661 variants
+Mean out-of-sample half ΔSharpe vs the incumbent (blended $250K), and the in-sample Δ it came from
+
+rule            IS Δ   OOS Δ  OOS/IS  P(OOS Δ>0)     p10     p90  most picked
+max_all        2.026   0.560    0.28        0.86  -0.146   1.226  r3c_r2_rnd_0306_tp_d40_100_sig_min_40.0 (10%), r3c_r2_rnd_0189_tp_d80_100_bid_to_20 (9%), r3a_1013 (6%)
+max_nh         2.010   0.707    0.35        0.94   0.109   1.360  r3c_r2_rnd_0306_tp_d40_100_sig_min_40.0 (11%), r3c_r2_rnd_0189_tp_d80_100_bid_to_20 (9%), r3a_1013 (6%)
+lcb_nh         1.995   0.668    0.34        0.93   0.079   1.308  r3a_1013 (10%), r3c_r2_rnd_0189_tp_d80_100_bid_to_20 (9%), r3c_r2_rnd_0306_tp_d40_100_sig_min_40.0 (7%)
+ols_nh         1.161   0.202    0.17        0.62  -0.359   0.883  r3a_0510 (9%), r3a_0709 (8%), r3f_0007 (7%)
+shr50_nh       1.904   0.576    0.30        0.86  -0.096   1.277  r3c_r2_rnd_0306_tp_d40_100_sig_min_40.0 (8%), r3a_1076 (8%), r3a_1013 (7%)
+ens10_nh       2.010   0.910    0.45        0.98   0.357   1.504  
+ens10_ols      1.259   0.371    0.29        0.91   0.010   0.773  
+fam_geometry   0.453  -0.205   -0.45        0.33  -0.679   0.208  r3g_R46_-1.0_1.0 (9%), r3g_R4568012_0.5_1.0 (7%), r3g_R4812_0.5_1.0 (6%)
+fam_exits      1.166   0.163    0.14        0.63  -0.605   0.889  r3e_0436 (9%), r3e_0031 (5%), r3e_0299 (5%)
+fam_filters    1.620   0.637    0.39        0.86  -0.241   1.326  r3f_0448 (18%), r3f_0363 (15%), r3f_0408 (12%)

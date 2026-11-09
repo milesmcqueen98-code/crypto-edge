@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Explore v1: run one round's variants on the selection era only (reports/explore/prereg.md).
 
-  python scripts/explore/run_round.py <round>
+  python scripts/explore/run_round.py <round tag, e.g. 3 or 3b>
 
-Reads reports/explore/round<round>_variants.json. For each variant, on Jan 2025 - Mar 2026 only:
+Reads reports/explore/round<tag>_variants.json. For each variant, on Jan 2025 - Mar 2026 only:
   - blended (live-like), minute and instant books at $250K;
   - the blended book at $1M.
 Appends one row per variant to reports/explore/variants.csv. Writes the blended $250K daily returns to
-reports/explore/daily_sel_r<round>.parquet (one column per variant) for the overfitting diagnostics.
+reports/explore/daily_sel_r<tag>.parquet (one column per variant) for the overfitting diagnostics.
 """
 import json
 import os
@@ -40,8 +40,8 @@ def one(v):
     return row, b250.rename(v["id"])
 
 
-def main(rnd):
-    V = json.load(open(os.path.join(OUT, f"round{rnd}_variants.json")))
+def main(tag):
+    V = json.load(open(os.path.join(OUT, f"round{tag}_variants.json")))
     with Pool(2) as pool:
         res = pool.map(one, V, chunksize=8)
     rows = pd.DataFrame([r for r, _ in res])
@@ -49,16 +49,16 @@ def main(rnd):
     path = os.path.join(OUT, "variants.csv")
     if os.path.exists(path):
         old = pd.read_csv(path)
-        old = old[old["round"] != rnd]
+        old = old[~old.id.isin(rows.id)]
         rows = pd.concat([old, rows], ignore_index=True)
     rows.to_csv(path, index=False)
-    daily.to_parquet(os.path.join(OUT, f"daily_sel_r{rnd}.parquet"))
-    r = rows[rows["round"] == rnd]
+    daily.to_parquet(os.path.join(OUT, f"daily_sel_r{tag}.parquet"))
+    r = rows[rows.id.isin([v["id"] for v in V])]
     base = rows[rows.id == "base"].iloc[0]
-    print(f"round {rnd}: {len(r)} variants; incumbent blended Sharpe at $250K {base.sharpe_b250:.3f}")
+    print(f"round {tag}: {len(r)} variants; incumbent blended Sharpe at $250K {base.sharpe_b250:.3f}")
     print(r.sort_values("sharpe_b250", ascending=False)[["id", "sharpe_b250", "sharpe_m250", "sharpe_b1m", "ret_b250",
                                                          "maxdd_b250"]].head(15).round(3).to_string(index=False))
 
 
 if __name__ == "__main__":
-    main(int(sys.argv[1]))
+    main(sys.argv[1])

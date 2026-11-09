@@ -151,7 +151,7 @@ Scored on check and 2022-23, the "binding cells".
 | Implementation | 5 | hand-scored at the freeze, before the read |
 
 ## Deviation log
-1. **Before round 3 ran (Nov 9 2026, 09:20 ET).** Recorded before any round-3 variant was run.
+1. **Before round 3 ran (Nov 9 2026, 09:03 ET, commit a49e5cf).** Recorded before any round-3 variant was run.
    - **New dimensions:** xsim gains three dimensions, all off in rounds 1-2, plus finer hold times. Parity at the
      defaults is unchanged (parity.txt).
      - sig_min: skip signals whose sigma is below 40 / 50 / 55 / 60 / 70 bp;
@@ -175,3 +175,19 @@ Scored on check and 2022-23, the "binding cells".
      out of sample. That bears on strictness (r_min) finalists. It is used only in the hand-scored mechanism points,
      not in selection.
    - All round-3 variants count toward N.
+2. **Before round 3b ran (Nov 9 2026, 09:12 ET).** Recorded after round 3 and before any round-3b variant was run.
+   - **Literature scan:** reports/explore/literature.md arrived after round 3 had started.
+   - **Round 3b** runs its ideas that xsim can express and rounds 1-3 did not already cover (variants_r3b.py). Each is run
+     on the incumbent and on the round 1-3 Best and Robust no-harm variants:
+     - take-profit rising with depth (A1);
+     - scale-out ladders on every rung (A4), and A1 + A4;
+     - a light 10% parent (A3);
+     - deeper bids cancelled at 50% parent recovery or after 30 minutes, and a 30-minute timeout alone (A5).
+   - **Not run:**
+     - per-rung hold times (A8): xsim has one hold;
+     - the scan's section B and C ideas, which need simulator or data changes.
+   - **The scan's look-ahead check passes:** the AI threshold is a quantile of the training-window predictions
+     (scripts/lab/core.py, walk_forward), so it uses past data only.
+   - **Verification:** xsim's sigma floor matches the legacy path (wick_v4 rungs.run with the dropped signals removed from
+     its input) to 2e-17 on the selection era (indep_sigma_selection.txt).
+   - All round-3b variants count toward N.
