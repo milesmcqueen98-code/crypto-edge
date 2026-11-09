@@ -190,6 +190,8 @@ def cells(name, cfgs, eras):
     mp = os.path.join(CELLS, "meta.csv")
     for cfg in cfgs:
         for era in eras:
+            if os.path.exists(os.path.join(CELLS, f"{name}__{cfg}__{era}.parquet")) and not os.environ.get("FORCE"):
+                continue                                      # already computed
             tw = os.path.join(CELLS, f"{twin(name, era)}__{cfg}__{era}.parquet")
             if twin(name, era) != name and os.path.exists(tw):       # same dataset: reuse the twin's cell
                 pd.read_parquet(tw).to_parquet(os.path.join(CELLS, f"{name}__{cfg}__{era}.parquet"))

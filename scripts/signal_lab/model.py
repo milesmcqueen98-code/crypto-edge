@@ -60,12 +60,24 @@ CFG = dict(theta=0.5, C=250e3, today=True, cost_mult=2.0)    # S* theta 0.5
 
 
 def split(name):
-    """SPEC = <label><feature set>[H]; H = the 2021-23 candidates are added to every training set (main era only)."""
-    hist = name.endswith("H")
-    core_name = name[:-1] if hist else name
+    """SPEC = <label><feature set>[suffix]. Suffixes (deviation log):
+      H     the 2021-23 candidates are added to every training set (main era only)
+      H23   only the 2023 candidates are added; H22: 2022-23 (dose-response of H)
+      W365  a rolling 365-day training window instead of the expanding one (less history)
+    Returns (label, feature set, history start or None/False, window days or None)."""
+    hist, window = False, None
+    core_name = name
+    if name.endswith("W365"):
+        core_name, window = name[:-4], 365
+    elif name.endswith("H23"):
+        core_name, hist = name[:-3], "2023-01-01"
+    elif name.endswith("H22"):
+        core_name, hist = name[:-3], "2022-01-01"
+    elif name.endswith("H"):
+        core_name, hist = name[:-1], "2021-01-01"
     for l in sorted(LABELS, key=len, reverse=True):
         if core_name.startswith(l) and core_name[len(l):] in FSETS:
-            return l, core_name[len(l):], hist
+            return l, core_name[len(l):], hist, window
     raise ValueError(name)
 
 
@@ -210,7 +222,7 @@ def memory_arrays(L):
 
 
 # ------------------------------------------------------------------------------------------------ walk-forward
-def wf(X, y, feats, periods, thr_q=0.6, seeds=(7, 11, 23), keep_models=False, hist=None):
+def wf(X, y, feats, periods, thr_q=0.6, seeds=(7, 11, 23), keep_models=False, hist=None, window_days=None):
     """core.walk_forward at R2-08's settings (episode weights, Huber, 250 rounds), also returning the models."""
     params = dict(wick.PARAMS)
     pred = pd.Series(np.nan, index=X.index)
@@ -220,6 +232,8 @@ def wf(X, y, feats, periods, thr_q=0.6, seeds=(7, 11, 23), keep_models=False, hi
     models = {}
     for per in periods:
         tr_mask = (X.ts < per.start_time - pd.Timedelta(days=1)) & ok
+        if window_days:
+            tr_mask &= X.ts >= per.start_time - pd.Timedelta(days=window_days)
         te_mask = (X.ts >= per.start_time) & (X.ts <= per.end_time)
         if not te_mask.any() or tr_mask.sum() < 200:
             continue
@@ -276,16 +290,16 @@ class Lab:
         print(f"lab ready: {len(self.X):,} candidates, {len(self.ls.coins)} coins ({time.time() - t0:.0f}s)", flush=True)
 
     def fit(self, name, periods, keep_models=False, seeds=(7, 11, 23)):
-        l, f, use_hist = split(name)
+        l, f, use_hist, window = split(name)
         feats = list(wick.FEATS) + FSETS[f]
         y = label_of(l, self.lab, self.sp)
         hist = None
         if use_hist:
             hy = self.hist[f"y_{l}"]
-            okh = hy.notna().to_numpy()
+            okh = hy.notna().to_numpy() & (self.hist.ts >= pd.Timestamp(use_hist)).to_numpy()
             hist = (self.hist[okh], hy.to_numpy()[okh])
         pred, thr, models = wf(self.X, y, feats, periods, thr_q=self.ai_d.get("thr_q", 0.5), keep_models=keep_models,
-                               hist=hist, seeds=seeds)
+                               hist=hist, seeds=seeds, window_days=window)
         return feats, pred, thr, models
 
     def export(self):
@@ -371,7 +385,7 @@ def screen(names):
             diff = float(np.abs(d["sel"].reindex(inc.index, fill_value=0.0) - inc).max())
             note = f"parity: trades {'identical' if same else 'DIFFER'} ({len(tr)} vs {len(ref)}); max daily diff {diff:.1e}"
         te = (L.X.ts >= periods[0].start_time) & (L.X.ts <= periods[-1].end_time)
-        rows.append(dict(spec=name, label=split(name)[0], fset=split(name)[1], hist=split(name)[2], n_feats=len(feats),
+        rows.append(dict(spec=name, label=split(name)[0], fset=split(name)[1], hist=bool(split(name)[2]), n_feats=len(feats),
                          sharpe=st["sharpe"],
                          ret_yr=st["ret_yr"], maxdd=st["maxdd"], d_sharpe=st["sharpe"] - s_inc["sharpe"],
                          trades=len(tr), share_kept=float((pred[te] > thr[te]).mean()),
@@ -388,6 +402,30 @@ def screen(names):
         dp = os.path.join(OUT, f"screen_daily_{'_'.join(names)[:40]}.parquet")
         D.to_parquet(dp)
     pd.DataFrame({"incumbent": inc}).to_parquet(os.path.join(OUT, "screen_daily_incumbent.parquet"))
+
+
+def dose(names):
+    """Post-freeze information runs (deviation log): each spec over the whole walk-forward, frozen-simulator Sharpe
+    per era at S* against the incumbent's. Used for the history dose-response and the shorter-window replication."""
+    L = Lab()
+    P_inc = fix_scale()
+    periods = pd.period_range(*core.WF_Q, freq="Q")
+    eras = ERA_OF[BASE]
+    inc = {e: fsim.stats(fsim.book(P_inc, e, **CFG)[0], CFG["C"], e) for e in eras}
+    rows = []
+    path = os.path.join(OUT, f"dose_{BASE}.csv")
+    for name in names:
+        _, pred, thr, _ = L.fit(name, periods)
+        tr = L.trades(pred, thr)
+        _, d = book_of(tr, f"{BASE}_dose_{name}", eras)
+        for e in eras:
+            st = fsim.stats(d[e], CFG["C"], e)
+            lo, hi = fsim.ERAS[e][1]
+            n = int(((tr.ts >= lo) & (tr.ts < pd.Timestamp(hi) + pd.Timedelta(days=1))).sum())
+            rows.append(dict(spec=name, era=e, sharpe=st["sharpe"], ret_yr=st["ret_yr"], sharpe_inc=inc[e]["sharpe"],
+                             d_sharpe=st["sharpe"] - inc[e]["sharpe"], trades=n))
+            print(rows[-1], flush=True)
+        pd.DataFrame(rows).to_csv(path, index=False)
 
 
 def noise(names):
@@ -408,9 +446,9 @@ def noise(names):
 
 
 # ------------------------------------------------------------------------------------------------ chain (finalists)
-def extra_all(L, c, pos):
-    """The F1-F4 extras for every listed minute of coin c (the same definitions as core.add_extra, written for
-    arbitrary minutes; candidate-based ones use the coin's candidate fill minutes)."""
+def extra_all(L, c, pos, need):
+    """The listed extra features for the given minutes of coin c: the same definitions as core.add_extra, written
+    for arbitrary minutes (candidate-based ones use the coin's candidate fill minutes). Only `need` is computed."""
     d, ls = L.data, L.ls
     p = lambda a: core.shift(a, 1)  # noqa: E731
     D = d.D[c]
@@ -418,64 +456,78 @@ def extra_all(L, c, pos):
     lp = d.lp[c]
     btc = d.D["BTC"]
     f = {}
-    f["dist_7d_high_bp"] = p(np.log(D["cf"] / s.rolling(10080, min_periods=2000).max().to_numpy()))[pos] * 1e4
-    f["dist_3d_low_bp"] = p(np.log(D["cf"] / s.rolling(4320, min_periods=1440).min().to_numpy()))[pos] * 1e4
-    lo1, hi1 = s.rolling(1440, min_periods=600).min().to_numpy(), s.rolling(1440, min_periods=600).max().to_numpy()
+    has = lambda *n: any(x in need for x in n)  # noqa: E731
     with np.errstate(invalid="ignore", divide="ignore"):
-        f["range_pos_1d"] = p((D["cf"] - lo1) / (hi1 - lo1))[pos]
-        f["ret15_bp"] = p(lp - core.shift(lp, 15))[pos] * 1e4
-        f["ret60_bp"] = p(lp - core.shift(lp, 60))[pos] * 1e4
-        b_cf = pd.Series(btc["cf"])
-        f["btc_dist_1d_high_bp"] = (p(np.log(btc["cf"] / b_cf.rolling(1440, min_periods=600).max().to_numpy())) * 1e4)[pos]
-        h, l_, cl = D["high"], D["low"], D["close"]
-        clv = ((cl - l_) - (h - cl)) / (h - l_)
-        f["clv5"] = p(pd.Series(clv).rolling(5, min_periods=1).mean().to_numpy())[pos]
-        r = np.diff(lp, prepend=np.nan)
-        v = pd.Series(D["vol"])
-        f["sellvol5"] = p(((v * (r < 0)).rolling(5).sum() / (v.rolling(4320, min_periods=1440).mean() * 5)).to_numpy())[pos]
-        b_r = np.diff(d.lp["BTC"], prepend=np.nan)
-        bv = pd.Series(btc["vol"])
-        f["btc_sellvol5"] = p(((bv * (b_r < 0)).rolling(5).sum() / (bv.rolling(4320, min_periods=1440).mean() * 5)).to_numpy())[pos]
-    br = np.zeros(len(pos))
-    for o in ls.coins:
-        if o == c:
-            continue
-        ind = np.zeros(d.T, dtype=np.int32)
-        ind[ls.cands[o]] = 1
-        a = np.cumsum(ind)
-        br += (a[np.maximum(pos - 1, 0)] - a[np.maximum(pos - 6, 0)]) > 0
-    f["panic_breadth"] = br
-    ind = np.zeros(d.T, dtype=bool)
-    ind[ls.cands[c]] = True
-    prev = np.r_[False, ind[:-1]]
-    is_start = ind & ~prev                                    # first minute of each run of candidate minutes
-    tt = np.arange(d.T)
-    run_start = np.maximum.accumulate(np.where(is_start, tt, -1))        # start of the latest run beginning <= t
-    start = np.where(prev, core.shift(run_start.astype(float), 1), tt)   # a fill at t continues t-1's run or starts one
-    start = np.nan_to_num(start, nan=0.0).astype(np.int64)
-    last_c = np.maximum.accumulate(np.where(ind, tt, -1))                # latest candidate minute <= t
-    prev_end = np.where(start >= 1, last_c[np.maximum(start - 1, 0)], -1)
-    msp = np.where(prev_end >= 0, np.minimum(start - prev_end, 10080), 10080)
-    cs = np.cumsum(is_start)
-    cs0 = np.r_[0, cs]                                        # cs0[i] = starts before minute i
-    e24 = cs0[start] - cs0[np.maximum(start - 1440, 0)]
-    f["mins_since_prev_ep"] = msp[pos]
-    f["eps_24h"] = e24[pos]
-    ts = d.idx[pos]
-    f["hour_of_week"] = np.asarray(ts.dayofweek * 24 + ts.hour)
-    f["mins_to_midnight"] = np.asarray(1440 - (ts.hour * 60 + ts.minute))
-    mins = np.asarray(ts.hour * 60 + ts.minute)
-    f["us_session"] = ((np.asarray(ts.dayofweek) < 5) & (mins >= 810) & (mins < 1200)).astype(int)
-    bcf = pd.Series(btc["cf"])
-    sma100 = bcf.rolling(144000, min_periods=100000).mean().to_numpy()
-    with np.errstate(invalid="ignore", divide="ignore"):
-        f["btc_dist_sma100_bp"] = (p(np.log(btc["cf"] / sma100)) * 1e4)[pos]
-        f["btc_ret30d_bp"] = (p(d.lp["BTC"] - core.shift(d.lp["BTC"], 43200)) * 1e4)[pos]
+        if has("dist_7d_high_bp"):
+            f["dist_7d_high_bp"] = p(np.log(D["cf"] / s.rolling(10080, min_periods=2000).max().to_numpy()))[pos] * 1e4
+        if has("dist_3d_low_bp"):
+            f["dist_3d_low_bp"] = p(np.log(D["cf"] / s.rolling(4320, min_periods=1440).min().to_numpy()))[pos] * 1e4
+        if has("range_pos_1d"):
+            lo1 = s.rolling(1440, min_periods=600).min().to_numpy()
+            hi1 = s.rolling(1440, min_periods=600).max().to_numpy()
+            f["range_pos_1d"] = p((D["cf"] - lo1) / (hi1 - lo1))[pos]
+        if has("ret15_bp"):
+            f["ret15_bp"] = p(lp - core.shift(lp, 15))[pos] * 1e4
+        if has("ret60_bp"):
+            f["ret60_bp"] = p(lp - core.shift(lp, 60))[pos] * 1e4
+        if has("btc_dist_1d_high_bp"):
+            b_cf = pd.Series(btc["cf"])
+            f["btc_dist_1d_high_bp"] = (p(np.log(btc["cf"] / b_cf.rolling(1440, min_periods=600).max().to_numpy())) * 1e4)[pos]
+        if has("clv5"):
+            h, l_, cl = D["high"], D["low"], D["close"]
+            clv = ((cl - l_) - (h - cl)) / (h - l_)
+            f["clv5"] = p(pd.Series(clv).rolling(5, min_periods=1).mean().to_numpy())[pos]
+        if has("sellvol5"):
+            r = np.diff(lp, prepend=np.nan)
+            v = pd.Series(D["vol"])
+            f["sellvol5"] = p(((v * (r < 0)).rolling(5).sum() / (v.rolling(4320, min_periods=1440).mean() * 5)).to_numpy())[pos]
+        if has("btc_sellvol5"):
+            b_r = np.diff(d.lp["BTC"], prepend=np.nan)
+            bv = pd.Series(btc["vol"])
+            f["btc_sellvol5"] = p(((bv * (b_r < 0)).rolling(5).sum()
+                                   / (bv.rolling(4320, min_periods=1440).mean() * 5)).to_numpy())[pos]
+        if has("btc_dist_sma100_bp", "btc_ret30d_bp"):
+            sma100 = pd.Series(btc["cf"]).rolling(144000, min_periods=100000).mean().to_numpy()
+            f["btc_dist_sma100_bp"] = (p(np.log(btc["cf"] / sma100)) * 1e4)[pos]
+            f["btc_ret30d_bp"] = (p(d.lp["BTC"] - core.shift(d.lp["BTC"], 43200)) * 1e4)[pos]
+    if has("panic_breadth"):
+        br = np.zeros(len(pos))
+        for o in ls.coins:
+            if o == c:
+                continue
+            ind = np.zeros(d.T, dtype=np.int32)
+            ind[ls.cands[o]] = 1
+            a = np.cumsum(ind)
+            br += (a[np.maximum(pos - 1, 0)] - a[np.maximum(pos - 6, 0)]) > 0
+        f["panic_breadth"] = br
+    if has("mins_since_prev_ep", "eps_24h"):
+        ind = np.zeros(d.T, dtype=bool)
+        ind[ls.cands[c]] = True
+        prev = np.r_[False, ind[:-1]]
+        is_start = ind & ~prev                                # first minute of each run of candidate minutes
+        tt = np.arange(d.T)
+        run_start = np.maximum.accumulate(np.where(is_start, tt, -1))
+        start = np.where(prev, core.shift(run_start.astype(float), 1), tt)   # a fill at t continues t-1's run or starts one
+        start = np.nan_to_num(start, nan=0.0).astype(np.int64)
+        last_c = np.maximum.accumulate(np.where(ind, tt, -1))
+        prev_end = np.where(start >= 1, last_c[np.maximum(start - 1, 0)], -1)
+        cs0 = np.r_[0, np.cumsum(is_start)]
+        f["mins_since_prev_ep"] = np.where(prev_end >= 0, np.minimum(start - prev_end, 10080), 10080)[pos]
+        f["eps_24h"] = (cs0[start] - cs0[np.maximum(start - 1440, 0)])[pos]
+    if has("hour_of_week", "mins_to_midnight", "us_session"):
+        ts = d.idx[pos]
+        mins = np.asarray(ts.hour * 60 + ts.minute)
+        f["hour_of_week"] = np.asarray(ts.dayofweek * 24 + ts.hour)
+        f["mins_to_midnight"] = 1440 - mins
+        f["us_session"] = ((np.asarray(ts.dayofweek) < 5) & (mins >= 810) & (mins < 1200)).astype(int)
     for k, a in L.macro.items():
-        f[k] = a[pos]
-    f["mkt_net_24h"], f["mkt_n_24h"] = L.mem["mkt_net_24h"][pos], L.mem["mkt_n_24h"][pos]
-    f["coin_prev_net"], f["coin_prev_age"] = L.mem["coin"][c][0][pos], L.mem["coin"][c][1][pos]
-    return pd.DataFrame(f).astype(np.float32)
+        if k in need:
+            f[k] = a[pos]
+    if has("mkt_net_24h", "mkt_n_24h"):
+        f["mkt_net_24h"], f["mkt_n_24h"] = L.mem["mkt_net_24h"][pos], L.mem["mkt_n_24h"][pos]
+    if has("coin_prev_net", "coin_prev_age"):
+        f["coin_prev_net"], f["coin_prev_age"] = L.mem["coin"][c][0][pos], L.mem["coin"][c][1][pos]
+    return pd.DataFrame({k: np.asarray(v, dtype=np.float32) for k, v in f.items() if k in need})
 
 
 def deep_paths(tag2):
@@ -527,69 +579,86 @@ def deep_paths(tag2):
     return len(out), bad
 
 
-def chain(name):
-    """Full walk-forward for one spec, its trade list and dataset, the every-minute panel and the deep paths, under
-    the tag <era>_<spec> (read by scripts/signal_lab/score.py)."""
+def chain(names):
+    """Full walk-forward for each listed spec, its trade list and dataset, the every-minute panel and the deep paths,
+    under the tag <era>_<spec> (read by scripts/signal_lab/score.py). The specs share the every-minute features, which
+    are built one quarter at a time (all of them at once does not fit in memory)."""
+    import shutil
     t0 = time.time()
     L = Lab()
     fix_scale()
-    tag2 = f"{BASE}_{name}"
-    periods = pd.period_range(*core.WF_Q, freq="Q")
-    feats, pred, thr, models = L.fit(name, periods, keep_models=True)
-    tr = L.trades(pred, thr)
-    P, _ = book_of(tr, tag2, ())
-    print(f"{tag2}: {len(tr)} trades, {len(P)} tranche rows ({time.time() - t0:.0f}s)", flush=True)
     d, ls = L.data, L.ls
     i0 = d.i_test
-    rows = {c: np.arange(i0, d.T, dtype=np.int64) for c in ls.coins}
+    periods = pd.period_range(*core.WF_Q, freq="Q")
+    nt = int(os.environ.get("PRED_THREADS", "2"))
+    fits = {}
+    for name in names:
+        feats, pred, thr, models = L.fit(name, periods, keep_models=True)
+        tr = L.trades(pred, thr)
+        tag2 = f"{BASE}_{name}"
+        P, _ = book_of(tr, tag2, ())
+        fits[name] = dict(feats=feats, pred=pred, models=models, tag2=tag2, trades=len(tr),
+                          px={c: np.full(d.T - i0, np.nan, np.float32) for c in ls.coins})
+        print(f"{tag2}: {len(tr)} trades, {len(P)} tranche rows ({time.time() - t0:.0f}s)", flush=True)
+    need = sorted({x for F in fits.values() for x in F["feats"] if x not in wick.FEATS})
+    per_coin = [x for x in need if x not in L.macro]            # macro arrays are shared by all coins
+    rows_all = np.arange(i0, d.T, dtype=np.int64)
+    ext = {c: extra_all(L, c, rows_all, per_coin) for c in ls.coins} if per_coin else {}
+    print(f"extras {need} ({time.time() - t0:.0f}s)", flush=True)
     cf = {c: d.D[c]["cf"] for c in d.D}
     vol = {c: d.D[c]["vol"] for c in d.D}
-    pn = wick.panel(cf, vol, ls.coins, d.idx, k=ls.k, lookback=ls.L, keep_rows=rows)
-    print(f"every-minute features ({time.time() - t0:.0f}s)", flush=True)
-    out = os.path.join(ROOT, "data", "ladder_v5", f"panel_{tag2}")
-    os.makedirs(out, exist_ok=True)
-    extra = [x for x in feats if x not in wick.FEATS]
-    worst, n_chk, armed = 0.0, 0, {}
-    q_of = pd.PeriodIndex(d.idx[i0:], freq="Q").astype(str)
-    for c in ls.coins:
-        f = pn.pop(c)[list(wick.FEATS)].copy().reset_index(drop=True)
-        r = rows[c]
-        f["bid_depth_bp"] = (ls.k * ls.sig[c][r] * 1e4).astype(np.float32)
-        f["beta"] = ls.beta[c][r].astype(np.float32)
-        if extra:
-            E = extra_all(L, c, r)
-            for x in extra:
-                f[x] = E[x].to_numpy()
-        px = np.full(len(r), np.nan, dtype=np.float32)
-        th = np.full(len(r), np.nan, dtype=np.float32)
-        for q, (ms, t_) in models.items():
-            m = np.asarray(q_of == q)
-            if m.any():
-                px[m] = np.mean([mm.predict(f.loc[m, feats], num_threads=1) for mm in ms], axis=0)
-                th[m] = t_
-        pd.DataFrame({"ts": d.idx[r], "pred": px}).to_parquet(os.path.join(out, f"{c}.parquet"), index=False)
-        # check: the every-minute prediction at candidate minutes = the candidate-row prediction
-        sub = L.X[(L.X.coin == c) & (L.X.ts >= core.TEST0)]
-        got = px[sub.pos.to_numpy() - i0]
-        want = pred[sub.index].to_numpy()
-        ok = np.isfinite(got) & np.isfinite(want)
-        if ok.any():
-            worst = max(worst, float(np.abs(got[ok] - want[ok]).max()))
-            n_chk += int(ok.sum())
-        armed[c] = float(np.nanmean(px > th))
-        del f
+    q_of = np.asarray(pd.PeriodIndex(d.idx[i0:], freq="Q").astype(str))
+    for q in list(dict.fromkeys(q_of)):
+        m = q_of == q
+        r = rows_all[m]
+        pn = wick.panel(cf, vol, ls.coins, d.idx, k=ls.k, lookback=ls.L, keep_rows={c: r for c in ls.coins})
+        for c in ls.coins:
+            f = pn.pop(c)[list(wick.FEATS)].reset_index(drop=True)
+            f["bid_depth_bp"] = (ls.k * ls.sig[c][r] * 1e4).astype(np.float32)
+            f["beta"] = ls.beta[c][r].astype(np.float32)
+            for x in per_coin:
+                f[x] = ext[c][x].to_numpy()[m]
+            for x in need:
+                if x in L.macro:
+                    f[x] = L.macro[x][r]
+            for F in fits.values():
+                if q in F["models"]:
+                    ms, _ = F["models"][q]
+                    F["px"][c][m] = np.mean([mm.predict(f[F["feats"]], num_threads=nt) for mm in ms], axis=0)
+            del f
+        del pn
         gc.collect()
-    pd.DataFrame({"thr": [t_ for _, (_, t_) in models.items()], "quarter": list(models)}).to_csv(
-        os.path.join(out, "thr.csv"), index=False)
-    print(f"panel: {n_chk:,} candidate minutes checked, max |every-minute - candidate prediction| {worst:.2e}; "
-          f"mean share of minutes armed {np.mean(list(armed.values())):.3f} ({time.time() - t0:.0f}s)", flush=True)
-    n, bad = deep_paths(tag2)
-    import shutil
+        print(f"quarter {q}: every-minute predictions done ({time.time() - t0:.0f}s)", flush=True)
     rt = os.path.join(ROOT, "reports", "ladder_v5", "redteam")
-    shutil.copy(os.path.join(rt, f"adv_{BASE}.parquet"), os.path.join(rt, f"adv_{tag2}.parquet"))
-    json.dump(dict(spec=name, base=BASE, trades=len(tr), panel_check=worst, panel_checked=n_chk, deep=n, deep_bad=bad,
-                   armed=armed), open(os.path.join(OUT, f"chain_{tag2}.json"), "w"), indent=1)
-    print(f"deep paths: {n} rungs, {bad} mismatches; done ({time.time() - t0:.0f}s)", flush=True)
+    for name, F in fits.items():
+        tag2 = F["tag2"]
+        out = os.path.join(ROOT, "data", "ladder_v5", f"panel_{tag2}")
+        os.makedirs(out, exist_ok=True)
+        worst, n_chk, armed = 0.0, 0, {}
+        th = np.full(d.T - i0, np.nan, np.float32)
+        for q, (_, t_) in F["models"].items():
+            th[q_of == q] = t_
+        for c in ls.coins:
+            px = F["px"][c]
+            pd.DataFrame({"ts": d.idx[rows_all], "pred": px}).to_parquet(os.path.join(out, f"{c}.parquet"), index=False)
+            sub = L.X[(L.X.coin == c) & (L.X.ts >= core.TEST0)]          # check against the candidate-row predictions
+            got = px[sub.pos.to_numpy() - i0]
+            want = F["pred"][sub.index].to_numpy()
+            ok = np.isfinite(got) & np.isfinite(want)
+            if ok.any():
+                worst = max(worst, float(np.abs(got[ok] - want[ok]).max()))
+                n_chk += int(ok.sum())
+            armed[c] = float(np.nanmean(px > th))
+        pd.DataFrame({"thr": [t_ for _, (_, t_) in F["models"].items()], "quarter": list(F["models"])}).to_csv(
+            os.path.join(out, "thr.csv"), index=False)
+        n, bad = deep_paths(tag2)
+        shutil.copy(os.path.join(rt, f"adv_{BASE}.parquet"), os.path.join(rt, f"adv_{tag2}.parquet"))
+        json.dump(dict(spec=name, base=BASE, trades=F["trades"], panel_check=worst, panel_checked=n_chk, deep=n,
+                       deep_bad=bad, armed_mean=float(np.mean(list(armed.values()))), armed=armed),
+                  open(os.path.join(OUT, f"chain_{tag2}.json"), "w"), indent=1)
+        print(f"{tag2}: panel check on {n_chk:,} candidate minutes, max |every-minute - candidate prediction| "
+              f"{worst:.2e}; armed {np.mean(list(armed.values())):.3f} of minutes; deep paths {n} rungs, {bad} "
+              f"mismatches ({time.time() - t0:.0f}s)", flush=True)
 
 
 if __name__ == "__main__":
@@ -597,8 +666,10 @@ if __name__ == "__main__":
     if mode == "screen":
         screen(sys.argv[3:] or SPECS)
     elif mode == "chain":
-        chain(sys.argv[3])
+        chain(sys.argv[3:])
     elif mode == "export":
         Lab().export()
     elif mode == "noise":
         noise(sys.argv[3:])
+    elif mode == "dose":
+        dose(sys.argv[3:])

@@ -163,3 +163,14 @@ unread.
      history is the likeliest, because it adds no new degrees of freedom.
    - **Screen vs binding simulator:** the screen used the frozen simulator. The engine-faithful selection-era cells are
      reported with the holdout cells; they do not change the list.
+4. **Information runs on the amount of history (Nov 9 2026, 15:30 ET).** Logged while the binding cells were being
+   computed. Seen so far: RF2 and RF4 (selection, check), RF2H (selection, check, primary configuration) and RF2
+   (2022-23). Not yet seen: any RF0H cell.
+   - **Why:** RF2H beat RF2 in the check era by 0.75 Sharpe, and the only difference is the added history. If more
+     history helps for the stated reason, Sharpe should rise with the amount of history.
+   - **Dose-response** (frozen simulator, S*): R2-08's model with a rolling 365-day window (RF0W365), with 2023 added
+     (RF0H23) and with 2022-23 added (RF0H22). RF0 and RF0H are the other two doses.
+   - **Replication where R2-08 already uses all the history there is:** RF0W365 in 2022-23.
+   - **Seed noise:** RF0, RF2 and RF0H refit with four other seed triples on the selection era.
+   - These runs select nothing and cannot become candidates. They read the check era and 2022-23 on the frozen
+     simulator for non-candidates, as information. The three new specs count toward N (31).
