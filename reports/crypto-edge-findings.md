@@ -3,7 +3,7 @@
 Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly signals, paper-trading bot)
 
 ## Status at a glance
-- **Signal lab (Nov 9): 37 retrained versions of R2-08's AI model; none beat it out of sample, so the model stays as
+- **Signal lab (Nov 9): 41 retrained versions of R2-08's AI model; none beat it out of sample, so the model stays as
   it is (section below).**
   - Tried: three new labels (spot costs, the whole ladder, per sigma), five added feature sets (cascade state, position
     and regime, calendar, DVOL / VIX / Nasdaq, outcome memory), 2021–23 training history, and looser thresholds.
@@ -145,7 +145,7 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
 Goal set by Miles: raise R2-08's out-of-sample Sharpe at $250K by improving what the model knows (features, labels,
 US-accessible data), since the execution ladder is exhausted. Final report: the "Signal Lab: Report" doc
 (https://claude.ai/artifact/69u1BHtZsDwEZNXdRwQUUF). Record: branch signal-lab. reports/signal_lab/prereg.md holds the
-plan and its seven-entry deviation log; reports/signal_lab/README.md holds the results.
+plan and its eight-entry deviation log; reports/signal_lab/README.md holds the results.
 
 **Protocol**
 - Pre-registered (ed5d42d) before any candidate ran; frozen (00a6992) before any holdout number.
@@ -159,7 +159,7 @@ plan and its seven-entry deviation log; reports/signal_lab/README.md holds the r
 - **Pass:** ΔSharpe ≥ +0.20 in every era at S*; ≥ 0 at θ 0.25, $1M and research volumes; drawdown and worst day ≤ 1.1×;
   no losing year; pooled holdout bootstrap p ≤ 0.05 after Holm.
 
-**Development** (screen ΔSharpe against R2-08's 2.363; 34 screen trials):
+**Development** (screen ΔSharpe against R2-08's 2.363; 34 screen trials, 41 specs in all):
 
 | Label | Base | Cascade state | Position and regime | All candle sets | DVOL, VIX, Nasdaq | Outcome memory |
 |---|---|---|---|---|---|---|
@@ -196,7 +196,8 @@ plan and its seven-entry deviation log; reports/signal_lab/README.md holds the r
   cuts the seed spread to 0.04.
 - The feature reversals are not seed luck: averaged over seeds the features model is +0.62 on development and −0.84 in
   Apr – Nov 2026, the new-data model +0.21 and −0.72. Adding the 2021–23 history moves the features model from −0.84 to
-  +0.13 there (a bear market in the training data is the likely reason; formed after the read).
+  +0.13 there. Splitting the set shows it is not the BTC-regime features in particular: the coin-position half and
+  the regime half both fail there without the history (−0.64, −0.58) and recover with it (−0.12, +0.02).
 
 **Checks**
 - Incumbent parity exact on development and Apr – Nov 2026. Every-minute panels match candidate predictions to 1e-5;
@@ -1951,7 +1952,7 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
 - Walk-forward retraining every quarter, with an 8-day purge between training data and the test period.
 - Hyperparameters frozen before seeing any results.
 - Weekly-only trend checks were fragile: 7%–26% CAGR depending on the weekday. Fixed with daily checks and averaging across all 7 weekday phases.
-- The signal lab ran 37 retrained versions of R2-08's model (Nov 9).
+- The signal lab ran 41 retrained versions of R2-08's model (Nov 9).
 - Explore v1 alone ran 4,691 variants of the spot ladder (Nov 9).
 - About 484 variants in the earlier rounds (incl. the maker, C3 upgrade and scale-2 rounds), 19 books and 146 signal tests
   in the Medallion round, about 2,000 setups in the execution round and 130 in the wick v2 lab, so an improvement

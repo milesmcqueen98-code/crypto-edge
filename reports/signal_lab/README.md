@@ -1,7 +1,7 @@
 # Signal lab (Nov 9 2026): what R2-08's model is taught and shown — no change
 
 **Result: no change.** R2-08 keeps its label, features, threshold and training data, and no new paper book opens.
-- **Tried:** 37 retrained versions of the model (labels, features, new data, more history, looser thresholds).
+- **Tried:** 41 retrained versions of the model (labels, features, new data, more history, looser thresholds).
 - **Read out of sample:** three candidates and one information-only model, once, on the engine-faithful simulator.
 - **Best:** features + history, 51.6 / 100. It was above R2-08 in all 12 cells, but by +0.16 and +0.17 Sharpe in the
   holdout eras against a +0.20 bar (p 0.27).
@@ -12,7 +12,7 @@ Final report: the "Signal Lab: Report" doc (https://claude.ai/artifact/69u1BHtZs
 - **Goal (Miles):** raise R2-08's out-of-sample Sharpe at $250K by improving what the model knows. Develop on Jan 2025 -
   Mar 2026 (the selection era), read the other eras once, count every trial, score on the engine-faithful simulator,
   beat R2-08 in every era.
-- **Plan:** prereg.md, committed at ed5d42d before any candidate ran. Its deviation log has seven entries, each written
+- **Plan:** prereg.md, committed at ed5d42d before any candidate ran. Its deviation log has eight entries, each written
   before the runs it covers.
 - **Pipeline:** scripts/signal_lab/model.py runs the wick lab's own code with a choice of label, feature set, training
   history and threshold. The incumbent spec reproduces R2-08's trade list and daily series exactly.
@@ -77,9 +77,12 @@ Final report: the "Signal Lab: Report" doc (https://claude.ai/artifact/69u1BHtZs
     (range -0.03 to +0.29) and +0.32 with 15 seeds, against R2-08 rebuilt by the lab.
   - **The reversals are not seed luck** (dose_seeds_main_feat.csv): averaged over five seed triples, RF2 is +0.62 on
     development and -0.84 in Apr - Nov 2026 (every triple negative); RF4 is +0.21 and -0.72.
-  - **History rescues the features:** adding 2021-23 moves RF2's Apr - Nov 2026 result from -0.84 to +0.13. A likely
-    reason, formed after the read: its regime features were otherwise learned on 2024-25 alone, and 2021-23 adds a
-    bear market.
+  - **History rescues the features:** adding 2021-23 moves RF2's Apr - Nov 2026 result from -0.84 to +0.13.
+  - **It is not the regime features in particular** (dose_split_main.csv, dose_split_early.csv; registered seeds).
+    Development / Apr - Nov 2026 / 2022-23:
+    - the six coin-position features alone: +0.31 / -0.64 / -0.14; with history +0.42 / -0.12;
+    - the two BTC-regime features alone: -0.52 / -0.58 / +0.11; with history +0.87 / +0.02.
+    - Both halves fail without the history and recover with it, and neither beats R2-08 out of sample.
 
 ## Checks
 - **Parity:** the incumbent spec gives R2-08's trades and frozen-simulator daily series exactly, on development and on

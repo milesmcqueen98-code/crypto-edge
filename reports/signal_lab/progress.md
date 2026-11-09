@@ -67,3 +67,6 @@ Code: scripts/signal_lab/. Trial ledger: reports/signal_lab/screen.csv.
   findings section written; everything committed and pushed.
 - Verdict: no change. Best scorer: features + history, 51.6 / 100 (above R2-08 in all 12 cells, under the +0.20 bar in
   both holdout eras, p 0.27).
+- 16:15 Post-hoc split of the feature set (deviation 8): the coin-position half and the BTC-regime half both fail in
+  the check era without the history (-0.64, -0.58) and recover with it (-0.12, +0.02). So the bear-market explanation
+  for the regime features is not specific; any added features need the longer history. 41 specs in all.
