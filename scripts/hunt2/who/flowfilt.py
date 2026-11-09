@@ -195,6 +195,41 @@ def cmd_select(idea):
 
 
 # ------------------------------------------------------------------ HOLD (after both freezes, once)
+def _wait_mem(gb):
+    """The machine is shared (7 GB, five builders): wait until `gb` GB are available before loading more."""
+    while True:
+        kb = [int(x.split()[1]) for x in open("/proc/meminfo") if x.startswith("MemAvailable")][0]
+        if kb / 1e6 >= gb:
+            return
+        print(f"waiting for memory: {kb / 1e6:.1f} GB available, need {gb}", flush=True)
+        time.sleep(30)
+
+
+def _free_except(era, theta=0.5):
+    """Keep only this era's simulator arrays (at theta) and its data tag's inputs in the frozen simulator's caches
+    (frozen_sim._A, rt_live._IN). They are pure caches: values are unchanged, only reloaded when needed. Added after
+    the freeze, before the HOLD read, so that one process never holds every era at once (memory, not results)."""
+    import gc
+    tag = F.fsim.ERAS[era][0]
+    for k in [k for k in F._A if k[:2] != (era, theta)]:
+        del F._A[k]
+    for t in [t for t in F.RL._IN if t != tag]:
+        del F.RL._IN[t]
+    gc.collect()
+
+
+def _lowmem_run_cells():
+    """pathA.hold_read calls pathA.run_cells for each era and cost; wrap it (in this process only, the shared file is
+    not edited) so that it frees the other eras first and waits for memory."""
+    orig = pathA.run_cells
+
+    def run_cells(era, *a, **kw):
+        _free_except(era, kw.get("theta", 0.5))
+        _wait_mem(1.5)
+        return orig(era, *a, **kw)
+    pathA.run_cells = run_cells
+
+
 def cmd_hold(idea):
     fc = frozen_commit(idea)
     if not fc or not all(frozen_commit(i) for i in IDEAS):
@@ -206,7 +241,10 @@ def cmd_hold(idea):
         raise SystemExit("gates.json exists: HOLD is read once")
     fz = json.load(open(os.path.join(od, "frozen.json")))
     cells, counts = {}, {}
+    _wait_mem(2.2)
     for era in ("sel", "chk", "early"):
+        _free_except(era)
+        _wait_mem(1.5)
         J = table(era)
         x = J[fz["feature"]]
         m = skip_mask(x, fz["threshold"], fz["side"])
@@ -218,15 +256,16 @@ def cmd_hold(idea):
         print(era, counts[era], flush=True)
     assert counts["sel"]["skipped"] == fz["dev"]["n_skipped"], "DEV cells differ from the frozen DEV trial"
     t0 = time.time()
+    _lowmem_run_cells()
     g = pathA.hold_read(idea, cells, od)
     print(f"hold_read {time.time() - t0:.0f}s", flush=True)
-    F._A.clear()
     # reported, not gated: theta 0.25 at S against the incumbent's S|0.25
     th = {}
     parts = []
     for era in ("sel", "chk", "early"):
         parts.append(pathA.run_cells(era, cells[era], cost="S", theta=0.25))
-        F._A.clear()
+    F._A.clear()
+    F.RL._IN.clear()
     c25 = pd.concat(parts).sort_index()
     c25 = c25[~c25.index.duplicated()]
     days = c25.index[np.isin(G.era_of(c25.index), list(G.ERAS))]
