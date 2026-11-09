@@ -28,3 +28,16 @@ print fetcher).
   choices: in the all-armed sensitivity run an unarmed minute is raised just above the threshold (funded last); the
   replay's one-ulp threshold read is left as is; history rows with print features go to test2/cand_early.parquet.
 - 17:41 Data job: 16 fetch shards running on GitHub Actions since 17:13.
+- 18:27 Data agent done (branch signal-lab-data, c175f8a). 16 fetch shards 17:12-18:19, 79.1M prints, 10,042 merged
+  windows, one feature row per candidate (17,527 main, 14,563 early). Data-quality gate passes: 100% complete windows
+  in both eras; median print USD over candle USD 1.0002 in both. Its look-ahead unit test passes; the side convention
+  checks out (falling windows show taker-sell shares above one half).
+- 18:33 Review of the QA found a timing risk: prints and the repo's candles disagree in 14-23% of minutes, mostly with
+  volume in the neighbouring minute. If a candle for minute q holds trades stamped before q, "prints before q" sees
+  part of the fill minute. Sent the data agent back for a boundary-offset diagnostic and for feature tables whose
+  windows end 5 s and 60 s before q. No model runs on print features until this is settled.
+- 18:35 Independent look-ahead audit started (separate Opus agent at max effort, read-only), on the print-feature
+  code, the join, the mixed panel, the drivers' holdout lock and the scorer.
+- 18:47 Deviation 2 logged before the diagnostic reported: gate result and the data agent's choices accepted; the rule
+  that picks the table (smallest margin among 0 s, 5 s, 60 s with under 0.5% of candidates leaking in each era); the
+  information readings on the other margins.

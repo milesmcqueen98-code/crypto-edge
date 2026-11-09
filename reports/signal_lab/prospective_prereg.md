@@ -99,3 +99,34 @@ A candidate with no prints in its window gets missing values (LightGBM handles t
        also retrains on 2021-23 and needs print features for those years.
    - **Comparison in the binding test:** against R2-08 rebuilt by the lab's pipeline as a 15-seed model (like for
      like), with model-priced exits for every book.
+2. **After the data job, before any model has seen a print feature (Nov 9 2026, 18:47 ET).** Written before the
+   boundary diagnostic below has reported.
+   - **Data-quality gate: passed** (reports/signal_lab/prints/QA.md). Every candidate's window is complete in both
+     eras, and print USD over candle USD has a median of 1.0002 in both.
+   - **Choices made by the data agent, accepted** (no outcome, label or prediction was read):
+     - ADV is one continuous daily series per coin across the era boundary, so January 2024 uses December 2023;
+     - the big-print pool is the coin's fetched prints of both eras stamped before the candidate's window starts;
+     - the 99th percentile is numpy's linear interpolation; the sweep uses calendar seconds;
+     - missing values: ADV for 10 main and 190 early rows, the big-print threshold for 24 and 73. LightGBM takes
+       them as missing.
+     - The Actions runner's own commits on branch signal-lab-data carry its fixed message without trailer lines.
+   - **A timing risk found in the QA.** Prints and the repo's candles disagree in 14-23% of minutes, mostly with
+     volume sitting in the neighbouring minute. The simulator decides fills from candles. If the candle of minute q
+     holds trades stamped before q, a feature built from "prints before q" sees part of the fill minute. The plan's
+     timing rule ("known at the end of minute q-1") is then broken by the candle clock, not by the code.
+   - **Boundary diagnostic and margin tables (data agent, no outcomes).** For each candidate's own boundary it
+     measures whether trades stamped before q sit in the candle of q, and by how many seconds. It also builds the
+     same five features with the windows ending at q - 5 s and at q - 60 s.
+   - **Rule for the table the test uses, fixed now:**
+     - A candidate counts as leaking under margin M if trades stamped before q - M sit in the candle of q or later.
+     - A disagreement that no boundary move up to 60 s explains counts as leaking under 0 s and 5 s when both signs
+       fit a move into q (the prints of q-1 exceed its candle and the candle of q exceeds its prints).
+     - The primary table is the smallest margin among 0 s (as registered), 5 s and 60 s under which fewer than
+       0.5% of candidates leak in each era.
+     - 60 s is the floor: a lag of more than a minute cannot be measured by this diagnostic. That limit is stated
+       with the result.
+   - **Information readings, declared now:**
+     - the 60 s table in the selection reading and in the seed-averaged holdout reading (if it is not the primary);
+     - the 0 s table on the selection era only (if it is not the primary), to measure what the boundary adds.
+     - The binding test runs the primary table only. Gates and scorecard use the primary table only.
+   - **Unchanged:** candidates, seeds, gates, scorecard, hand scores and the order of reads.
