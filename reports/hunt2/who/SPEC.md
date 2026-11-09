@@ -23,7 +23,9 @@
   1. `sell_bigadv_share_W`: share of aggressive-sell dollars in orders ≥ 5 bp of the coin's 30-day ADV (blocks).
      Skip when HIGH.
   2. `sell_hhi_W`: Herfindahl concentration of aggressive-sell order sizes. Skip when HIGH.
-  3. `sell_small1k_share_W`: share of aggressive-sell dollars in orders < $1,000 (retail). Skip when LOW.
+  3. `sell_share_W`: aggressor-sell share of all printed dollars. A drop that is not driven by aggressive selling is
+     makers repricing (pulling bids): an informed move. Skip when LOW. (Replaces a small-order share after memo R3:
+     trade-size mix carried no reversal information where tested, while order-flow-driven moves reverted more.)
   4. `rate_ratio_1`: prints in the last minute vs the 30-minute average (a frenzy vs a slow drift). Skip when LOW.
      (W is fixed at 1 for this feature; its second variant uses `rate_ratio_5`.)
 - **Rule (frozen grid, 16 trials):** 4 features × W ∈ {5, 15} (rate ratio: {1, 5}) × removal share ∈ {15%, 30%}.
