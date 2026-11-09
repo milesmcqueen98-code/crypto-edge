@@ -24,22 +24,32 @@ This machine has 2 CPUs and 7 GB shared by several builders. Anything over ~3 mi
 runs on Actions. Exchange APIs are unreachable from here; only GitHub is. `gh` is not authenticated here; use the REST
 API with curl and $GH_TOKEN:
 1. Commit and push your branch: `git -C /home/claude/wt/<id> push -u origin hunt2/<id>`.
-2. Dispatch the generic runner (workflow id of hunt.yml):
+2. Dispatch the generic runner hunt2.yml (it can also download earlier runs' artifacts):
    ```
    curl -sS -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
-     https://api.github.com/repos/milesmcqueen98-code/crypto-edge/actions/workflows/hunt.yml/dispatches \
-     -d '{"ref":"hunt2/<id>","inputs":{"script":"scripts/hunt2/prints.py","args":"reports/hunt2/<id>/windows.csv 0 6 out","commit":"","artifact":"out","tag":"<id>-p0","sparse":"scripts reports/hunt2"}}'
+     -H "Content-Type: application/json" \
+     https://api.github.com/repos/milesmcqueen98-code/crypto-edge/actions/workflows/hunt2.yml/dispatches \
+     -d '{"ref":"hunt2/<id>","inputs":{"script":"scripts/hunt2/prints.py","args":"reports/hunt2/<id>/windows.csv 0 6 out","commit":"","artifact":"out","tag":"<id>-p0","sparse":"scripts/hunt2 scripts/hunt scripts/wick_v4/fetch_trades.py reports/hunt2/<id>"}}'
    ```
-   - `commit`: space-separated paths committed back to your branch (derived, small files). `artifact`: paths uploaded
-     instead (raw prints). `sparse`: repo-relative paths to check out (use it; the full repo is 3+ GB).
+   Inputs: `script`, `args`, `pip` (extra packages), `commit` (space-separated paths committed back to your branch:
+   derived, small files), `artifact` (paths uploaded instead: raw prints; kept 21 days), `tag`, `sparse` (repo-relative
+   paths to check out; use it, the full repo is 3+ GB), `art_runs` (space-separated run ids whose artifacts are
+   downloaded into art/<run_id>/ before the script runs), `art_pattern` (artifact name glob, default `*`).
+   The run's id is not returned by the dispatch call: list runs on your branch right after dispatching.
    - Shard long fetches (args `<shard> <n>`) and dispatch the shards in parallel; each runner has its own IP and rate
      limit (Coinbase public endpoints allow ~10 requests/s per IP; the fetchers pace at 7).
 3. Watch: `curl -sS -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/milesmcqueen98-code/crypto-edge/actions/runs?branch=hunt2/<id>&per_page=5"`.
    Logs: `.../actions/runs/<run_id>/logs` (zip). Wait with the Monitor tool (an until-loop on the run's status), not
    with sleep chains.
-4. Get committed outputs: `git -C /home/claude/wt/<id> pull --rebase origin hunt2/<id>`. Get artifacts:
-   `.../actions/runs/<run_id>/artifacts` then the artifact's `archive_download_url` (zip, follow redirects with -L).
-   Prefer computing derived per-event features ON the runner and committing those, rather than downloading raw prints.
+4. Get committed outputs: `git -C /home/claude/wt/<id> pull --rebase origin hunt2/<id>`. **Artifacts cannot be
+   downloaded to this machine** (their storage host is blocked); run logs can (`.../actions/runs/<run_id>/logs`, a zip).
+   So raw prints never come here: fetch them in one run (`artifact` = the raw files), then process them in a second
+   hunt2.yml run with `"art_runs":"<run ids>"` (they land in art/<run_id>/), committing only derived per-event files.
+   The parents' prints (every research parent, all eras, 30 min before to 2 min after the fill minute) are already
+   fetched: runs listed in reports/hunt2/parents/RUNS.txt; DEV features in reports/hunt2/parents/features_dev.csv.
+5. **Never let an Actions run commit anything computed on HOLD days before your freeze commit** (the first hunt had
+   one such breach). A derive script must write DEV and HOLD outputs to separate files, and your pre-freeze runs commit
+   only the DEV file.
 
 ## Rules that protect the hold-out
 - **DEV** = 2025-01-01 .. 2026-03-31. **HOLD** = 2026-04-01 .. 2026-11-05 and 2022-01-01 .. 2023-12-31. 2021 and 2024
@@ -65,7 +75,12 @@ API with curl and $GH_TOKEN:
   effect), re-running the same frozen variant once.
 
 ## Modelling rules
-- **Path A:** only through scripts/hunt2/frozen_sim.py (`daily(era, cost=..., mfac=...)`). A filter that skips a
+- **Path A:** only through scripts/hunt2/frozen_sim.py (`daily(era, cost=..., mfac=...)`). scripts/hunt2/pathA.py
+  has the standard workflow: `parents(era)` (the research parents), `dev_trial(idea, variant, skip_cells)` (one DEV
+  trial at X2, logged) and, after the freeze only, `hold_read(idea, cells_by_era, out_dir)` (X2/X1/S on every era,
+  daily.parquet, gates.json). For rules that switch bids off over time ranges (every coin in a window, a coin for C
+  hours), build the T x NC array yourself: `A = frozen_sim.arrays(era)`; rows are `A["idx"]` (minutes), columns
+  `A["coins"]`; then `frozen_sim.daily(era, cost=..., mfac=m)`. A filter that skips a
   signal sets m = frozen_sim.SKIP in that (minute, coin) cell; a size change sets m in (0, 2] and must respect the
   0.2% ADV cap (m above 1 only where the ladder v6 sizing `room` allows; prefer filters, m <= 1).
   Features for minute t use information available at t-1 minute (candles) or >= 1 second before the decision (prints).
