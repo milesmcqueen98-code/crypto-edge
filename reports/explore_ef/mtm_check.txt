@@ -1,0 +1,8 @@
+POST HOC: marked-to-market max drawdown, engine-faithful simulator, S* theta 0.5, $250K
+
+sel    incumbent  minute -15.26% at 2025-10-10 21:18:00; instant -16.88% at 2025-10-10 21:18:00
+sel    W2         minute -15.73% at 2025-10-10 21:19:00; instant -16.30% at 2025-10-10 21:18:00
+chk    incumbent  minute -5.37% at 2026-06-05 07:14:00; instant -5.36% at 2026-06-05 07:14:00
+chk    W2         minute -5.04% at 2026-06-05 07:14:00; instant -5.03% at 2026-06-05 07:14:00
+early  incumbent  minute -7.15% at 2022-05-11 12:51:00; instant -7.15% at 2022-05-11 12:51:00
+early  W2         minute -6.84% at 2022-05-11 12:51:00; instant -6.84% at 2022-05-11 12:51:00
