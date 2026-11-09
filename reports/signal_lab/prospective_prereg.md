@@ -20,6 +20,9 @@ Written after the signal lab's read and before any trade print is fetched for th
   overlapping).
 - **Kept:** one feature row per candidate. Raw prints stay on the runner.
 - **Timing rule:** only prints stamped before minute q. A feature on row q is known at the end of minute q-1.
+- **How to run it:** the generic Actions runner .github/workflows/hunt2.yml (on main) runs a script and commits its
+  derived rows. Edge hunt 2's scripts/hunt2/prints.py and scripts/hunt2/who/flowfilt.py (branch hunt2) already compute
+  `csv_30` for R2-08's fills; extend them to every candidate and the five features below.
 
 ## Features (F6; fixed now)
 For coin c and candidate minute q, with ADV = the coin's trailing 30-day median daily USD volume as of the day before:
