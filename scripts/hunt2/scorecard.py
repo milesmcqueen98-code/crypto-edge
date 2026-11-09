@@ -50,6 +50,8 @@ def main():
     man = json.load(open(os.path.join(OUT, "scorecard_manual.json")))
     rows = []
     for idea, m in man.items():
+        if idea.startswith("_"):
+            continue
         g = gates.get(idea, {})
         yrs = g.get("years_x2") or g.get("years") or {}
         r = dict(idea=idea, path=g.get("path", m.get("path")), status=m.get("status", "built"))
