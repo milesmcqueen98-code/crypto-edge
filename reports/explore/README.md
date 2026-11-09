@@ -61,6 +61,19 @@ Files: posthoc_attr.txt, posthoc_panel.txt, posthoc_rotate.txt.
   - Only more depth beat it in all three eras, by at most +0.18. Examples: 4/5/7/10 sigma, 4/5/6/8/10/12 sigma, W2.
 - **Rotation:** tuning on two eras and scoring the third still lost to the incumbent in two of three rotations.
 
+## W2 on the engine-faithful simulator (post hoc)
+Branch explore/v1-ef (from ladder/v6-exits): scripts/explore_ef/ and reports/explore_ef/.
+- **Simulator:** ladder v6's frozen one (resting-bid cash rule, print-priced exits, 1-second blend). Rung weights were
+  added in a copy of the replay; with thirds it matches the frozen replay to 1.6e-17.
+- **Result:** W2 (rungs 1:1:2, the paper book) beat the incumbent in all 12 cells (4 configurations x 3 eras), by
+  +0.01 to +0.30 Sharpe (w_check.txt).
+  - Best estimate at $250K: +0.18 / +0.13 / +0.18.
+  - Paired t: +0.54 / +0.73 / +1.24.
+  - Still ahead without each book's best 5 days (w_paired.txt).
+- **Marked-to-market drawdown is no worse** (mtm_check.txt). Oct 10 2025: -15.7% vs -15.3% (minute book), -16.3% vs
+  -16.9% (instant).
+- **Not fresh evidence:** W2 was picked post hoc in wick v4.
+
 ## Next test
 prospective_prereg.md, written before its data exists:
 - two deeper ladders, read once on Nov 10 2026 - Mar 31 2027 against the incumbent and W2;

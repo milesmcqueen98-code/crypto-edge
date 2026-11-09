@@ -12,6 +12,11 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   - Post hoc, the incumbent beat 94% / 91% of all variants out of sample. Only more depth (more or deeper rungs) beat it
     in all three eras, by at most +0.18. Two deeper ladders are pre-registered for a forward read on Nov 2026 – Mar
     2027 data.
+  - The W2 paper book (1:1:2) is the depth idea the bot already runs.
+    - On the engine-faithful simulator it beat the incumbent in all 12 cells: +0.01 to +0.30 Sharpe, and +0.18 / +0.13
+      / +0.18 at the best estimate.
+    - Its marked-to-market drawdown is no worse.
+    - The gain is small and not significant (paired t 0.5–1.2), and W2 was picked post hoc.
 - **Sizing lab (Nov 9): no durable sizing edge; both paper books keep flat sizing (section below).**
   - Nine pre-registered candidates in three families: calendar (day of week, Sunday 4–7 pm ET, CPI / FOMC days), R2-08's
     predicted edge (halves, terciles, quintiles) and guards (BTC still falling, coins filling at once, vol regime).
@@ -204,6 +209,23 @@ results.
 - Pass: a positive ΔSharpe, the minute book ≥ 0, risk ≤ 1.1×. Power: about a 61% chance of a positive sign if the true
   gain is +0.2.
 - If it holds: a configurable depth list in the engine, an engine-faithful re-check, then a paper book.
+
+**W2 on the engine-faithful simulator** (post hoc; branch explore/v1-ef, reports/explore_ef/):
+- Ladder v6's frozen simulator, with rung weights added in a copy of the replay (thirds match the frozen replay to
+  1.6e-17). W2 beat the incumbent in all 12 cells (4 configurations × 3 eras):
+
+| Configuration | Tuning era | Check | 2022–23 |
+|---|---|---|---|
+| Best estimate, $250K (S*, θ 0.5) | +0.18 | +0.13 | +0.18 |
+| θ 0.25 | +0.15 | +0.20 | +0.20 |
+| $1M | +0.01 | +0.30 | +0.15 |
+| Research volumes, 1× costs | +0.12 | +0.20 | +0.29 |
+
+- **Small:** paired t +0.54 / +0.73 / +1.24 at the best estimate. W2 led in 9/15, 5/8 and 12/24 months, and it stays
+  ahead without each book's best 5 days. Return is +0.5 to +1.6 points a year.
+- **Crash risk no worse:** marked-to-market max drawdown on Oct 10 2025 was −15.7% vs −15.3% (minute book) and −16.3%
+  vs −16.9% (instant). Wick v4's −25% came from a replay with unlimited fills.
+- **Not fresh evidence:** W2 was picked post hoc in wick v4.
 
 ## Sizing lab (Nov 9): no durable sizing edge for the R2-08 ladder; both paper books keep flat sizing
 Goal set by Miles: a durable sizing edge for the R2-08 spot ladder, main and W2 books, optimizing Sharpe and capacity,
