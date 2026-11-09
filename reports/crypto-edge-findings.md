@@ -199,7 +199,9 @@ plan and its eleven-entry deviation log; reports/signal_lab/README.md holds the 
   book's 2.36 / 2.57 / 1.70, so the research book is representative.
 - Much of the challengers' loss is selectivity, not ranking: they arm fewer signals than R2-08. With thresholds reset
   to R2-08's share of candidates (a diagnostic), the Apr – Nov 2026 results move from −0.80 to −0.21 (features), −0.73
-  to −0.28 (new data), +0.20 to +0.09 (features + history) and −0.02 to +0.25 (history only).
+  to −0.28 (new data), +0.20 to +0.09 (features + history) and −0.02 to +0.25 (history only). Averaged over five seed
+  triples at equal selectivity, history only is +0.38 on development and +0.15 in Apr – Nov 2026, and features + history
+  +0.39 and +0.13: the added features rank no better, and more history may rank slightly better.
 - The feature reversals are not seed luck: averaged over seeds the features model is +0.62 on development and −0.84 in
   Apr – Nov 2026, the new-data model +0.21 and −0.72. Adding the 2021–23 history moves the features model from −0.84 to
   +0.13 there. Splitting the set shows it is not the BTC-regime features in particular: the coin-position half and
@@ -221,7 +223,9 @@ plan and its eleven-entry deviation log; reports/signal_lab/README.md holds the 
    before any print is fetched. It needs a data job.
 3. Leave the bot's training as it is: a growing window from 2024, five seeds, unlabelled rows dropped
    (bot/train_v2.py). Never switch to a rolling window. Optional: 15 seeds at the next retrain.
-4. Forward data: open interest and funding logs for a model test in about six months.
+4. Optional forward check: R2-08 trained with the 2021–23 history, its threshold set from the 2024-on rows, logged
+   beside the paper book with no trading change.
+5. Forward data: open interest and funding logs for a model test in about six months.
 
 ## Explore v1 (Nov 9): 4,691 variants of the spot ladder; nothing held out of sample
 Goal set by Miles: run 1,000+ variants, play with every assumption, learn from the literature, and find a higher-Sharpe

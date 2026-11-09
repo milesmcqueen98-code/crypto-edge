@@ -74,6 +74,9 @@ Final report: the "Signal Lab: Report" doc (https://claude.ai/artifact/69u1BHtZs
   - RF2H: +0.53 / +0.09 (unmatched: +0.82 / +0.20);
   - RF0H: +0.54 / +0.25 (unmatched: +0.39 / -0.02).
   - Most of the challengers' check-era loss came from arming fewer signals. What is left is within the noise.
+  - Averaged over five seed triples (dose_seeds_main_match.csv), development / Apr - Nov 2026: RF0H +0.38 / +0.15
+    (positive in 5 and 4 of 5 triples); RF2H +0.39 / +0.13. So the added features rank no better than R2-08's, and
+    more history may rank slightly better.
 - **Seed noise** (dose_seeds_main.csv; five seed triples, frozen simulator):
 
   | Mean (SD across seed triples) | Development | Apr - Nov 2026 |
@@ -127,4 +130,6 @@ Final report: the "Signal Lab: Report" doc (https://claude.ai/artifact/69u1BHtZs
    drops unlabelled rows. Never switch to a rolling window. Optional: 15 seeds at the next retrain (same expected
    Sharpe, less seed noise). The research walk-forward (scripts/lab/core.py) should drop unlabelled rows when next
    touched.
-4. **Forward data:** open interest and funding logs (hunt 3's hourly logger) for a model test in about six months.
+4. **Optional forward check on history:** train R2-08 with the 2021-23 history, set its threshold from the 2024-on
+   rows so it arms about as often as R2-08, and log its decisions beside the paper book. No trading change.
+5. **Forward data:** open interest and funding logs (hunt 3's hourly logger) for a model test in about six months.

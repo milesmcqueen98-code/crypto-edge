@@ -82,3 +82,8 @@ Code: scripts/signal_lab/. Trial ledger: reports/signal_lab/screen.csv.
 - 16:31 Matched-selectivity diagnostic (deviation 11): with thresholds reset to R2-08's share of candidates, the check-era
   results move from -0.80 to -0.21 (features), -0.73 to -0.28 (new data), +0.20 to +0.09 (features + history) and -0.02
   to +0.25 (history only). Most of the challengers' loss was from arming fewer signals, not from worse ranking.
+- 16:36 Seed-averaged matched readings: history only +0.38 development / +0.15 check (4 of 5 triples positive); features
+  + history +0.39 / +0.13. At equal selectivity the added features rank no better than R2-08's; more history may rank
+  slightly better. Listed as an optional forward check (log-only).
+- 16:38 Final: verdict no change. Everything committed and pushed; report doc, README, findings and project docs
+  updated.
