@@ -124,6 +124,63 @@ def coin_boundaries(t, size, usd, w_start, w_end, q, cand_min, cand_vol):
             r["kind"] = "neighbour"
         elif all(expl[x] or first[x] or last[x] for x in need):
             r["kind"] = "edge"
+    # chain check: a transfer at every boundary of a window at once. With x the print volume stamped before the
+    # boundary that the candles put after it (A > 0; B < 0), candle m = prints of m + x(before m) - x(after m), so
+    # x(after m) = x(before m) - (candle m - prints m), starting from 0 at the window start. x must be 0, a suffix of
+    # the left minute's prints (A) or a prefix of the right minute's (B); where it is none of these the boundary is
+    # "unexplained" (e.g. candle volume lost) and x restarts at 0. A move is confirmed when neither neighbouring
+    # boundary is unexplained.
+    e_all = C - P
+
+    def classify(x, kl, kr, tol):
+        if abs(x) <= tol:
+            return ("zero", np.nan, False, 0.0)
+        if x > 0:
+            ml, mh = int(lo[kl]), int(hi[kl])
+            if mh > ml:
+                cs = np.cumsum(vs[ml:mh][::-1])
+                j = int(np.searchsorted(cs, x - tol))
+                if j < len(cs) and abs(cs[j] - x) <= tol:
+                    b = int(mins[kl] + 1) * NS_MIN
+                    return ("A", (b - int(ut[mh - 1 - j])) / NS_S, j == mh - ml - 1,
+                            float(np.cumsum(vu[ml:mh][::-1])[j]))
+            return ("unexplained", np.nan, False, np.nan)
+        if kr < 0:
+            return ("B_unverified", np.nan, False, np.nan)          # the right minute was never fetched
+        nl, nh = int(lo[kr]), int(hi[kr])
+        if nh > nl:
+            cs = np.cumsum(vs[nl:nh])
+            j = int(np.searchsorted(cs, -x - tol))
+            if j < len(cs) and abs(cs[j] + x) <= tol:
+                b = int(mins[kr]) * NS_MIN
+                return ("B", (int(ut[nl + j]) - b) / NS_S + 1e-6, j == nh - nl - 1, float(np.cumsum(vu[nl:nh])[j]))
+        return ("unexplained", np.nan, False, np.nan)
+
+    starts = np.flatnonzero(first)
+    ends = np.r_[starts[1:], len(mins)]
+    chain, chain_end = {}, {}
+    for r_, (s0, s1) in enumerate(zip(starts, ends)):
+        x, acc, res = 0.0, 0.0, []
+        for k in range(s0 + 1, s1 + 1):                    # boundary before window position k (k = s1: window end)
+            x -= e_all[k - 1]
+            acc += C[k - 1]
+            internal = k < s1
+            loc = max(P[k - 1], C[k - 1], P[k] if internal else 0.0, C[k] if internal else 0.0)
+            out = classify(x, k - 1, k if internal else -1, TOL * loc + 1e-7 * acc)
+            if out[0] == "unexplained":
+                x, acc = 0.0, 0.0
+            res.append((k, out))
+        kinds = [o[0] for _, o in res]
+        for j_, (k, out) in enumerate(res):
+            bad = (j_ > 0 and kinds[j_ - 1] == "unexplained") or (j_ + 1 < len(res) and kinds[j_ + 1] == "unexplained")
+            rec = out + (out[0] in ("A", "B") and not bad,)
+            if k < s1:
+                chain[k] = rec
+            else:
+                chain_end[r_] = rec
+    for i, r in zip(upair, rows):
+        c_ = chain[int(i) + 1]
+        r.update(chain_kind=c_[0], chain_d_s=c_[1], chain_whole=c_[2], chain_confirmed=c_[4])
     # the boundary before each candidate
     qm = np.asarray(q, dtype=np.int64) // NS_MIN
     ip = np.searchsorted(mins, qm - 1)
@@ -151,10 +208,16 @@ def coin_boundaries(t, size, usd, w_start, w_end, q, cand_min, cand_vol):
                          strict=jAs >= 0, usd_moved=float(np.cumsum(vu[ml:mh][::-1])[jA]))
             else:
                 r["kind"] = "deficit_unexplained" if Cm < Pm else "surplus"
+        c_ = chain[i + 1] if two else chain_end[int(np.searchsorted(starts, i, "right") - 1)]
+        r.update(chain_kind=c_[0], chain_d_s=c_[1], chain_whole=c_[2], chain_usd_moved=c_[3], chain_confirmed=c_[4])
         crow.append(r)
-    cols = ["minute", "kind", "d_s", "whole", "strict", "usd_moved", "em", "en", "both", "d_strict_s"]
-    return pd.DataFrame(rows, columns=cols), pd.DataFrame(crow), dict(minutes=int(len(mins)), pairs=int(len(pair)),
-                                                        unequal_pairs=int(len(upair)), unequal_minutes=int(uneq.sum()))
+    cols = ["minute", "kind", "d_s", "whole", "strict", "usd_moved", "em", "en", "both", "d_strict_s", "chain_kind",
+            "chain_d_s", "chain_whole", "chain_confirmed"]
+    CH = pd.DataFrame([dict(minute=int(mins[k] - 1), kind=v[0], d_s=v[1], whole=v[2], usd_moved=v[3], confirmed=v[4])
+                       for k, v in chain.items()], columns=["minute", "kind", "d_s", "whole", "usd_moved", "confirmed"])
+    return (pd.DataFrame(rows, columns=cols), pd.DataFrame(crow),
+            dict(minutes=int(len(mins)), pairs=int(len(pair)), unequal_pairs=int(len(upair)),
+                 unequal_minutes=int(uneq.sum())), CH)
 
 
 # ------------------------------------------------------------------------------------------------ self-test
@@ -189,6 +252,15 @@ def selftest():
     plan[b0 + 20] = ("A", ((b0 + 21) * NS_MIN - t[sel].min()) / NS_S, True)
     for mm in (b0 + 3, b0 + 5, b0 + 10, b0 + 12, b0 + 19, b0 + 21):
         plan[mm] = ("neighbour", np.nan, False)
+    # a chain of B moves in window 2: the first 1, 2, 3 s of minutes b1+10, +11, +12 go to the previous candle
+    b1 = w_start[1] // NS_MIN
+    chain_plan = {}
+    for mm, sec in ((b1 + 10, 1), (b1 + 11, 2), (b1 + 12, 3)):
+        sel = (t >= mm * NS_MIN) & (t < mm * NS_MIN + sec * NS_S)
+        cm[sel] = mm - 1
+        chain_plan[mm - 1] = ("B", (t[sel].max() - mm * NS_MIN) / NS_S + 1e-6)
+    for mm in (b1 + 8, b1 + 9, b1 + 10, b1 + 11, b1 + 12):
+        plan[mm] = ("none", np.nan, False)                       # no single move reconciles a chain
     # lost: minute b0+30 has no candle and its volume is nowhere
     lost = m == b0 + 30
     plan[b0 + 29] = ("none", np.nan, False)
@@ -208,8 +280,19 @@ def selftest():
     cvol[i_last] -= size[sel].sum()
     plan[qe // NS_MIN - 2] = ("edge", np.nan, False)            # minute qe-1 lost prints to the unfetched minute qe
     q = np.array([bA, int(w_end[1])])
-    pairs, cands, info = coin_boundaries(t, size, usd, w_start, w_end, q, cmin, cvol)
+    pairs, cands, info, CH = coin_boundaries(t, size, usd, w_start, w_end, q, cmin, cvol)
     got = pairs.set_index("minute")
+    ch = CH.set_index("minute")                                  # chain result per boundary (indexed by left minute)
+    for mm, (kind, d, whole) in plan.items():
+        if kind in ("A", "B"):                                   # isolated moves: the chain check agrees and confirms
+            assert ch.loc[mm].kind == kind and abs(ch.loc[mm].d_s - d) < 1e-9 and bool(ch.loc[mm].confirmed), mm - b0
+    for mm, (kind, d) in chain_plan.items():
+        g = ch.loc[mm]
+        assert g.kind == kind and abs(g.d_s - d) < 1e-9 and bool(g.confirmed), (mm - b1, g.kind, g.d_s, d)
+    assert ch.loc[b1 + 8].kind == "zero" and ch.loc[b1 + 12].kind == "zero"
+    assert ch.loc[b0 + 29].kind == "zero"
+    assert ch.loc[b0 + 30].kind == "A" and bool(ch.loc[b0 + 30].whole) and not bool(ch.loc[b0 + 30].confirmed)
+    assert ch.loc[b0 + 31].kind == "unexplained"                 # the lost minute is caught, not taken as a shift
     for mm, (kind, d, whole) in plan.items():
         assert mm in got.index, f"boundary after minute {mm - b0} not found unequal"
         g = got.loc[mm]
@@ -221,8 +304,11 @@ def selftest():
     assert c0.two_sided and c0.kind == "A" and abs(c0.d_s - plan[b0 + 4][1]) < 1e-9
     assert (not c1.two_sided) and c1.kind == "A" and abs(c1.d_s - (qe - t[sel].min()) / NS_S) < 1e-9
     assert np.isclose(c1.usd_moved, usd[sel].sum())
+    assert c0.chain_kind == "A" and bool(c0.chain_confirmed) and c1.chain_kind == "A" and bool(c1.chain_confirmed)
+    assert abs(c1.chain_d_s - c1.d_s) < 1e-9
     msg = (f"prints_boundary self-test passed ({info['unequal_pairs']} unequal pairs; A 0.35 s lag, B 2 s lead, "
-           "whole-minute A, their neighbours, a lost minute, a window edge and a one-sided window-end A all recovered)")
+           "whole-minute A, their neighbours, a lost minute, a window edge, a one-sided window-end A and, by the "
+           "chain check, a three-boundary B chain all recovered)")
     print(msg, flush=True)
     return msg
 
@@ -253,11 +339,27 @@ def pair_summary(R, n_pairs):
     return out
 
 
+def chain_summary(CH, R):
+    """Chain check over every internal boundary, and what it says about the pairs the single-move test left open."""
+    out = dict(boundaries=int(len(CH)), kinds={k: int(v) for k, v in CH.kind.value_counts().items()})
+    for kind in ("A", "B"):
+        g = CH[(CH.kind == kind) & CH.confirmed.astype(bool)]
+        sub = g[~g.whole.astype(bool)]
+        out[kind] = dict(confirmed=int(len(g)), unconfirmed=int(((CH.kind == kind) & ~CH.confirmed.astype(bool)).sum()),
+                         whole_minute=int(g.whole.astype(bool).sum()), d_q=qv(g.d_s), d_sub_minute_q=qv(sub.d_s))
+    open_ = R[R.kind.isin(["none", "edge"])]
+    lab = np.where(open_.chain_kind.isin(["A", "B"]) & open_.chain_confirmed.astype(bool),
+                   open_.chain_kind + "_confirmed", open_.chain_kind)
+    out["single_move_open_pairs_by_chain"] = {k: int(v) for k, v in pd.Series(lab).value_counts().items()}
+    return out
+
+
 def cand_summary(Q):
     n = len(Q)
     A = Q[Q.kind == "A"]
     two, one = Q[Q.two_sided], Q[~Q.two_sided]
     ratio = (A.usd_moved / A.usd_30).to_numpy()
+    QC = Q[(Q.chain_kind == "A") & Q.chain_confirmed.astype(bool)]
     allr = np.where(Q.kind == "A", Q.usd_moved / Q.usd_30, 0.0)
     return dict(
         n=int(n), two_sided=int(len(two)), one_sided=int(len(one)),
@@ -266,7 +368,16 @@ def cand_summary(Q):
         A=int(len(A)), A_share=float(len(A) / n) if n else None, A_strict=int(A.strict.astype(bool).sum()),
         A_whole_minute=int(A.whole.astype(bool).sum()), A_d_q=qv(A.d_s), A_d_sub_minute_q=qv(A[~A.whole.astype(bool)].d_s),
         A_usd_over_usd30_q=qv(ratio), usd_over_usd30_mean_all=float(np.nanmean(allr)) if n else None,
-        B=int((Q.kind == "B").sum()))
+        B=int((Q.kind == "B").sum()),
+        chain_kinds={k: int(v) for k, v in Q.chain_kind.value_counts().items()},
+        chain_A_confirmed=int(len(QC)), chain_A_confirmed_share=float(len(QC) / n) if n else None,
+        chain_A_unconfirmed=int(((Q.chain_kind == "A") & ~Q.chain_confirmed.astype(bool)).sum()),
+        chain_A_whole_minute=int(QC.chain_whole.astype(bool).sum()), chain_A_d_q=qv(QC.chain_d_s),
+        chain_A_d_sub_minute_q=qv(QC[~QC.chain_whole.astype(bool)].chain_d_s),
+        chain_A_usd_over_usd30_q=qv((QC.chain_usd_moved / QC.usd_30).to_numpy()),
+        chain_usd_over_usd30_mean_all=float(np.nanmean(np.where((Q.chain_kind == "A") & Q.chain_confirmed.astype(bool),
+                                                                Q.chain_usd_moved / Q.usd_30, 0.0))) if n else None,
+        chain_B_confirmed=int(((Q.chain_kind == "B") & Q.chain_confirmed.astype(bool)).sum()))
 
 
 def main(art_dir, out_dir=os.path.join(ROOT, "reports", "signal_lab", "prints")):
@@ -278,7 +389,7 @@ def main(art_dir, out_dir=os.path.join(ROOT, "reports", "signal_lab", "prints"))
     U = pd.concat([pd.read_parquet(os.path.join(ROOT, "reports", "signal_lab", "prints", f"f6_{e}.parquet"))
                    .assign(era=e) for e in ("main", "early")], ignore_index=True)
     assert (U.coin.astype(str).to_numpy() == C.coin.to_numpy()).all() and (U.ts.to_numpy() == C.ts.to_numpy()).all()
-    pairs, cands, info = [], [], {}
+    pairs, cands, info, chains = [], [], {}, []
     for product, g in W.groupby("product"):
         coin = product[:-4]
         raw, _ = PFE.load_coin(files, product)
@@ -291,11 +402,13 @@ def main(art_dir, out_dir=os.path.join(ROOT, "reports", "signal_lab", "prints"))
         idx = np.flatnonzero((C.coin == coin).to_numpy())
         q = C.ts.to_numpy()[idx].astype("datetime64[ns]").view(np.int64)
         cmin, cvol = PD.candles(coin)
-        R, Q, inf = coin_boundaries(d["t"], d["size"], d["usd"],
+        R, Q, inf, CH = coin_boundaries(d["t"], d["size"], d["usd"],
                                     g.start.to_numpy().astype("datetime64[ns]").view(np.int64),
                                     g.end.to_numpy().astype("datetime64[ns]").view(np.int64), q, cmin, cvol)
         del d
         R["coin"] = coin
+        CH["coin"] = coin
+        chains.append(CH)
         Q["era"], Q["coin"], Q["ts"] = C.era.to_numpy()[idx], coin, C.ts.to_numpy()[idx]
         Q["usd_30"] = U.usd_30.to_numpy()[idx]
         Q["row"] = idx
@@ -317,10 +430,25 @@ def main(art_dir, out_dir=os.path.join(ROOT, "reports", "signal_lab", "prints"))
                pairs={"all": pair_summary(R, sum(n_pairs_year.values()))})
     for y, g in R.groupby("year"):
         out["pairs"][str(y)] = pair_summary(g, n_pairs_year.get(int(y), 0))
+    CH = pd.concat(chains, ignore_index=True)
+    CH["year"] = pd.to_datetime(CH.minute * NS_MIN).dt.year
+    out["chain"] = {"all": chain_summary(CH, R)}
+    for y, g in CH.groupby("year"):
+        out["chain"][str(y)] = chain_summary(g, R[R.year == y])
     out["candidates"] = {e: cand_summary(g) for e, g in Q.groupby("era")}
     out["candidates_by_year"] = {str(y): cand_summary(g) for y, g in Q.groupby("year")}
     A = R[R.kind == "A"]
     QA_ = Q[Q.kind == "A"]
+    CA = CH[(CH.kind == "A") & CH.confirmed.astype(bool)]
+    QC = Q[(Q.chain_kind == "A") & Q.chain_confirmed.astype(bool)]
+    out["largest_A_chain_confirmed"] = dict(
+        boundaries_d_max=float(CA.d_s.max()) if len(CA) else None,
+        boundaries_sub_minute_d_max=float(CA[~CA.whole.astype(bool)].d_s.max()) if (~CA.whole.astype(bool)).any() else None,
+        boundaries_whole_minute=int(CA.whole.astype(bool).sum()),
+        at_q_d_max=float(QC.chain_d_s.max()) if len(QC) else None,
+        at_q_sub_minute_d_max=(float(QC[~QC.chain_whole.astype(bool)].chain_d_s.max())
+                               if (~QC.chain_whole.astype(bool)).any() else None),
+        at_q_whole_minute=int(QC.chain_whole.astype(bool).sum()))
     out["largest_A"] = dict(
         pairs_d_max=float(A.d_s.max()) if len(A) else None,
         pairs_sub_minute_d_max=float(A[~A.whole.astype(bool)].d_s.max()) if (~A.whole.astype(bool)).any() else None,
@@ -331,9 +459,11 @@ def main(art_dir, out_dir=os.path.join(ROOT, "reports", "signal_lab", "prints"))
     os.makedirs(out_dir, exist_ok=True)
     with open(os.path.join(out_dir, "qa_boundary.json"), "w") as fh:
         json.dump(out, fh, indent=1, default=str)
-    Q[["era", "coin", "ts", "two_sided", "kind", "d_s", "whole", "strict", "usd_moved", "usd_30"]].to_parquet(
+    Q[["era", "coin", "ts", "two_sided", "kind", "d_s", "whole", "strict", "usd_moved", "chain_kind", "chain_d_s",
+       "chain_whole", "chain_usd_moved", "chain_confirmed", "usd_30"]].to_parquet(
         os.path.join(out_dir, "qa_boundary_cand.parquet"), index=False)
-    print(json.dumps({k: out[k] for k in ("largest_A", "candidates")}, indent=1, default=str), flush=True)
+    print(json.dumps({k: out[k] for k in ("largest_A", "largest_A_chain_confirmed", "candidates")}, indent=1,
+                     default=str), flush=True)
     print(json.dumps(out["pairs"]["all"], indent=1, default=str), flush=True)
 
 
