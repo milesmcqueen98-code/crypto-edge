@@ -34,6 +34,174 @@ def spearman(x, y):
     return float(np.corrcoef(rx, ry)[0, 1])
 
 
+def qfmt(q, d=3):
+    return "-" if not q else " / ".join(f"{x:.{d}f}" for x in q)
+
+
+def boundary_section(add, out):
+    """Follow-up of Nov 9: candle-print boundary offsets (qa_boundary.json from prints_boundary.py)."""
+    p = os.path.join(out, "qa_boundary.json")
+    if not os.path.exists(p):
+        return
+    B = json.load(open(p))
+    add("## Candle-print boundary offsets (follow-up; prints_boundary.py, qa_boundary.json)")
+    add("")
+    add("The model decides fills from the candles and F6 reads prints stamped before q, so a candle q that held trades "
+        "the prints stamp before q would let the features see the start of the fill minute. For every adjacent pair "
+        "of minutes (m, m+1) inside a merged window where print base volume and candle volume differ (relative "
+        "1e-5) in at least one of the two: the smallest boundary move that reconciles both minutes within 1e-5 "
+        "(\"strict\": within 1e-7, the float32 precision of the candle files).")
+    add("- **A** (could leak): the prints stamped in [m+1-d, m+1) sit in candle m+1; candle time lags print time.")
+    add("- **B** (harmless): the prints stamped in [m+1, m+1+d) sit in candle m.")
+    add("- **Neighbour:** this pair's difference is a reconciled move at the next boundary (one move leaves the two "
+        "pairs around it unequal). **Edge:** the remaining difference sits in the first or last minute of a window, "
+        "next to a boundary whose outer minute was never fetched. **Not reconciled:** no single move up to 60 s.")
+    add("- A whole-minute shift moves every print of the source minute (its candle row is missing and the next one "
+        "holds both minutes). d for a whole-minute A shift is measured from that minute's first print.")
+    add(f"- Self-test on a synthetic tape with planted moves: `{B.get('self_test')}`")
+    add("")
+    add("| Year | Unequal pairs | A (strict) | A whole-minute | B (strict) | B whole-minute | Neighbour | Edge | "
+        "Not reconciled (A-like / B-like / same sign) | Whole-minute share |")
+    add("|---|---|---|---|---|---|---|---|---|---|")
+    keys = ["all"] + sorted(k for k in B["pairs"] if k != "all")
+    for k in keys:
+        v = B["pairs"][k]
+        nr = v["not_reconciled"]
+        add(f"| {k} | {v['unequal']:,} of {v['pairs']:,} | {v['A']['n']:,} ({v['A']['strict']:,}) | "
+            f"{v['A']['whole_minute']:,} | {v['B']['n']:,} ({v['B']['strict']:,}) | {v['B']['whole_minute']:,} | "
+            f"{v['neighbour']:,} | {v['edge']:,} | {nr['n']:,} ({nr['a_like']:,} / {nr['b_like']:,} / "
+            f"{nr['same_sign']:,}) | {100 * (v['share_whole_minute_of_unequal'] or 0):.1f}% |")
+    add("")
+    add("Offset d in seconds, p50 / p90 / p99 / max (all reconciled pairs; then without whole-minute shifts):")
+    add("")
+    add("| Year | A: all | A: sub-minute | B: all | B: sub-minute |")
+    add("|---|---|---|---|---|")
+    for k in keys:
+        v = B["pairs"][k]
+        add(f"| {k} | {qfmt(v['A']['d_q'])} | {qfmt(v['A']['d_sub_minute_q'])} | {qfmt(v['B']['d_q'])} | "
+            f"{qfmt(v['B']['d_sub_minute_q'])} |")
+    add("")
+    add("At the boundary before each candidate (m+1 = q). Two-sided where minute q lies inside a merged window; "
+        "otherwise minute q was never fetched and A is tested on minute q-1 alone (candle q-1 = its prints less a "
+        "suffix, candle q holding at least that volume):")
+    add("")
+    add("| Era | Candidates | Two-sided: kinds | One-sided: kinds | A (whole-minute) | A share | A: d p50 / p90 / "
+        "p99 / max (s) | A: moved USD / usd_30, p50 / p90 / p99 / max | Mean moved USD / usd_30, all candidates |")
+    add("|---|---|---|---|---|---|---|---|---|")
+    for e in ERAS:
+        v = B["candidates"].get(e)
+        if not v:
+            continue
+        add(f"| {e} | {v['n']:,} | {v['two_sided']:,}: {v['two_sided_kinds']} | {v['one_sided']:,}: "
+            f"{v['one_sided_kinds']} | {v['A']:,} ({v['A_whole_minute']:,}) | {100 * v['A_share']:.2f}% | "
+            f"{qfmt(v['A_d_q'])} | {qfmt(v['A_usd_over_usd30_q'], 4)} | {v['usd_over_usd30_mean_all']:.5f} |")
+    add("")
+    if "chain" in B:
+        add("**Chain check.** The single-move test cannot reconcile runs of consecutive moves (a run of B moves leaves "
+            "pairs with an A-like sign pattern that no one move fixes). The chain check solves every boundary of a "
+            "window at once: with x the print volume stamped before a boundary that the candles put after it (A > 0, "
+            "B < 0), candle m = prints m + x(before m) - x(after m), so x is carried from the window start (x = 0). "
+            "Each x must be 0, a suffix of the left minute's prints (A) or a prefix of the right minute's (B); "
+            "otherwise the boundary is unexplained (for example candle volume lost) and x restarts at 0. A move is "
+            "confirmed when neither neighbouring boundary is unexplained.")
+        add("")
+        add("| Year | Boundaries | Zero | A confirmed (whole-minute) / unconfirmed | B confirmed (whole-minute) / "
+            "unconfirmed | Unexplained | A confirmed d, sub-minute (s) | B confirmed d, sub-minute (s) | "
+            "Pairs left open by the single-move test, by chain result |")
+        add("|---|---|---|---|---|---|---|---|---|")
+        for k in ["all"] + sorted(x for x in B["chain"] if x != "all"):
+            v = B["chain"][k]
+            kd = v["kinds"]
+            add(f"| {k} | {v['boundaries']:,} | {kd.get('zero', 0):,} | {v['A']['confirmed']:,} "
+                f"({v['A']['whole_minute']:,}) / {v['A']['unconfirmed']:,} | {v['B']['confirmed']:,} "
+                f"({v['B']['whole_minute']:,}) / {v['B']['unconfirmed']:,} | {kd.get('unexplained', 0):,} | "
+                f"{qfmt(v['A']['d_sub_minute_q'])} | {qfmt(v['B']['d_sub_minute_q'])} | "
+                f"{v['single_move_open_pairs_by_chain']} |")
+        add("")
+        add("Chain check at the boundary before each candidate (B_unverified: x < 0 at a window end, where minute q "
+            "was not fetched; harmless either way):")
+        add("")
+        add("| Era | Kinds | A confirmed (whole-minute) | A confirmed share | A: d p50 / p90 / p99 / max (s) | "
+            "A: moved USD / usd_30, p50 / p90 / p99 / max | Mean moved USD / usd_30, all candidates |")
+        add("|---|---|---|---|---|---|---|")
+        for e in ERAS:
+            v = B["candidates"].get(e)
+            if not v:
+                continue
+            add(f"| {e} | {v['chain_kinds']} | {v['chain_A_confirmed']:,} ({v['chain_A_whole_minute']:,}) | "
+                f"{100 * v['chain_A_confirmed_share']:.2f}% | {qfmt(v['chain_A_d_q'])} | "
+                f"{qfmt(v['chain_A_usd_over_usd30_q'], 4)} | {v['chain_usd_over_usd30_mean_all']:.6f} |")
+        add("")
+    L_ = B["largest_A"]
+
+    def s_(x):
+        return "none" if x is None else f"{x:.3f} s"
+    add(f"**Largest direction-A offset (single-move test):** over all window pairs {s_(L_['pairs_d_max'])} "
+        f"({L_['pairs_whole_minute']:,} whole-minute shifts; largest sub-minute {s_(L_['pairs_sub_minute_d_max'])}); "
+        f"at the boundary before a candidate {s_(L_['at_q_d_max'])} ({L_['at_q_whole_minute']:,} whole-minute; "
+        f"largest sub-minute {s_(L_['at_q_sub_minute_d_max'])}).")
+    if "largest_A_chain_confirmed" in B:
+        L2 = B["largest_A_chain_confirmed"]
+        add(f"**Largest direction-A offset (chain check, confirmed):** over all boundaries {s_(L2['boundaries_d_max'])} "
+            f"({L2['boundaries_whole_minute']:,} whole-minute; largest sub-minute "
+            f"{s_(L2['boundaries_sub_minute_d_max'])}); at the boundary before a candidate {s_(L2['at_q_d_max'])} "
+            f"({L2['at_q_whole_minute']:,} whole-minute; largest sub-minute {s_(L2['at_q_sub_minute_d_max'])}).")
+    cp = os.path.join(out, "qa_boundary_cand.parquet")
+    if os.path.exists(cp) and "chain" in B:
+        Q = pd.read_parquet(cp)
+        parts = []
+        for e in ERAS:
+            g = Q[Q.era == e]
+            a = g[(g.kind == "A") | ((g.chain_kind == "A") & g.chain_confirmed)]
+            d = np.fmax(a.d_s.fillna(-1.0), a.chain_d_s.fillna(-1.0))
+            parts.append(f"{e} {len(a)} of {len(g):,} candidates ({100 * len(a) / len(g):.2f}%), {int((d <= 5).sum())} "
+                         f"with d <= 5 s, {int((d <= 60).sum())} with d <= 60 s; chain result unexplained at "
+                         f"{int((g.chain_kind == 'unexplained').sum())}, B at "
+                         f"{int(g.chain_kind.isin(['B', 'B_unverified']).sum())}")
+        add("")
+        add("- **Reading:** the candles mostly lead the prints (B: prints stamped in the first seconds of a minute sit "
+            "in the previous candle), which cannot leak. Direction A at the boundary before a candidate, by either "
+            "test: " + "; ".join(parts) + ". Most A cases there are whole-minute shifts (the candle row for q-1 is "
+            "missing and candle q holds that minute's prints). Every A offset found is under 60 s, so the 60 s margin "
+            "tables exclude all of them; the 5 s margin excludes few. Unexplained boundaries are undetermined, not "
+            "shown to be A.")
+    add("")
+
+
+def margin_section(add, out):
+    p = os.path.join(out, "qa_margin.json")
+    if not os.path.exists(p):
+        return
+    M = json.load(open(p))
+    add("## Margin tables (follow-up)")
+    add("")
+    add("f6_main_m5.parquet, f6_early_m5.parquet (margin 5 s) and f6_main_m60.parquet, f6_early_m60.parquet (margin "
+        "60 s): the same schema, keys and row order as f6_main / f6_early, with both windows ending at q - margin, "
+        "[q - 30 min, q - margin) and [q - 5 min, q - margin); the big-print threshold pool is unchanged (prints "
+        "before q - 30 min), so big_thr_usd equals the margin-0 column. scripts/signal_lab/prints_features.py "
+        "<art_dir> <out_dir> 0,5,60; the synthetic test checks that a print at q - margin is excluded and one 1 us "
+        "earlier is included.")
+    m0 = M.get("margin0", {})
+    add(f"- **Margin 0 unchanged:** the same run recomputed the margin-0 tables: values equal to the committed files "
+        f"(main {m0.get('main', {}).get('values_equal')}, early {m0.get('early', {}).get('values_equal')}), bytes "
+        f"equal (main {m0.get('main', {}).get('bytes_equal')}, early {m0.get('early', {}).get('bytes_equal')}). The "
+        "committed f6_main.parquet and f6_early.parquet were not rewritten.")
+    add("")
+    add("| Margin | Era | Complete | Windows without a print | Median n_prints | Missing (csv_30, csv_5, sell_share_30, "
+        "big_sell_share_30, sweep_max_30) | Medians (same order) |")
+    add("|---|---|---|---|---|---|---|")
+    for m in sorted(M["margins"], key=int):
+        for e in ERAS:
+            v = M["margins"][m][e]
+            miss = ", ".join(str(v["missing"][k]) for k in ("csv_30", "csv_5", "sell_share_30", "big_sell_share_30",
+                                                             "sweep_max_30"))
+            med = ", ".join(f"{v['median'][k]:.4g}" for k in ("csv_30", "csv_5", "sell_share_30", "big_sell_share_30",
+                                                                "sweep_max_30"))
+            add(f"| {m} s | {e} | {v['complete']:,} | {v['no_print_windows']:,} | {v['n_prints_median']:.0f} | {miss} "
+                f"| {med} |")
+    add("")
+
+
 def fmt(x, d=4):
     return "n/a" if x is None or (isinstance(x, float) and not np.isfinite(x)) else f"{x:.{d}f}"
 
@@ -291,6 +459,8 @@ def main(out=PR):
     add("- NaN: every float when complete is False; ratios with a missing or zero denominator; big_* without a "
         "threshold; the five F6 features when the window has no print (its USD sums are then 0).")
     add("")
+    boundary_section(add, out)
+    margin_section(add, out)
     with open(os.path.join(out, "QA.md"), "w") as fh:
         fh.write("\n".join(L) + "\n")
     print("\n".join(L))
