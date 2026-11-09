@@ -1,0 +1,5 @@
+POST HOC: W2 vs the incumbent, engine-faithful simulator, S* theta 0.5, $250K (blended, print exits)
+
+sel    ΔSharpe +0.180 (t +0.54); corr 0.942; months W2 ahead 9/15; without each book's best 5 days +0.235
+chk    ΔSharpe +0.130 (t +0.73); corr 0.989; months W2 ahead 5/8; without each book's best 5 days +0.377
+early  ΔSharpe +0.180 (t +1.24); corr 0.981; months W2 ahead 12/24; without each book's best 5 days +0.289
