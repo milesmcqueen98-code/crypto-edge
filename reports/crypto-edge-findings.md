@@ -1,4 +1,4 @@
-# Crypto edge: findings and live rules (updated Nov 9, 2026, signal lab; explore v1; sizing lab; edge hunt 2; ladder v6 sizing; Gemini venue test)
+# Crypto edge: findings and live rules (updated Nov 9, 2026, signal lab; hunt 3; explore v1; sizing lab; edge hunt 2; ladder v6 sizing; Gemini venue test)
 
 Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly signals, paper-trading bot)
 
@@ -13,6 +13,21 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   - The models agree on the signals that carry the profit; the disputed ones roughly break even. A one-year training
     window costs about 1.0 Sharpe out of sample, and looser thresholds lose 1.1–2.8 on development. The model's random
     seed alone moves Sharpe by ±0.15.
+- **Hunt 3 (Nov 9): 66 new models, none an R2-08 variant; none beat R2-08 out of sample, so R2-08 stays the
+  strategy of record (section below).**
+  - 258 pre-registered DEV trials (N = 9,658 counted with earlier rounds); each model frozen and read once on
+    Apr–Nov 2026 and 2022–23. No model beat R2-08 in any era at both cost levels. Best score 44.9/100
+    (VOLCOMP: 1.66 in Apr–Nov 2026 (1.51 at 2x vs R2-08's 1.61) but −0.79 in 2022–23).
+  - Even with every trading cost removed, none beats R2-08 in all three eras (independent audit). CARRY, the only DEV
+    winner (5.21 vs 3.54 at 1x), rode a CFM launch premium that arbitrage closed by spring 2026.
+  - The gates only admit a much better model: an uncorrelated model with a true Sharpe of 4 passes about half the time.
+  - Next test (frozen, reports/hunt3/prospective_prereg.md): alt-perp carry on fresh data with CFM's published hourly
+    funding, read once on Feb 1 2027; logger written (scripts/fetch_cfm.py funding, cfm-funding.yml). It must run
+    from the default branch by Nov 15 (no public history of CFM's published funding exists to backfill it).
+    DEV expectation: under the forward spec the rule made 2.30 / −4.01 against R2-08's 3.12 / 2.33 with idle cash
+    earning nothing (it would fail its bar), and 9.6 / 0.7 with T-bills on its idle and margin cash (R2-08: 3.1–3.7 /
+    2.3–2.9), so it would pass at 1x and fail at 2x: the funding stress decides, and so does what the account's idle
+    cash earns; record that on Dec 1 (reports/hunt3/forward/RUNBOOK.md).
 - **Explore v1 (Nov 9): 4,691 variants of the spot ladder, every assumption varied; nothing held out of sample, so the
   bot and both paper books stay as they are (section below).**
   - Tuned on Jan 2025 – Mar 2026, the best variant reached Sharpe 4.03 against the incumbent's 2.40. Read once out of
@@ -226,6 +241,174 @@ plan and its eleven-entry deviation log; reports/signal_lab/README.md holds the 
 4. Optional forward check: R2-08 trained with the 2021–23 history, its threshold set from the 2024-on rows, logged
    beside the paper book with no trading change.
 5. Forward data: open interest and funding logs for a model test in about six months.
+
+## Hunt 3 (Nov 9): 66 new models against R2-08; no winner
+Goal set by Miles: a new model, not an R2-08 variant, with higher out-of-sample Sharpe than the R2-08 spot ladder,
+tradable from his NY retail Coinbase account at $250K. Start from mechanisms (who is forced to trade, why we're paid);
+pre-register; tune on DEV only; read the newest holdout once; count every trial; measured costs; win head-to-head in
+every era. "No winner" was acceptable. Final report: the "Hunt 3: New Models vs R2-08" doc
+(https://claude.ai/artifact/DEWRSXs3uGXNZRamdmNzSe). Record: local branch hunt3 of the session's clone (the session
+could not push to GitHub, so it is not on the repo yet): reports/hunt3/ holds prereg.md (protocol and deviation log),
+PROGRESS.md (mirrored here as claude/hunt3-progress.md), trials.csv, central_gates.json, scorecard.csv, meta.csv,
+power.csv, audit/AUDIT.md, prospective_prereg.md and one folder per model; code in scripts/hunt3/.
+
+**Protocol**
+- DEV = Jan 2025 – Mar 2026 (CARRY and SPIKE, which need CFM perp prices, from Jul 21 2025). HOLD = Apr 1 – Nov 5 2026
+  and 2022–23, read once per frozen model by a central runner that refuses a second read; the data loaders hide HOLD
+  from builders.
+- Costs: X1 = Coinbase spot tier from the model's own 30-day volume, CFM perps $0.15 a contract + 2 bp + 1.5× the
+  measured half-spread on market orders; X2 = everything doubled. Long/short perp books pay or receive each coin's
+  funding (CFM rebuilt from candles, else Binance, else 3 bp a day), and X2 takes another 3 bp a day off both sides.
+- Pass = G1 Sharpe above R2-08's in sel, chk and early at X1 and X2; G2 pooled-HOLD Newey–West t ≥ 2 on the
+  vol-matched difference after Holm; G3 no losing year at X2. Reported: Hansen SPA, deflated Sharpe (N = 9,400 + this
+  round's ledger).
+- Scorecard /100: chk 15, early 15, DEV 5 (Sharpe as a share of R2-08's at X2), significance 15, deflated Sharpe 10,
+  no losing year 10, and mechanism, realism, capacity 10 each, hand-scored before each read.
+
+**Results** (Sharpe above T-bills on $250K with no interest on idle cash or margin, for R2-08 as for every model;
+X1 / X2; every model fails G1–G3; SPA p 1.0):
+
+| Model | Score /100 | DEV (X1 / X2) | Apr–Nov 2026 | 2022–23 |
+|---|---|---|---|---|
+| R2-08 (bar) | — | 2.94 / 1.62 | 2.66 / 1.61 | 1.91 / 1.13 |
+| VOLCOMP | 44.9 | 1.77 / 1.57 | 1.66 / 1.51 | −0.79 / −1.09 |
+| LIQSHOCK | 43.5 | 0.85 / 0.64 | −0.68 / −0.97 | 1.14 / 0.90 |
+| MACROTREND | 42.6 | 0.63 / 0.40 | 0.32 / −0.00 | 1.08 / 0.85 |
+| FUNDTIME | 42.5 | −0.15 / −0.28 | 2.15 / 1.95 | −0.53 / −0.70 |
+| WKND | 38.4 | 1.22 / 1.07 | 1.39 / 1.08 | −0.68 / −0.82 |
+| STABLE | 37.2 | 0.02 / −0.24 | 1.50 / 1.25 | 0.07 / −0.21 |
+| TSMOM | 36.9 | 0.53 / 0.27 | 0.89 / 0.50 | 0.44 / 0.14 |
+| EXFLOW | 34.2 | 0.74 / 0.45 | −0.05 / −0.43 | 0.63 / 0.32 |
+| EQRISK | 33.9 | −0.19 / −0.27 | 0.58 / 0.47 | −0.24 / −0.39 |
+| FGI | 33.3 | −0.32 / −0.45 | 1.18 / 1.00 | −1.45 / −1.62 |
+| CROSSMOM | 33.0 | −0.67 / −0.96 | −0.80 / −1.19 | 0.87 / 0.60 |
+| CBPREM | 32.3 | 0.24 / −0.06 | 1.06 / 0.60 | 0.63 / 0.20 |
+| EXHAUST | 31.0 | 0.86 / 0.80 | no trades / no trades | −1.24 / −1.27 |
+| BREADTH2 | 30.1 | 1.61 / 1.34 | 0.23 / −0.31 | −0.69 / −0.97 |
+| MVRV | 29.3 | 0.55 / 0.26 | 0.89 / 0.59 | −0.89 / −1.11 |
+| ILLIQ | 29.2 | 0.95 / 0.44 | 0.95 / 0.47 | −0.01 / −0.52 |
+| MACRO | 28.5 | 1.06 / 0.81 | −0.45 / −0.88 | −0.29 / −0.54 |
+| CMEBASIS | 27.9 | 0.64 / 0.45 | −0.98 / −1.18 | −0.98 / −1.29 |
+| FEESPIKE | 27.7 | no trades | 0.71 / 0.50 | −0.89 / −1.03 |
+| EXSUPPLY | 27.5 | 0.16 / −0.19 | 0.58 / 0.05 | 0.44 / 0.04 |
+| TAKERFLOW | 27.5 | 1.79 / 1.45 | 0.76 / −0.12 | −0.96 / −1.41 |
+| PUELL | 26.7 | −0.68 / −0.83 | 0.74 / 0.34 | −0.54 / −0.70 |
+| BREADTH | 26.4 | 0.82 / 0.47 | −0.19 / −0.73 | −0.36 / −0.85 |
+| VRP | 26.4 | 0.44 / 0.13 | −0.62 / −0.99 | −0.31 / −0.66 |
+| MOMXS | 25.6 | 1.59 / 0.91 | 1.02 / 0.35 | −0.41 / −1.08 |
+| CTAFLOW | 25.2 | −1.22 / −1.53 | 0.61 / 0.19 | −0.35 / −0.68 |
+| CARRY | 25.0 | 5.21 / −0.41 | −2.41 / −6.05 | −1.41 / −2.17 |
+| NVT | 24.3 | 0.17 / 0.10 | no trades / no trades | −0.40 / −0.44 |
+| OIFLUSH | 23.6 | 0.59 / 0.37 | −1.50 / −1.82 | −0.91 / −1.28 |
+| HASHRIB | 23.0 | 0.19 / −0.08 | −0.12 / −0.40 | 0.05 / −0.20 |
+| CRASHBUY | 22.8 | 0.21 / 0.10 | −1.55 / −1.58 | −1.75 / −1.88 |
+| FLOWXS | 22.5 | 1.79 / 0.98 | −0.65 / −1.31 | −0.31 / −1.02 |
+| THRUST | 22.5 | −0.28 / −0.46 | −0.18 / −0.46 | −0.46 / −0.66 |
+| XSCOMBO | 22.5 | 1.04 / 0.16 | −1.07 / −1.81 | 0.08 / −0.52 |
+| RESMOM | 22.5 | 1.10 / 0.48 | 0.11 / −0.37 | 0.37 / −0.20 |
+| ADDRMOM | 22.3 | 0.68 / 0.58 | −1.69 / −1.87 | −1.13 / −1.26 |
+| BETAXS | 22.2 | 1.37 / 0.87 | −1.87 / −2.33 | −0.07 / −0.56 |
+| LEVUP | 22.2 | 0.42 / 0.21 | −0.30 / −0.58 | −1.05 / −1.24 |
+| TUGWAR | 21.8 | 0.85 / 0.26 | −1.18 / −1.70 | 0.09 / −0.47 |
+| VOLMAN | 21.5 | −0.11 / −0.34 | 0.08 / −0.21 | 0.21 / −0.04 |
+| TOM | 21.5 | −0.10 / −0.23 | −0.48 / −0.71 | −0.33 / −0.55 |
+| VOLSHOCK | 21.2 | 0.74 / 0.07 | −0.31 / −0.92 | 0.54 / −0.06 |
+| XSCOMBO2 | 21.0 | 0.68 / −0.11 | 0.39 / −0.22 | 0.15 / −0.51 |
+| HIGH52 | 21.0 | 0.42 / −0.10 | −1.49 / −2.16 | −0.11 / −0.70 |
+| CROWD | 20.5 | 0.24 / −0.21 | 0.08 / −0.69 | 0.34 / −0.09 |
+| OPENRANGE | 20.5 | −0.89 / −2.25 | −2.48 / −4.75 | 0.26 / −1.50 |
+| FIXFADE | 20.0 | −0.77 / −1.69 | −2.48 / −3.15 | −1.99 / −3.12 |
+| ALTSEASON | 19.5 | −0.30 / −0.89 | −1.37 / −2.12 | 0.18 / −0.56 |
+| LOWVOL | 19.5 | 0.22 / −0.30 | −1.81 / −2.25 | −0.68 / −1.17 |
+| RESREV | 19.5 | 0.59 / −0.15 | −3.56 / −4.23 | −1.34 / −2.23 |
+| ETHBTC | 19.0 | −1.51 / −1.93 | −0.12 / −1.00 | −0.67 / −1.25 |
+| FUNDCLOCK | 19.0 | −2.68 / −2.66 | −3.55 / −4.79 | −3.23 / −3.85 |
+| INTRAMOM | 19.0 | −1.54 / −3.60 | −6.37 / −7.43 | −1.63 / −3.78 |
+| RSKEW | 18.5 | 0.57 / −0.11 | 0.26 / −0.50 | −0.19 / −0.87 |
+| USSHARE | 18.5 | −0.53 / −1.22 | −1.65 / −2.26 | −0.55 / −1.20 |
+| NETMOM | 18.5 | 0.10 / −0.53 | 0.52 / −0.07 | −2.10 / −2.73 |
+| REVXS | 18.0 | −1.65 / −2.40 | 0.80 / 0.11 | −1.23 / −1.95 |
+| SESSION | 18.0 | −0.26 / −1.51 | −2.88 / −4.55 | −1.05 / −2.80 |
+| LEADLAG | 18.0 | −1.60 / −2.27 | −0.20 / −0.70 | −3.05 / −3.72 |
+| BREAK | 18.0 | −4.75 / −7.92 | −6.75 / −11.61 | −3.92 / −6.89 |
+| FUNDXS | 17.0 | 0.39 / −0.36 | −0.45 / −1.19 | −0.95 / −1.64 |
+| SPIKE | 16.5 | −5.51 / −6.76 | −3.94 / −8.25 | −16.72 / −9.23 |
+| MAXLOT | 16.0 | 0.32 / −0.29 | −2.56 / −3.08 | −0.90 / −1.46 |
+| WKNDXS | 16.0 | 0.32 / −0.75 | −0.35 / −1.35 | −1.43 / −2.49 |
+| XSML | 15.0 | −10.95 / −22.53 | −8.16 / −17.66 | −8.26 / −18.25 |
+| ROUND | 15.0 | −4.00 / −6.50 | −5.52 / −7.81 | −5.96 / −9.49 |
+
+**What it says**
+- **No model beat R2-08 in any era at both cost levels.** The only single cells above it: CARRY on DEV at 1x (5.21 vs
+  3.54), which then lost in both holdouts, and FUNDTIME in Apr–Nov 2026 at 2x (1.95 vs 1.61), where its best five days
+  made 89% of the profit (−0.05 without them) and DEV and 2022–23 were negative. Deflated Sharpe about 0 throughout.
+- **The gates only admit a much better model** (post-hoc simulation against R2-08's actual days): an uncorrelated model
+  whose true Sharpe is 3.0 everywhere passes 4% of the time, 4.0 passes 51%, 5.0 passes 92% (correlation 0.5: 12%,
+  74%, 98%). The best holdout Sharpes here were 2.15 (FUNDTIME, 2026) and
+  1.14 (LIQSHOCK, 2022–23), so this is not a power problem.
+- **CARRY's DEV win was the CFM launch premium.** Rebuilt funding on majors fell from 27–42%/yr at launch (Jul 2025) to
+  4–10% from Dec 2025; the book needs above ~5% just to match T-bills. The alt perps' rebuilt premium averaged
+  5–12%/yr per coin through the holdout (monthly −5% to 26%); post hoc, low-churn alt carry would have scored 2.5–3.0 at
+  1x in Apr–Nov 2026 (R2-08 2.66) but −5 to −9 at 2x, and it is a cash-like book (~0.75% vol, 5.5–5.9%/yr, ~2 points
+  over T-bills). HOLD is no longer clean for it.
+- **Retail round trips eat intraday edges.** Gross per trade: BREAK ~0 bp, OPENRANGE 4–7, SESSION 10–15, SPIKE 16–20,
+  XSML 0.5 bp per dollar traded, against 10–74 bp of costs (33 bp for RESREV with its BTC hedge).
+- **Daily and weekly signals were era-specific, and DEV rank barely carried** (Spearman 0.27 vs Apr–Nov 2026,
+  0.35 vs 2022–23, across the 63 models that traded in every era; a straight-line fit maps DEV Sharpe x to
+  about 0.62x − 0.79 in 2026, so beating 2.66 there needed a DEV Sharpe near 6). BETAXS (1.37 on DEV), TAKERFLOW and
+  FLOWXS (1.79) went negative; positive in all three eras at 1x: MACROTREND, STABLE, TSMOM, CBPREM, EXSUPPLY, RESMOM, XSCOMBO2, CROWD (0.02–1.50).
+  Consistent with the Medallion round's screen.
+- **The results look like noise around a cost drag.** A Sharpe's standard error is about 0.9 on DEV's
+  455 days (1.3 on Apr–Nov 2026, 0.7 on 2022–23). The middle half of the models spans
+  −0.30 to 0.74 on DEV, −1.57 to 0.58 in 2026 and −1.11 to 0.07 in 2022–23, a spread
+  (0.8, 1.6, 0.9 as a robust standard deviation) about what sampling error alone gives, around medians of
+  0.32 on DEV (each model was the best of its grid there), −0.30 and −0.54. The best results stay
+  under the luckiest of 66 skill-less models (about 2.1, 3.0 and 1.7). Only CARRY's DEV 5.21 stands outside the
+  noise, and it was a launch premium.
+- **Breadth did not rescue it (post hoc, not a trial):** an equal-risk mix of the 25
+  frozen books with a positive DEV Sharpe at 2x made 3.34 on DEV at 1x (above R2-08's 2.94), then
+  −1.04 in Apr–Nov 2026 and −1.57 in 2022–23 (reports/hunt3/posthoc_breadth.csv). Combining
+  signals chosen on DEV multiplies the DEV Sharpe, not the edge.
+- **Year by year (post hoc, scripts/hunt3/by_year.py):** at 1x, models beating R2-08: 0 of 66 in 2022; 2 of 63 in 2023 (HASHRIB 2.14 vs 2.06, RESMOM 2.07 vs 2.06); 1 of 65 in 2025 (CARRY 6.79 vs 4.56); 0 of 66 in 2026; models beating it in two or more years: 0.
+- **Hindsight mix (not a result; scripts/hunt3/hindsight_bound.py):** the single books positive in all three eras at
+  1x, picked with full knowledge of the holdouts and mixed at equal risk: 7 books, 0.96 / 1.38 / 1.10 against R2-08's 2.94 / 2.66 / 1.91 (DEV, 2026, 2022–23).
+  Even this flattering selection loses in every era; so do the auditor's stronger variants (leverage-free Sharpe
+  1.33 / 1.60 / 1.30 against R2-08's 3.57 / 3.29 / 2.82; in-sample max-Sharpe weights 1.53 / 1.28 / 1.48).
+- **The cash convention matters for carry, not for the verdict** (scripts/hunt3/convention_check.py): with T-bills
+  credited on all capital (an upper bound, the opposite extreme from the hunt's rule; crediting only CARRY's idle and
+  margin cash gives 0.67 in 2026, per the audit), no model beats R2-08 in every era and
+  cost cell either; the cells that flip are CARRY sel X1 (12.06 vs 4.10), CARRY sel X2 (4.96 vs 3.42), CARRY chk X1 (6.55 vs 3.29), CARRY early X1 (3.51 vs 2.82).
+- **Costs are not the whole story:** with every trading cost removed no model beats R2-08 in all eras (closest: CARRY
+  2.33 vs 2.66 and 1.68 vs 1.91).
+- **The new books are diversifiers, not replacements:** median daily correlation with R2-08 about 0.
+- **Live data:** twelve models (BREADTH through OIFLUSH) read Binance data (Binance blocks US users) and VRP reads Deribit's DVOL; live use from New
+  York would need a US-accessible vendor.
+
+**Checks**
+- Independent audit agents covered all 66 models in seven passes (reports/hunt3/audit/AUDIT.md): gates and scores recomputed with its own code (largest relative
+  difference below 1e-12); every frozen model's sel series reproduced from DEV data alone (one SPIKE day differs
+  because of a whole-sample eligibility rule); truncation and decision-time cut tests for look-ahead; one read per
+  model; ledger complete. No verdict changed. Open caveat: years without trades count as non-losing in G3 and the
+  scorecard (FGI and NVT would each lose 1.7 points); no verdict depends on it. The $150 whole-contract rule leaves
+  the BTC/ETH timing models without ETH while ETH is under $1,500 (much of 2022–23), so their 2022–23 figures are
+  partly BTC-only. NVT's read cell was the second of an exact DEV tie (c2_ls, not c2_lf).
+- Deviations (logged before the affected run unless noted): CARRY round-3 series mislabelled in a file (rebuilt, no new
+  trial); signed-funding convention set before the long/short books ran; RESREV capped positions at 8 rather than gross
+  at 200% (gross reached 3.2x in 93 DEV hours; noted after its run); MVRV's z window cut to 365 days and CMEBASIS's
+  weekend carry, both before any run; four disclosed glimpses of HOLD-era data (five ETH closes, six BTC
+  open-interest rows, three CME closes, three Fear & Greed values; none modelled); from the second batch on, ideas
+  were chosen knowing earlier holdout results (disclosed at each registration); NVT read the second cell of an exact
+  DEV tie; intraday fills one minute earlier than worded; log times written ahead of the clock corrected from commits.
+
+**Next test** (frozen before its data exists: reports/hunt3/prospective_prereg.md): alt-perp carry on fresh data. An
+hourly job (scripts/fetch_cfm.py funding; .github/workflows/cfm-funding.yml, which must be on the default branch to
+run) logs every CFM perp's published funding, index, open interest, margins and top of book. Rule: CARRY's r2_W336_a2
+cell on published funding, fee tier on spot plus derivatives volume, per-coin overnight margin (Nov 6: 26–98%; ZEC
+98%, SOL/SUI/XRP 56–57%); secondary cell STAKE-CARRY (ETH and SOL staked on Coinbase, open to NY since Oct 2025). Read
+once on Feb 1 2027 (Dec 1 – Jan 31) against R2-08's paper book at X1 and X2; pass also needs published funding within
+2 bp a day of the rebuild. Sixty days cannot reach t = 2, so a pass earns a small live sleeve and a longer read.
+Evaluator: scripts/hunt3/carry/forward.py (bias, read, selftest). Second in line: hunt 2's flow-identity ideas on Hyperliquid
+open interest, now logged hourly by the same job (scripts/fetch_hl.py); liquidations have no public feed.
 
 ## Explore v1 (Nov 9): 4,691 variants of the spot ladder; nothing held out of sample
 Goal set by Miles: run 1,000+ variants, play with every assumption, learn from the literature, and find a higher-Sharpe
@@ -1965,7 +2148,7 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
 - Hyperparameters frozen before seeing any results.
 - Weekly-only trend checks were fragile: 7%–26% CAGR depending on the weekday. Fixed with daily checks and averaging across all 7 weekday phases.
 - The signal lab ran 41 retrained versions of R2-08's model (Nov 9).
-- Explore v1 alone ran 4,691 variants of the spot ladder (Nov 9).
+- Explore v1 alone ran 4,691 variants of the spot ladder (Nov 9); Hunt 3 added 258 DEV trials of 66 new models (N = 9,658).
 - About 484 variants in the earlier rounds (incl. the maker, C3 upgrade and scale-2 rounds), 19 books and 146 signal tests
   in the Medallion round, about 2,000 setups in the execution round and 130 in the wick v2 lab, so an improvement
   needs t ≈ 3 to be believable.
@@ -1974,7 +2157,9 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
 
 ## Known gaps
 - Hyperliquid liquidation, open-interest and wallet history isn't free, so the flow-identity ideas (who was
-  liquidated vs who is informed) wait for forward-collected data (edge hunt 2).
+  liquidated vs who is informed) wait for forward-collected data (edge hunt 2). Open interest and funding are now
+  logged hourly with the CFM funding job (scripts/fetch_hl.py, data/hl/oi_log.csv) once it runs from the default
+  branch; liquidations still have no public feed.
 - Coinbase Financial Markets' own commission on perps is unverified; with it, H1 (edge hunt) passes or fails. One authenticated order preview settles it.
 - Coins delisted from Coinbase are missing (survivorship bias favors the alt strategies).
 - Taxes are excluded.
@@ -2000,3 +2185,15 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
 - Take-profit fills assume we get half (θ 0.5) of the volume trading through the take-profit, in research and in the
   paper broker alike. Only live pilot fills can measure the real share. The stakes are small: full fills would add at
   most +0.04 to +0.07 Sharpe (ladder v6).
+- Hunt 3's CFM funding (CARRY, SPIKE, signed funding in the long/short books) is rebuilt from 1-minute candles under the
+  CFTC formula; the published history isn't available offline. A Nov 6 check against book mids gave correlation 0.72
+  (published 1.3 bp a day above the mids). Hourly logging of the published rate settles it.
+- Hunt 3's CARRY assumed 25% overnight short margin and counted only spot volume toward the fee tier; CFM publishes
+  25.7–56.6% by coin (Nov 6), and the tier counts spot plus derivatives volume (audit).
+- Twelve Hunt 3 models read Binance data and one Deribit's DVOL; neither is directly usable live from New York.
+- The 2022–23 and Apr–Nov 2026 holdouts are no longer clean for alt-carry or low-vol follow-ups (both read in Hunt 3).
+- Idle-cash yield is unsettled: Coinbase pays USDC rewards (about 4%) only to Coinbase One members since Dec 15 2025
+  (decrypt.co/351946); whether a New York account and CFM margin qualify is unverified. It decides how a carry book
+  compares with R2-08 (Hunt 3's cash-convention check).
+- Both holdouts have now been read by 66 Hunt 3 models; new ideas should be tested on forward data (the
+  prospective carry test is the template), not on these eras again.
