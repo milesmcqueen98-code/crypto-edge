@@ -79,3 +79,6 @@ Code: scripts/signal_lab/. Trial ledger: reports/signal_lab/screen.csv.
   / 1.70. Representative.
 - 16:27 Final state: verdict no change; report doc, README, findings section and next-test pre-registration done;
   branch signal-lab pushed.
+- 16:31 Matched-selectivity diagnostic (deviation 11): with thresholds reset to R2-08's share of candidates, the check-era
+  results move from -0.80 to -0.21 (features), -0.73 to -0.28 (new data), +0.20 to +0.09 (features + history) and -0.02
+  to +0.25 (history only). Most of the challengers' loss was from arming fewer signals, not from worse ranking.

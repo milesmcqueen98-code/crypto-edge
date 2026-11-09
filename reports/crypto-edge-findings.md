@@ -145,7 +145,7 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
 Goal set by Miles: raise R2-08's out-of-sample Sharpe at $250K by improving what the model knows (features, labels,
 US-accessible data), since the execution ladder is exhausted. Final report: the "Signal Lab: Report" doc
 (https://claude.ai/artifact/69u1BHtZsDwEZNXdRwQUUF). Record: branch signal-lab. reports/signal_lab/prereg.md holds the
-plan and its ten-entry deviation log; reports/signal_lab/README.md holds the results.
+plan and its eleven-entry deviation log; reports/signal_lab/README.md holds the results.
 
 **Protocol**
 - Pre-registered (ed5d42d) before any candidate ran; frozen (00a6992) before any holdout number.
@@ -197,6 +197,9 @@ plan and its ten-entry deviation log; reports/signal_lab/README.md holds the res
   2026). Averaged over seeds, history only gains −0.03 in Apr – Nov 2026 and features + history +0.13. More history
   cuts the seed spread to 0.04. With the bot's own five seeds R2-08 scores 2.42 / 2.63 / 1.60 against the research
   book's 2.36 / 2.57 / 1.70, so the research book is representative.
+- Much of the challengers' loss is selectivity, not ranking: they arm fewer signals than R2-08. With thresholds reset
+  to R2-08's share of candidates (a diagnostic), the Apr – Nov 2026 results move from −0.80 to −0.21 (features), −0.73
+  to −0.28 (new data), +0.20 to +0.09 (features + history) and −0.02 to +0.25 (history only).
 - The feature reversals are not seed luck: averaged over seeds the features model is +0.62 on development and −0.84 in
   Apr – Nov 2026, the new-data model +0.21 and −0.72. Adding the 2021–23 history moves the features model from −0.84 to
   +0.13 there. Splitting the set shows it is not the BTC-regime features in particular: the coin-position half and
@@ -211,7 +214,8 @@ plan and its ten-entry deviation log; reports/signal_lab/README.md holds the res
 - An independent read-only review found no look-ahead and nothing that changes a verdict.
 
 **Next**
-1. Average at least five seed triples per arm in every future model comparison.
+1. Average at least five seed triples per arm in every future model comparison, and read each challenger at R2-08's
+   selectivity as well as at its own.
 2. Next model test: forced-selling features from Coinbase trade prints for every candidate (edge hunt 2's EXH), with
    this lab's pipeline and gates and seed-averaged arms. Pre-registered in reports/signal_lab/prospective_prereg.md
    before any print is fetched. It needs a data job.

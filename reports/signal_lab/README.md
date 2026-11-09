@@ -12,7 +12,7 @@ Final report: the "Signal Lab: Report" doc (https://claude.ai/artifact/69u1BHtZs
 - **Goal (Miles):** raise R2-08's out-of-sample Sharpe at $250K by improving what the model knows. Develop on Jan 2025 -
   Mar 2026 (the selection era), read the other eras once, count every trial, score on the engine-faithful simulator,
   beat R2-08 in every era.
-- **Plan:** prereg.md, committed at ed5d42d before any candidate ran. Its deviation log has ten entries, each written
+- **Plan:** prereg.md, committed at ed5d42d before any candidate ran. Its deviation log has eleven entries, each written
   before the runs it covers.
 - **Pipeline:** scripts/signal_lab/model.py runs the wick lab's own code with a choice of label, feature set, training
   history and threshold. The incumbent spec reproduces R2-08's trade list and daily series exactly.
@@ -65,6 +65,15 @@ Final report: the "Signal Lab: Report" doc (https://claude.ai/artifact/69u1BHtZs
   - only the last 365 days: +0.10 / -1.09 / -0.95;
   - adding 2023: -0.34 / +0.15; adding 2022-23: +0.05 / +0.24; adding 2021-23: +0.39 / -0.02.
   - So a one-year window is too short, and beyond R2-08's growing window there is no dose-response.
+- **Selectivity, not ranking** (dose_match_main.csv, dose_match_early.csv; frozen simulator, registered seeds). Each
+  model's threshold is the 60th percentile of its own training predictions, and the challengers arm fewer signals
+  than R2-08. With each quarter's threshold reset so a model keeps R2-08's share of candidates (a diagnostic, not a
+  tradable rule), development / Apr - Nov 2026 / 2022-23:
+  - RF2: +0.49 / -0.21 / +0.03 (unmatched: +0.68 / -0.80);
+  - RF4: +0.25 / -0.28 / -0.27 (unmatched: +0.26 / -0.73);
+  - RF2H: +0.53 / +0.09 (unmatched: +0.82 / +0.20);
+  - RF0H: +0.54 / +0.25 (unmatched: +0.39 / -0.02).
+  - Most of the challengers' check-era loss came from arming fewer signals. What is left is within the noise.
 - **Seed noise** (dose_seeds_main.csv; five seed triples, frozen simulator):
 
   | Mean (SD across seed triples) | Development | Apr - Nov 2026 |
@@ -108,7 +117,8 @@ Final report: the "Signal Lab: Report" doc (https://claude.ai/artifact/69u1BHtZs
   - The Nasdaq-futures daily bar may close later than assumed. It affects RF4 only, which failed.
 
 ## Next
-1. **Method:** average at least five seed triples per arm in every future model comparison.
+1. **Method:** average at least five seed triples per arm in every future model comparison, and read each challenger
+   at R2-08's selectivity as well as at its own.
 2. **Next model test:** forced-selling features from Coinbase trade prints for every candidate (edge hunt 2's EXH was
    the closest miss as a filter), with this lab's pipeline, gates and seed averaging. It is pre-registered in
    prospective_prereg.md, written before any print is fetched. It needs a data job (candidate lists:
