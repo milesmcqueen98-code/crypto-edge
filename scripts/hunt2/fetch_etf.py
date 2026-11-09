@@ -21,8 +21,8 @@ def main(out_dir, tickers):
         try:
             d = yf.Ticker(t).history(period="max", interval="1d", auto_adjust=False)
             d = d.reset_index()
-            d["date"] = pd.to_datetime(d["Date"]).dt.tz_localize(None).dt.normalize()
-            d = d.rename(columns=str.lower)[["date", "open", "high", "low", "close", "volume"]]
+            d = pd.DataFrame(dict(date=pd.to_datetime(d["Date"]).dt.tz_localize(None).dt.normalize(),
+                                  open=d["Open"], high=d["High"], low=d["Low"], close=d["Close"], volume=d["Volume"]))
             d["ticker"] = t
             px.append(d)
             row.update(first=str(d.date.min().date()) if len(d) else "", rows=len(d))
