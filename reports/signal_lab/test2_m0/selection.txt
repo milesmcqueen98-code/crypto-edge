@@ -1,0 +1,11 @@
+Signal lab 2, selection reading (walk-forward stopped at 2026Q1; selection era only)
+
+ΔSharpe against RF0 with the same seed triple (frozen simulator, S* theta 0.5, $250K): mean, SD across the five triples, range, triples positive; mean Sharpe of the arm and of RF0
+
+== sel
+       triples  d_mean   d_sd  d_min  d_max  positive  sharpe_mean  inc_mean
+spec                                                                        
+RF6          5   0.061  0.143 -0.124  0.241         3        2.457     2.396
+RF6H         5   0.429  0.136  0.194  0.550         5        2.825     2.396
+RF6M         5   0.021  0.153 -0.144  0.270         2        2.417     2.396
+RF6HM        5   0.386  0.121  0.186  0.479         5        2.782     2.396
