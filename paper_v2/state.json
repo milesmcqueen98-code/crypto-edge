@@ -2,72 +2,72 @@
  "positions": {},
  "orders": {
   "NEAR": {
-   "id": "paper-51118de922",
+   "id": "paper-86d09ff6fc",
    "side": "BUY",
-   "px": 3.4457,
+   "px": 3.5263,
    "contracts": 1,
    "kind": "entry",
-   "active_from": "2026-11-09T10:03:00"
+   "active_from": "2026-11-09T20:47:00"
   },
   "XRP": {
-   "id": "paper-ace232dcc1",
+   "id": "paper-d2a2e5c385",
    "side": "BUY",
-   "px": 1.0748,
+   "px": 1.0749,
    "contracts": 4,
    "kind": "entry",
-   "active_from": "2026-11-09T10:03:00"
+   "active_from": "2026-11-09T20:47:00"
+  },
+  "HYPE": {
+   "id": "paper-c6e6f99ca0",
+   "side": "BUY",
+   "px": 73.71000000000001,
+   "contracts": 3,
+   "kind": "entry",
+   "active_from": "2026-11-09T20:47:00"
   },
   "BCH": {
-   "id": "paper-ae1582c906",
+   "id": "paper-19062f0029",
    "side": "BUY",
-   "px": 232.05,
+   "px": 232.65,
    "contracts": 10,
    "kind": "entry",
-   "active_from": "2026-11-09T10:03:00"
+   "active_from": "2026-11-09T20:47:00"
   },
-  "AAVE": {
-   "id": "paper-3badeffca3",
+  "PEPE": {
+   "id": "paper-bbea7bef8b",
    "side": "BUY",
-   "px": 127.33,
-   "contracts": 3,
+   "px": 0.004971,
+   "contracts": 5,
    "kind": "entry",
-   "active_from": "2026-11-09T10:03:00"
+   "active_from": "2026-11-09T20:47:00"
   },
-  "ENA": {
-   "id": "paper-10a0165ca7",
+  "SUI": {
+   "id": "paper-5d5fc2b0c5",
    "side": "BUY",
-   "px": 0.14626,
-   "contracts": 3,
+   "px": 0.8338,
+   "contracts": 6,
    "kind": "entry",
-   "active_from": "2026-11-09T10:03:00"
-  },
-  "ZEC": {
-   "id": "paper-a480ebd9f4",
-   "side": "BUY",
-   "px": 1169.65,
-   "contracts": 2,
-   "kind": "entry",
-   "active_from": "2026-11-09T10:03:00"
+   "active_from": "2026-11-09T20:47:00"
   }
  },
  "equity": 10023.52546,
  "day": "2026-11-09",
  "day_start_equity": 10023.52546,
  "halted_day": null,
- "last_minute": "2026-11-09T10:03:00",
+ "last_minute": "2026-11-09T20:47:00",
  "pending_sig": {
-  "NEAR": 0.006133100172395531,
-  "HYPE": 0.0035530937315168686,
-  "PEPE": 0.007344795554582784,
-  "BCH": 0.005973852872480756,
-  "XRP": 0.0037982908534854327,
-  "SUI": 0.003835594817297975,
-  "XLM": 0.003620609493012642,
-  "AAVE": 0.00580899904955212,
-  "ENA": 0.006882117826661697,
-  "ONDO": 0.0037933505604398564,
-  "ZEC": 0.009009214731115154,
-  "HBAR": 0.004136782727218453,
+  "NEAR": 0.005852094430771944,
+  "HYPE": 0.004902452423977969,
+  "PEPE": 0.007647649669923713,
+  "BCH": 0.005973432940204758,
+  "XRP": 0.004022274771055034,
+  "SUI": 0.0041524697207888294,
+  "XLM": 0.0035005375881039295,
+  "AAVE": 0.00538599232221655,
+  "ENA": 0.005897167409159745,
+  "ONDO": 0.007872146959220203,
+  "ZEC": 0.007606667865675924,
+  "HBAR": 0.003992995750778446,
   "DOGE": 0.002916662953624037
  }
 }

@@ -1,72 +1,72 @@
 {
  "positions": {},
  "orders": {
-  "NEAR": {
-   "id": "paper-5e8466ab5b",
-   "side": "BUY",
-   "px": 3.4471000000000003,
-   "contracts": 1,
-   "kind": "entry",
-   "active_from": "2026-11-09T10:03:00"
-  },
   "ZEC": {
-   "id": "paper-b2fd5ecf58",
+   "id": "paper-06b01fc6b5",
    "side": "BUY",
-   "px": 1171.15,
+   "px": 1139.15,
    "contracts": 2,
    "kind": "entry",
-   "active_from": "2026-11-09T10:03:00"
-  },
-  "AAVE": {
-   "id": "paper-e1ac723d64",
-   "side": "BUY",
-   "px": 127.35000000000001,
-   "contracts": 3,
-   "kind": "entry",
-   "active_from": "2026-11-09T10:03:00"
-  },
-  "ENA": {
-   "id": "paper-0e676cfe4c",
-   "side": "BUY",
-   "px": 0.14632,
-   "contracts": 3,
-   "kind": "entry",
-   "active_from": "2026-11-09T10:03:00"
-  },
-  "BCH": {
-   "id": "paper-06522ff091",
-   "side": "BUY",
-   "px": 232.0,
-   "contracts": 10,
-   "kind": "entry",
-   "active_from": "2026-11-09T10:03:00"
+   "active_from": "2026-11-09T20:47:00"
   },
   "PEPE": {
-   "id": "paper-19dc1f40d5",
+   "id": "paper-d97113fb0d",
    "side": "BUY",
-   "px": 0.004997,
+   "px": 0.004971,
    "contracts": 5,
    "kind": "entry",
-   "active_from": "2026-11-09T10:03:00"
+   "active_from": "2026-11-09T20:47:00"
+  },
+  "BCH": {
+   "id": "paper-22a64305e0",
+   "side": "BUY",
+   "px": 232.70000000000002,
+   "contracts": 10,
+   "kind": "entry",
+   "active_from": "2026-11-09T20:47:00"
+  },
+  "NEAR": {
+   "id": "paper-a257173619",
+   "side": "BUY",
+   "px": 3.5268,
+   "contracts": 1,
+   "kind": "entry",
+   "active_from": "2026-11-09T20:47:00"
+  },
+  "ENA": {
+   "id": "paper-2c643269fd",
+   "side": "BUY",
+   "px": 0.15196,
+   "contracts": 3,
+   "kind": "entry",
+   "active_from": "2026-11-09T20:47:00"
+  },
+  "ONDO": {
+   "id": "paper-a93ee4d3c9",
+   "side": "BUY",
+   "px": 0.3635,
+   "contracts": 6,
+   "kind": "entry",
+   "active_from": "2026-11-09T20:47:00"
   }
  },
  "equity": 10046.034,
  "day": "2026-11-09",
  "day_start_equity": 10046.034,
  "halted_day": null,
- "last_minute": "2026-11-09T10:03:00",
+ "last_minute": "2026-11-09T20:47:00",
  "pending_sig": {
-  "ENA": 0.006950122364175603,
-  "NEAR": 0.00615915672632236,
-  "PEPE": 0.007353076873087423,
-  "AAVE": 0.005866809978380413,
-  "ZEC": 0.008949058592516594,
-  "BCH": 0.005960440181132062,
-  "HYPE": 0.003982474462012575,
-  "SUI": 0.004033910282832638,
-  "ONDO": 0.004263011101863046,
-  "XRP": 0.0037402179747455374,
-  "XLM": 0.0036453490282209048,
+  "ENA": 0.0061625685929645214,
+  "NEAR": 0.0058899310556512,
+  "PEPE": 0.00764777713936849,
+  "AAVE": 0.005434775128480501,
+  "ZEC": 0.007544566007122714,
+  "BCH": 0.0059592875892079,
+  "HYPE": 0.004928016179715994,
+  "SUI": 0.004174314525261945,
+  "ONDO": 0.007951157516458923,
+  "XRP": 0.00395135901277295,
+  "XLM": 0.0035794184695673455,
   "ETH": 0.003532412385971314
  }
 }
