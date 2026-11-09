@@ -1,0 +1,35 @@
+{
+ "idea": "exp",
+ "path": "B",
+ "variant": "with|mq|BTC",
+ "rule": "with",
+ "evset": "mq",
+ "assets": "BTC",
+ "thresholds": {
+  "all|BTC": 5.749008388594429,
+  "all|ETH": 3.5436996521755764,
+  "mq|BTC": 20.430137469375033,
+  "mq|ETH": 7.371295002162763
+ },
+ "threshold_used": {
+  "mq|BTC": 20.430137469375033
+ },
+ "selection": "highest DEV alpha t (h2gates.dev_screen_b, $50K sleeve, 2x) among variants with >= 20 events (all Fridays) or >= 8 (monthly + quarterly); all 12 eligible; no tie",
+ "dev": {
+  "t_alpha": -4.024893362329882,
+  "events": 8,
+  "trades": 8,
+  "n_cfm": 6,
+  "sleeve_sharpe": -3.686414011150141,
+  "book_gain_a08": -0.3216983881956716,
+  "corr": 0.004935763114326,
+  "total_ret_2x_50k": -0.0076942910033351,
+  "total_ret_1x_50k": -0.0002758017516675
+ },
+ "trials": 12,
+ "trial_code_commit": "5ca2d24cb27d0c5210e9859c690dc30c3b6fa56b",
+ "trial_code": "scripts/hunt2/exp/exp.py (dev sel)",
+ "hold_code": "scripts/hunt2/exp/exp_hold.py",
+ "derive_run": "42545078490 (scripts/hunt2/gamma/derive_deribit.py; HOLD Friday file in its artifact hold_out/fridays_hold.csv)",
+ "note": "DEV alpha t of every variant is dominated by the T-bill charge on idle sleeve capital (gates subtract T-bills; the sleeve is idle on ~98% of days): with|mq|BTC raw DEV sleeve mean t = -0.55, alpha t = -4.02."
+}
