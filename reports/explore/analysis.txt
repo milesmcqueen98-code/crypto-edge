@@ -1,0 +1,62 @@
+Variants analysed: 1060 (selection era, blended $250K unless noted)
+Incumbent: blended 2.399, minute 2.383, $1M blended 2.511
+
+Share of variants above the incumbent: 36.8%; no-harm: 14.1%
+Best blended Sharpe: 3.507 (rnd_0306)
+PBO (CSCV, 16 blocks, 12870 splits): 0.310; mean OOS Sharpe of the in-sample best 2.65 vs the median variant's 2.33
+SPA (vol-matched daily difference vs incumbent): T 2.35, p 0.400; StepM rejections at 5%: 0
+OLS of blended Sharpe on the design levels (random variants): R^2 0.61
+
+Top 20 no-harm variants (blended Sharpe at $250K):
+      id  sharpe_b250   lcb  sharpe_m250  sharpe_b1m  ret_b250  maxdd_b250  spa_t  stepm
+rnd_0306        3.507 2.855        3.518       3.035     0.278      -0.019  2.326  False
+rnd_0989        3.489 2.967        3.335       2.737     0.341      -0.016  1.979  False
+rnd_0661        3.448 2.708        2.876       3.152     0.239      -0.015  1.340  False
+rnd_0449        3.424 2.753        3.307       3.317     0.258      -0.028  2.346  False
+rnd_0189        3.406 2.860        3.290       2.870     0.306      -0.018  1.783  False
+rnd_0120        3.363 2.760        3.283       3.536     0.323      -0.032  2.146  False
+rnd_0929        3.238 2.665        3.169       3.115     0.265      -0.020  1.554  False
+rnd_0568        3.233 2.625        3.140       3.109     0.265      -0.020  1.734  False
+rnd_0035        3.199 2.661        3.219       2.700     0.290      -0.018  1.554  False
+rnd_0533        3.196 2.478        2.967       2.644     0.336      -0.043  1.678  False
+rnd_0834        3.185 2.605        3.250       3.566     0.322      -0.032  2.313  False
+rnd_0034        3.152 2.553        3.127       2.999     0.246      -0.023  1.848  False
+rnd_0444        3.149 2.526        3.161       3.052     0.324      -0.042  1.957  False
+rnd_0102        3.128 2.437        2.822       3.281     0.320      -0.035  2.031  False
+rnd_0383        3.119 2.552        3.071       2.887     0.320      -0.025  1.709  False
+rnd_0966        3.100 2.536        3.035       3.257     0.273      -0.022  1.751  False
+rnd_0225        3.078 2.425        2.983       3.245     0.287      -0.032  1.811  False
+rnd_0476        3.076 2.553        3.035       2.806     0.241      -0.018  1.397  False
+rnd_0112        3.073 2.509        2.967       3.117     0.265      -0.024  1.410  False
+rnd_0532        3.063 2.357        2.723       3.042     0.224      -0.027  0.929  False
+
+Largest partial effects (OLS, |t| >= 2):
+                term   coef    se       t
+                H=30 -0.463 0.026 -17.512
+              p4=0.0 -0.453 0.027 -16.567
+             tp=f100 -0.409 0.075  -5.465
+           alpha=3.0 -0.346 0.044  -7.933
+             slots=4 -0.329 0.031 -10.514
+              tp=f30 -0.290 0.070  -4.151
+           alpha=2.0 -0.247 0.041  -6.075
+          tp=d80_100 -0.243 0.071  -3.448
+          tp=d40_100 -0.217 0.074  -2.921
+              tp=f80 -0.213 0.071  -2.990
+         rungset=R46 -0.196 0.058  -3.371
+          tp=d60_100 -0.171 0.071  -2.405
+             slots=6 -0.154 0.033  -4.712
+           alpha=1.5 -0.143 0.042  -3.369
+           tp=d60_80 -0.141 0.068  -2.086
+              p4=0.5 -0.112 0.027  -4.146
+      per_trade=0.15 -0.109 0.031  -3.498
+         cancel=none -0.098 0.022  -4.395
+                H=45  0.090 0.028   3.260
+    rungset=R4568012  0.110 0.054   2.021
+           r_min=1.2  0.115 0.037   3.138
+      rungset=R45710  0.143 0.055   2.605
+           r_min=1.1  0.147 0.037   3.969
+      rungset=R45678  0.148 0.054   2.746
+          r_min=1.05  0.152 0.038   4.044
+adv_floor=10000000.0  0.154 0.027   5.647
+       rungset=R4610  0.162 0.054   3.013
+           r_min=1.3  0.222 0.039   5.741

@@ -1,0 +1,645 @@
+[
+{
+"id": "me_H45",
+"design": {
+"rungset": "R468",
+"alpha": 0.0,
+"p4": 1.0,
+"tp": "f60",
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.0,
+"adv_floor": 0.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"spec": {
+"rungs": {
+"4.0": 1.0,
+"6.0": 1.0,
+"8.0": 1.0
+},
+"tp": [
+[
+0.6,
+1
+]
+],
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.0,
+"adv_floor": 0.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"note": "main effects from the round-1 OLS, added to the incumbent",
+"origin": "main_effects"
+},
+{
+"id": "me_r12",
+"design": {
+"rungset": "R468",
+"alpha": 0.0,
+"p4": 1.0,
+"tp": "f60",
+"H": 60,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 0.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"spec": {
+"rungs": {
+"4.0": 1.0,
+"6.0": 1.0,
+"8.0": 1.0
+},
+"tp": [
+[
+0.6,
+1
+]
+],
+"H": 60,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 0.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"note": "main effects from the round-1 OLS, added to the incumbent",
+"origin": "main_effects"
+},
+{
+"id": "me_r11",
+"design": {
+"rungset": "R468",
+"alpha": 0.0,
+"p4": 1.0,
+"tp": "f60",
+"H": 60,
+"cancel": "parent_tp",
+"r_min": 1.1,
+"adv_floor": 0.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"spec": {
+"rungs": {
+"4.0": 1.0,
+"6.0": 1.0,
+"8.0": 1.0
+},
+"tp": [
+[
+0.6,
+1
+]
+],
+"H": 60,
+"cancel": "parent_tp",
+"r_min": 1.1,
+"adv_floor": 0.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"note": "main effects from the round-1 OLS, added to the incumbent",
+"origin": "main_effects"
+},
+{
+"id": "me_f10",
+"design": {
+"rungset": "R468",
+"alpha": 0.0,
+"p4": 1.0,
+"tp": "f60",
+"H": 60,
+"cancel": "parent_tp",
+"r_min": 1.0,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"spec": {
+"rungs": {
+"4.0": 1.0,
+"6.0": 1.0,
+"8.0": 1.0
+},
+"tp": [
+[
+0.6,
+1
+]
+],
+"H": 60,
+"cancel": "parent_tp",
+"r_min": 1.0,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"note": "main effects from the round-1 OLS, added to the incumbent",
+"origin": "main_effects"
+},
+{
+"id": "me_H45_r12",
+"design": {
+"rungset": "R468",
+"alpha": 0.0,
+"p4": 1.0,
+"tp": "f60",
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 0.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"spec": {
+"rungs": {
+"4.0": 1.0,
+"6.0": 1.0,
+"8.0": 1.0
+},
+"tp": [
+[
+0.6,
+1
+]
+],
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 0.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"note": "main effects from the round-1 OLS, added to the incumbent",
+"origin": "main_effects"
+},
+{
+"id": "me_H45_r11",
+"design": {
+"rungset": "R468",
+"alpha": 0.0,
+"p4": 1.0,
+"tp": "f60",
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.1,
+"adv_floor": 0.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"spec": {
+"rungs": {
+"4.0": 1.0,
+"6.0": 1.0,
+"8.0": 1.0
+},
+"tp": [
+[
+0.6,
+1
+]
+],
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.1,
+"adv_floor": 0.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"note": "main effects from the round-1 OLS, added to the incumbent",
+"origin": "main_effects"
+},
+{
+"id": "me_H45_f10",
+"design": {
+"rungset": "R468",
+"alpha": 0.0,
+"p4": 1.0,
+"tp": "f60",
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.0,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"spec": {
+"rungs": {
+"4.0": 1.0,
+"6.0": 1.0,
+"8.0": 1.0
+},
+"tp": [
+[
+0.6,
+1
+]
+],
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.0,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"note": "main effects from the round-1 OLS, added to the incumbent",
+"origin": "main_effects"
+},
+{
+"id": "me_r12_f10",
+"design": {
+"rungset": "R468",
+"alpha": 0.0,
+"p4": 1.0,
+"tp": "f60",
+"H": 60,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"spec": {
+"rungs": {
+"4.0": 1.0,
+"6.0": 1.0,
+"8.0": 1.0
+},
+"tp": [
+[
+0.6,
+1
+]
+],
+"H": 60,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"note": "main effects from the round-1 OLS, added to the incumbent",
+"origin": "main_effects"
+},
+{
+"id": "me_H45_r12_f10",
+"design": {
+"rungset": "R468",
+"alpha": 0.0,
+"p4": 1.0,
+"tp": "f60",
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"spec": {
+"rungs": {
+"4.0": 1.0,
+"6.0": 1.0,
+"8.0": 1.0
+},
+"tp": [
+[
+0.6,
+1
+]
+],
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"note": "main effects from the round-1 OLS, added to the incumbent",
+"origin": "main_effects"
+},
+{
+"id": "me_H45_r11_f10",
+"design": {
+"rungset": "R468",
+"alpha": 0.0,
+"p4": 1.0,
+"tp": "f60",
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.1,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"spec": {
+"rungs": {
+"4.0": 1.0,
+"6.0": 1.0,
+"8.0": 1.0
+},
+"tp": [
+[
+0.6,
+1
+]
+],
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.1,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"note": "main effects from the round-1 OLS, added to the incumbent",
+"origin": "main_effects"
+},
+{
+"id": "me_H45_r13_f10",
+"design": {
+"rungset": "R468",
+"alpha": 0.0,
+"p4": 1.0,
+"tp": "f60",
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.3,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"spec": {
+"rungs": {
+"4.0": 1.0,
+"6.0": 1.0,
+"8.0": 1.0
+},
+"tp": [
+[
+0.6,
+1
+]
+],
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.3,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"note": "main effects from the round-1 OLS, added to the incumbent",
+"origin": "main_effects"
+},
+{
+"id": "me_H45_r12_f10_R4610",
+"design": {
+"rungset": "R4610",
+"alpha": 0.0,
+"p4": 1.0,
+"tp": "f60",
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"spec": {
+"rungs": {
+"4.0": 1.0,
+"6.0": 1.0,
+"10.0": 1.0
+},
+"tp": [
+[
+0.6,
+1
+]
+],
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"note": "main effects from the round-1 OLS, added to the incumbent",
+"origin": "main_effects"
+},
+{
+"id": "me_H45_r12_f10_R45678",
+"design": {
+"rungset": "R45678",
+"alpha": 0.0,
+"p4": 1.0,
+"tp": "f60",
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"spec": {
+"rungs": {
+"4.0": 1.0,
+"5.0": 1.0,
+"6.0": 1.0,
+"7.0": 1.0,
+"8.0": 1.0
+},
+"tp": [
+[
+0.6,
+1
+]
+],
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"note": "main effects from the round-1 OLS, added to the incumbent",
+"origin": "main_effects"
+},
+{
+"id": "me_H45_r12_f10_R45710",
+"design": {
+"rungset": "R45710",
+"alpha": 0.0,
+"p4": 1.0,
+"tp": "f60",
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"spec": {
+"rungs": {
+"4.0": 1.0,
+"5.0": 1.0,
+"7.0": 1.0,
+"10.0": 1.0
+},
+"tp": [
+[
+0.6,
+1
+]
+],
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"note": "main effects from the round-1 OLS, added to the incumbent",
+"origin": "main_effects"
+},
+{
+"id": "me_H45_r12_f10_a-1",
+"design": {
+"rungset": "R468",
+"alpha": -1.0,
+"p4": 1.0,
+"tp": "f60",
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"spec": {
+"rungs": {
+"4.0": 1.0,
+"6.0": 0.6666666666666666,
+"8.0": 0.5
+},
+"tp": [
+[
+0.6,
+1
+]
+],
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.25,
+"cash_cap": 1.0
+},
+"note": "main effects from the round-1 OLS, added to the incumbent",
+"origin": "main_effects"
+},
+{
+"id": "me_H45_r12_f10_p33",
+"design": {
+"rungset": "R468",
+"alpha": 0.0,
+"p4": 1.0,
+"tp": "f60",
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.33,
+"cash_cap": 1.0
+},
+"spec": {
+"rungs": {
+"4.0": 1.0,
+"6.0": 1.0,
+"8.0": 1.0
+},
+"tp": [
+[
+0.6,
+1
+]
+],
+"H": 45,
+"cancel": "parent_tp",
+"r_min": 1.2,
+"adv_floor": 10000000.0,
+"slots": null,
+"kappa": 0.002,
+"per_trade": 0.33,
+"cash_cap": 1.0
+},
+"note": "main effects from the round-1 OLS, added to the incumbent",
+"origin": "main_effects"
+}
+]
