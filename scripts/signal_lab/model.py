@@ -3,6 +3,7 @@
 
   python scripts/signal_lab/model.py <main|early> screen [SPEC ...]   development screen (selection era only)
   python scripts/signal_lab/model.py <main|early> chain SPEC          full walk-forward + every-minute panel + deep paths
+  other modes: export (this era's candidates with features and labels), dose, doseseeds, noise (deviation log)
 
 The lab's own pipeline (scripts/lab: levels, candidates, features, walk-forward LightGBM by quarter, 60th-percentile
 threshold, per-coin books) is imported, not modified. A spec is a label and a feature set:
@@ -16,8 +17,27 @@ threshold, per-coin books) is imported, not modified. A spec is a label and a fe
             F2  + multi-horizon position and trend regime
             F3  + all of F1, F2 and calendar
             F4  + implied-volatility and macro regime (Deribit DVOL, variance premium, VIX, Nasdaq futures)
+            F6  + forced selling from Coinbase trade prints (signal lab 2, prospective_prereg.md): csv_30, csv_5,
+                sell_share_30, big_sell_share_30, sweep_max_30, joined on (coin, ts) from
+                reports/signal_lab/prints/f6_<era>.parquet (fails if any candidate lacks a row)
 RF0 is the incumbent; its trades must equal reports/wick1m/trades_<era>.parquet.
 The screen scores each spec on the frozen simulator (fsim.book, S*: today's volumes, costs x2, theta 0.5, $250K).
+
+Options (signal lab 2; anywhere after the era; without them every mode behaves as in the first lab):
+  --seeds SET   t1 .. t5 (the five registered triples), u15 (their 15-seed union), triples (doseseeds / noise: the
+                five in turn) or a comma-separated list. Default (7, 11, 23) = t1.
+  --out DIR     where results go (default reports/signal_lab; signal lab 2: reports/signal_lab/test2)
+  --f6 DIR      where f6_<era>.parquet is read (default reports/signal_lab/prints)
+  --hist PATH   the 2021-23 history rows of H specs (default <out>/cand_early.parquet, written by `early export`)
+  --sel         doseseeds and chain: the walk-forward stops at 2026Q1 and only the selection era is scored
+  --armed       chain: also write each spec's every-minute panel with every non-candidate minute armed (sensitivity),
+                under the tag <tag>_armed
+  --tag NAME    appended to every dataset tag this run writes (e.g. SYN for synthetic-feature validation runs)
+Chain tags are <era>_<spec>[_<seed set> if --seeds][_sel if --sel][_<tag> if --tag]. A print spec's chain panel holds
+its own prediction at candidate minutes and its no-prints twin's (RF0 for RF6, RF0H for RF6H) elsewhere, shifted by the
+threshold difference (deviation 1); the twin is fitted with the same seeds, and written only if listed.
+Lock: fitting a print-feature spec beyond the selection era (main after 2026Q1, or early) stops unless
+reports/signal_lab/test2/AUDIT_PASSED exists (created by the orchestrator after the look-ahead audit).
 """
 import gc
 import json
@@ -30,6 +50,32 @@ import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
+sys.path.insert(0, HERE)
+import lab2  # noqa: E402
+
+OPT = {"seeds": None, "out": None, "f6": None, "hist": None, "tag": None, "sel": False, "armed": False}
+
+
+def _options():
+    """Signal lab 2's --options are taken out of sys.argv before the lab reads the era from it."""
+    rest, it = sys.argv[:1], iter(sys.argv[1:])
+    for a in it:
+        if not a.startswith("--"):
+            rest.append(a)
+            continue
+        k = a[2:]
+        if k not in OPT:
+            raise SystemExit(f"unknown option {a}")
+        if isinstance(OPT[k], bool):
+            OPT[k] = True
+        else:
+            OPT[k] = next(it, None)
+            if OPT[k] is None:
+                raise SystemExit(f"{a} needs a value")
+    sys.argv[:] = rest
+
+
+_options()
 BASE = sys.argv[1] if len(sys.argv) > 1 else "main"
 os.environ["LAB_ERA"] = BASE                                 # the lab reads the era at import
 sys.path.insert(0, os.path.join(ROOT, "scripts", "ladder_v5"))
@@ -43,7 +89,7 @@ from edge import wick  # noqa: E402
 import fsim  # noqa: E402
 import sim  # noqa: E402
 
-OUT = os.path.join(ROOT, "reports", "signal_lab")
+OUT = os.path.abspath(OPT["out"]) if OPT["out"] else os.path.join(ROOT, "reports", "signal_lab")
 os.makedirs(OUT, exist_ok=True)
 MAKER_BP, TAKER_BP, HS_BP = 6.0, 12.5, 2.0
 MACRO = ["dvol_btc", "dvol_chg24", "vrp_btc", "vix", "nq_ret1d_bp", "nq_ret5d_bp"]
@@ -51,13 +97,34 @@ MEMORY = ["mkt_net_24h", "mkt_n_24h", "coin_prev_net", "coin_prev_age"]
 FSETS = {"F0": [], "F1": list(core.EXTRA2), "F2": list(core.EXTRA1) + list(core.EXTRA4),
          "F3": list(core.EXTRA1) + list(core.EXTRA2) + list(core.EXTRA3) + list(core.EXTRA4), "F4": list(MACRO),
          "F5": list(MEMORY),
-         "F2a": list(core.EXTRA1), "F2b": list(core.EXTRA4)}    # F2 split (deviation 8): coin position / BTC trend regime
+         "F2a": list(core.EXTRA1), "F2b": list(core.EXTRA4),   # F2 split (deviation 8): coin position / BTC trend regime
+         "F6": list(lab2.F6)}                                  # signal lab 2: print features (joined on demand)
 LABELS = ("R", "S4", "LD", "LS")
 SPECS = [f"{l}{f}" for l in LABELS for f in ("F0", "F1", "F2", "F3", "F4")]            # round 1
-HIST = os.path.join(OUT, "cand_early.parquet")              # round 2: 2021-23 candidates as extra training rows
+HIST = os.path.abspath(OPT["hist"]) if OPT["hist"] else os.path.join(OUT, "cand_early.parquet")   # round 2: 2021-23
 DEV_Q = {"main": ("2025Q1", "2026Q1")}                      # development: walk-forward through Mar 2026 only
 ERA_OF = {"main": ("sel", "chk"), "early": ("early",)}
 CFG = dict(theta=0.5, C=250e3, today=True, cost_mult=2.0)    # S* theta 0.5
+SEED_SETS = lab2.seed_sets(OPT["seeds"]) if OPT["seeds"] else [(7, 11, 23)]
+ITAG = f"_{OPT['tag']}" if OPT["tag"] else ""               # appended to every dataset tag this run writes
+CTAG = ((f"_{lab2.seed_name(SEED_SETS[0])}" if OPT["seeds"] and len(SEED_SETS) == 1 else "")
+        + ("_sel" if OPT["sel"] else "") + ITAG)            # chain tags: <era>_<spec><CTAG>
+
+
+def run_seeds():
+    """The one seed set of a single-model mode (screen, dose, chain)."""
+    if len(SEED_SETS) != 1:
+        raise SystemExit("this mode fits one seed set: pass --seeds t1 .. t5, u15 or a list (not 'triples')")
+    return SEED_SETS[0]
+
+
+def lock_check(names, through):
+    """Before the lab loads: a print-feature spec fitted beyond the selection era needs the audit's lock file (the
+    same check runs again in Lab.fit)."""
+    beyond = BASE != "main" or pd.Period(through, freq="Q") > pd.Period(DEV_Q["main"][1], freq="Q")
+    prints = [n for n in names if split(n)[1] == "F6"]
+    if prints and beyond:
+        lab2.check_lock(f"fitting {', '.join(prints)} ({BASE} era, walk-forward through {through})")
 
 
 def split(name):
@@ -306,10 +373,50 @@ class Lab:
             h["coin_id"] = h.coin.map(codes).astype(np.float32)
             h["episode"] = h.episode + 10_000_000
             self.hist = h.reset_index(drop=True)
+        self._f6, self._hist_f6 = False, False
         print(f"lab ready: {len(self.X):,} candidates, {len(self.ls.coins)} coins ({time.time() - t0:.0f}s)", flush=True)
 
-    def fit(self, name, periods, keep_models=False, seeds=(7, 11, 23)):
+    def use_f6(self):
+        """Join the print features (F6) to this era's candidate rows, as float32; fails if any candidate lacks a row."""
+        if self._f6:
+            return
+        T = lab2.load_f6(BASE, OPT["f6"])
+        F, unused = lab2.join_f6(self.X, T, f"{BASE} candidates")
+        for f in lab2.F6:
+            self.X[f] = F[f]
+        cpl = f"; complete windows {float(T.complete.mean()):.4f} of the table" if "complete" in T else ""
+        print(f"F6 joined from {T.attrs['path']}: {len(self.X):,} candidates, {unused} table rows unused{cpl}; missing "
+              f"share " + ", ".join(f"{f} {float(F[f].isna().mean()):.3f}" for f in lab2.F6), flush=True)
+        self._f6 = True
+
+    def hist_f6(self):
+        """The history rows (the exported 2021-23 candidates) must carry F6, equal to the early table's values."""
+        if self._hist_f6:
+            return
+        miss = [f for f in lab2.F6 if f not in self.hist.columns]
+        if miss:
+            raise SystemExit(f"the history rows ({HIST}) lack the print features {miss}: run "
+                             f"`model.py early export` with the same --out / --f6 once f6_early.parquet exists")
+        T = lab2.load_f6("early", OPT["f6"])
+        F, _ = lab2.join_f6(self.hist, T, "history rows (2021-23 candidates)")
+        a, b = self.hist[lab2.F6].to_numpy(np.float32), F[lab2.F6].to_numpy(np.float32)
+        if not ((a == b) | (np.isnan(a) & np.isnan(b))).all():
+            raise SystemExit(f"the history rows' print features ({HIST}) differ from {T.attrs['path']}: re-export")
+        print(f"history rows carry F6 ({len(self.hist):,} rows, equal to {T.attrs['path']})", flush=True)
+        self._hist_f6 = True
+
+    def fit(self, name, periods, keep_models=False, seeds=None):
+        seeds = tuple(seeds) if seeds is not None else run_seeds()
         l, f, use_hist, window, thr_o, matched = split(name)
+        if use_hist and self.hist is None:
+            raise SystemExit(f"{name}: H specs exist only in the main era with the history rows ({HIST}); in 2022-23 an "
+                             f"H spec is its non-H twin")
+        if f == "F6":
+            if BASE != "main" or periods[-1] > pd.Period(DEV_Q["main"][1], freq="Q"):
+                lab2.check_lock(f"fitting {name} ({BASE} era, walk-forward through {periods[-1]})")
+            self.use_f6()
+            if use_hist:
+                self.hist_f6()
         share = None
         if matched:                                           # R2-08's kept share of candidates, quarter by quarter
             key = (tuple(str(p) for p in periods), tuple(seeds))
@@ -337,13 +444,20 @@ class Lab:
         return feats, pred, thr, models
 
     def export(self):
-        """Every candidate of this era with all features and labels (training rows for the later era's models)."""
-        cols = ["coin", "ts", "episode"] + list(wick.FEATS) + sorted({x for v in FSETS.values() for x in v})
+        """Every candidate of this era with all features and labels (training rows for the later era's models). The
+        print features are added at the end when this era's table exists (signal lab 2: RF6H's history rows)."""
+        cols = ["coin", "ts", "episode"] + list(wick.FEATS) + sorted({x for k, v in FSETS.items() if k != "F6" for x in v})
+        try:
+            self.use_f6()
+            cols += list(lab2.F6)
+        except FileNotFoundError as e:
+            print(f"WARNING: {e}; exported WITHOUT the print features (an H print spec cannot use these rows)", flush=True)
         E = self.X[cols].copy()
         for l in LABELS:
             E[f"y_{l}"] = label_of(l, self.lab, self.sp).to_numpy()
         E.to_parquet(os.path.join(OUT, f"cand_{BASE}.parquet"), index=False)
-        print(f"exported {len(E):,} candidates, {E.coin.nunique()} coins, {E.ts.min()} .. {E.ts.max()}", flush=True)
+        print(f"exported {len(E):,} candidates, {E.coin.nunique()} coins, {E.ts.min()} .. {E.ts.max()} to "
+              f"{os.path.join(OUT, f'cand_{BASE}.parquet')}", flush=True)
 
     def trades(self, pred, thr):
         X, ls, ex = self.X, self.ls, self.ex
@@ -395,6 +509,7 @@ def book_of(tr, tag2, eras):
 
 
 def screen(names):
+    lock_check(names, DEV_Q[BASE][1])
     L = Lab()
     P_inc = fix_scale()
     periods = pd.period_range(*DEV_Q[BASE], freq="Q")
@@ -410,7 +525,7 @@ def screen(names):
         t0 = time.time()
         feats, pred, thr, _ = L.fit(name, periods)
         tr = L.trades(pred, thr)
-        P, d = book_of(tr, f"{BASE}_dev_{name}", ("sel",))
+        P, d = book_of(tr, f"{BASE}_dev_{name}{ITAG}", ("sel",))
         st = fsim.stats(d["sel"], CFG["C"], "sel")
         note = ""
         if name == "RF0":
@@ -424,6 +539,8 @@ def screen(names):
                          ret_yr=st["ret_yr"], maxdd=st["maxdd"], d_sharpe=st["sharpe"] - s_inc["sharpe"],
                          trades=len(tr), share_kept=float((pred[te] > thr[te]).mean()),
                          overlap=float(len(tr.merge(ref[["ts", "coin"]], on=["ts", "coin"])) / max(len(tr), 1)), note=note))
+        if OPT["seeds"]:
+            rows[-1]["seeds"] = lab2.seed_name(run_seeds())
         daily[name] = d["sel"]
         print(f"{name}: Sharpe {st['sharpe']:.3f} ({st['sharpe'] - s_inc['sharpe']:+.3f}), {100 * st['ret_yr']:.2f}%/yr, "
               f"{len(tr)} trades, overlap {rows[-1]['overlap']:.2f} {note} ({time.time() - t0:.0f}s)", flush=True)
@@ -441,6 +558,7 @@ def screen(names):
 def dose(names):
     """Post-freeze information runs (deviation log): each spec over the whole walk-forward, frozen-simulator Sharpe
     per era at S* against the incumbent's. Used for the history dose-response and the shorter-window replication."""
+    lock_check(names, core.WF_Q[1])
     L = Lab()
     P_inc = fix_scale()
     periods = pd.period_range(*core.WF_Q, freq="Q")
@@ -451,7 +569,7 @@ def dose(names):
     for name in names:
         _, pred, thr, _ = L.fit(name, periods)
         tr = L.trades(pred, thr)
-        _, d = book_of(tr, f"{BASE}_dose_{name}", eras)
+        _, d = book_of(tr, f"{BASE}_dose_{name}{ITAG}", eras)
         for e in eras:
             st = fsim.stats(d[e], CFG["C"], e)
             lo, hi = fsim.ERAS[e][1]
@@ -464,23 +582,30 @@ def dose(names):
 
 def doseseeds(names):
     """Seed robustness of a read (deviation log): each spec refit with five seed triples over the whole walk-forward,
-    frozen-simulator Sharpe per era at S*. Information only."""
+    frozen-simulator Sharpe per era at S*. Information only. Signal lab 2: --seeds picks the sets (default: the five
+    triples), --sel stops the walk-forward at 2026Q1 and scores the selection era only."""
+    if OPT["sel"] and BASE != "main":
+        raise SystemExit("--sel: the selection era is in the main era")
+    lock_check(names, DEV_Q[BASE][1] if OPT["sel"] else core.WF_Q[1])
     L = Lab()
     fix_scale()
-    periods = pd.period_range(*core.WF_Q, freq="Q")
-    eras = ERA_OF[BASE]
+    periods = pd.period_range(*(DEV_Q[BASE] if OPT["sel"] else core.WF_Q), freq="Q")
+    eras = ("sel",) if OPT["sel"] else ERA_OF[BASE]
     rows = []
     triples = ((7, 11, 23), (1, 2, 3), (4, 5, 6), (8, 9, 10), (12, 13, 14))
     union = tuple(x for t in triples for x in t)               # one 15-seed model (deviation 7)
     sets = (union,) if os.environ.get("ONLY15") else (triples + ((union,) if os.environ.get("WITH15") else ()))
     if os.environ.get("SEEDS"):                               # one custom ensemble, e.g. the bot's five seeds
         sets = (tuple(int(x) for x in os.environ["SEEDS"].split(",")),)
-    out = os.path.join(OUT, f"dose_seeds{'15' if os.environ.get('ONLY15') else ''}_{BASE}{os.environ.get('TAGOUT', '')}.csv")
+    if OPT["seeds"]:
+        sets = tuple(SEED_SETS)
+    out = os.path.join(OUT, f"dose_seeds{'15' if os.environ.get('ONLY15') else ''}{'_sel' if OPT['sel'] else ''}_{BASE}"
+                            f"{os.environ.get('TAGOUT', '')}.csv")
     for seeds in sets:
         for name in names:
             _, pred, thr, _ = L.fit(name, periods, seeds=seeds)
             tr = L.trades(pred, thr)
-            _, d = book_of(tr, f"{BASE}_dose_seed", eras)
+            _, d = book_of(tr, f"{BASE}_dose_seed{ITAG}", eras)
             for e in eras:
                 st = fsim.stats(d[e], CFG["C"], e)
                 rows.append(dict(spec=name, seeds=str(seeds), n_seeds=len(seeds), era=e, sharpe=st["sharpe"],
@@ -491,15 +616,17 @@ def doseseeds(names):
 
 def noise(names):
     """Seed-noise calibration of the screen (information only; not trials): each spec refit with other seed triples."""
+    lock_check(names, DEV_Q[BASE][1])
     L = Lab()
     fix_scale()
     periods = pd.period_range(*DEV_Q[BASE], freq="Q")
     rows = []
-    for seeds in ((7, 11, 23), (1, 2, 3), (4, 5, 6), (8, 9, 10), (12, 13, 14)):
+    sets = tuple(SEED_SETS) if OPT["seeds"] else ((7, 11, 23), (1, 2, 3), (4, 5, 6), (8, 9, 10), (12, 13, 14))
+    for seeds in sets:
         for name in names:
             _, pred, thr, _ = L.fit(name, periods, seeds=seeds)
             tr = L.trades(pred, thr)
-            _, d = book_of(tr, f"{BASE}_dev_noise", ("sel",))
+            _, d = book_of(tr, f"{BASE}_dev_noise{ITAG}", ("sel",))
             st = fsim.stats(d["sel"], CFG["C"], "sel")
             rows.append(dict(spec=name, seeds=str(seeds), sharpe=st["sharpe"], ret_yr=st["ret_yr"], trades=len(tr)))
             print(rows[-1], flush=True)
@@ -640,28 +767,73 @@ def deep_paths(tag2):
     return len(out), bad
 
 
+def clone_dataset(tag, new):
+    """Another tag over the same dataset (trade list, tranche precompute, deep paths, ADV table): the all-armed
+    sensitivity differs from its spec only in the every-minute panel."""
+    import shutil
+    rt = os.path.join(ROOT, "reports", "ladder_v5", "redteam")
+    for f in (os.path.join(sim.OUT, "trades_{}.parquet"), os.path.join(ROOT, "reports", "wick1m", "pre_hunt_{}.pkl"),
+              os.path.join(fsim.OUT, "deep_paths_{}.pkl"), os.path.join(rt, "adv_{}.parquet")):
+        shutil.copy(f.format(tag), f.format(new))
+
+
+def write_panel(tag2, d, rows_all, coins, pxs, thr_q):
+    out = os.path.join(ROOT, "data", "ladder_v5", f"panel_{tag2}")
+    os.makedirs(out, exist_ok=True)
+    for c in coins:
+        pd.DataFrame({"ts": d.idx[rows_all], "pred": pxs[c]}).to_parquet(os.path.join(out, f"{c}.parquet"), index=False)
+    pd.DataFrame({"thr": list(thr_q.values()), "quarter": list(thr_q)}).to_csv(os.path.join(out, "thr.csv"), index=False)
+    back = pd.read_csv(os.path.join(out, "thr.csv"))                  # what the replay reads (rt_live.inputs)
+    if dict(zip(back.quarter, back.thr)) != lab2.replay_thresholds(thr_q):
+        raise AssertionError(f"{tag2}: thr.csv does not read back as the thresholds the panel rule used")
+    return out
+
+
 def chain(names):
     """Full walk-forward for each listed spec, its trade list and dataset, the every-minute panel and the deep paths,
-    under the tag <era>_<spec> (read by scripts/signal_lab/score.py). The specs share the every-minute features, which
-    are built one quarter at a time (all of them at once does not fit in memory)."""
+    under the tag <era>_<spec><CTAG> (read by scripts/signal_lab/score.py). The specs share the every-minute features,
+    which are built one quarter at a time (all of them at once does not fit in memory).
+    Print specs (F6; signal lab 2, deviation 1): their features exist only at candidate minutes, so their panel holds
+    the spec's own candidate-row prediction there and, at every other minute, the no-prints twin's every-minute
+    prediction shifted by (spec threshold - twin threshold) each quarter (lab2.mixed_panel). The twin is fitted with the
+    same seeds (and gets its own dataset only if listed). --armed also writes <tag>_armed: the same panel with every
+    non-candidate minute armed (lab2.arm_others), over a copy of the same dataset."""
     import shutil
     t0 = time.time()
+    if OPT["sel"] and BASE != "main":
+        raise SystemExit("--sel: the selection era is in the main era")
+    for name in names:
+        if split(name)[5]:
+            raise SystemExit(f"{name}: an M spec is a diagnostic of the frozen simulator, not a chain spec")
+    seeds = run_seeds()
+    lock_check(names, DEV_Q[BASE][1] if OPT["sel"] else core.WF_Q[1])
+    twins = {n: lab2.twin_of(n) for n in names if split(n)[1] == "F6"}
+    order = list(names) + [t for t in dict.fromkeys(twins.values()) if t not in names]   # unlisted twins: aux
     L = Lab()
     fix_scale()
     d, ls = L.data, L.ls
     i0 = d.i_test
-    periods = pd.period_range(*core.WF_Q, freq="Q")
+    periods = pd.period_range(*(DEV_Q[BASE] if OPT["sel"] else core.WF_Q), freq="Q")
     nt = int(os.environ.get("PRED_THREADS", "2"))
     fits = {}
-    for name in names:
-        feats, pred, thr, models = L.fit(name, periods, keep_models=True)
-        tr = L.trades(pred, thr)
-        tag2 = f"{BASE}_{name}"
-        P, _ = book_of(tr, tag2, ())
-        fits[name] = dict(feats=feats, pred=pred, models=models, tag2=tag2, trades=len(tr),
-                          px={c: np.full(d.T - i0, np.nan, np.float32) for c in ls.coins})
-        print(f"{tag2}: {len(tr)} trades, {len(P)} tranche rows ({time.time() - t0:.0f}s)", flush=True)
-    need = sorted({x for F in fits.values() for x in F["feats"] if x not in wick.FEATS})
+    for name in order:
+        feats, pred, thr, models = L.fit(name, periods, keep_models=True, seeds=seeds)
+        if name in twins:                                     # a print spec's panel needs only its thresholds
+            models = {q: (None, t_) for q, (_, t_) in models.items()}
+        F = dict(feats=feats, pred=pred, models=models, aux=name not in names, prints=name in twins)
+        if not F["prints"]:
+            F["px"] = {c: np.full(d.T - i0, np.nan, np.float32) for c in ls.coins}
+        if not F["aux"]:
+            tr = L.trades(pred, thr)
+            tag2 = f"{BASE}_{name}{CTAG}"
+            P, _ = book_of(tr, tag2, ())
+            F.update(tag2=tag2, trades=len(tr))
+            print(f"{tag2}: {len(tr)} trades, {len(P)} tranche rows ({time.time() - t0:.0f}s)", flush=True)
+        else:
+            print(f"{name}{CTAG}: fitted as a print spec's twin (every-minute predictions only) ({time.time() - t0:.0f}s)",
+                  flush=True)
+        fits[name] = F
+    need = sorted({x for F in fits.values() if not F["prints"] for x in F["feats"] if x not in wick.FEATS})
     per_coin = [x for x in need if x not in L.macro]            # macro arrays are shared by all coins
     rows_all = np.arange(i0, d.T, dtype=np.int64)
     ext = {c: extra_all(L, c, rows_all, per_coin) for c in ls.coins} if per_coin else {}
@@ -672,6 +844,8 @@ def chain(names):
     for q in list(dict.fromkeys(q_of)):
         m = q_of == q
         r = rows_all[m]
+        if not any(q in F["models"] for F in fits.values() if not F["prints"]):
+            continue                                              # no model this quarter (--sel): nothing to predict
         pn = wick.panel(cf, vol, ls.coins, d.idx, k=ls.k, lookback=ls.L, keep_rows={c: r for c in ls.coins})
         for c in ls.coins:
             f = pn.pop(c)[list(wick.FEATS)].reset_index(drop=True)
@@ -683,47 +857,150 @@ def chain(names):
                 if x in L.macro:
                     f[x] = L.macro[x][r]
             for F in fits.values():
-                if q in F["models"]:
+                if not F["prints"] and q in F["models"]:
                     ms, _ = F["models"][q]
                     F["px"][c][m] = np.mean([mm.predict(f[F["feats"]], num_threads=nt) for mm in ms], axis=0)
             del f
         del pn
         gc.collect()
         print(f"quarter {q}: every-minute predictions done ({time.time() - t0:.0f}s)", flush=True)
+    for F in fits.values():                                       # boosters are no longer needed
+        F["models"] = {q: (None, t_) for q, (_, t_) in F["models"].items()}
+    gc.collect()
     rt = os.path.join(ROOT, "reports", "ladder_v5", "redteam")
-    for name, F in fits.items():
-        tag2 = F["tag2"]
-        out = os.path.join(ROOT, "data", "ladder_v5", f"panel_{tag2}")
-        os.makedirs(out, exist_ok=True)
-        worst, n_chk, armed = 0.0, 0, {}
-        th = np.full(d.T - i0, np.nan, np.float32)
-        for q, (_, t_) in F["models"].items():
-            th[q_of == q] = t_
+
+    def thr_min(F, replay=True):                                  # each panel minute's quarterly threshold (float64),
+        tq = {q: t_ for q, (_, t_) in F["models"].items()}       # as the replay parses it from thr.csv (or the model's)
+        if replay:
+            tq = lab2.replay_thresholds(tq)
+        return np.array([tq.get(q, np.nan) for q in q_of], np.float64)
+
+    def cands(F, c):                                              # panel positions and candidate-row predictions
+        sub = L.X[(L.X.coin == c) & (L.X.ts >= core.TEST0)]
+        return sub.pos.to_numpy() - i0, F["pred"][sub.index].to_numpy(np.float64)
+
+    def twin_check(F):                                            # an unlisted twin: the lab-1 panel check only
+        worst, n_chk = 0.0, 0
         for c in ls.coins:
-            px = F["px"][c]
-            pd.DataFrame({"ts": d.idx[rows_all], "pred": px}).to_parquet(os.path.join(out, f"{c}.parquet"), index=False)
-            sub = L.X[(L.X.coin == c) & (L.X.ts >= core.TEST0)]          # check against the candidate-row predictions
-            got = px[sub.pos.to_numpy() - i0]
-            want = F["pred"][sub.index].to_numpy()
+            cp, want = cands(F, c)
+            got = F["px"][c][cp]
             ok = np.isfinite(got) & np.isfinite(want)
             if ok.any():
-                worst = max(worst, float(np.abs(got[ok] - want[ok]).max()))
-                n_chk += int(ok.sum())
-            armed[c] = float(np.nanmean(px > th))
-        pd.DataFrame({"thr": [t_ for _, (_, t_) in F["models"].items()], "quarter": list(F["models"])}).to_csv(
-            os.path.join(out, "thr.csv"), index=False)
+                worst, n_chk = max(worst, float(np.abs(got[ok] - want[ok]).max())), n_chk + int(ok.sum())
+        return dict(panel_check=worst, panel_checked=n_chk)
+
+    for name, F in fits.items():
+        if F["aux"]:
+            continue
+        tag2 = F["tag2"]
+        thr_q = {q: t_ for q, (_, t_) in F["models"].items()}
+        info = dict(spec=name, base=BASE, trades=F["trades"])
+        if OPT["seeds"] or OPT["sel"] or OPT["tag"]:
+            info.update(seeds=lab2.seed_name(seeds), periods=f"{periods[0]}..{periods[-1]}")
+        armed_info = None
+        if not F["prints"]:
+            write_panel(tag2, d, rows_all, ls.coins, F["px"], thr_q)
+            worst, n_chk, armed = 0.0, 0, {}
+            th = np.full(d.T - i0, np.nan, np.float32)
+            for q, (_, t_) in F["models"].items():
+                th[q_of == q] = t_
+            for c in ls.coins:
+                px = F["px"][c]
+                sub = L.X[(L.X.coin == c) & (L.X.ts >= core.TEST0)]          # check against the candidate-row predictions
+                got = px[sub.pos.to_numpy() - i0]
+                want = F["pred"][sub.index].to_numpy()
+                ok = np.isfinite(got) & np.isfinite(want)
+                if ok.any():
+                    worst = max(worst, float(np.abs(got[ok] - want[ok]).max()))
+                    n_chk += int(ok.sum())
+                armed[c] = float(np.nanmean(px > th))
+            info.update(panel_check=worst, panel_checked=n_chk)
+            if OPT["armed"]:
+                th64, pa, chk, raised = thr_min(F), {}, [], 0
+                for c in ls.coins:
+                    cp, cpred = cands(F, c)
+                    pa[c], k = lab2.arm_others(F["px"][c], th64, cp)
+                    raised += k
+                    chk.append((c, pa[c], cp))
+                armed_info = (pa, th64, chk, raised)
+        else:
+            tw = fits[twins[name]]
+            th_s, th_t, th_m = thr_min(F), thr_min(tw), thr_min(F, replay=False)
+            pxs, armed, pa, raised = {}, {}, {}, 0
+            tot = dict(panel_check=0.0, panel_checked=0, cand_armed_mismatch=0, cand_nan_mismatch=0,
+                       other_armed_mismatch=0, moved_other=0, moved_cand=0)
+            for c in ls.coins:
+                cp, cpred = cands(F, c)
+                want = cpred > th_m[cp]                                    # the trade list's decision (keep rule)
+                v, mi = lab2.mixed_panel(tw["px"][c], th_t, th_s, cp, cpred, cand_want=want)
+                ck = lab2.check_panel(v, th_s, cp, cpred, want_other=lab2.armed_state(tw["px"][c], th_t),
+                                      cand_want=want)
+                tot["panel_check"] = max(tot["panel_check"], ck["cand_max_abs"])
+                tot["panel_checked"] += ck["cand_checked"]
+                for k in ("cand_armed_mismatch", "cand_nan_mismatch", "other_armed_mismatch"):
+                    tot[k] += ck[k]
+                tot["moved_other"] += mi["moved_other"]
+                tot["moved_cand"] += mi["moved_cand"]
+                pxs[c] = v
+                armed[c] = float(np.mean(lab2.armed_state(v, th_s)))
+                if OPT["armed"]:
+                    pa[c], k = lab2.arm_others(v, th_s, cp)
+                    raised += k
+            write_panel(tag2, d, rows_all, ls.coins, pxs, thr_q)
+            if tot["cand_armed_mismatch"] or tot["cand_nan_mismatch"] or tot["other_armed_mismatch"]:
+                raise AssertionError(f"{tag2}: mixed panel check failed {tot}")
+            info.update(twin=f"{twins[name]}{CTAG}", rule="deviation 1: own prediction at candidate minutes, twin "
+                        "shifted by (spec - twin threshold) elsewhere", **tot,
+                        twin_check=twin_check(tw) if tw["aux"] else "see the twin's own chain json")
+            del pxs
+            if OPT["armed"]:
+                armed_info = (pa, th_s, [(c, pa[c], cands(F, c)[0]) for c in ls.coins], raised)
         n, bad = deep_paths(tag2)
         shutil.copy(os.path.join(rt, f"adv_{BASE}.parquet"), os.path.join(rt, f"adv_{tag2}.parquet"))
-        json.dump(dict(spec=name, base=BASE, trades=F["trades"], panel_check=worst, panel_checked=n_chk, deep=n,
-                       deep_bad=bad, armed_mean=float(np.mean(list(armed.values()))), armed=armed),
-                  open(os.path.join(OUT, f"chain_{tag2}.json"), "w"), indent=1)
-        print(f"{tag2}: panel check on {n_chk:,} candidate minutes, max |every-minute - candidate prediction| "
-              f"{worst:.2e}; armed {np.mean(list(armed.values())):.3f} of minutes; deep paths {n} rungs, {bad} "
-              f"mismatches ({time.time() - t0:.0f}s)", flush=True)
+        info.update(deep=n, deep_bad=bad, armed_mean=float(np.mean(list(armed.values()))), armed=armed)
+        json.dump(info, open(os.path.join(OUT, f"chain_{tag2}.json"), "w"), indent=1)
+        print(f"{tag2}: panel check on {info['panel_checked']:,} candidate minutes, max |every-minute - candidate "
+              f"prediction| {info['panel_check']:.2e}; armed {info['armed_mean']:.3f} of minutes; deep paths {n} rungs, "
+              f"{bad} mismatches ({time.time() - t0:.0f}s)", flush=True)
+        if F["prints"]:
+            print(f"{tag2}: mixed panel (twin {info['twin']}): candidate armed-state mismatches "
+                  f"{info['cand_armed_mismatch']}, non-candidate mismatches with the twin's armed state "
+                  f"{info['other_armed_mismatch']}; values moved one ulp {info['moved_other']} / {info['moved_cand']}; "
+                  f"twin check {info['twin_check']}", flush=True)
+        if armed_info is not None:
+            pa, th64, chk, raised = armed_info
+            tag_a = f"{tag2}_armed"
+            write_panel(tag_a, d, rows_all, ls.coins, pa, thr_q)
+            clone_dataset(tag2, tag_a)
+            other_unarmed, cand_mm, am = 0, 0, {}
+            for c, v, cp in chk:
+                is_c = np.zeros(len(v), bool)
+                is_c[cp] = True
+                a = lab2.armed_state(v, th64)
+                other_unarmed += int((~a & ~is_c & np.isfinite(th64)).sum())
+                base_v = F["px"][c] if not F["prints"] else None
+                if base_v is not None:
+                    cand_mm += int((a[cp] != lab2.armed_state(base_v[cp], th64[cp])).sum())
+                am[c] = float(np.mean(a))
+            if other_unarmed:
+                raise AssertionError(f"{tag_a}: {other_unarmed} non-candidate minutes are not armed")
+            ia = dict(spec=name, base=BASE, of=tag2, rule="every non-candidate minute armed (deviation 1 sensitivity); "
+                      "values not above the threshold raised to the smallest float32 above it", raised=raised,
+                      other_unarmed=other_unarmed, armed_mean=float(np.mean(list(am.values()))), armed=am)
+            if not F["prints"]:
+                ia["cand_armed_changed"] = cand_mm
+            json.dump(ia, open(os.path.join(OUT, f"chain_{tag_a}.json"), "w"), indent=1)
+            print(f"{tag_a}: {raised:,} non-candidate minutes raised to armed; armed {ia['armed_mean']:.3f} of minutes; "
+                  f"dataset cloned from {tag2} ({time.time() - t0:.0f}s)", flush=True)
+            del pa
 
 
 if __name__ == "__main__":
     mode = sys.argv[2]
+    if OPT["sel"] and mode not in ("doseseeds", "chain"):
+        raise SystemExit("--sel applies to doseseeds and chain (screen and noise are selection-era only already)")
+    if OPT["armed"] and mode != "chain":
+        raise SystemExit("--armed applies to chain")
     if mode == "screen":
         screen(sys.argv[3:] or SPECS)
     elif mode == "chain":
@@ -736,3 +1013,5 @@ if __name__ == "__main__":
         dose(sys.argv[3:])
     elif mode == "doseseeds":
         doseseeds(sys.argv[3:])
+    else:
+        raise SystemExit(f"unknown mode {mode}")

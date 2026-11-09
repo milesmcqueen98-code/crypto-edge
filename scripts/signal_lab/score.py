@@ -10,6 +10,17 @@ The engine-faithful book is ladder v6's frozen replay (scripts/ladder_v6x/frozen
 bids hold cash, 1-second blend. A finalist's dataset lives under the tag <era tag>_<spec> (built by model.py chain).
 Each cell is stored with the remainder's market exit priced two ways: "model" (the same rule for every book; primary)
 and "print" (R2-08's own fills on Coinbase prints, any other fill on the model; information).
+
+Signal lab 2 (prospective_prereg.md, deviation 1): --t2 switches to reports/signal_lab/test2/ (config.json, cells/,
+outputs), so nothing of the first lab is read or overwritten. Incumbent RF0 = R2-08 rebuilt by the lab's pipeline as one
+15-seed model; candidates RF6H and RF6 (Holm across the two; hand scores from deviation 1); same gates and scorecard.
+Datasets: tag <era>_<spec><suffix> (default suffix _u15, from model.py chain --seeds u15); in 2022-23 RF6H is RF6.
+Sensitivity books: <spec>_armed (chain --armed: every non-candidate minute armed; S_0.5 only) and the configuration
+"frozen" (the frozen simulator at S* theta 0.5, $250K, which has no cash rule).
+  python scripts/signal_lab/score.py cells BOOK [CFG ...] [--eras ...] --t2 [--suffix S] [--out DIR]
+  python scripts/signal_lab/score.py report --t2
+Lock: with --t2, cells outside the selection era and the report stop unless reports/signal_lab/test2/AUDIT_PASSED
+exists (created by the orchestrator after the look-ahead audit).
 """
 import json
 import math
@@ -23,7 +34,9 @@ from scipy.stats import norm
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, os.path.join(ROOT, "scripts", "ladder_v6x"))
+sys.path.insert(0, HERE)
 import lsim  # noqa: E402
+import lab2  # noqa: E402
 from edge import book as edge_book  # noqa: E402
 
 fsim, RL = lsim.fsim, lsim.RL
@@ -34,6 +47,31 @@ CFGS = ("S_0.5", "S_0.25", "cap_1M", "base_0.5")
 ERAS = ("sel", "chk", "early")
 INC = "R2-08"
 EULER = 0.5772156649
+T2 = None                                                  # signal lab 2's configuration (--t2)
+SUFFIX = ""
+
+
+def _options():
+    """--t2 [--suffix S] [--out DIR] [--config PATH]: signal lab 2's configuration and folders."""
+    global OUT, CELLS, INC, T2, SUFFIX
+    argv, opt, it = sys.argv[:1], {}, iter(sys.argv[1:])
+    for a in it:
+        if a == "--t2":
+            opt["t2"] = True
+        elif a in ("--suffix", "--out", "--config"):
+            opt[a[2:]] = next(it)
+        else:
+            argv.append(a)
+    sys.argv[:] = argv
+    if not opt.get("t2"):
+        if len(opt):
+            raise SystemExit("--suffix / --out / --config go with --t2")
+        return
+    T2 = json.load(open(opt.get("config") or os.path.join(lab2.T2, "config.json")))
+    OUT = os.path.abspath(opt.get("out") or lab2.T2)
+    CELLS = os.path.join(OUT, "cells")
+    INC = T2["incumbent"]
+    SUFFIX = opt["suffix"] if "suffix" in opt else f"_{T2['seeds']}"
 
 
 # ------------------------------------------------------------------------------------------------ helpers
@@ -155,7 +193,12 @@ def screenstats():
 # ------------------------------------------------------------------------------------------------ binding cells
 def twin(name, era):
     """The book whose dataset a spec uses in an era: an H spec runs without H in 2022-23 (no earlier history exists),
-    so RF0H is R2-08 there and RF2H is RF2."""
+    so RF0H is R2-08 there and RF2H is RF2. Signal lab 2: RF6H is RF6 there (and RF6H_armed is RF6_armed)."""
+    if T2 is not None:
+        spec, arm = (name[:-6], "_armed") if name.endswith("_armed") else (name, "")
+        if fsim.ERAS[era][0] == "early" and spec.endswith("H"):
+            return spec[:-1] + arm
+        return name
     if fsim.ERAS[era][0] == "early" and name.endswith("H"):
         return INC if name == "RF0H" else name[:-1]
     return name
@@ -164,6 +207,11 @@ def twin(name, era):
 def tag_of(name, era):
     base = fsim.ERAS[era][0]
     name = twin(name, era)
+    if T2 is not None:                                     # every book of signal lab 2 is built by model.py chain
+        spec, arm = (name[:-6], "_armed") if name.endswith("_armed") else (name, "")
+        t2 = f"{base}_{spec}{SUFFIX}{arm}"
+        sim.PERIODS[t2] = sim.PERIODS[base]
+        return t2
     if name == INC:
         return base
     t2 = f"{base}_{name}"
@@ -171,7 +219,17 @@ def tag_of(name, era):
     return t2
 
 
+def frozen_cell(name, era):
+    """Signal lab 2's sensitivity: the frozen simulator, which has no cash rule (S* theta 0.5, $250K; fsim.book on the
+    book's own dataset, today's volumes with R2-08's per-coin factors as in every cell)."""
+    P = fsim.load(tag_of(name, era))
+    d = fsim.book(P, era, theta=0.5, C=250e3, today=True, cost_mult=2.0)[0]
+    return pd.DataFrame({"model": d}), {}
+
+
 def cell(name, cfg, era):
+    if cfg == "frozen":
+        return frozen_cell(name, era)
     kw = lsim.CONFIGS[cfg]
     A = RL.era_arrays(tag_of(name, era), era, kw["theta"], kw["C"], kw["today"])
     d, meta = {}, {}
@@ -189,6 +247,12 @@ def cell(name, cfg, era):
 
 
 def cells(name, cfgs, eras):
+    if T2 is not None:
+        if any(e != "sel" for e in eras):
+            lab2.check_lock(f"cells of {name} in {', '.join(e for e in eras if e != 'sel')}")
+        bad = [c for c in cfgs if c not in lsim.CONFIGS and c != "frozen"]
+        if bad:
+            raise SystemExit(f"unknown configurations {bad}")
     lsim.ensure_frozen()
     fix_scale()
     os.makedirs(CELLS, exist_ok=True)
@@ -204,8 +268,9 @@ def cells(name, cfgs, eras):
                 continue
             out, meta = cell(name, cfg, era)
             out.to_parquet(os.path.join(CELLS, f"{name}__{cfg}__{era}.parquet"))
-            st = fsim.stats(out["model"], lsim.CONFIGS[cfg]["C"], era)
-            sp = fsim.stats(out["print"], lsim.CONFIGS[cfg]["C"], era)
+            C = lsim.CONFIGS[cfg]["C"] if cfg != "frozen" else 250e3
+            st = fsim.stats(out["model"], C, era)
+            sp = fsim.stats(out["print"], C, era) if "print" in out else st
             row = dict(book=name, cfg=cfg, era=era, sharpe_model=st["sharpe"], ret_model=st["ret_yr"],
                        sharpe_print=sp["sharpe"], ret_print=sp["ret_yr"], **meta)
             pd.DataFrame([row]).to_csv(mp, mode="a", header=not os.path.exists(mp), index=False)
@@ -219,7 +284,9 @@ def load_cell(name, cfg, era, cost="model"):
 
 
 def report():
-    F = json.load(open(os.path.join(OUT, "finalists.json")))
+    if T2 is not None:
+        lab2.check_lock("the binding report")
+    F = T2 if T2 is not None else json.load(open(os.path.join(OUT, "finalists.json")))
     fins = [f["spec"] for f in F["finalists"]]
     rows, tests, score = [], [], []
     pvals = {}
@@ -257,6 +324,10 @@ def report():
         run = max(run, min(1.0, (len(order) - i) * pvals[f]))
         holm[f] = run
     lines = ["Signal lab: binding test on the engine-faithful simulator (model-priced exits unless stated)", ""]
+    if T2 is not None:
+        lines = [f"Signal lab 2: binding test on the engine-faithful simulator (model-priced exits unless stated); "
+                 f"incumbent {INC} = R2-08 rebuilt by the lab as one 15-seed model; datasets <era>_<spec>{SUFFIX}; Holm "
+                 f"across {', '.join(fins)}", ""]
     M = T[T.cost == "model"]
     for f in fins:
         m = M[M.spec == f]
@@ -301,13 +372,45 @@ def report():
     Sc = pd.DataFrame(score)
     Sc.to_csv(os.path.join(OUT, "holdout_scorecard.csv"), index=False)
     lines += ["Scorecard:", Sc.round(1).to_string(index=False)]
+    if T2 is not None:
+        lines += [""] + sensitivity(fins)
     txt = "\n".join(lines) + "\n"
     open(os.path.join(OUT, "holdout.txt"), "w").write(txt)
     print(txt)
 
 
+def sensitivity(fins):
+    """Signal lab 2 (deviation 1): the binding test's ΔSharpe (S* theta 0.5, $250K, model-priced exits) beside the same
+    replay with every non-candidate minute armed (every book armed, like for like; and the candidate armed against the
+    incumbent as built) and the frozen simulator (no cash rule)."""
+    C = lsim.CONFIGS["S_0.5"]["C"]
+    sh = lambda b, cfg, e: fsim.stats(load_cell(b, cfg, e), C, e)["sharpe"]  # noqa: E731
+    rows = []
+    for f in fins:
+        for e in ERAS:
+            rows.append(dict(spec=f, era=e, binding=sh(f, "S_0.5", e) - sh(INC, "S_0.5", e),
+                             armed_both=sh(f"{f}_armed", "S_0.5", e) - sh(f"{INC}_armed", "S_0.5", e),
+                             armed_cand_only=sh(f"{f}_armed", "S_0.5", e) - sh(INC, "S_0.5", e),
+                             frozen=sh(f, "frozen", e) - sh(INC, "frozen", e),
+                             cash_effect_cand=sh(f"{f}_armed", "S_0.5", e) - sh(f, "S_0.5", e),
+                             cash_effect_inc=sh(f"{INC}_armed", "S_0.5", e) - sh(INC, "S_0.5", e)))
+    S = pd.DataFrame(rows)
+    S.to_csv(os.path.join(OUT, "sensitivity.csv"), index=False)
+    lines = ["Sensitivity (deviation 1; ΔSharpe against the incumbent, S* theta 0.5, $250K, model-priced exits):",
+             "  binding = the binding cell; armed_both = every non-candidate minute armed in both books; armed_cand_only ="
+             " the candidate armed, the incumbent as built; frozen = the frozen simulator (no cash rule);",
+             "  cash_effect_* = the armed book's Sharpe minus the book's own."]
+    for f in fins:
+        lines += [f"== {f}", S[S.spec == f].set_index("era").drop(columns="spec").T.reindex(columns=list(ERAS))
+                  .round(3).to_string()]
+    return lines
+
+
 if __name__ == "__main__":
+    _options()
     mode = sys.argv[1]
+    if T2 is not None and mode == "screenstats":
+        raise SystemExit("screenstats belongs to the first lab")
     if mode == "screenstats":
         screenstats()
     elif mode == "cells":

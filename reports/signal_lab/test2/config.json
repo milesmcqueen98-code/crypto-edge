@@ -1,0 +1,9 @@
+{
+ "note": "Signal lab 2 (reports/signal_lab/prospective_prereg.md, deviation 1): the binding test's configuration for scripts/signal_lab/score.py --t2. Incumbent RF0 = R2-08 rebuilt by the lab's pipeline as one 15-seed model (like for like, not the frozen R2-08 dataset). Candidates RF6H (primary) and RF6 (single change); Holm across the two. Hand scores (mechanism /10, implementation /5) as assigned in deviation 1. Model-priced exits are primary. Gates and scorecard as in reports/signal_lab/prereg.md.",
+ "seeds": "u15",
+ "incumbent": "RF0",
+ "finalists": [
+  {"spec": "RF6H", "rule": "primary: R2-08's label and 23 features + F6, with the 2021-23 history in the main era", "role": "candidate", "hand": [6, 2]},
+  {"spec": "RF6", "rule": "single change: R2-08's label and 23 features + F6", "role": "candidate", "hand": [6, 3]}
+ ]
+}
