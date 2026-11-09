@@ -1,0 +1,1 @@
+Deribit: every Friday 08:00 UTC (monthly = last Friday, quarterly = last Friday of Mar/Jun/Sep/Dec); CME BTC futures: last Friday of the month, final settlement on CF BRR at 4:00 pm London; US equity options (IBIT from 2024-11-19): third Friday, 4:00 pm ET. Computed from the exchanges' published rules, not fetched; holiday shifts are not applied.
