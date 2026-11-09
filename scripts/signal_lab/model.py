@@ -275,7 +275,7 @@ class Lab:
             self.hist = h.reset_index(drop=True)
         print(f"lab ready: {len(self.X):,} candidates, {len(self.ls.coins)} coins ({time.time() - t0:.0f}s)", flush=True)
 
-    def fit(self, name, periods, keep_models=False):
+    def fit(self, name, periods, keep_models=False, seeds=(7, 11, 23)):
         l, f, use_hist = split(name)
         feats = list(wick.FEATS) + FSETS[f]
         y = label_of(l, self.lab, self.sp)
@@ -285,7 +285,7 @@ class Lab:
             okh = hy.notna().to_numpy()
             hist = (self.hist[okh], hy.to_numpy()[okh])
         pred, thr, models = wf(self.X, y, feats, periods, thr_q=self.ai_d.get("thr_q", 0.5), keep_models=keep_models,
-                               hist=hist)
+                               hist=hist, seeds=seeds)
         return feats, pred, thr, models
 
     def export(self):
@@ -388,6 +388,23 @@ def screen(names):
         dp = os.path.join(OUT, f"screen_daily_{'_'.join(names)[:40]}.parquet")
         D.to_parquet(dp)
     pd.DataFrame({"incumbent": inc}).to_parquet(os.path.join(OUT, "screen_daily_incumbent.parquet"))
+
+
+def noise(names):
+    """Seed-noise calibration of the screen (information only; not trials): each spec refit with other seed triples."""
+    L = Lab()
+    fix_scale()
+    periods = pd.period_range(*DEV_Q[BASE], freq="Q")
+    rows = []
+    for seeds in ((7, 11, 23), (1, 2, 3), (4, 5, 6), (8, 9, 10), (12, 13, 14)):
+        for name in names:
+            _, pred, thr, _ = L.fit(name, periods, seeds=seeds)
+            tr = L.trades(pred, thr)
+            _, d = book_of(tr, f"{BASE}_dev_noise", ("sel",))
+            st = fsim.stats(d["sel"], CFG["C"], "sel")
+            rows.append(dict(spec=name, seeds=str(seeds), sharpe=st["sharpe"], ret_yr=st["ret_yr"], trades=len(tr)))
+            print(rows[-1], flush=True)
+            pd.DataFrame(rows).to_csv(os.path.join(OUT, "seed_noise.csv"), index=False)
 
 
 # ------------------------------------------------------------------------------------------------ chain (finalists)
@@ -583,3 +600,5 @@ if __name__ == "__main__":
         chain(sys.argv[3])
     elif mode == "export":
         Lab().export()
+    elif mode == "noise":
+        noise(sys.argv[3:])

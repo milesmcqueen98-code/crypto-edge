@@ -126,3 +126,28 @@ unread.
      overfits (explore v1). Included if different from finalists 1 and 2.
    - "Best" is now the highest screen Sharpe among all non-H trials of rounds 1-2 (21 trials). N = 25 with the H specs.
    - **Not run:** a Bitstamp-Coinbase premium feature. The Bitstamp history starts in 2024, so 2022-23 could not be read.
+2. **Round 3 and the final finalist rules (Nov 9 2026, 14:48 ET).** Written after rounds 1-2 (25 trials, selection era
+   only) and before round 3 or any holdout number.
+   - **What rounds 1-2 showed** (screen ΔSharpe against the incumbent's 2.363):
+     - Labels, base features: S4 -0.11, LD -0.27, LS -1.89. The label mismatch is not a handicap on this era.
+     - Feature sets, R label: F1 +0.02, F2 +0.68, F3 -0.01, F4 +0.26, F5 -0.10. F2 is the best set under all four labels.
+     - More history (H) helped under every label: R +0.39, S4 +0.54, LD +0.28, LS +0.36 against the same spec without it.
+   - **Round 3 (3 trials):** RF2H, S4F2H and RF4H, the two best labels under H with the best feature set, and the
+     new-data set with H. N = 28.
+   - **How an H spec is judged in 2022-23:** no earlier history exists there, so the spec runs without H in that era.
+     A spec that is only H (RF0H, S4F0H) equals its non-H twin there, so it cannot gain in 2022-23.
+   - **Finalists (frozen at the next commit, before any holdout number):**
+     1. **Best:** the highest screen Sharpe among the non-H trials (unchanged rule).
+     2. **Best label-only:** none. No label-only spec beat the incumbent on the screen.
+     3. **Main effects:** R with F2, the same spec as Best on the round-1 grid.
+     4. **New data:** RF4, the single-change test of the new data (DVOL, VIX, Nasdaq futures). LDF4 scored 0.006 higher
+        on the screen; RF4 is chosen because it changes one thing.
+     5. **Best with history:** the highest screen Sharpe among all H trials (rounds 2-3). Read in all three eras under
+        the rule above.
+     6. **History only:** RF0H, the single-change test of more history. Information only; it cannot pass gate 1.
+   - Holm runs across the finalists that can pass (1, 4 and 5).
+   - **Failed on development, and why:**
+     - S4 and LD: R2-08's per-contract costs were not the handicap. The ladder payoff adds heavy-tailed noise to the
+       target.
+     - LS: dividing by sigma down-weights the high-sigma signals, where the profit is.
+     - F5: outcome memory added nothing beyond the existing return and volatility features.
