@@ -41,3 +41,12 @@ print fetcher).
 - 18:42 Deviation 2 logged before the diagnostic reported: gate result and the data agent's choices accepted; the rule
   that picks the table (smallest margin among 0 s, 5 s, 60 s with under 0.5% of candidates leaking in each era); the
   information readings on the other margins.
+- 18:55 Selection reading on the 0 s table done (run agent; test2_m0/selection.txt; frozen simulator, five seed
+  triples, walk-forward stopped at 2026Q1). ΔSharpe against R2-08 with the same seeds, mean (SD), triples positive:
+  RF6 +0.06 (0.14), 3 of 5; RF6H +0.43 (0.14), 5 of 5; at R2-08's selectivity RF6M +0.02, 2 of 5; RF6HM +0.39, 5 of 5.
+  R2-08's five triples reproduce the first lab's exactly (mean 2.396, SD 0.130). Every candidate found its feature
+  row; 24 main and 211 history rows have a missing feature.
+  - Against the no-prints twins (first lab's dose_seeds_main.csv): the prints add +0.06 to R2-08 (SD 0.14) and +0.06
+    to the history model (RF6H against RF0H: SD 0.03, 5 of 5). Most of RF6H's +0.43 is the added history (+0.37),
+    which did not carry out of sample in the first lab.
+  - This table's windows end at the candidate minute, so the reading stands only if the boundary diagnostic clears it.
