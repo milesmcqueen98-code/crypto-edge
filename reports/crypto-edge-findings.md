@@ -1,8 +1,17 @@
-# Crypto edge: findings and live rules (updated Nov 9, 2026, sizing lab; edge hunt 2; ladder v6 sizing; Gemini venue test)
+# Crypto edge: findings and live rules (updated Nov 9, 2026, explore v1; sizing lab; edge hunt 2; ladder v6 sizing; Gemini venue test)
 
 Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly signals, paper-trading bot)
 
 ## Status at a glance
+- **Explore v1 (Nov 9): 4,691 variants of the spot ladder, every assumption varied; nothing held out of sample, so the
+  bot and both paper books stay as they are (section below).**
+  - Tuned on Jan 2025 – Mar 2026, the best variant reached Sharpe 4.03 against the incumbent's 2.40. Read once out of
+    sample, it made 0.03 (Apr – Nov 2026) and 1.70 (2022–23); the incumbent made 2.96 and 2.27.
+  - All 7 finalists failed (21–53 /100, Holm p 1.0). That includes the cleanest single idea, a 55 bp sigma floor
+    (−1.31 / −0.60): low-sigma signals lost only in the tuning era.
+  - Post hoc, the incumbent beat 94% / 91% of all variants out of sample. Only more depth (more or deeper rungs) beat it
+    in all three eras, by at most +0.18. Two deeper ladders are pre-registered for a forward read on Nov 2026 – Mar
+    2027 data.
 - **Sizing lab (Nov 9): no durable sizing edge; both paper books keep flat sizing (section below).**
   - Nine pre-registered candidates in three families: calendar (day of week, Sunday 4–7 pm ET, CPI / FOMC days), R2-08's
     predicted edge (halves, terciles, quintiles) and guards (BTC still falling, coins filling at once, vol regime).
@@ -116,6 +125,85 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   (section below).
 - **Maker round (Nov 6): rejected.** Two-sided quoting at the touch loses 0.7–0.9 bp per dollar before fees in all 36 setups.
 - **C3 upgrade round (Nov 6):** turnover cuts tie on Sharpe; C3 unchanged, still a paper-trade candidate.
+
+## Explore v1 (Nov 9): 4,691 variants of the spot ladder; nothing held out of sample
+Goal set by Miles: run 1,000+ variants, play with every assumption, learn from the literature, and find a higher-Sharpe
+model. Final report: the "Explore v1: Search Report" doc (https://claude.ai/artifact/4xNUYDdWCrBEfdh6LJ1Mbz). Record:
+branch explore/v1. reports/explore/prereg.md holds the plan and its deviation log; reports/explore/README.md holds the
+results.
+
+**Protocol**
+- Pre-registered (f6d5512) before any variant ran. The search used the selection era only (Jan 2025 – Mar 2026).
+  Finalists were frozen at 0970362, then the check era (Apr – Nov 5 2026) and 2022–23 were read once (6044004).
+- **Simulator:** xsim, a generalized wick v4 rungs.py.
+  - Spot-only capacity, θ 0.5, the model's costs.
+  - The live-like blend of the minute and instant books (wick v4's latency shares).
+  - Parity with rungs.py: 2e-17.
+  - It does not charge resting bids for the cash they hold.
+- **Assumptions varied:**
+  - rung sets from 4 to 12σ, depth weights, the parent's weight;
+  - take-profit level, by depth or as scale-out ladders;
+  - hold 30–60 minutes; when deeper bids die;
+  - AI strictness, ADV floor, a σ floor, open-parent limit, ADV cap, size, cash cap;
+  - the literature scan's expressible ideas (reports/explore/literature.md).
+- **Rounds:** 1,060 (one-at-a-time and random), 444 (neighbours of the top 20), 3,157 (new assumptions, pruned random,
+  family searches), 30 (literature).
+- **Pass:** blended ΔSharpe ≥ +0.20 at $250K in every era; ≥ 0 at $1M, in the minute book and at θ 0.25; drawdowns and
+  worst day ≤ 1.1× the incumbent's; no losing year; pooled holdout event-cluster p ≤ 0.05 after Holm.
+
+**Tuning era:** 68% of the variants beat the incumbent, and the best reached 4.03 against 2.40.
+- SPA p 0.067; StepM: no variant significantly better; deflated Sharpe of the improvement 0.02–0.24 (N = 4,691). All
+  of these were right.
+- PBO 0.23 and CSCV retention of 35–57% were too hopeful: both halves of a split share one era's regime.
+
+**Holdout** (blended ΔSharpe at $250K, check / 2022–23; score /100):
+
+| Finalist | Check | 2022–23 | Score |
+|---|---|---|---|
+| Best geometry: 4/5/6/8/10/12σ, weights rising with depth | +0.00 | +0.41 | 53.0 |
+| Best single change: σ ≥ 55 bp | −1.31 | −0.60 | 28.3 |
+| Best exits: take-profits 0.3/0.6/1.0 (1:2:1), 45-minute hold, deeper bids 5 minutes | −1.12 | +0.09 | 27.0 |
+| Robust: Best's core with scale-out take-profits | −2.38 | −0.95 | 23.3 |
+| Ensemble: the top 10, all variations of Best's core | −2.72 | −0.78 | 22.3 |
+| Best: 11 knobs (4/6/9/12σ, take-profit 0.4 / 1.0, 45 minutes, strictness 1.2, σ ≥ 40 bp, …) | −2.92 | −0.57 | 22.0 |
+| Best filters: σ ≥ 55 bp, strictness 1.1, ADV floor, slot limit, larger size and cap | −1.69 | −0.76 | 21.0 |
+
+- All are rejected. Every Holm p is 1.0; Best geometry's raw p is 0.17.
+- The σ-floor cells and the 10σ ladders match the legacy simulator to 1e-17 in all three eras.
+
+**Why** (post hoc, reports/explore/posthoc_attr.txt):
+- **σ floor:** σ < 55 bp signals lost 10 bp per dollar in the tuning era but made 28 and 31 bp out of sample. They
+  carried 45% and 25% of the incumbent's holdout profit. Higher σ earned more per dollar in every era, but cutting the
+  rest threw away profitable trades. The check era was also calmer (median σ 44 bp vs 56).
+- **Strictness:** signals at 1.1–1.2× the threshold made −0.5 bp in-sample, then +25 and +33 bp. Same as the sizing
+  lab's B.
+- **Deeper-bid timeouts:** fills after 5 minutes made 26 bp in-sample, then 35–71 bp.
+- **Best:** reverting its take-profit, hold or σ floor alone lifts its check-era Sharpe from 0.03 to about 1.0.
+
+**Every variant on the holdout** (post hoc, reports/explore/posthoc_panel.txt):
+- In-sample rank did not carry: Spearman −0.05 (check) and +0.20 (2022–23).
+- The incumbent beat 94% and 91% of the variants.
+- 79 variants (1.7%) beat it in all three eras, by at most +0.18. Most add depth:
+  - 4/5/7/10σ: +0.14 / +0.26 / +0.14;
+  - 4/5/6/8/10/12σ: +0.21 / +0.10 / +0.38;
+  - W2: +0.05 / +0.16 / +0.24;
+  - deeper bids resting the full hour: +0.14 / +0.10 / +0.03. This one is flattered most by the uncharged resting
+    cash.
+- Bigger size or a looser cap alone did not help the incumbent: 33% a signal −0.24 / −0.16; 0.4% cap −0.29 / −0.02.
+- Tuning on two eras and scoring the third still lost to the incumbent in two of three rotations (−0.65 check, −0.39
+  2022–23).
+
+**What it means**
+- The incumbent sits near a robust optimum of this design space. More search on these three eras can only overfit.
+- Paper books check fills; they cannot prove small gains. At the books' daily correlation of about 0.93, confirming
+  +0.5 Sharpe at t = 2 takes about 2 years of data, and +0.2 more than a decade.
+
+**Next test** (reports/explore/prospective_prereg.md, written before its data exists):
+- G1 (4/5/7/10σ, equal parts) and G2 (the frozen geometry finalist), read once on Nov 10 2026 – Mar 31 2027 against the
+  incumbent and W2.
+- Pass: a positive ΔSharpe, the minute book ≥ 0, risk ≤ 1.1×. Power: about a 61% chance of a positive sign if the true
+  gain is +0.2.
+- If it holds: a configurable depth list in the engine, an engine-faithful re-check, then a paper book.
 
 ## Sizing lab (Nov 9): no durable sizing edge for the R2-08 ladder; both paper books keep flat sizing
 Goal set by Miles: a durable sizing edge for the R2-08 spot ladder, main and W2 books, optimizing Sharpe and capacity,
@@ -1758,6 +1846,7 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
 - Walk-forward retraining every quarter, with an 8-day purge between training data and the test period.
 - Hyperparameters frozen before seeing any results.
 - Weekly-only trend checks were fragile: 7%–26% CAGR depending on the weekday. Fixed with daily checks and averaging across all 7 weekday phases.
+- Explore v1 alone ran 4,691 variants of the spot ladder (Nov 9).
 - About 484 variants in the earlier rounds (incl. the maker, C3 upgrade and scale-2 rounds), 19 books and 146 signal tests
   in the Medallion round, about 2,000 setups in the execution round and 130 in the wick v2 lab, so an improvement
   needs t ≈ 3 to be believable.
