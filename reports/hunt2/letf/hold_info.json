@@ -1,0 +1,153 @@
+{
+ "sel": {
+  "2x": {
+   "trades": 41,
+   "mean_gross_bp": -10.86643339671333,
+   "mean_net_bp": -41.60614174479455,
+   "hit": 0.34146341463414637,
+   "pnl": -5731.749851050355,
+   "mean_notional": 31375.52739579364,
+   "fill_share": 1.0,
+   "by_asset": {
+    "BTC": 16,
+    "ETH": 15,
+    "SOL": 7,
+    "XRP": 3
+   },
+   "stale_exits": 5
+  },
+  "1x": {
+   "trades": 41,
+   "mean_gross_bp": -10.86643339671333,
+   "mean_net_bp": -26.236287570753934,
+   "hit": 0.4146341463414634,
+   "pnl": -3794.1112328982217,
+   "mean_notional": 31375.52739579364,
+   "fill_share": 1.0,
+   "by_asset": {
+    "BTC": 16,
+    "ETH": 15,
+    "SOL": 7,
+    "XRP": 3
+   },
+   "stale_exits": 5
+  },
+  "scored_days": 455,
+  "trading_days": 311,
+  "gate_open_share": {
+   "BTC": 1.0,
+   "ETH": 1.0,
+   "SOL": 0.5144694533762058,
+   "XRP": 0.3247588424437299
+  },
+  "signals": 41,
+  "sleeve_sharpe_2x_50k": -1.9103293657406912,
+  "sleeve_sharpe_1x_50k": -1.5090526202067456
+ },
+ "chk": {
+  "2x": {
+   "trades": 23,
+   "mean_gross_bp": -22.933203770335105,
+   "mean_net_bp": -58.271058249961364,
+   "hit": 0.17391304347826086,
+   "pnl": -4539.073136637962,
+   "mean_notional": 34541.71086956521,
+   "fill_share": 1.0,
+   "by_asset": {
+    "BTC": 12,
+    "ETH": 11
+   },
+   "stale_exits": 6
+  },
+  "1x": {
+   "trades": 23,
+   "mean_gross_bp": -22.933203770335105,
+   "mean_net_bp": -40.60213101014823,
+   "hit": 0.2608695652173913,
+   "pnl": -3149.211568318982,
+   "mean_notional": 34541.71086956521,
+   "fill_share": 1.0,
+   "by_asset": {
+    "BTC": 12,
+    "ETH": 11
+   },
+   "stale_exits": 6
+  },
+  "scored_days": 219,
+  "trading_days": 152,
+  "gate_open_share": {
+   "BTC": 1.0,
+   "ETH": 1.0,
+   "SOL": 0.03289473684210526,
+   "XRP": 0.0
+  },
+  "signals": 23,
+  "gated": true,
+  "sleeve_sharpe_2x_50k": -3.1540739848982113,
+  "sleeve_sharpe_1x_50k": -2.5438526645938344
+ },
+ "early": {
+  "2x": {
+   "trades": 0
+  },
+  "1x": {
+   "trades": 0
+  },
+  "scored_days": 0,
+  "trading_days": 501,
+  "gate_open_share": {
+   "BTC": 0.0,
+   "ETH": 0.0,
+   "SOL": 0.0,
+   "XRP": 0.0
+  },
+  "signals": 0,
+  "gated": false
+ },
+ "early_placebo_gate_off": {
+  "stats_2x": {
+   "trades": 80,
+   "mean_gross_bp": -28.814762997613194,
+   "mean_net_bp": -70.17449148566456,
+   "hit": 0.3,
+   "pnl": -13432.172458245826,
+   "mean_notional": 31784.05363859439,
+   "fill_share": 1.0,
+   "by_asset": {
+    "BTC": 34,
+    "ETH": 26,
+    "SOL": 14,
+    "XRP": 6
+   },
+   "stale_exits": 0
+  },
+  "stats_1x": {
+   "trades": 80,
+   "mean_gross_bp": -28.814762997613194,
+   "mean_net_bp": -49.494627241638874,
+   "hit": 0.3875,
+   "pnl": -8195.952422417438,
+   "mean_notional": 31784.05363859439,
+   "fill_share": 1.0,
+   "by_asset": {
+    "BTC": 34,
+    "ETH": 26,
+    "SOL": 14,
+    "XRP": 6
+   },
+   "stale_exits": 0
+  },
+  "sleeve_sharpe_2x": -2.135879532674282,
+  "sleeve_sharpe_1x": -1.5301134866849915,
+  "days": 730,
+  "note": "descriptive only, never gated"
+ },
+ "sleeve_years_2x_50k": {
+  "2025": -0.07617721072930303,
+  "2026": -0.12923924902446332
+ },
+ "sleeve_years_1x_50k": {
+  "2025": -0.0469208315121124,
+  "2026": -0.09194562451223166
+ }
+}
