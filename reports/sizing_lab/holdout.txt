@@ -1,0 +1,105 @@
+Sizing lab holdout, read once at commit 5f08f432d557aeabc0d4ced1b82af70b52374c35.
+
+ΔSharpe against the baseline (rows: test, book; columns: capital, era):
+capital          250000.0                  1000000.0                
+era              selection  check y2022_23 selection  check y2022_23
+test        book                                                    
+A2          main     0.070 -0.061   -0.032    -0.011 -0.039    0.016
+            W2       0.033 -0.061   -0.028    -0.030 -0.035    0.020
+B2          main     0.308 -0.252   -0.250    -0.003 -0.208    0.021
+            W2       0.278 -0.304   -0.279     0.120 -0.298    0.028
+C1          main     0.037 -0.904   -0.963    -0.264 -1.126   -1.327
+            W2       0.022 -1.125   -1.182    -0.242 -1.443   -1.500
+A2+B2 vs B2 main     0.007  0.000    0.009    -0.013  0.000    0.024
+            W2      -0.010  0.000    0.019    -0.037  0.000    0.022
+
+Leave-one-day-out minimum ΔSharpe:
+capital          250000.0                  1000000.0                
+era              selection  check y2022_23 selection  check y2022_23
+test        book                                                    
+A2          main    -0.001 -0.074   -0.035    -0.082 -0.049    0.011
+            W2      -0.047 -0.075   -0.030    -0.112 -0.047    0.015
+B2          main     0.215 -0.355   -0.330    -0.111 -0.352   -0.167
+            W2       0.188 -0.404   -0.353     0.016 -0.413   -0.139
+C1          main     0.001 -1.119   -1.109    -0.365 -1.427   -1.518
+            W2      -0.022 -1.406   -1.387    -0.307 -1.897   -1.755
+A2+B2 vs B2 main    -0.004  0.000   -0.009    -0.022  0.000    0.010
+            W2      -0.022  0.000    0.003    -0.044  0.000    0.008
+
+Capital ratio (candidate / baseline average capital):
+capital          250000.0                  1000000.0                
+era              selection  check y2022_23 selection  check y2022_23
+test        book                                                    
+A2          main     1.000  1.012    1.008     1.000  1.012    1.015
+            W2       1.000  1.015    1.010     1.000  1.015    1.020
+B2          main     0.940  0.986    0.971     0.905  0.907    0.947
+            W2       0.940  0.982    0.972     0.911  0.904    0.949
+C1          main     1.000  1.013    0.863     0.906  0.903    0.861
+            W2       0.958  0.977    0.823     0.832  0.862    0.822
+A2+B2 vs B2 main     1.003  1.000    1.012     1.002  1.000    1.020
+            W2       1.003  1.000    1.012     1.002  1.000    1.022
+
+Tests (pooled check + 2022-23, event-cluster bootstrap; IUT over capitals; Holm):
+       test book  d_sharpe_pooled_250000  p_250000  p_check_250000  p_y2022_23_250000  d_sharpe_pooled_1000000  p_1000000  p_check_1000000  p_y2022_23_1000000  p_iut  p_holm
+         A2 main                 -0.0391    0.9988          0.9827             0.9789                   0.0009     0.4694           0.9335              0.0719 0.9988     1.0
+         A2   W2                 -0.0360    0.9879          0.9707             0.9222                   0.0046     0.3220           0.8894              0.0451 0.9879     1.0
+         B2 main                 -0.2433    0.9648          0.8174             0.9432                  -0.0417     0.6365           0.7268              0.5222 0.9648     1.0
+         B2   W2                 -0.2796    0.9812          0.8537             0.9648                  -0.0589     0.6693           0.8072              0.4966 0.9812     1.0
+         C1 main                 -0.9194    1.0000          0.9903             1.0000                  -1.2188     1.0000           0.9975              1.0000 1.0000     1.0
+         C1   W2                 -1.1413    1.0000          0.9876             1.0000                  -1.4158     1.0000           0.9974              0.9999 1.0000     1.0
+A2+B2 vs B2 main                  0.0060    0.4362          1.0000             0.4538                   0.0176     0.1274           1.0000              0.1369 0.4362     1.0
+A2+B2 vs B2   W2                  0.0132    0.1237          1.0000             0.1253                   0.0155     0.1306           1.0000              0.1319 0.1306     1.0
+
+Pass criteria:
+       test book  sharpe_ok  risk_ok  loo_ok  years_ok  signif_ok  p_holm  passes
+         A2 main      False    False   False      True      False     1.0   False
+         A2   W2      False    False   False      True      False     1.0   False
+         B2 main      False    False   False      True      False     1.0   False
+         B2   W2      False    False   False      True      False     1.0   False
+         C1 main      False    False   False      True      False     1.0   False
+         C1   W2      False    False   False      True      False     1.0   False
+A2+B2 vs B2 main      False    False   False      True      False     1.0   False
+A2+B2 vs B2   W2      False    False   False      True      False     1.0   False
+
+Calendar years (candidate return):
+year                          2022    2023    2025    2026
+test        book capital                                  
+A2          main 250000.0   0.1283  0.1154  0.3092  0.1602
+                 1000000.0  0.0812  0.0402  0.2149  0.0691
+            W2   250000.0   0.1449  0.1143  0.3031  0.1600
+                 1000000.0  0.0894  0.0391  0.2132  0.0737
+B2          main 250000.0   0.1403  0.1063  0.3663  0.1770
+                 1000000.0  0.0925  0.0337  0.2094  0.0775
+            W2   250000.0   0.1546  0.1068  0.3374  0.1801
+                 1000000.0  0.1011  0.0327  0.2180  0.0792
+C1          main 250000.0   0.0774  0.0734  0.3181  0.1246
+                 1000000.0  0.0329  0.0265  0.1826  0.0414
+            W2   250000.0   0.0814  0.0640  0.2964  0.1109
+                 1000000.0  0.0344  0.0230  0.1667  0.0390
+A2+B2 vs B2 main 250000.0   0.1427  0.1063  0.3688  0.1770
+                 1000000.0  0.0947  0.0337  0.2093  0.0775
+            W2   250000.0   0.1575  0.1068  0.3384  0.1801
+                 1000000.0  0.1033  0.0327  0.2163  0.0792
+
+Information only (ΔSharpe vs flat):
+capital              250000.0           1000000.0         
+era                      check y2022_23     check y2022_23
+cand variant    book                                      
+A2   theta 0.25 W2      -0.055   -0.022    -0.031    0.021
+                main    -0.051   -0.028    -0.036    0.016
+     uncapped   W2      -0.080   -0.033     0.015    0.053
+                main    -0.079   -0.043     0.000    0.040
+B2   theta 0.25 W2      -0.359   -0.208    -0.167    0.066
+                main    -0.316   -0.168    -0.075    0.063
+     uncapped   W2      -0.391   -0.407     0.216    0.195
+                main    -0.395   -0.381     0.272    0.146
+C1   theta 0.25 W2      -1.197   -1.132    -1.372   -1.457
+                main    -1.015   -0.985    -1.132   -1.390
+     uncapped   W2      -1.211   -1.041    -1.089   -1.096
+                main    -1.026   -0.919    -0.930   -0.990
+
+Scorecard:
+cand  total  sharpe  capacity  consistency  evidence  spread  risk  mechanism  implementation  mean_d_sharpe_250k  mean_d_sharpe_1m  capital_ratio_1m
+  A2   19.0     0.0      4.22         0.00       0.0     0.0  5.75        4.0             5.0           -0.045458         -0.009641          1.015570
+  B2   22.5     0.0      1.33         1.67       0.0     0.0  7.50        7.0             5.0           -0.270978         -0.114091          0.926641
+  C1   15.5     0.0      0.00         0.00       0.0     0.0  7.50        4.0             4.0           -1.043375         -1.348993          0.862208

@@ -1,0 +1,47 @@
+selection B2 terciles (flat main $250K, per-dollar bp):
+     count   mean     std  mu_over_var_x1e4
+b                                          
+0.0    387  -3.90   80.32             -6.05
+1.0    345   9.42   81.08             14.32
+2.0    393  39.29  109.53             32.75
+  unranked 30
+
+selection C1 deeper rows (flat main $250K):
+        rows  fill_musd  pnl_per_dollar_bp
+c1                                        
+False  220.0       3.22              47.09
+True   272.0       3.98              47.50
+
+selection flat main $250K best days: 2025-10-10 $15,216, 2026-02-06 $7,832, 2025-03-11 $6,652
+
+check B2 terciles (flat main $250K, per-dollar bp):
+     count   mean    std  mu_over_var_x1e4
+b                                         
+0.0    123   9.02  55.05             29.76
+1.0    136   5.00  64.90             11.88
+2.0    153  33.06  89.77             41.02
+  unranked 0
+
+check C1 deeper rows (flat main $250K):
+        rows  fill_musd  pnl_per_dollar_bp
+c1                                        
+False   82.0       0.90              30.24
+True   113.0       1.17              83.10
+
+check flat main $250K best days: 2026-06-05 $5,878, 2026-08-22 $5,412, 2026-10-15 $2,558
+
+y2022_23 B2 terciles (flat main $250K, per-dollar bp):
+     count   mean     std  mu_over_var_x1e4
+b                                          
+0.0    210  13.36   80.17             20.78
+1.0    237   6.07   81.90              9.05
+2.0    259  45.79  135.37             24.99
+  unranked 30
+
+y2022_23 C1 deeper rows (flat main $250K):
+        rows  fill_musd  pnl_per_dollar_bp
+c1                                        
+False  122.0       1.40              88.26
+True   274.0       2.87              96.24
+
+y2022_23 flat main $250K best days: 2022-11-09 $7,009, 2023-12-11 $5,564, 2022-05-10 $4,682

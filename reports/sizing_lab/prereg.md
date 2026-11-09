@@ -187,7 +187,7 @@ For finalists, on the holdout:
 - theta 0.25.
 
 ## Deviation log
-- **Freeze (Nov 9, 11:55 UTC), before any check-era or 2022-23 statistic:**
+- **Freeze (Nov 9, 11:54 UTC, commit 5f08f43), before any check-era or 2022-23 statistic:**
   - **Every candidate was testable** (selection-era firing sets: A2 68 signals in 15 clusters, A3 50 in 10, C1 316,
     C2 368, C3 167; every day-of-week and B bucket at least 86 signals).
   - **Finalists** (highest mean selection ΔSharpe in their family): A2 (+0.016), B2 (+0.176), C1 (-0.112).
@@ -204,3 +204,10 @@ For finalists, on the holdout:
   - **Holdout code** (scripts/sizing_lab/holdout.py) was written before this freeze. It was dry-run on the selection
     era alone, with outputs to a scratch folder, to catch bugs; no check-era or 2022-23 data was loaded. The read-once
     marker is written after the outputs.
+- **Holdout read (Nov 9, 11:55 UTC), once, at commit 5f08f43** (holdout_read.txt):
+  - No finalist passes. All 8 tests have a Holm-adjusted p of 1.0. Verdicts and scores are in README.md.
+  - **Test 6 measured almost nothing.** With c at its bound, A2 on top of B2 equals B2 except on signals without a
+    B rank, so the overlay sits at ΔSharpe 0.000 in the check era. A2 alone failed tests 1, 2, 3 and 5 anyway.
+  - **tests.csv** carries p_holm twice (p_holm_x, p_holm_y, the same values): a column-naming slip in the merge, left
+    as written by the single read.
+  - **Post-hoc diagnostics** (scripts/sizing_lab/posthoc.py, posthoc.txt) explain the result. They change no rule.
