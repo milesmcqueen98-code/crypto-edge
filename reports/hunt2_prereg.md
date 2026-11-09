@@ -176,7 +176,7 @@ simulator): XV, LIQW, HAWK, TSC, ONE, then MACB.
   book: the book is at least half incumbent, so its deflated Sharpe (EXP 0.82) and its calendar years scored the
   incumbent, not the idea. This lowers EXP from 39 to 31 and LETF from 39 to 34; no other score moves.
 - **Operations, all builders (Nov 8 evening).** The shared machine's memory limit (6.26 GB for every builder) killed
-  six HOLD-read processes. None had written or shown a gate, series or P&L except WHO's, which had already written its
+  eight HOLD-read processes (SHAPE 1, BURN 2, CROWD 2, GAMMA 1, WHO 1, EXH 1). None had written or shown a gate, series or P&L except WHO's, which had already written its
   outputs when it was killed; each idea's single read is the one committed, and its DEV slice reproduces the logged
   DEV trial exactly (reports/hunt2/central_checks.json). The instructed HOLD-feature dispatch could not commit
   (parent_features.py rewrites tracked files, so the workflow's pull --rebase refused and the step still ended
