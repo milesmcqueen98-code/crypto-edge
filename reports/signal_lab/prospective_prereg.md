@@ -99,7 +99,7 @@ A candidate with no prints in its window gets missing values (LightGBM handles t
        also retrains on 2021-23 and needs print features for those years.
    - **Comparison in the binding test:** against R2-08 rebuilt by the lab's pipeline as a 15-seed model (like for
      like), with model-priced exits for every book.
-2. **After the data job, before any model has seen a print feature (Nov 9 2026, 18:47 ET).** Written before the
+2. **After the data job, before any model has seen a print feature (Nov 9 2026, 18:42 ET).** Written before the
    boundary diagnostic below has reported.
    - **Data-quality gate: passed** (reports/signal_lab/prints/QA.md). Every candidate's window is complete in both
      eras, and print USD over candle USD has a median of 1.0002 in both.
