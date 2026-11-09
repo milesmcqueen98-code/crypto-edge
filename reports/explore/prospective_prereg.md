@@ -54,3 +54,9 @@ Written after the explore v1 holdout read, before any of the data it will be rea
 - **So this is a sign check that keeps a lead open or closes it, not proof.** No significance bar is set, because none
   could be met. Confirming +0.2 at t = 2 would take more than a decade of data. Decisions on gains this small rest on
   the mechanism and on consistency across eras.
+
+## Known bias (added Nov 9 2026, before the data exists)
+- **xsim does not charge resting deeper bids for the cash they hold.** The live engine does: Coinbase holds funds for
+  resting orders. So more depth looks slightly better in xsim than in the bot.
+- **The engine-faithful replay (ladder v5) cannot express these ladders yet.**
+- **If the lead holds:** the engine's depth list comes with an engine-faithful re-check before any paper book opens.
