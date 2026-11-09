@@ -17,3 +17,7 @@ print fetcher).
   data-quality gate, the every-minute panel for the binding test (exact at candidate minutes, no-prints twin elsewhere,
   with two sensitivity runs), the order of reads (selection era, audit, one holdout read), a matched-selectivity
   reading, seeds and hand scores.
+- 16:50 Two Opus agents started at max effort, in parallel: (1) the print-data job on GitHub Actions, in its own
+  worktree and branch (signal-lab-data); (2) the pipeline changes on branch signal-lab, validated on the selection era
+  with synthetic features only. The holdout readings are locked behind a file only the orchestrator creates after the
+  audit.
