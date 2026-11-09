@@ -3,8 +3,10 @@
 features of every candidate of both eras, from the artifacts of the fetch runs (scripts/signal_lab/prints_fetch.py).
 Runs on GitHub Actions; raw prints stay on the runner and only derived rows leave it.
 
-usage: python scripts/signal_lab/prints_features.py <art_dir> [<out_dir>]
+usage: python scripts/signal_lab/prints_features.py <art_dir> [<out_dir>] [<margins>]
   art_dir: art/<run_id>/<artifact>/prints_<shard>.parquet and status_<shard>.csv of the fetch runs
+  margins: comma list of seconds (default 0). A margin m > 0 ends both windows at q - m (follow-up of Nov 9) and writes
+           f6_<era>_m<m>.parquet with the same schema; the big-print threshold pool does not move.
 Writes <out_dir>/f6_main.parquet and f6_early.parquet (schema below), qa_cand.parquet (QA side table: window,
 status, base volume, first and last print price, taker-sell count) and qa_runner.json (print-level checks).
 
@@ -79,17 +81,20 @@ def prep(trade_id, t, price, size, sell, window_id=None):
     return d, checks
 
 
-def coin_features(t, usd, sell, q):
+def coin_features(t, usd, sell, q, margin_s=0, thr=None):
     """F6 sums for one coin. t (int64 ns), usd, sell: the coin's prints from prep (ordered by time); q: int64 ns
     candidate minute starts. Every quantity of candidate i is read from slices that end before q[i]:
     [a, b) = [q - 30 min, q), [a5, b) = [q - 5 min, q), threshold pool [c, a) = [w - 30 days, w) with w = q - 30 min,
-    or the 2,000 prints before index a."""
+    or the 2,000 prints before index a.
+    margin_s (follow-up of Nov 9): both windows end at q - margin_s instead of q, i.e. [q - 30 min, q - margin) and
+    [q - 5 min, q - margin); the threshold pool does not move. thr = (thresholds, rules) from a call on the same prints
+    and candidates may be passed to skip recomputing them (the pool does not depend on the margin)."""
     t = np.asarray(t, dtype=np.int64)
     q = np.asarray(q, dtype=np.int64)
     sell_usd = np.where(sell, usd, 0.0)
     w = q - W30
     a = np.searchsorted(t, w, "left")
-    b = np.searchsorted(t, q, "left")
+    b = np.searchsorted(t, q - int(margin_s) * NS_S, "left")
     a5 = np.searchsorted(t, q - W5, "left")
     c = np.searchsorted(t, w - LOOKBACK, "left")
     n = len(q)
@@ -103,15 +108,17 @@ def coin_features(t, usd, sell, q):
         out["usd_30"][i] = u.sum()
         out["sell_usd_30"][i] = s.sum()
         out["sell_usd_5"][i] = sell_usd[int(a5[i]):bi].sum()
-        if ai - int(c[i]) >= MIN_POOL:
-            thr, rule = float(np.quantile(usd[int(c[i]):ai], QTL)), 1
+        if thr is not None:
+            th, rule = float(thr[0][i]), int(thr[1][i])
+        elif ai - int(c[i]) >= MIN_POOL:
+            th, rule = float(np.quantile(usd[int(c[i]):ai], QTL)), 1
         elif ai >= MIN_POOL:
-            thr, rule = float(np.quantile(usd[ai - MIN_POOL:ai], QTL)), 2
+            th, rule = float(np.quantile(usd[ai - MIN_POOL:ai], QTL)), 2
         else:
-            thr, rule = np.nan, 0
-        out["big_thr_usd"][i], extra["thr_rule"][i] = thr, rule
+            th, rule = np.nan, 0
+        out["big_thr_usd"][i], extra["thr_rule"][i] = th, rule
         if rule:
-            out["big_sell_usd_30"][i] = s[u >= thr].sum()
+            out["big_sell_usd_30"][i] = s[u >= th].sum()
         if bi > ai:
             sec = t[ai:bi] // NS_S
             starts = np.flatnonzero(np.r_[True, sec[1:] != sec[:-1]])
@@ -202,8 +209,20 @@ def statuses(art_dir):
     return S.set_index("window_id").status, len(fs)
 
 
-def main(art_dir, out_dir=PR):
+def table(C, n_prints, sums):
+    f = finalize(C.complete.to_numpy(), n_prints, sums, C.adv_usd.to_numpy())
+    F = pd.DataFrame({"coin": C.coin.astype(str).to_numpy(), "ts": C.ts.to_numpy().astype("datetime64[ns]"),
+                      "complete": C.complete.to_numpy().astype(bool), "n_prints": n_prints.astype(np.int64)})
+    for k in SCHEMA[4:]:
+        F[k] = f[k].astype(np.float64)
+    return F[SCHEMA]
+
+
+def main(art_dir, out_dir=PR, margins="0"):
+    """margins: comma list of window-end margins in seconds; 0 writes f6_<era>.parquet, m > 0 f6_<era>_m<m>.parquet."""
     t0 = time.time()
+    ms = sorted({int(x) for x in str(margins).split(",") if x.strip() != ""})
+    extra_m = [m for m in ms if m != 0]
     sys.path.insert(0, HERE)
     import test_prints                                               # synthetic look-ahead tests first
     test_prints.run()
@@ -225,6 +244,8 @@ def main(art_dir, out_dir=PR):
     ex = {k: np.full(n, np.nan) for k in ("vol_30", "px_first", "px_last")}
     ex["n_sell"] = np.zeros(n, dtype=np.int64)
     ex["thr_rule"] = np.zeros(n, dtype=np.int8)
+    n_prints_m = {m: np.zeros(n, dtype=np.int64) for m in extra_m}
+    sums_m = {m: {k: np.full(n, np.nan) for k in SUMS} for m in extra_m}
     qa = dict(print_files=len(files), status_files=n_sfiles, coins={})
     assert (W.window_id.to_numpy() == np.arange(len(W))).all()
     w_lo = W.start.to_numpy().astype("datetime64[ns]").view(np.int64)
@@ -235,7 +256,8 @@ def main(art_dir, out_dir=PR):
         q = C.ts.to_numpy()[idx].astype("datetime64[ns]").view(np.int64)
         raw, sides = load_coin(files, f"{coin}-USD")
         if raw is None:
-            nn, s, e = coin_features(np.zeros(0, np.int64), np.zeros(0), np.zeros(0, bool), q)[:3]
+            d = dict(t=np.zeros(0, np.int64), usd=np.zeros(0), sell=np.zeros(0, bool))
+            nn, s, e = coin_features(d["t"], d["usd"], d["sell"], q)[:3]
             qa["coins"][coin] = dict(prints=0)
         else:
             d, chk = prep(raw["trade_id"], raw["t"], raw["price"], raw["size"], raw["sell"], raw["window_id"])
@@ -255,7 +277,13 @@ def main(art_dir, out_dir=PR):
             sc = np.concatenate([[0], np.cumsum(d["sell"].astype(np.int64))])
             e["n_sell"] = sc[ab["b"]] - sc[ab["a"]]
             qa["coins"][coin] = chk
-            del d
+        for m in extra_m:                         # the same prints, windows ending at q - m seconds
+            nn_m, s_m = coin_features(d["t"], d["usd"], d["sell"], q, margin_s=m,
+                                      thr=(s["big_thr_usd"], e["thr_rule"]))[:2]
+            n_prints_m[m][idx] = nn_m
+            for k in SUMS:
+                sums_m[m][k][idx] = s_m[k]
+        del d
         n_prints[idx] = nn
         for k in SUMS:
             sums[k][idx] = s[k]
@@ -263,16 +291,13 @@ def main(art_dir, out_dir=PR):
             ex[k][idx] = e[k]
         print(f"{coin}: {len(idx)} candidates, {qa['coins'][coin].get('prints', 0)} prints, "
               f"{time.time() - t1:.0f}s", flush=True)
-    f = finalize(C.complete.to_numpy(), n_prints, sums, C.adv_usd.to_numpy())
-    F = pd.DataFrame({"coin": C.coin.astype(str).to_numpy(), "ts": C.ts.to_numpy().astype("datetime64[ns]"),
-                      "complete": C.complete.to_numpy().astype(bool), "n_prints": n_prints.astype(np.int64)})
-    for k in SCHEMA[4:]:
-        F[k] = f[k].astype(np.float64)
-    F = F[SCHEMA]
+    F = table(C, n_prints, sums)
     os.makedirs(out_dir, exist_ok=True)
-    for era in ("main", "early"):
-        m = (C.era == era).to_numpy()
-        F[m].reset_index(drop=True).to_parquet(os.path.join(out_dir, f"f6_{era}.parquet"), index=False)
+    outs = ([(0, F, "")] if 0 in ms else []) + [(m, table(C, n_prints_m[m], sums_m[m]), f"_m{m}") for m in extra_m]
+    for _, T, suffix in outs:
+        for era in ("main", "early"):
+            m = (C.era == era).to_numpy()
+            T[m].reset_index(drop=True).to_parquet(os.path.join(out_dir, f"f6_{era}{suffix}.parquet"), index=False)
     Q = pd.DataFrame({"era": C.era.to_numpy(), "coin": C.coin.astype(str).to_numpy(), "ts": F.ts.to_numpy(),
                       "window_id": C.window_id.to_numpy(), "status": C.status.to_numpy()})
     for k in ex:
@@ -307,4 +332,4 @@ def main(art_dir, out_dir=PR):
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:3])
+    main(*sys.argv[1:4])

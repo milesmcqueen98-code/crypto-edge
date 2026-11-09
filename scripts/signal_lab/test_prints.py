@@ -9,6 +9,9 @@ every feature run on the runner and stop it if any fails; QA.md records their ou
    [w - 30 days, w) when that holds >= 2,000 prints, the latest 2,000 before w when not, and NaN below 2,000 in all.
 3. Sweep = the largest calendar-second taker-sell USD in [q - 30 min, q), against a pandas groupby.
 4. De-duplication by trade_id; maker side BUY = taker sell; the NaN rules of finalize().
+5. Margin (follow-up of Nov 9): with the windows ending at q - margin (5 s, 60 s), a print at q - margin or later
+   leaves every column unchanged, one 1 us before q - margin is counted, the sums equal a brute force over
+   [q - 30 min, q - margin) and [q - 5 min, q - margin), and the threshold is the margin-0 one.
 usage: python scripts/signal_lab/test_prints.py
 """
 import os
@@ -90,6 +93,45 @@ def check_timing(P, q0):
     return True
 
 
+def feats_m(P, q, margin):
+    d, _ = PF.prep(P["trade_id"], P["t"], P["price"], P["size"], P["sell"])
+    n, s, e, _ = PF.coin_features(d["t"], d["usd"], d["sell"], q, margin_s=margin)
+    return n, s, e, d
+
+
+def check_margin(P, q0, margin):
+    """Windows end at q - margin: a print at q - margin (and anything later) is out, one 1 us earlier is in; the
+    threshold does not move; reusing the margin-0 thresholds gives the same result as recomputing them."""
+    q = np.array([q0], dtype=np.int64)
+    end = q0 - margin * NS
+    n0, s0, e0, d0 = feats_m(P, q, margin)
+    for tn in (end, end + 1000, q0 - 1000, q0, q0 + 5 * MIN):
+        n1, s1, _, _ = feats_m(add(P, [tn], 1e6, 1e3, True), q, margin)
+        assert same(n0, n1), f"margin {margin}: n_prints moved by a print at {tn - q0} ns from q"
+        for k in PF.SUMS:
+            assert same(s0[k], s1[k]), f"margin {margin}: {k} moved by a print at {tn - q0} ns from q"
+    usd = 1e6 * 1e3
+    n2, s2, _, _ = feats_m(add(P, [end - 1000], 1e6, 1e3, True), q, margin)
+    assert (n2 == n0 + 1).all()
+    assert np.allclose(s2["sell_usd_30"] - s0["sell_usd_30"], usd)
+    assert np.allclose(s2["sell_usd_5"] - s0["sell_usd_5"], usd)
+    assert (s2["sweep_max_usd_30"] >= usd).all()
+    # brute force against the definition
+    t, u, sl = d0["t"], d0["usd"], d0["sell"]
+    m30 = (t >= q0 - 30 * MIN) & (t < end)
+    m5 = (t >= q0 - 5 * MIN) & (t < end)
+    assert n0[0] == m30.sum() and np.isclose(s0["usd_30"][0], u[m30].sum())
+    assert np.isclose(s0["sell_usd_30"][0], u[m30 & sl].sum()) and np.isclose(s0["sell_usd_5"][0], u[m5 & sl].sum())
+    # threshold: identical to margin 0, and reusing it gives identical sums
+    _, z, ez, _ = feats_m(P, q, 0)
+    assert same(s0["big_thr_usd"], z["big_thr_usd"])
+    _, s3, _, _ = PF.coin_features(d0["t"], d0["usd"], d0["sell"], q, margin_s=margin,
+                                   thr=(z["big_thr_usd"], ez["thr_rule"]))
+    for k in PF.SUMS:
+        assert same(s0[k], s3[k]), f"margin {margin}: {k} differs with reused thresholds"
+    return True
+
+
 def brute_thr(t, usd, q):
     w = q - 30 * MIN
     pool = usd[(t >= w - 30 * 86400 * NS) & (t < w)]
@@ -157,7 +199,7 @@ def check_finalize():
 
 
 def run():
-    out, all_rules = [], set()
+    out, all_rules, n_margin = [], set(), 0
     for seed in (0, 1, 2, 3):
         P = tape(seed)
         if seed == 3:                                   # a 40-day gap: the 30-day pool runs dry after it (rule 2)
@@ -175,6 +217,10 @@ def run():
         qs = np.unique(np.concatenate([qs, extra]))
         for q in qs[::6]:
             check_timing(P, int(q))
+        for q in qs[3::12]:
+            for margin in (5, 60):
+                check_margin(P, int(q), margin)
+                n_margin += 1
         rules = check_threshold(P, qs)
         all_rules |= rules
         check_sweep(P, qs)
@@ -182,7 +228,7 @@ def run():
     assert all_rules == {0, 1, 2}, all_rules
     check_dedup_side()
     check_finalize()
-    msg = "test_prints: all checks passed (" + "; ".join(out) + ")"
+    msg = ("test_prints: all checks passed (" + "; ".join(out) + f"; {n_margin} margin checks at 5 s and 60 s)")
     print(msg, flush=True)
     return msg
 
