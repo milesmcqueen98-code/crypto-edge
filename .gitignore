@@ -11,3 +11,5 @@ reports/ladder_v5/redteam/adv_main_*.parquet
 reports/ladder_v5/redteam/adv_early_*.parquet
 reports/signal_lab/screen_daily_*.parquet
 reports/signal_lab/cand_*.parquet
+data/ladder_v5/panel_main_*/
+data/ladder_v5/panel_early_*/
