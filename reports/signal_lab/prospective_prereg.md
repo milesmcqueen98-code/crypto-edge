@@ -58,3 +58,44 @@ A candidate with no prints in its window gets missing values (LightGBM handles t
 - One era's Sharpe difference between two correlated books has a standard error of roughly 0.5.
 - So +0.20 in each of three eras is a demanding bar, and a real gain of +0.2 will often miss it.
 - A miss with a consistent positive sign would be a lead for a paper-shadow log, not a change.
+
+## Deviation log
+1. **Before any print was fetched or any model run (Nov 9 2026, 16:48 ET).** Decisions the plan left open, fixed now.
+   - **Roles:** the session's main agent keeps the protocol and decides. Opus agents build the data job, the feature
+     code and the model runs. A separate Opus agent audits for look-ahead before the holdout read.
+   - **"Big" prints (feature 4).** A trailing 30-day percentile over all prints would need every print the coin
+     traded. The job fetches only the candidate windows, so the threshold is taken from those:
+     - the 99th percentile of print size in USD over the coin's fetched prints stamped in the 30 days before the
+       candidate's own window starts;
+     - if that holds fewer than 2,000 prints, the most recent 2,000 fetched prints before the window;
+     - if fewer than 2,000 exist at all, the feature is missing.
+   - **Taker sells:** prints whose maker side is BUY (a resting bid was hit).
+   - **ADV:** the trailing 30-day median daily USD volume on Coinbase spot candles, as of the day before, with the
+     10-day minimum the simulator uses.
+   - **Data-quality gate, before any model run:**
+     - at least 97% of candidates in each era have a completely fetched window;
+     - print USD against candle USD over the same windows has a median ratio of 0.98-1.02 in each era.
+     - If either fails, the test stops and the gap is reported.
+   - **Every-minute panel for the binding test.** The engine-faithful replay needs a prediction for every minute, and
+     print features for every minute would need every Coinbase print for five years. So:
+     - at candidate minutes (the only minutes a bid can fill) the candidate's own prediction is used, which is exact;
+     - at other minutes its no-prints twin's prediction is used (RF0 for RF6, RF0H for RF6H), shifted so the twin's
+       own armed state is kept. This only affects how much cash resting bids hold.
+     - Sensitivity, reported with the result: the same replay with every non-candidate minute armed, and the frozen
+       simulator, which has no cash rule.
+   - **Order of reads:**
+     1. the selection era alone, with the walk-forward stopped at 2026Q1 so no holdout prediction exists;
+     2. the independent look-ahead audit;
+     3. one holdout read of the check era and 2022-23: the seed-averaged reading and the binding test together.
+   - **Added reading (information):** each candidate at R2-08's selectivity (thresholds reset to R2-08's share of each
+     quarter's candidates), five seed triples. The signal lab showed selectivity alone moves results.
+   - **Seeds:** the five triples of the signal lab, (7, 11, 23), (1, 2, 3), (4, 5, 6), (8, 9, 10) and (12, 13, 14).
+     The 15-seed model is their union.
+   - **Hand scores, assigned now** (mechanism /10, implementation /5): RF6H 6 and 2; RF6 6 and 3.
+     - Mechanism 6: aggressive selling before the fill measures forced selling directly, which candles cannot. EXH was
+       positive in every era as a filter. Against: edge hunt 2's other print screens ran backwards, EXH's gain sat on a
+       few days, and the profit sits in signals every model already takes.
+     - Implementation 2-3: the bot must aggregate the live trade feed per coin every minute, a new data path. RF6H
+       also retrains on 2021-23 and needs print features for those years.
+   - **Comparison in the binding test:** against R2-08 rebuilt by the lab's pipeline as a 15-seed model (like for
+     like), with model-priced exits for every book.
