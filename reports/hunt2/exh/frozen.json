@@ -1,0 +1,120 @@
+{
+ "idea": "exh",
+ "path": "A",
+ "builder": "flow",
+ "variant": "csv30_15",
+ "feature": "csv_30",
+ "side": "low",
+ "share": 0.15,
+ "threshold": 0.0169068600284091,
+ "skip_if": "csv_30 < np.float64(0.0169068600284091)",
+ "missing": "kept (never skipped)",
+ "threshold_rule": "numpy.quantile (linear) of the DEV parents' values at the level that removes `share` of all DEV parents; fixed in absolute units for HOLD",
+ "selection": "highest DEV paired HAC t at X2 (h2gates.dev_screen_a); ties -> the smaller removal share",
+ "code_commit": "e1f6538c56483bb133b6420129520fbc565379f4",
+ "spec": "reports/hunt2/exh/SPEC.md",
+ "dev": {
+  "n_parents": 1155,
+  "n_skipped": 174,
+  "n_missing": 0,
+  "t_diff": 1.0286419016635795,
+  "mean_diff_bp": 0.556039529969057,
+  "d_sharpe": 0.437863741480937,
+  "cand_sharpe": 2.0612290195381084,
+  "inc_sharpe": 1.6233652780571717,
+  "top5_share": 1.645488159793367,
+  "n_days": 455.0
+ },
+ "trials": [
+  {
+   "variant": "csv30_15",
+   "feature": "csv_30",
+   "side": "low",
+   "share": 0.15,
+   "thr": 0.0169068600284091,
+   "n_skipped": 174.0,
+   "t_diff": 1.0286419016635795,
+   "mean_diff_bp": 0.556039529969057,
+   "d_sharpe": 0.437863741480937
+  },
+  {
+   "variant": "csv15_30",
+   "feature": "csv_15",
+   "side": "low",
+   "share": 0.3,
+   "thr": 0.0152405037252373,
+   "n_skipped": 347.0,
+   "t_diff": 0.9431896103973828,
+   "mean_diff_bp": 0.6587034354553645,
+   "d_sharpe": 0.5703796254058513
+  },
+  {
+   "variant": "csv30_30",
+   "feature": "csv_30",
+   "side": "low",
+   "share": 0.3,
+   "thr": 0.0252369422864454,
+   "n_skipped": 347.0,
+   "t_diff": 0.5653700438873398,
+   "mean_diff_bp": 0.4696746895272856,
+   "d_sharpe": 0.4590356172764978
+  },
+  {
+   "variant": "csv15_15",
+   "feature": "csv_15",
+   "side": "low",
+   "share": 0.15,
+   "thr": 0.0105063746508853,
+   "n_skipped": 174.0,
+   "t_diff": 0.4627540831396817,
+   "mean_diff_bp": 0.2002149592339837,
+   "d_sharpe": 0.2769860937134207
+  },
+  {
+   "variant": "expeak_15",
+   "feature": "ex_peak",
+   "side": "high",
+   "share": 0.15,
+   "thr": 0.9852337557091704,
+   "n_skipped": 174.0,
+   "t_diff": 0.435398450804529,
+   "mean_diff_bp": 0.2279736382429587,
+   "d_sharpe": 0.1945349157879417
+  },
+  {
+   "variant": "turn_15",
+   "feature": "turn",
+   "side": "low",
+   "share": 0.15,
+   "thr": -0.4125896110243396,
+   "n_skipped": 174.0,
+   "t_diff": 0.0020861087020159,
+   "mean_diff_bp": 0.0008566468757935,
+   "d_sharpe": 0.1250807260774393
+  },
+  {
+   "variant": "expeak_30",
+   "feature": "ex_peak",
+   "side": "high",
+   "share": 0.3,
+   "thr": 0.8697873640046472,
+   "n_skipped": 347.0,
+   "t_diff": -0.5945859356085028,
+   "mean_diff_bp": -0.4173804208572136,
+   "d_sharpe": -0.0584109213173433
+  },
+  {
+   "variant": "turn_30",
+   "feature": "turn",
+   "side": "low",
+   "share": 0.3,
+   "thr": -0.2699212818206863,
+   "n_skipped": 347.0,
+   "t_diff": -1.0760693253548854,
+   "mean_diff_bp": -0.6620556618048319,
+   "d_sharpe": -0.2001592155166078
+  }
+ ],
+ "n_trials": 8,
+ "time": "2026-11-09T01:19:01Z"
+}
