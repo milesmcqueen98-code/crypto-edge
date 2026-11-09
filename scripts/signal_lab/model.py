@@ -89,8 +89,7 @@ def split(name):
 
 
 # ------------------------------------------------------------------------------------------------ labels
-@numba.njit(cache=True)
-def _ladder(cand, hi, lo, cf, lvl4, sig, tickf, H, ks, theta):
+def _ladder_py(cand, hi, lo, cf, lvl4, sig, tickf, H, ks, theta):
     """Deeper rungs of the ladder for each candidate 4-sigma fill: (filled, gross log return, take-profit hit)."""
     n, nk, T = len(cand), len(ks), len(hi)
     g = np.full((n, nk), np.nan)
@@ -132,6 +131,9 @@ def _ladder(cand, hi, lo, cf, lvl4, sig, tickf, H, ks, theta):
             else:
                 g[a, b] = np.log(cf[jf + H] / L)
     return g, filled, tp
+
+
+_ladder = numba.njit(cache=True)(_ladder_py)
 
 
 def spot_labels(ls, X, lab):

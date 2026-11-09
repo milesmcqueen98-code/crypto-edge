@@ -1,0 +1,97 @@
+# Signal lab (Nov 9 2026): what R2-08's model is taught and shown — no change
+
+**Result: no change.** R2-08 keeps its label, features, threshold and training data, and no new paper book opens.
+- **Tried:** 37 retrained versions of the model (labels, features, new data, more history, looser thresholds).
+- **Read out of sample:** three candidates and one information-only model, once, on the engine-faithful simulator.
+- **Best:** features + history, 51.6 / 100. It was above R2-08 in all 12 cells, but by +0.16 and +0.17 Sharpe in the
+  holdout eras against a +0.20 bar (p 0.27).
+
+Final report: the "Signal Lab: Report" doc (https://claude.ai/artifact/69u1BHtZsDwEZNXdRwQUUF).
+
+## Setup
+- **Goal (Miles):** raise R2-08's out-of-sample Sharpe at $250K by improving what the model knows. Develop on Jan 2025 -
+  Mar 2026 (the selection era), read the other eras once, count every trial, score on the engine-faithful simulator,
+  beat R2-08 in every era.
+- **Plan:** prereg.md, committed at ed5d42d before any candidate ran. Its deviation log has seven entries, each written
+  before the runs it covers.
+- **Pipeline:** scripts/signal_lab/model.py runs the wick lab's own code with a choice of label, feature set, training
+  history and threshold. The incumbent spec reproduces R2-08's trade list and daily series exactly.
+- **Development screen:** the frozen simulator at S* (today's volumes, costs doubled, capture 0.5, $250K).
+- **Binding test:** ladder v6's engine-faithful replay. Each finalist got its own trade list, tranche dataset,
+  every-minute armed panel and deep paths. Both books' market exits are priced by the cost model.
+
+## Development (screen ΔSharpe against R2-08's 2.363; screen.csv, screen_stats.txt)
+
+| Label | Base features | Cascade state (F1) | Position and regime (F2) | All candle sets (F3) | DVOL, VIX, Nasdaq (F4) | Outcome memory (F5) |
+|---|---|---|---|---|---|---|
+| R: R2-08's (one 4-sigma trade, perp costs) | 0.00 | +0.02 | +0.68 | -0.01 | +0.26 | -0.10 |
+| S4: the same trade at spot costs | -0.11 | +0.06 | +0.20 | -0.13 | +0.13 | not run |
+| LD: the whole spot ladder | -0.27 | -0.43 | +0.13 | -0.15 | +0.26 | -0.43 |
+| LS: the ladder per unit of sigma | -1.89 | -1.75 | -0.74 | -0.49 | -0.99 | not run |
+
+- **With the 2021-23 candidates added to training (H):** RF0H +0.39, S4F0H +0.42, LDF0H +0.01, LSF0H -1.53, RF2H +0.82,
+  S4F2H +0.71, RF4H +0.16.
+- **Looser thresholds (round 4):** 50th percentile -1.06, 40th -1.66, 30th -2.30, 20th -2.72; predicted net above 0 bp
+  -2.82. The signals below R2-08's 60th-percentile threshold lose money, so the holdout was not read for this idea.
+- **Multiple testing:** SPA p 0.14 against R2-08; StepM: none significantly better; deflated Sharpe of the improvement
+  at most 0.33.
+
+## Binding test (holdout.txt; ΔSharpe against R2-08, S* capture 0.5, $250K)
+
+| Finalist | Development | Apr - Nov 2026 | 2022-23 | Cells above R2-08 (of 12) | Gates passed (of 5) | Score /100 |
+|---|---|---|---|---|---|---|
+| RF2H: features + history | +0.79 | +0.16 | +0.17 | 12 | 3 | 51.6 |
+| RF0H: history only (information) | +0.35 | +0.12 | same book | 7 | 2 | 33.7 |
+| RF2: position-and-regime features | +0.63 | -0.59 | +0.17 | 9 | 1 | 32.4 |
+| RF4: DVOL, VIX, Nasdaq | +0.34 | -0.46 | -0.44 | 4 | 1 | 19.3 |
+
+- **All fail gate 1** (+0.20 in every era) and gate 5 (pooled holdout p <= 0.05). RF2H's p is 0.27.
+- **RF2H runs without the history in 2022-23** (no earlier data exists), so only its four Apr - Nov 2026 cells test the
+  added history out of sample.
+- **Print-priced exits** (information; favours R2-08): Apr - Nov 2026 gains are +0.06 for RF2H and -0.01 for RF0H.
+
+## Why (post hoc, information only)
+- **The models agree on the signals that carry the profit** (posthoc_sets.txt).
+  - Signals kept by both models earn 41-55 bp gross per dollar in every era.
+  - Signals kept by only one model earn 4-30 bp, about a round trip's costs.
+- **Cutting the disputed signals fails** (posthoc_consensus.txt): +0.98 on development, then -0.30 to -0.34 in Apr - Nov
+  2026 and -0.02 in 2022-23.
+- **How much history** (dose_main.csv, dose_early.csv; frozen simulator, development / Apr - Nov 2026 / 2022-23):
+  - only the last 365 days: +0.10 / -1.09 / -0.95;
+  - adding 2023: -0.34 / +0.15; adding 2022-23: +0.05 / +0.24; adding 2021-23: +0.39 / -0.02.
+  - So a one-year window is too short, and beyond R2-08's growing window there is no dose-response.
+- **Seed noise** (dose_seeds_main.csv; five seed triples, frozen simulator):
+
+  | Mean (SD across seed triples) | Development | Apr - Nov 2026 |
+  |---|---|---|
+  | R2-08 | 2.40 (0.13) | 2.61 (0.15) |
+  | History only | 2.77 (0.03) | 2.58 (0.04) |
+  | Features + history | 3.17 (0.07) | 2.74 (0.04) |
+
+  - Averaged over seeds, history only gains -0.03 in Apr - Nov 2026 and features + history +0.13 (range -0.09 to +0.33).
+  - More history cuts the seed-to-seed spread from 0.15 to 0.04. It steadies the model; it does not raise the mean.
+  - **One 15-seed model lands on the seed average** (dose_seeds15_main.csv): R2-08 scores 2.34 / 2.62 against the
+    five-triple means of 2.40 / 2.61. With 15 seeds, features + history is +0.10 in Apr - Nov 2026 and history only
+    -0.06. A larger ensemble removes the seed lottery without changing the expected Sharpe.
+
+## Checks
+- **Parity:** the incumbent spec gives R2-08's trades and frozen-simulator daily series exactly, on development and on
+  Apr - Nov 2026.
+- **Datasets:** every-minute predictions equal the candidate-row predictions to about 1e-5; deep paths show 0
+  mismatches.
+- **2022-23:** R2-08 rebuilt by the lab differs from the frozen book from 2023Q2 (engine-faithful Sharpe 1.645 against
+  1.684). Two candidate rows without a label (BCH and XLM, Mar 4 2023) are dropped by the lab and kept by the original
+  pipeline, where LightGBM reads them as 0. Comparisons there are against the frozen R2-08, as registered.
+- **Independent review** (a separate agent, read-only): no look-ahead found, and nothing that changes a verdict. Its
+  notes:
+  - The 60th-percentile threshold comes from each model's own training predictions, so feature and history effects
+    are mixed with how selective the model is.
+  - History rows carry today's per-coin perp fee in the R label.
+  - The Nasdaq-futures daily bar may close later than assumed. It affects RF4 only, which failed.
+
+## Next
+1. **Method:** average at least five seed triples per arm in every future model comparison.
+2. **Next model test:** forced-selling features from Coinbase trade prints for every candidate (edge hunt 2's EXH was
+   the closest miss as a filter), with this lab's pipeline, gates and seed averaging. It needs a data job.
+3. **Training fixes with no expected change:** drop the two unlabelled rows; keep the growing window.
+4. **Forward data:** open interest and funding logs (hunt 3's hourly logger) for a model test in about six months.

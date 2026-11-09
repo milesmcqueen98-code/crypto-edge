@@ -39,3 +39,22 @@ Code: scripts/signal_lab/. Trial ledger: reports/signal_lab/screen.csv.
   (the development gain shows on this simulator too), check 1.63 vs 2.22. The feature gain reversed out of sample.
 - 15:17 Mistake: the early-era build and the scorer together ran out of memory. Scorer stopped (cells are resumable);
   the early build runs alone, then two scorers in parallel.
+- 15:23 Early-era datasets done (371 s), run alone. Two scorers in parallel from 15:24.
+- 15:35 Post-hoc signal sets: signals kept by both models earn 41-55 bp gross per dollar; signals only one model keeps
+  earn 4-30 bp. A model swap reshuffles break-even signals.
+- 15:42 All 60 binding cells done. Chain check: R2-08 rebuilt by the lab in 2022-23 differs from the frozen book from
+  2023Q2 (1.645 vs 1.684). Cause found: two candidate rows without a label are dropped by the lab and kept by the
+  original pipeline. Main-era parity is exact in both eras.
+- 15:43 HOLDOUT READ (d17591d): no finalist passes. RF2 -0.59 and RF4 -0.46 in Apr - Nov 2026. RF2H above R2-08 in all
+  12 cells but +0.16 / +0.17 in the holdout eras (51.6 / 100). RF0H +0.12 (information).
+- 15:45 Information runs: a rolling 365-day window loses about 1.0 Sharpe in both holdout eras; adding 2023, 2022-23 or
+  2021-23 gives +0.15, +0.24, -0.02 in the check era. No dose-response, so "more history" is not established.
+- 15:47 Post-hoc consensus rule (only signals two models approve): +0.98 on development, -0.30 to -0.34 in the check
+  era. Failed.
+- 15:50 Round 4 (looser arming thresholds, registered first): fails on development by 1.1 to 2.8 Sharpe. The signals
+  below the threshold lose money. Holdout not read.
+- 15:57 Seed noise: R2-08 across five seed triples has SD 0.13 (development) and 0.15 (check). Averaged over seeds,
+  history only gains -0.03 in the check era; features + history +0.13. More history cuts the seed spread to 0.04.
+- 15:57 Independent review back: no look-ahead, nothing that changes a verdict; six minor notes (README).
+- 16:02 Mistake: a queued job waited on itself and never started (10 minutes of idle CPU). Restarted directly: one
+  15-seed R2-08 model against the five 3-seed models, all eras.
