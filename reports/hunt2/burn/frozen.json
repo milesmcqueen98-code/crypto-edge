@@ -1,0 +1,43 @@
+{
+ "idea": "burn",
+ "path": "A",
+ "variant": "coin_m0.5_C6",
+ "params": {
+  "m": 0.5,
+  "C_hours": 6,
+  "scope": "coin"
+ },
+ "rule": "failed = take-profit not hit by fill + 60 min and g60 < 0 and g60 <= -m x D (D = g_tp / 0.6); known at minute row fill + 61; coin scope: SKIP the coin's 4-sigma multiplier in rows [known, known + 60 C); market scope: SKIP every coin's when a failure is known < 60 min after another coin's failure",
+ "code_commit": "be8b1475c05a8fb6f14e58fb8df5f57d9473ca74",
+ "trials_code_commit": [
+  "8482644bc6ecc2bcded71b684693f336a41f1d57"
+ ],
+ "selection": "highest DEV paired HAC t at X2 among variants skipping >= 5% of DEV parents; ties -> shorter C, then coin scope, then m = 0",
+ "dev": {
+  "t_diff": -1.2703004643029827,
+  "mean_diff_bp": -0.398560265800781,
+  "d_sharpe": -0.2562652652897017,
+  "cand_sharpe": 1.3671000127674695,
+  "inc_sharpe": 1.6233652780571717,
+  "n_skip": 89,
+  "frac_skip": 0.077056277056277,
+  "n_dev_parents": 1155,
+  "top5_share": NaN
+ },
+ "n_trials": 12,
+ "eligible": [
+  "coin_m0_C6",
+  "coin_m0.5_C6",
+  "coin_m0_C24",
+  "coin_m0.5_C24",
+  "coin_m0_C72",
+  "coin_m0.5_C72",
+  "market_m0_C6",
+  "market_m0.5_C6",
+  "market_m0_C24",
+  "market_m0.5_C24",
+  "market_m0_C72",
+  "market_m0.5_C72"
+ ],
+ "frozen_utc": "2026-11-09T01:28:16Z"
+}
