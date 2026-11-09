@@ -187,4 +187,20 @@ For finalists, on the holdout:
 - theta 0.25.
 
 ## Deviation log
-(none yet)
+- **Freeze (Nov 9, 11:55 UTC), before any check-era or 2022-23 statistic:**
+  - **Every candidate was testable** (selection-era firing sets: A2 68 signals in 15 clusters, A3 50 in 10, C1 316,
+    C2 368, C3 167; every day-of-week and B bucket at least 86 signals).
+  - **Finalists** (highest mean selection ΔSharpe in their family): A2 (+0.016), B2 (+0.176), C1 (-0.112).
+    A2 on top of B2 against B2: +0.007 / -0.013 / -0.010 / -0.037.
+  - **No finalist clears test 1 on the selection era.** B2 is +0.31 / +0.28 at $250K (main / W2) but -0.003 / +0.12 at
+    $1M. A2 and C1 are below +0.20 everywhere. So none can pass. The holdout is still read once, as registered (each
+    family's best is its finalist). The read is information for the next test, not a chance to pass.
+  - **Capital match unreachable for B2** (both books) **and B3** (main). Even with every positive-Kelly bucket at
+    x1.5, the ADV cap leaves B2 at 0.94 of flat capital at $250K and 0.91 at $1M.
+    - c sits at the bisection's bound, 50. That equals "c at its largest value" here: every B2 bucket's g is
+      either <= 0 or >= 0.8.
+    - So under the 0.2% ADV cap, the same-capital mu/sigma^2 rule collapses to a step: x0.5 for the low-margin
+      tercile, x1.5 (capped) for the rest.
+  - **Holdout code** (scripts/sizing_lab/holdout.py) was written before this freeze. It was dry-run on the selection
+    era alone, with outputs to a scratch folder, to catch bugs; no check-era or 2022-23 data was loaded. The read-once
+    marker is written after the outputs.
