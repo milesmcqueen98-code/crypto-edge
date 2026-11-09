@@ -94,6 +94,30 @@ def feats(p, t_fill, lvl, adv=np.nan):
             out[f"ret_bp_{W}"] = 1e4 * (px[-1] / px[0] - 1.0)
             out[f"maxdd_bp_{W}"] = 1e4 * (px.min() / px.max() - 1.0)
             out[f"dist_lvl_bp_{W}"] = 1e4 * (px[-1] / lvl - 1.0)
+        # exhaustion family (memo R3, C4): cumulative aggressive selling as a share of ADV, and the imbalance
+        if adv == adv and adv > 0:
+            out[f"csv_{W}"] = s_not / adv
+        b_not = tot - s_not
+        out[f"imb_{W}"] = (b_not - s_not) / tot if tot > 0 else np.nan
+    # sell intensity now vs its peak over the window: EWMA (60 s half-life) of aggressive-sell dollars on a 1 s grid
+    if len(pre):
+        t0 = t_fill - pd.Timedelta(minutes=30) - pd.Timedelta(seconds=1)
+        s = pre[pre.side == "BUY"]
+        sec = ((s.time - t0) // pd.Timedelta(seconds=1)).to_numpy()
+        n = int((t_fill - pd.Timedelta(seconds=1) - t0) // pd.Timedelta(seconds=1)) + 1
+        grid = np.zeros(max(n, 1))
+        ok = (sec >= 0) & (sec < len(grid))
+        np.add.at(grid, sec[ok], (s.price * s["size"]).to_numpy()[ok])
+        lam = np.empty_like(grid)
+        a = 0.5 ** (1.0 / 60.0)
+        acc = 0.0
+        for i in range(len(grid)):
+            acc = acc * a + grid[i]
+            lam[i] = acc
+        pk = lam.max()
+        out["ex_peak"] = float(lam[-1] / pk) if pk > 0 else np.nan
+    if "imb_1" in out and "imb_15" in out:
+        out["turn"] = out["imb_1"] - out["imb_15"]
     return out
 
 
