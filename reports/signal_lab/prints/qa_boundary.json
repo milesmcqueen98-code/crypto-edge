@@ -1,5 +1,5 @@
 {
- "self_test": "prints_boundary self-test passed (12 unequal pairs; A 0.35 s lag, B 2 s lead, whole-minute A, their neighbours, a lost minute, a window edge and a one-sided window-end A all recovered)",
+ "self_test": "prints_boundary self-test passed (17 unequal pairs; A 0.35 s lag, B 2 s lead, whole-minute A, their neighbours, a lost minute, a window edge, a one-sided window-end A and, by the chain check, a three-boundary B chain all recovered)",
  "tol": 1e-05,
  "strict": 1e-07,
  "coins": {
@@ -488,6 +488,349 @@
    "share_whole_minute_of_unequal": 0.020915896081021578
   }
  },
+ "chain": {
+  "all": {
+   "boundaries": 397094,
+   "kinds": {
+    "zero": 354140,
+    "B": 32426,
+    "unexplained": 8017,
+    "A": 2511
+   },
+   "A": {
+    "confirmed": 45,
+    "unconfirmed": 2466,
+    "whole_minute": 27,
+    "d_q": [
+     14.911344,
+     53.306626,
+     57.725599,
+     59.219253
+    ],
+    "d_sub_minute_q": [
+     5.928819,
+     13.760816,
+     20.9141,
+     21.021371
+    ]
+   },
+   "B": {
+    "confirmed": 31060,
+    "unconfirmed": 1366,
+    "whole_minute": 2680,
+    "d_q": [
+     8.688768,
+     28.082866,
+     53.463981,
+     59.984419
+    ],
+    "d_sub_minute_q": [
+     8.419139,
+     22.442948,
+     41.132533,
+     59.759434
+    ]
+   },
+   "single_move_open_pairs_by_chain": {
+    "zero": 15356,
+    "B_confirmed": 14593,
+    "unexplained": 6368,
+    "A": 2279,
+    "B": 726,
+    "A_confirmed": 31
+   }
+  },
+  "2021": {
+   "boundaries": 44695,
+   "kinds": {
+    "zero": 42134,
+    "B": 2201,
+    "unexplained": 294,
+    "A": 66
+   },
+   "A": {
+    "confirmed": 0,
+    "unconfirmed": 66,
+    "whole_minute": 0,
+    "d_q": null,
+    "d_sub_minute_q": null
+   },
+   "B": {
+    "confirmed": 2142,
+    "unconfirmed": 59,
+    "whole_minute": 128,
+    "d_q": [
+     8.416326,
+     25.119773,
+     49.903905,
+     59.943001
+    ],
+    "d_sub_minute_q": [
+     8.301507,
+     19.749736,
+     39.788495,
+     49.255001
+    ]
+   },
+   "single_move_open_pairs_by_chain": {
+    "B_confirmed": 847,
+    "zero": 785,
+    "unexplained": 261,
+    "A": 62,
+    "B": 28
+   }
+  },
+  "2022": {
+   "boundaries": 64292,
+   "kinds": {
+    "zero": 56336,
+    "B": 6378,
+    "unexplained": 1212,
+    "A": 366
+   },
+   "A": {
+    "confirmed": 2,
+    "unconfirmed": 364,
+    "whole_minute": 1,
+    "d_q": [
+     18.097493,
+     30.06072,
+     32.752446,
+     33.051527
+    ],
+    "d_sub_minute_q": [
+     3.143459,
+     3.143459,
+     3.143459,
+     3.143459
+    ]
+   },
+   "B": {
+    "confirmed": 6167,
+    "unconfirmed": 211,
+    "whole_minute": 483,
+    "d_q": [
+     8.768929,
+     27.820549,
+     51.657337,
+     59.877143
+    ],
+    "d_sub_minute_q": [
+     8.561625,
+     23.517735,
+     41.15358,
+     53.001575
+    ]
+   },
+   "single_move_open_pairs_by_chain": {
+    "B_confirmed": 2850,
+    "zero": 2702,
+    "unexplained": 1033,
+    "A": 332,
+    "B": 105,
+    "A_confirmed": 2
+   }
+  },
+  "2023": {
+   "boundaries": 72787,
+   "kinds": {
+    "zero": 58899,
+    "B": 10164,
+    "unexplained": 2860,
+    "A": 864
+   },
+   "A": {
+    "confirmed": 8,
+    "unconfirmed": 856,
+    "whole_minute": 6,
+    "d_q": [
+     21.252475,
+     53.900602,
+     55.632187,
+     55.824585
+    ],
+    "d_sub_minute_q": [
+     13.866903,
+     19.590477,
+     20.878282,
+     21.021371
+    ]
+   },
+   "B": {
+    "confirmed": 9654,
+    "unconfirmed": 510,
+    "whole_minute": 1154,
+    "d_q": [
+     9.073927,
+     30.333081,
+     55.554672,
+     59.984419
+    ],
+    "d_sub_minute_q": [
+     8.63135,
+     25.232568,
+     43.057261,
+     49.988202
+    ]
+   },
+   "single_move_open_pairs_by_chain": {
+    "zero": 5182,
+    "B_confirmed": 4686,
+    "unexplained": 2285,
+    "A": 773,
+    "B": 268,
+    "A_confirmed": 5
+   }
+  },
+  "2024": {
+   "boundaries": 68866,
+   "kinds": {
+    "zero": 66880,
+    "B": 733,
+    "unexplained": 681,
+    "A": 572
+   },
+   "A": {
+    "confirmed": 11,
+    "unconfirmed": 561,
+    "whole_minute": 10,
+    "d_q": [
+     21.034533,
+     53.788297,
+     58.676157,
+     59.219253
+    ],
+    "d_sub_minute_q": [
+     10.919582,
+     10.919582,
+     10.919582,
+     10.919582
+    ]
+   },
+   "B": {
+    "confirmed": 709,
+    "unconfirmed": 24,
+    "whole_minute": 66,
+    "d_q": [
+     8.867859,
+     29.193131,
+     53.67223,
+     59.964666
+    ],
+    "d_sub_minute_q": [
+     8.509966,
+     23.481762,
+     42.613791,
+     49.997049
+    ]
+   },
+   "single_move_open_pairs_by_chain": {
+    "zero": 800,
+    "A": 544,
+    "B_confirmed": 372,
+    "unexplained": 210,
+    "B": 12,
+    "A_confirmed": 10
+   }
+  },
+  "2025": {
+   "boundaries": 73421,
+   "kinds": {
+    "zero": 68402,
+    "B": 4024,
+    "unexplained": 823,
+    "A": 172
+   },
+   "A": {
+    "confirmed": 2,
+    "unconfirmed": 170,
+    "whole_minute": 2,
+    "d_q": [
+     24.747507,
+     37.986761,
+     40.965593,
+     41.296574
+    ],
+    "d_sub_minute_q": null
+   },
+   "B": {
+    "confirmed": 3896,
+    "unconfirmed": 128,
+    "whole_minute": 244,
+    "d_q": [
+     8.430831,
+     23.613556,
+     51.279047,
+     59.95833
+    ],
+    "d_sub_minute_q": [
+     8.217664,
+     19.095115,
+     38.576154,
+     54.69387
+    ]
+   },
+   "single_move_open_pairs_by_chain": {
+    "B_confirmed": 1813,
+    "zero": 1768,
+    "unexplained": 707,
+    "A": 156,
+    "B": 71,
+    "A_confirmed": 1
+   }
+  },
+  "2026": {
+   "boundaries": 73033,
+   "kinds": {
+    "zero": 61489,
+    "B": 8926,
+    "unexplained": 2147,
+    "A": 471
+   },
+   "A": {
+    "confirmed": 22,
+    "unconfirmed": 449,
+    "whole_minute": 8,
+    "d_q": [
+     8.700095,
+     45.5633,
+     53.503251,
+     53.751109
+    ],
+    "d_sub_minute_q": [
+     4.573588,
+     9.623151,
+     18.993508,
+     20.390363
+    ]
+   },
+   "B": {
+    "confirmed": 8492,
+    "unconfirmed": 434,
+    "whole_minute": 605,
+    "d_q": [
+     8.460825,
+     26.57611,
+     51.787442,
+     59.938924
+    ],
+    "d_sub_minute_q": [
+     8.222724,
+     20.660182,
+     41.164047,
+     59.759434
+    ]
+   },
+   "single_move_open_pairs_by_chain": {
+    "zero": 4119,
+    "B_confirmed": 4025,
+    "unexplained": 1872,
+    "A": 412,
+    "B": 242,
+    "A_confirmed": 13
+   }
+  }
+ },
  "candidates": {
   "early": {
    "n": 14563,
@@ -525,7 +868,38 @@
     0.702995
    ],
    "usd_over_usd30_mean_all": 8.778654809726452e-05,
-   "B": 275
+   "B": 275,
+   "chain_kinds": {
+    "zero": 13678,
+    "B": 449,
+    "B_unverified": 315,
+    "unexplained": 83,
+    "A": 38
+   },
+   "chain_A_confirmed": 13,
+   "chain_A_confirmed_share": 0.0008926732129368949,
+   "chain_A_unconfirmed": 25,
+   "chain_A_whole_minute": 12,
+   "chain_A_d_q": [
+    11.415687,
+    47.838289,
+    55.108142,
+    56.098161
+   ],
+   "chain_A_d_sub_minute_q": [
+    6.822469,
+    6.822469,
+    6.822469,
+    6.822469
+   ],
+   "chain_A_usd_over_usd30_q": [
+    0.006008,
+    0.268478,
+    0.651576,
+    0.702995
+   ],
+   "chain_usd_over_usd30_mean_all": 0.00011126532763957754,
+   "chain_B_confirmed": 439
   },
   "main": {
    "n": 17527,
@@ -569,7 +943,38 @@
     0.052968
    ],
    "usd_over_usd30_mean_all": 1.7782154722139384e-05,
-   "B": 178
+   "B": 178,
+   "chain_kinds": {
+    "zero": 16824,
+    "B": 303,
+    "B_unverified": 246,
+    "unexplained": 112,
+    "A": 42
+   },
+   "chain_A_confirmed": 21,
+   "chain_A_confirmed_share": 0.0011981514235180008,
+   "chain_A_unconfirmed": 21,
+   "chain_A_whole_minute": 16,
+   "chain_A_d_q": [
+    17.241099,
+    44.334051,
+    57.060845,
+    58.439611
+   ],
+   "chain_A_d_sub_minute_q": [
+    8.283413,
+    33.49687,
+    43.250333,
+    44.334051
+   ],
+   "chain_A_usd_over_usd30_q": [
+    0.010588,
+    0.052968,
+    0.083208,
+    0.088502
+   ],
+   "chain_usd_over_usd30_mean_all": 2.5956687162267097e-05,
+   "chain_B_confirmed": 295
   }
  },
  "candidates_by_year": {
@@ -598,7 +1003,22 @@
    "A_d_sub_minute_q": null,
    "A_usd_over_usd30_q": null,
    "usd_over_usd30_mean_all": 0.0,
-   "B": 49
+   "B": 49,
+   "chain_kinds": {
+    "zero": 3861,
+    "B": 61,
+    "B_unverified": 32,
+    "unexplained": 6
+   },
+   "chain_A_confirmed": 0,
+   "chain_A_confirmed_share": 0.0,
+   "chain_A_unconfirmed": 0,
+   "chain_A_whole_minute": 0,
+   "chain_A_d_q": null,
+   "chain_A_d_sub_minute_q": null,
+   "chain_A_usd_over_usd30_q": null,
+   "chain_usd_over_usd30_mean_all": 0.0,
+   "chain_B_confirmed": 61
   },
   "2022": {
    "n": 5506,
@@ -636,7 +1056,38 @@
     0.000115
    ],
    "usd_over_usd30_mean_all": 2.0805341561550752e-08,
-   "B": 101
+   "B": 101,
+   "chain_kinds": {
+    "zero": 5211,
+    "B": 168,
+    "B_unverified": 96,
+    "unexplained": 22,
+    "A": 9
+   },
+   "chain_A_confirmed": 2,
+   "chain_A_confirmed_share": 0.0003632401017072285,
+   "chain_A_unconfirmed": 7,
+   "chain_A_whole_minute": 1,
+   "chain_A_d_q": [
+    11.783006,
+    15.751436,
+    16.644332,
+    16.743543
+   ],
+   "chain_A_d_sub_minute_q": [
+    6.822469,
+    6.822469,
+    6.822469,
+    6.822469
+   ],
+   "chain_A_usd_over_usd30_q": [
+    0.003061,
+    0.005419,
+    0.005949,
+    0.006008
+   ],
+   "chain_usd_over_usd30_mean_all": 1.1120120455522994e-06,
+   "chain_B_confirmed": 164
   },
   "2023": {
    "n": 5097,
@@ -674,7 +1125,33 @@
     0.702995
    ],
    "usd_over_usd30_mean_all": 0.0002507986944731853,
-   "B": 125
+   "B": 125,
+   "chain_kinds": {
+    "zero": 4606,
+    "B": 220,
+    "B_unverified": 187,
+    "unexplained": 55,
+    "A": 29
+   },
+   "chain_A_confirmed": 11,
+   "chain_A_confirmed_share": 0.002158132234647832,
+   "chain_A_unconfirmed": 18,
+   "chain_A_whole_minute": 11,
+   "chain_A_d_q": [
+    11.415687,
+    47.848001,
+    55.273145,
+    56.098161
+   ],
+   "chain_A_d_sub_minute_q": null,
+   "chain_A_usd_over_usd30_q": [
+    0.028973,
+    0.274496,
+    0.660145,
+    0.702995
+   ],
+   "chain_usd_over_usd30_mean_all": 0.0003167028110834524,
+   "chain_B_confirmed": 214
   },
   "2024": {
    "n": 5644,
@@ -712,7 +1189,38 @@
     0.047025
    ],
    "usd_over_usd30_mean_all": 1.7150811570708996e-05,
-   "B": 12
+   "B": 12,
+   "chain_kinds": {
+    "zero": 5575,
+    "unexplained": 22,
+    "B": 18,
+    "A": 15,
+    "B_unverified": 14
+   },
+   "chain_A_confirmed": 7,
+   "chain_A_confirmed_share": 0.0012402551381998582,
+   "chain_A_unconfirmed": 8,
+   "chain_A_whole_minute": 6,
+   "chain_A_d_q": [
+    23.768803,
+    38.621237,
+    43.76277,
+    44.334051
+   ],
+   "chain_A_d_sub_minute_q": [
+    44.334051,
+    44.334051,
+    44.334051,
+    44.334051
+   ],
+   "chain_A_usd_over_usd30_q": [
+    0.017063,
+    0.053772,
+    0.061203,
+    0.062029
+   ],
+   "chain_usd_over_usd30_mean_all": 3.5605422111215124e-05,
+   "chain_B_confirmed": 18
   },
   "2025": {
    "n": 6280,
@@ -756,7 +1264,33 @@
     0.03277
    ],
    "usd_over_usd30_mean_all": 1.5417817453918786e-05,
-   "B": 56
+   "B": 56,
+   "chain_kinds": {
+    "zero": 6087,
+    "B": 89,
+    "B_unverified": 78,
+    "unexplained": 20,
+    "A": 6
+   },
+   "chain_A_confirmed": 5,
+   "chain_A_confirmed_share": 0.0007961783439490446,
+   "chain_A_unconfirmed": 1,
+   "chain_A_whole_minute": 5,
+   "chain_A_d_q": [
+    27.592125,
+    52.410468,
+    57.836697,
+    58.439611
+   ],
+   "chain_A_d_sub_minute_q": null,
+   "chain_A_usd_over_usd30_q": [
+    0.012458,
+    0.066209,
+    0.086273,
+    0.088502
+   ],
+   "chain_usd_over_usd30_mean_all": 2.2159406414700283e-05,
+   "chain_B_confirmed": 89
   },
   "2026": {
    "n": 5603,
@@ -800,8 +1334,47 @@
     0.052968
    ],
    "usd_over_usd30_mean_all": 2.1068133446233344e-05,
-   "B": 110
+   "B": 110,
+   "chain_kinds": {
+    "zero": 5162,
+    "B": 196,
+    "B_unverified": 154,
+    "unexplained": 70,
+    "A": 21
+   },
+   "chain_A_confirmed": 9,
+   "chain_A_confirmed_share": 0.0016062823487417454,
+   "chain_A_unconfirmed": 12,
+   "chain_A_whole_minute": 5,
+   "chain_A_d_q": [
+    8.283413,
+    33.542685,
+    49.745471,
+    51.545781
+   ],
+   "chain_A_d_sub_minute_q": [
+    7.094929,
+    14.553793,
+    16.972368,
+    17.241099
+   ],
+   "chain_A_usd_over_usd30_q": [
+    0.006506,
+    0.037647,
+    0.051436,
+    0.052968
+   ],
+   "chain_usd_over_usd30_mean_all": 2.0493446584515338e-05,
+   "chain_B_confirmed": 188
   }
+ },
+ "largest_A_chain_confirmed": {
+  "boundaries_d_max": 59.219253,
+  "boundaries_sub_minute_d_max": 21.021371,
+  "boundaries_whole_minute": 27,
+  "at_q_d_max": 58.439611,
+  "at_q_sub_minute_d_max": 44.334051,
+  "at_q_whole_minute": 28
  },
  "largest_A": {
   "pairs_d_max": 54.74297,
