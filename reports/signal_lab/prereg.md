@@ -221,3 +221,13 @@ unread.
      models, on the frozen simulator in every era. It asks how much of a book's Sharpe is the luck of the seed draw, and
      whether a larger ensemble removes it. It selects nothing: the claim under test is lower variance, not a higher
      mean.
+8. **Post-hoc dissection of F2 (Nov 9 2026, 16:13 ET; information only, logged before it ran).**
+   - **Seed-averaged results since deviation 7:** the feature reversals hold across seeds (RF2 -0.84 and RF4 -0.72 in
+     the check era). Adding the 2021-23 history moves RF2 from -0.84 to +0.13 there.
+   - **Question:** is that because F2's two BTC trend-regime features (BTC against its 100-day average, BTC's 30-day
+     return) were learned on 2024-25 alone, and the history adds a bear market?
+   - **Runs** (frozen simulator, S*, every era): F2a = the six coin-position features only; F2b = the two regime
+     features only; each with and without the history (RF2a, RF2b, RF2aH, RF2bH).
+   - **Reading it:** if the story is right, RF2b should fail in the check era without the history and recover with it,
+     and RF2a should depend on the history much less.
+   - These four specs select nothing. They count toward N (41) and shape only the next pre-registered test.

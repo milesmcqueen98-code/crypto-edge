@@ -50,7 +50,8 @@ MACRO = ["dvol_btc", "dvol_chg24", "vrp_btc", "vix", "nq_ret1d_bp", "nq_ret5d_bp
 MEMORY = ["mkt_net_24h", "mkt_n_24h", "coin_prev_net", "coin_prev_age"]
 FSETS = {"F0": [], "F1": list(core.EXTRA2), "F2": list(core.EXTRA1) + list(core.EXTRA4),
          "F3": list(core.EXTRA1) + list(core.EXTRA2) + list(core.EXTRA3) + list(core.EXTRA4), "F4": list(MACRO),
-         "F5": list(MEMORY)}
+         "F5": list(MEMORY),
+         "F2a": list(core.EXTRA1), "F2b": list(core.EXTRA4)}    # F2 split (deviation 8): coin position / BTC trend regime
 LABELS = ("R", "S4", "LD", "LS")
 SPECS = [f"{l}{f}" for l in LABELS for f in ("F0", "F1", "F2", "F3", "F4")]            # round 1
 HIST = os.path.join(OUT, "cand_early.parquet")              # round 2: 2021-23 candidates as extra training rows
