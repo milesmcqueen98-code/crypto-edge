@@ -36,10 +36,21 @@ def main(raw_dir):
                              candle_px=px, buy=sgn > 0))
     W = pd.DataFrame(rows)
     os.makedirs(raw_dir, exist_ok=True)
-    wf = os.path.join(raw_dir, "windows.csv")
-    W[["window_id", "product", "start", "end"]].to_csv(wf, index=False)
-    prints.main(wf, 0, 1, raw_dir)
-    P = pd.read_parquet(os.path.join(raw_dir, "prints_0.parquet"))
+    # spot and perp windows in separate prints.main calls: a mixed file fails to save (spot trade ids are ints, perp
+    # trade ids strings, so prints.py's concatenated trade_id column cannot be written to parquet)
+    parts = []
+    for k, sel in (("spot", W["product"] == "BTC-USD"), ("perp", W["product"] != "BTC-USD")):
+        if not sel.any():
+            continue
+        d = os.path.join(raw_dir, k)
+        os.makedirs(d, exist_ok=True)
+        wf = os.path.join(d, "windows.csv")
+        W.loc[sel, ["window_id", "product", "start", "end"]].to_csv(wf, index=False)
+        prints.main(wf, 0, 1, d)
+        q = pd.read_parquet(os.path.join(d, "prints_0.parquet"))
+        q["trade_id"] = q["trade_id"].astype(str)
+        parts.append(q)
+    P = pd.concat(parts, ignore_index=True)
     P["time"] = pd.to_datetime(P["time"], utc=True).dt.tz_localize(None)
     P["price"] = pd.to_numeric(P["price"], errors="coerce")
     P["size"] = pd.to_numeric(P["size"], errors="coerce")
