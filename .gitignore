@@ -10,3 +10,4 @@ reports/ladder_v5/deep_paths_early_*.pkl
 reports/ladder_v5/redteam/adv_main_*.parquet
 reports/ladder_v5/redteam/adv_early_*.parquet
 reports/signal_lab/screen_daily_*.parquet
+reports/signal_lab/cand_*.parquet

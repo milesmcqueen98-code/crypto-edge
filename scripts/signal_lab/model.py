@@ -47,19 +47,25 @@ OUT = os.path.join(ROOT, "reports", "signal_lab")
 os.makedirs(OUT, exist_ok=True)
 MAKER_BP, TAKER_BP, HS_BP = 6.0, 12.5, 2.0
 MACRO = ["dvol_btc", "dvol_chg24", "vrp_btc", "vix", "nq_ret1d_bp", "nq_ret5d_bp"]
+MEMORY = ["mkt_net_24h", "mkt_n_24h", "coin_prev_net", "coin_prev_age"]
 FSETS = {"F0": [], "F1": list(core.EXTRA2), "F2": list(core.EXTRA1) + list(core.EXTRA4),
-         "F3": list(core.EXTRA1) + list(core.EXTRA2) + list(core.EXTRA3) + list(core.EXTRA4), "F4": list(MACRO)}
+         "F3": list(core.EXTRA1) + list(core.EXTRA2) + list(core.EXTRA3) + list(core.EXTRA4), "F4": list(MACRO),
+         "F5": list(MEMORY)}
 LABELS = ("R", "S4", "LD", "LS")
-SPECS = [f"{l}{f}" for l in LABELS for f in FSETS]
+SPECS = [f"{l}{f}" for l in LABELS for f in ("F0", "F1", "F2", "F3", "F4")]            # round 1
+HIST = os.path.join(OUT, "cand_early.parquet")              # round 2: 2021-23 candidates as extra training rows
 DEV_Q = {"main": ("2025Q1", "2026Q1")}                      # development: walk-forward through Mar 2026 only
 ERA_OF = {"main": ("sel", "chk"), "early": ("early",)}
 CFG = dict(theta=0.5, C=250e3, today=True, cost_mult=2.0)    # S* theta 0.5
 
 
 def split(name):
+    """SPEC = <label><feature set>[H]; H = the 2021-23 candidates are added to every training set (main era only)."""
+    hist = name.endswith("H")
+    core_name = name[:-1] if hist else name
     for l in sorted(LABELS, key=len, reverse=True):
-        if name.startswith(l) and name[len(l):] in FSETS:
-            return l, name[len(l):]
+        if core_name.startswith(l) and core_name[len(l):] in FSETS:
+            return l, core_name[len(l):], hist
     raise ValueError(name)
 
 
@@ -166,8 +172,45 @@ def macro_arrays(d):
     return {k: v.astype(np.float32) for k, v in out.items()}
 
 
+def memory_arrays(L):
+    """Outcome memory, known at the end of minute t-1 (row t). A candidate fill at minute q has its R2-08 label (net bp
+    of the 4-sigma trade, clipped) known by the end of minute q + 60, so row t may use it when q + 61 <= t.
+      mkt_net_24h / mkt_n_24h   mean and count of all coins' candidate outcomes that became known in the last 24 hours
+      coin_prev_net / _age      the coin's latest known candidate outcome, and minutes since that fill (<= 7 days)"""
+    d, X = L.data, L.X
+    T = d.T
+    y = L.lab.net_real.clip(-400, 400).to_numpy()
+    pos = X.pos.to_numpy().astype(np.int64)
+    ok = np.isfinite(y) & (pos + 61 < T)
+    a_s, a_n = np.zeros(T), np.zeros(T)
+    np.add.at(a_s, pos[ok] + 61, y[ok])
+    np.add.at(a_n, pos[ok] + 61, 1.0)
+    cs, cn = np.cumsum(a_s), np.cumsum(a_n)
+    lag = np.r_[np.zeros(1440), cs[:-1440]], np.r_[np.zeros(1440), cn[:-1440]]
+    w_s, w_n = cs - lag[0], cn - lag[1]
+    with np.errstate(invalid="ignore", divide="ignore"):
+        out = {"mkt_net_24h": np.where(w_n > 0, w_s / w_n, np.nan).astype(np.float32), "mkt_n_24h": w_n.astype(np.float32)}
+    coin = {}
+    cc = X.coin.to_numpy()
+    tt = np.arange(T)
+    for c in L.ls.coins:
+        m = ok & (cc == c)
+        val = np.full(T, np.nan)
+        src = np.full(T, -1, dtype=np.int64)
+        o = np.argsort(pos[m])
+        val[pos[m][o] + 61] = y[m][o]
+        src[pos[m][o] + 61] = pos[m][o]
+        last = np.maximum.accumulate(np.where(src >= 0, tt, -1))          # latest minute <= t with a new outcome
+        has = last >= 0
+        pv = np.where(has, val[np.maximum(last, 0)], np.nan)
+        age = np.where(has, np.minimum(tt - src[np.maximum(last, 0)], 10080), 10080)
+        coin[c] = (pv.astype(np.float32), age.astype(np.float32))
+    out["coin"] = coin
+    return out
+
+
 # ------------------------------------------------------------------------------------------------ walk-forward
-def wf(X, y, feats, periods, thr_q=0.6, seeds=(7, 11, 23), keep_models=False):
+def wf(X, y, feats, periods, thr_q=0.6, seeds=(7, 11, 23), keep_models=False, hist=None):
     """core.walk_forward at R2-08's settings (episode weights, Huber, 250 rounds), also returning the models."""
     params = dict(wick.PARAMS)
     pred = pd.Series(np.nan, index=X.index)
@@ -181,8 +224,12 @@ def wf(X, y, feats, periods, thr_q=0.6, seeds=(7, 11, 23), keep_models=False):
         if not te_mask.any() or tr_mask.sum() < 200:
             continue
         tr, te = X[tr_mask], X[te_mask]
-        w = 1.0 / tr.groupby(["coin", "episode"]).ts.transform("size").to_numpy()
         ytr = y[tr_mask].to_numpy()
+        if hist is not None:                                  # earlier-era candidates: extra training rows
+            hx, hy = hist
+            tr = pd.concat([hx[["coin", "episode", "ts"] + feats], tr[["coin", "episode", "ts"] + feats]], ignore_index=True)
+            ytr = np.r_[hy, ytr]
+        w = 1.0 / tr.groupby(["coin", "episode"]).ts.transform("size").to_numpy()
         ms = [lgb.train(params | {"seed": s}, lgb.Dataset(tr[feats], ytr, weight=w, categorical_feature=cat),
                         num_boost_round=wick.ROUNDS) for s in seeds]
         pred[te.index] = np.mean([m.predict(te[feats]) for m in ms], axis=0)
@@ -210,14 +257,45 @@ class Lab:
         pos = self.X.pos.to_numpy()
         for k, a in self.macro.items():
             self.X[k] = a[pos]
+        self.mem = memory_arrays(self)
+        self.X["mkt_net_24h"], self.X["mkt_n_24h"] = self.mem["mkt_net_24h"][pos], self.mem["mkt_n_24h"][pos]
+        pn_, pa_ = np.full(len(pos), np.nan, np.float32), np.full(len(pos), np.nan, np.float32)
+        cc = self.X.coin.to_numpy()
+        for c in self.ls.coins:
+            m = cc == c
+            pn_[m], pa_[m] = self.mem["coin"][c][0][pos[m]], self.mem["coin"][c][1][pos[m]]
+        self.X["coin_prev_net"], self.X["coin_prev_age"] = pn_, pa_
+        self.hist = None
+        if BASE == "main" and os.path.exists(HIST):
+            h = pd.read_parquet(HIST)
+            codes = {c: float(i) for i, c in enumerate(sorted(self.ls.coins))}
+            h = h[h.coin.isin(codes)].copy()
+            h["coin_id"] = h.coin.map(codes).astype(np.float32)
+            h["episode"] = h.episode + 10_000_000
+            self.hist = h.reset_index(drop=True)
         print(f"lab ready: {len(self.X):,} candidates, {len(self.ls.coins)} coins ({time.time() - t0:.0f}s)", flush=True)
 
     def fit(self, name, periods, keep_models=False):
-        l, f = split(name)
+        l, f, use_hist = split(name)
         feats = list(wick.FEATS) + FSETS[f]
         y = label_of(l, self.lab, self.sp)
-        pred, thr, models = wf(self.X, y, feats, periods, thr_q=self.ai_d.get("thr_q", 0.5), keep_models=keep_models)
+        hist = None
+        if use_hist:
+            hy = self.hist[f"y_{l}"]
+            okh = hy.notna().to_numpy()
+            hist = (self.hist[okh], hy.to_numpy()[okh])
+        pred, thr, models = wf(self.X, y, feats, periods, thr_q=self.ai_d.get("thr_q", 0.5), keep_models=keep_models,
+                               hist=hist)
         return feats, pred, thr, models
+
+    def export(self):
+        """Every candidate of this era with all features and labels (training rows for the later era's models)."""
+        cols = ["coin", "ts", "episode"] + list(wick.FEATS) + sorted({x for v in FSETS.values() for x in v})
+        E = self.X[cols].copy()
+        for l in LABELS:
+            E[f"y_{l}"] = label_of(l, self.lab, self.sp).to_numpy()
+        E.to_parquet(os.path.join(OUT, f"cand_{BASE}.parquet"), index=False)
+        print(f"exported {len(E):,} candidates, {E.coin.nunique()} coins, {E.ts.min()} .. {E.ts.max()}", flush=True)
 
     def trades(self, pred, thr):
         X, ls, ex = self.X, self.ls, self.ex
@@ -293,7 +371,8 @@ def screen(names):
             diff = float(np.abs(d["sel"].reindex(inc.index, fill_value=0.0) - inc).max())
             note = f"parity: trades {'identical' if same else 'DIFFER'} ({len(tr)} vs {len(ref)}); max daily diff {diff:.1e}"
         te = (L.X.ts >= periods[0].start_time) & (L.X.ts <= periods[-1].end_time)
-        rows.append(dict(spec=name, label=split(name)[0], fset=split(name)[1], n_feats=len(feats), sharpe=st["sharpe"],
+        rows.append(dict(spec=name, label=split(name)[0], fset=split(name)[1], hist=split(name)[2], n_feats=len(feats),
+                         sharpe=st["sharpe"],
                          ret_yr=st["ret_yr"], maxdd=st["maxdd"], d_sharpe=st["sharpe"] - s_inc["sharpe"],
                          trades=len(tr), share_kept=float((pred[te] > thr[te]).mean()),
                          overlap=float(len(tr.merge(ref[["ts", "coin"]], on=["ts", "coin"])) / max(len(tr), 1)), note=note))
@@ -377,6 +456,8 @@ def extra_all(L, c, pos):
         f["btc_ret30d_bp"] = (p(d.lp["BTC"] - core.shift(d.lp["BTC"], 43200)) * 1e4)[pos]
     for k, a in L.macro.items():
         f[k] = a[pos]
+    f["mkt_net_24h"], f["mkt_n_24h"] = L.mem["mkt_net_24h"][pos], L.mem["mkt_n_24h"][pos]
+    f["coin_prev_net"], f["coin_prev_age"] = L.mem["coin"][c][0][pos], L.mem["coin"][c][1][pos]
     return pd.DataFrame(f).astype(np.float32)
 
 
@@ -500,3 +581,5 @@ if __name__ == "__main__":
         screen(sys.argv[3:] or SPECS)
     elif mode == "chain":
         chain(sys.argv[3])
+    elif mode == "export":
+        Lab().export()

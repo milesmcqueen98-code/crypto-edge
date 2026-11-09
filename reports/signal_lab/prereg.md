@@ -107,4 +107,22 @@ unread.
 | Implementation | 5 | hand-scored at the freeze |
 
 ## Deviation log
-(none yet)
+1. **Round 2 and a third finalist rule (Nov 9 2026, 14:42 ET).** Written while round 1 was running, after seeing 8 of
+   its 20 results (RF0-RF4, S4F0-S4F2), and before any round-2 spec ran.
+   - **F5, outcome memory** (4 features): the mean and count of all coins' candidate-trade outcomes that became known
+     in the last 24 hours; the coin's latest known outcome and its age.
+     - Mechanism: liquidity providers' capital is slow to return after losses, so the rebound premium is higher after
+       failed rebounds. Edge hunt 2 saw this on its development data (the next ladder after a failure earned more).
+     - An outcome is used only once it is known: a fill at minute q is used from minute q + 61.
+     - Trials: RF5 and LDF5.
+   - **H, more history** (main era only): the 2021-23 candidates are added to every training set. The main-era models
+     otherwise learn from 2024 on.
+     - Mechanism: the binding limit is the number of independent forced-selling episodes, not the feature count.
+     - It cannot be judged in 2022-23 (no earlier data), so it cannot pass gate 1. It is a side family: its best spec is
+       read on selection and check as information only.
+     - Trials: RF0H, S4F0H, LDF0H and LSF0H.
+   - **Third finalist, "Main effects":** the label with the highest mean screen Sharpe across F0-F4, with the feature set
+     with the highest mean across the four labels (round-1 grid). Added because the single best cell of a noisy grid
+     overfits (explore v1). Included if different from finalists 1 and 2.
+   - "Best" is now the highest screen Sharpe among all non-H trials of rounds 1-2 (21 trials). N = 25 with the H specs.
+   - **Not run:** a Bitstamp-Coinbase premium feature. The Bitstamp history starts in 2024, so 2022-23 could not be read.
