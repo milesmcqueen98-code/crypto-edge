@@ -33,21 +33,41 @@ def committed(path):
     return st == "" and log.strip() != ""
 
 
+def _mem():
+    av = rss = -1
+    for line in open("/proc/meminfo"):
+        if line.startswith("MemAvailable"):
+            av = int(line.split()[1]) // 1024
+    for line in open("/proc/self/status"):
+        if line.startswith("VmRSS"):
+            rss = int(line.split()[1]) // 1024
+    return av, rss
+
+
 class LazyM(dict):
-    """m_by_era for pathA.hold_read: builds an era's multiplier array when first asked, after dropping the other eras'
-    arrays from frozen_sim's cache."""
+    """m_by_era for pathA.hold_read: builds an era's multiplier array when first asked, after releasing the previous
+    era's simulator arrays (and the other tag's input cache), collecting garbage and waiting until >= 3.5 GB of the
+    shared machine is free. Operational only (two earlier runs were OOM-killed before writing or printing anything)."""
 
     def __init__(self, v, thr, info):
         super().__init__()
         self.v, self.thr, self.info, self.cur = v, thr, info, (None, None)
 
     def get(self, era, default=None):
+        import gc
+        import time
         if self.cur[0] == era:
             return self.cur[1]
+        prev = self.cur[0]
         self.cur = (None, None)
-        for key in list(F._A):
-            if key[0] != era:
-                del F._A[key]
+        F._A.clear()
+        if prev is not None and F.fsim.ERAS[prev][0] != F.fsim.ERAS[era][0]:
+            F.RL._IN.clear()
+        gc.collect()
+        while _mem()[0] < 3500:
+            time.sleep(20)
+        print(f"[progress] era {era}: start, MemAvailable {_mem()[0]} MB, RSS {_mem()[1]} MB", file=sys.stderr,
+              flush=True)
         with pathA.cpu_slot():
             F.arrays(era)
         sk = CW.skip_frame(era, self.v, self.thr, allow_hold=True)
