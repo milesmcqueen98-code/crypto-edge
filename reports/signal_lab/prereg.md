@@ -1,0 +1,110 @@
+# Signal lab: what R2-08's model is taught and shown — pre-registration (Nov 9 2026)
+
+Written before any candidate of this lab was run. Branch signal-lab, cut from explore/v1-ef (55f9802).
+Code: scripts/signal_lab/. Results: reports/signal_lab/. Time box: ends 5 pm ET, Nov 9.
+
+## Goal
+Raise R2-08's out-of-sample Sharpe at $250K by changing what the AI model knows: its label, its features and new
+US-accessible data. Nothing else changes:
+- the ladder (4 / 6 / 8 sigma in thirds, take-profit 0.6, market exit at 60 minutes, 0.2% ADV cap);
+- the model class and settings (LightGBM, quarterly walk-forward, 60th-percentile threshold, 3 seeds).
+
+"No change" is a valid result.
+
+## Why these candidates
+- **The label teaches the wrong economics.**
+  - R2-08 learns the net of one 4-sigma trade at perp per-contract costs. There, ETH, LTC and BCH cost 7.5-9 bp a side.
+  - The bot trades a spot ladder: flat spot fees, and more than half its profit from the 6- and 8-sigma rungs.
+- **Features: who is forced to sell.** Cascade state, where the coin sits in its range and trend, and the market's own
+  fear gauge (implied volatility).
+
+## Known priors, disclosed
+- The extra candle features (F1-F3 below) were about neutral under the perp label in the wick v2 lab.
+- The AI's prediction ranks risk along with return (sizing lab; ladder v6 sizing).
+- Stricter thresholds failed out of sample (explore v1). Hyperparameter changes were neutral (wick v2).
+- **The eras are not fresh.** R2-08 was chosen with the check era in view, and 2022-23 has been read by several rounds.
+  So the holdout here is "read once for these candidates", not unseen data.
+
+## Candidates: 4 labels x 5 feature sets = 20 specs (19 trials + the incumbent)
+
+| Label | What the model predicts |
+|---|---|
+| R | R2-08's: one 4-sigma trade, perp per-contract costs |
+| S4 | The same trade at the spot bot's costs: maker 6 bp in; take-profit maker 6 bp, else taker 12.5 bp + 2 bp half-spread |
+| LD | The spot ladder's net per dollar of the whole signal: 4 / 6 / 8-sigma rungs in thirds, each with its own take-profit, else sold at minute 60. An unfilled rung earns 0 |
+| LS | LD in units of the signal's sigma (a Sharpe-like target) |
+
+| Feature set | Added to R2-08's 23 features |
+|---|---|
+| F0 | nothing |
+| F1 | cascade state: 5-minute sell volume (coin, BTC), close location, other coins filling in the last 5 minutes, minutes since the last fill episode, episodes in 24 hours |
+| F2 | position and regime: distance from the 7-day high and 3-day low, place in the 1-day range, 15- and 60-minute returns, BTC from its 1-day high, BTC vs its 100-day average, BTC 30-day return |
+| F3 | F1 + F2 + calendar (hour of week, minutes to midnight UTC, US session) |
+| F4 | new data: Deribit BTC implied volatility (DVOL) and its 24-hour change, DVOL minus 1-day realized volatility, VIX, Nasdaq-futures 1- and 5-day returns |
+
+- RF0 is the incumbent. It must reproduce R2-08's trade list and frozen-simulator daily series exactly.
+- Every feature uses data through minute t-1 only. DVOL bars are usable one hour after they open; daily bars from the
+  next UTC day.
+- **F4's live source is unverified.** DVOL comes from Deribit's public API; a winner using it needs that check before a
+  paper book.
+
+**Not tested, and why:**
+- Coinbase perp basis and funding: history starts Jul 2025, so 2022-23 cannot be read.
+- Binance funding and open interest: not usable live from the US.
+- Liquidations and order books: no history.
+- Model settings: neutral in wick v2.
+
+## Development (Jan 2025 - Mar 2026 only)
+- The walk-forward stops at 2026Q1, so no holdout prediction exists during development.
+- **Screen:** each spec's trade list goes through the frozen simulator (fsim.book) at S*: today's volumes, unverified
+  costs doubled, theta 0.5, $250K, 1-second blend. The statistic is Sharpe against the incumbent's.
+- Every spec that runs is logged in screen.csv and counts toward N. No other spec runs without a deviation entry made
+  first.
+- **Overfitting checks (information):**
+  - Hansen's SPA and Romano-Wolf StepM against the incumbent, on the vol-matched daily difference (stationary
+    bootstrap, mean block 7 days, 2,000 draws);
+  - deflated Sharpe of the improvement, with N = 19 and with N = 19 + 9,700 earlier setups.
+
+## Finalists (frozen before any holdout number exists), at most 2
+1. **Best:** the highest screen Sharpe of the 19.
+2. **Best label-only:** the highest screen Sharpe among S4F0, LDF0 and LSF0, if different. It needs no new live
+   feature.
+
+A finalist must beat the incumbent on the screen. If none does, the lab ends with "no change" and the holdout stays
+unread.
+
+## Binding test: the engine-faithful simulator, all three eras
+- **Simulator:** ladder v6's frozen replay (resting bids hold cash; 1-second blend).
+- **Dataset:** each finalist gets its own, built by the code path that built R2-08's: trade list, tranche precompute,
+  the every-minute armed panel and deep paths.
+- **Exit costs:** print-measured costs exist only for R2-08's own fills.
+  - Primary: both books' market exits priced by the model (the same rule for both).
+  - Information: the print-priced version, which favours R2-08 (a challenger's new fills fall back to the model).
+- **Volumes:** "today's volumes" uses R2-08's per-coin factors for every book.
+- **Configurations:** S* theta 0.5 at $250K (primary), theta 0.25, $1M, and research volumes at 1x costs.
+
+## Pass (all required; primary configuration unless stated)
+1. ΔSharpe >= +0.20 in each era (selection, check, 2022-23).
+2. ΔSharpe >= 0 in each era at theta 0.25, at $1M, and at research volumes.
+3. Daily max drawdown and worst day no worse than 1.1x R2-08's in each era.
+4. No losing calendar year.
+5. Pooled holdout (check + 2022-23) vol-matched daily difference: one-sided stationary-bootstrap p <= 0.05 (mean block 7
+   days), Holm-adjusted across the finalists.
+
+**Verdicts:** a winner gets a new paper book (nothing goes live). Everything else is rejected or kept as a forward lead.
+
+## Scorecard (100 points, fixed now; engine-faithful cells, model-priced exits)
+
+| Criterion | Points | Formula |
+|---|---|---|
+| Sharpe gain | 25 | 25 x clip(mean ΔSharpe over check and 2022-23 / 0.40, 0, 1) |
+| Capacity | 10 | 10 x clip(mean $1M ΔSharpe over check and 2022-23 / 0.40, 0, 1) |
+| Consistency | 15 | 15 x share of the 12 cells (3 eras x 4 configurations) with ΔSharpe > 0 |
+| Evidence | 15 | 15 x clip((0.20 - Holm p) / 0.15, 0, 1) |
+| Spread | 10 | 10 x clip((1 - top-5-day share of the pooled holdout gain) / 0.5, 0, 1); 0 if the pooled gain is <= 0 |
+| Risk | 10 | 8 x share of the 6 risk checks passed (2 measures x 3 eras) + 2 if no losing year |
+| Mechanism | 10 | hand-scored at the freeze |
+| Implementation | 5 | hand-scored at the freeze |
+
+## Deviation log
+(none yet)

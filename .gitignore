@@ -2,3 +2,11 @@ __pycache__/
 reports/preds_cache.parquet
 .tick_tmp/
 reports/wick1m/pre_*.pkl
+# signal lab intermediates (rebuilt by scripts/signal_lab/model.py)
+reports/wick1m/trades_main_*.parquet
+reports/wick1m/trades_early_*.parquet
+reports/ladder_v5/deep_paths_main_*.pkl
+reports/ladder_v5/deep_paths_early_*.pkl
+reports/ladder_v5/redteam/adv_main_*.parquet
+reports/ladder_v5/redteam/adv_early_*.parquet
+reports/signal_lab/screen_daily_*.parquet
