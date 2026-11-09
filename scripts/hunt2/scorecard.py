@@ -35,11 +35,25 @@ def oos_points(g):
     return 7 if gain > 0 else 0
 
 
+def sleeve_view(idea, g):
+    """Path B: the sleeve itself at the capital the gate chose (a), 2x costs, over its scored days. The gate's own
+    deflated Sharpe and calendar years are the book's, which is at least half incumbent, so they score the incumbent;
+    the scorecard reads the sleeve's (deviation log, Nov 8 2026: scoring only, no gate changes)."""
+    D = pd.read_parquet(os.path.join(OUT, idea, "daily.parquet"))
+    D.index = pd.DatetimeIndex(D.index)
+    cap = int(round((1 - g["a"]) * G.CAPITAL))
+    rs = D[f"s{cap // 1000}_2x"]
+    rs = rs[np.isin(G.era_of(rs.index), list(G.ERAS))]
+    N, V = G.n_trials()
+    return dict(dsr=G.deflated_sharpe(rs, N, V)[0], years={int(k): float(v) for k, v in G.years(rs).items()})
+
+
 def stat_points(g):
     """Statistical strength, 15 points: DEV statistic (5), deflated Sharpe (5), every HOLD era positive (5)."""
     dev = g.get("dev_t_x2") if g.get("path") == "A" else g.get("dev_t_alpha")
     p = 5 if dev is not None and dev >= 3 else (3 if dev is not None and dev >= 2 else (1 if dev is not None and dev >= 1 else 0))
-    d = g.get("dsr", 0) or 0
+    d = g.get("dsr_sleeve", g.get("dsr", 0)) if g.get("path") == "B" else g.get("dsr", 0)
+    d = d or 0
     p += 5 if d >= 0.95 else (3 if d >= 0.8 else (1 if d >= 0.5 else 0))
     p += 5 if g.get("A3", g.get("B3")) else 0
     return p
@@ -53,7 +67,10 @@ def main():
         if idea.startswith("_"):
             continue
         g = gates.get(idea, {})
-        yrs = g.get("years_x2") or g.get("years") or {}
+        if g.get("path") == "B":
+            sv = sleeve_view(idea, g)
+            g = dict(g, dsr_sleeve=sv["dsr"], years_sleeve=sv["years"])
+        yrs = g.get("years_x2") or g.get("years_sleeve") or g.get("years") or {}
         r = dict(idea=idea, path=g.get("path", m.get("path")), status=m.get("status", "built"))
         r["oos"] = oos_points(g) if g else 0
         r["stat"] = stat_points(g) if g else 0
@@ -68,6 +85,8 @@ def main():
         r["total"] = sum(r[k] for k in ("oos", "stat", "robust", "realism", "mechanism", "implement", "divers",
                                         "capacity"))
         r["pass"] = bool(g.get("pass", False))
+        r["dsr_scored"] = g.get("dsr_sleeve", g.get("dsr"))
+        r["years_scored"] = json.dumps({k: round(v, 4) for k, v in yrs.items()})
         r["note"] = m.get("note", "")
         rows.append(r)
     S = pd.DataFrame(rows).sort_values("total", ascending=False)

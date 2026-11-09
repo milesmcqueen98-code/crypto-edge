@@ -171,3 +171,24 @@ simulator): XV, LIQW, HAWK, TSC, ONE, then MACB.
   unchanged by reversal). The shared code is left as it is, so the DEV and HOLD files keep one convention; IMP uses
   `r_W = -ln(1 + ret_bp_W/1e4)`, which is exact. No other build uses either feature. To be fixed in the code after
   the round, with the files regenerated.
+- **2026-11-08 21:40 ET, scorecard only, after every HOLD read (no gate is affected).** For Path B the scorecard's
+  deflated Sharpe and "every year positive" are read on the sleeve itself (at the capital the gate chose), not on the
+  book: the book is at least half incumbent, so its deflated Sharpe (EXP 0.82) and its calendar years scored the
+  incumbent, not the idea. This lowers EXP from 39 to 31 and LETF from 39 to 34; no other score moves.
+- **Operations, all builders (Nov 8 evening).** The shared machine's memory limit (6.26 GB for every builder) killed
+  six HOLD-read processes. None had written or shown a gate, series or P&L except WHO's, which had already written its
+  outputs when it was killed; each idea's single read is the one committed, and its DEV slice reproduces the logged
+  DEV trial exactly (reports/hunt2/central_checks.json). The instructed HOLD-feature dispatch could not commit
+  (parent_features.py rewrites tracked files, so the workflow's pull --rebase refused and the step still ended
+  green); flow and shape re-ran the unchanged script into a fresh folder, and both runners regenerated the committed
+  DEV file byte for byte. The options builder's pre-freeze derive uploaded no artifact (the workflow passes a
+  space-separated artifact list as one path); its HOLD files were rebuilt after both freezes from the same raw trades,
+  with the DEV outputs identical by SHA-256.
+- **Shared-code notes for later rounds.** (1) A skipped parent still keeps its coin busy until its take-profit or
+  fill + 61 minutes, so a later same-coin parent that live trading could take is lost; at most 2.3% (DEV), 0.5% (chk)
+  and 2.4% (early) of parents follow a still-busy same-coin parent, and only those whose predecessor a filter skipped
+  are affected. (2) h2gates.path_b's B3 counts every era with a scored day; the 60-day / 10-event rule above was
+  applied by the builders and changes no verdict. (3) Gate B2 books idle sleeve capital at 0%, which dominates the alpha
+  t of a sleeve that trades a few days a year (EXP -10.2; -2.1 with idle cash at T-bills). (4) pathA.mult_for drops
+  cells it cannot place without an error; every build asserted its cells, and every filter changed the result in every
+  era. (5) prints.py cannot save a file that mixes spot and perp trade ids. (6) ex_peak tops out at 0.9885, not 1.

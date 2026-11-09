@@ -5,14 +5,28 @@
   "mechanism": 9,
   "mechanism_why": "4: forced sellers (liquidation engines, stops, retail panic) vs informed blocks/metaorders, named with the reason each trades. 2: Kyle/Glosten-Milgrom and stealth-trading evidence in equities; crypto microstructure measures predict (Easley et al.), but no crypto study of pre-fill composition. 3: a filter on the incumbent's small-capacity niche.",
   "implement": 9,
-  "implement_why": "4: Coinbase public trade feed. 3: cancel a resting post-only bid. 2: rolling 30-minute print features for 17 coins in the bot's loop."
+  "implement_why": "4: Coinbase public trade feed. 3: cancel a resting post-only bid. 2: rolling 30-minute print features for 17 coins in the bot's loop.",
+  "realism": 13,
+  "realism_why": "6 aggressor-exact print features; 1 latency (the cancel must land before the trade-through it predicts; a change in the last second cannot be acted on); 3 caps; 3 fees.",
+  "neighbours": 0,
+  "neighbours_why": "DEV t -0.18; all 16 variants negative.",
+  "divers": 5,
+  "divers_why": "+270 bp over the incumbent's 10 worst DEV days at X2.",
+  "capacity": 5
  },
  "exh": {
   "path": "A",
   "mechanism": 9,
   "mechanism_why": "4: liquidation engines sell until their queue is empty (front-loaded). 2: one crypto study of the Oct 10 2025 cascade (Garcia Seuma 2026). 3: filter on the incumbent's niche.",
   "implement": 9,
-  "implement_why": "4: Coinbase trade feed. 3: cancel bids. 2: EWMA intensity and cumulative-selling state per coin."
+  "implement_why": "4: Coinbase trade feed. 3: cancel bids. 2: EWMA intensity and cumulative-selling state per coin.",
+  "realism": 13,
+  "realism_why": "6 aggressor-exact print features; 1 latency (the bid is off in quiet markets and must be placed as selling accumulates; a crossing in the last second or two is a missed fill live, not modelled); 3 caps; 3 fees.",
+  "neighbours": 5,
+  "neighbours_why": "DEV t +1.03; csv30 at 30% (+0.57) and csv15 at 15% (+0.46) agree.",
+  "divers": 5,
+  "divers_why": "+280 bp over the incumbent's 10 worst DEV days at X2.",
+  "capacity": 5
  },
  "mac": {
   "path": "A",
