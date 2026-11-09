@@ -47,9 +47,38 @@ def mult_for(era, cells, value=F.SKIP, before=0, theta=0.5, C=250e3):
     return m
 
 
+class cpu_slot:
+    """At most two frozen-simulator runs at once on the shared 2-CPU machine (file locks in /tmp)."""
+
+    def __enter__(self):
+        import fcntl
+        import time
+        while True:
+            for i in (0, 1):
+                f = open(f"/tmp/hunt2_cpu_slot_{i}.lock", "w")
+                try:
+                    fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    self.f = f
+                    return self
+                except OSError:
+                    f.close()
+            time.sleep(2)
+
+    def __exit__(self, *a):
+        import fcntl
+        fcntl.flock(self.f, fcntl.LOCK_UN)
+        self.f.close()
+
+
+def run_mult(era, m, cost="X2", theta=0.5, C=250e3):
+    """Daily returns on C of the live bot with a full T x NC multiplier array m (None = the incumbent)."""
+    with cpu_slot():
+        return F.daily(era, theta, C, cost, mfac=m)
+
+
 def run_cells(era, cells, cost="X2", value=F.SKIP, before=0, theta=0.5, C=250e3):
     """Daily returns on C of the live bot with the given cells skipped (or resized)."""
-    return F.daily(era, theta, C, cost, mfac=mult_for(era, cells, value, before, theta, C))
+    return run_mult(era, mult_for(era, cells, value, before, theta, C), cost, theta, C)
 
 
 # ------------------------------------------------------------------ the standard Path A workflow
@@ -58,28 +87,37 @@ def _gates():
     return G
 
 
-def dev_trial(idea, variant, cells_dev, note="", value=F.SKIP, before=0, **extra):
-    """Run one DEV configuration (sel era, X2, $250K), log it as a trial, and return its DEV screen."""
+def dev_trial(idea, variant, cells_dev=None, note="", value=F.SKIP, before=0, m=None, n_skip=None, **extra):
+    """Run one DEV configuration (sel era, X2, $250K), log it as a trial, and return its DEV screen. Give either
+    cells_dev (cells to skip) or m (a full T x NC multiplier array for the sel era) with n_skip (parents skipped)."""
     G = _gates()
-    d = run_cells("sel", cells_dev, cost="X2", value=value, before=before)
+    if m is not None:
+        d = run_mult("sel", m, cost="X2")
+    else:
+        d = run_cells("sel", cells_dev, cost="X2", value=value, before=before)
     d = d[G.is_dev(d.index)]
     scr = G.dev_screen_a(d)
-    n_skip = int(len(cells_dev)) if cells_dev is not None else 0
+    if n_skip is None:
+        n_skip = int(len(cells_dev)) if cells_dev is not None else 0
     G.log_trial(idea, variant, d, "A", scr["t_diff"], note=note, n_skipped=n_skip, **extra)
     scr["n_skipped"] = n_skip
     return scr, d
 
 
-def hold_read(idea, cells_by_era, out_dir, value=F.SKIP, before=0, eras=("sel", "chk", "early"), days=None):
+def hold_read(idea, cells_by_era, out_dir, value=F.SKIP, before=0, eras=("sel", "chk", "early"), days=None,
+              m_by_era=None):
     """AFTER the freeze commit only: run the frozen variant on every era at X2, X1 and S, write daily.parquet (columns
-    x2, x1, s) and gates.json in out_dir, and return the gate dict."""
+    x2, x1, s) and gates.json in out_dir, and return the gate dict. Give cells_by_era ({era: cells}) or m_by_era
+    ({era: T x NC multiplier array}); `days` restricts the scored days (an idea whose inputs start later)."""
     import json
     G = _gates()
     cols = {"x2": [], "x1": [], "s": []}
     for era in eras:
-        cells = cells_by_era.get(era)
         for cost, k in (("X2", "x2"), ("X1", "x1"), ("S", "s")):
-            cols[k].append(run_cells(era, cells, cost=cost, value=value, before=before))
+            if m_by_era is not None:
+                cols[k].append(run_mult(era, m_by_era.get(era), cost=cost))
+            else:
+                cols[k].append(run_cells(era, cells_by_era.get(era), cost=cost, value=value, before=before))
     D = pd.DataFrame({k: pd.concat(v).sort_index() for k, v in cols.items()})
     D = D[~D.index.duplicated()]
     if days is not None:
