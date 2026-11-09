@@ -29,6 +29,8 @@
     (a bid on down days, an offer on up days) 10 bp beyond the 15:54 close; cancel at 16:00 if unfilled; exit at 17:00
     (taker) or earlier on a post-only take-profit at the 15:54 close.
   Grid: k in {1, 2} x leg in {momentum, reversal-taker, reversal-maker} x assets in {BTC only, BTC+ETH+SOL+XRP}.
+- **HOLD protection:** no signal, trade or return on HOLD days is computed before the freeze commit; data fetches
+  may cover HOLD dates.
 - **Size:** each signal's notional = 1.0 x sleeve capital / (number of assets signalling that day), whole contracts;
   gross <= 2x sleeve capital.
 - **Costs:** scripts/hunt2/costs.py perps at 2x ($0.15 per contract + 2 bp commission + 1.5x measured half-spread

@@ -16,6 +16,8 @@
 - **Rule (frozen grid, 8 trials):** skip a coin's 4σ bids on day d when its funding statistic for day d − 1 is
   below a threshold: source ∈ {coin, BTC} × statistic ∈ {previous day, trailing 7-day mean} × threshold ∈ {0,
   the DEV 25th percentile of the statistic over the coin-days on which a research parent filled}.
+- **HOLD protection:** the feature's values on HOLD days (and any threshold or distribution from them) are computed or
+  read only after the freeze commit.
 - **Costs:** frozen simulator at X2 (selection, gates), X1 (gate A2), S (reported).
 - **Selection statistic:** highest DEV paired HAC t at X2; minimum 10% of DEV parents skipped and at most 50%;
   ties → previous-day, then threshold 0.

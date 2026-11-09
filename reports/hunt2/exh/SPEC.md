@@ -25,6 +25,8 @@
      (sellers still gaining ground).
 - **Rule (frozen grid, 8 trials):** {ex_peak high, csv_15 low, csv_30 low, turn low} × removal share ∈ {15%, 30%} of
   DEV parents (threshold = the DEV quantile, then fixed in absolute units).
+- **HOLD protection:** the feature's values on HOLD days (and any threshold or distribution from them) are computed or
+  read only after the freeze commit.
 - **Costs:** frozen simulator at X2 (selection, gates), X1 (gate A2), S (reported).
 - **Selection statistic:** highest DEV paired HAC t at X2; ties → 15%.
 - **Capital:** $250K. **Outputs:** reports/hunt2/exh/.

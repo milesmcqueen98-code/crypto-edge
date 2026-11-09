@@ -26,6 +26,8 @@
   - window fade without inventory (control): if |r(07:30→08:00)| ≥ 1 σ of 30-minute returns, enter −sign(r) at 08:01,
     exit at 09:00.
   Grid: rule ∈ {with, fade, window fade} × event set ∈ {all Fridays, monthly + quarterly} × assets ∈ {BTC, BTC+ETH}.
+- **HOLD protection:** no signal, trade or return on HOLD days is computed before the freeze commit; data fetches
+  may cover HOLD dates.
 - **Size:** notional per event = 1.0 × sleeve capital split across assets (gross ≤ 2×), whole contracts.
 - **Costs:** scripts/hunt2/costs.py perps at 2× (1× reported).
 - **Selection statistic:** highest DEV alpha t with ≥ 20 events (all Fridays) or ≥ 8 (monthly + quarterly); ties →

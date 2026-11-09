@@ -19,6 +19,8 @@
   for the coin, in units of the coin's 15-minute residual sigma. Skip the bid when the dislocation is global:
   local > -c (Coinbase has not fallen more than Bitstamp by c sigma), c in {0.5, 1.0}; window in {15, 60} minutes;
   Bitstamp missing (no trade in the window) -> keep the bid, or skip it ({keep, skip}).
+- **HOLD protection:** the feature's values on HOLD days (and any threshold or distribution from them) are computed or
+  read only after the freeze commit.
 - **Costs:** frozen simulator at X2 (selection, gates), X1 (gate A2), S (reported).
 - **Selection statistic:** highest DEV paired HAC t at X2 with 5–50% of DEV parents skipped; ties -> c = 0.5, 15 min,
   keep.

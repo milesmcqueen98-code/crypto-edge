@@ -1,4 +1,4 @@
-# MACB: deep bids and offers through scheduled macro releases on the majors' perps — DRAFT, not frozen
+# MACB: deep bids and offers through scheduled macro releases on the majors' perps — ALT (not among the ten builds), DRAFT
 
 - **Path:** B (a sleeve on Coinbase US perps: BTC, ETH, SOL, XRP).
 - **Who is forced or eager, and why we are paid:** a hot or cold US print (CPI, NFP, PPI at 08:30 ET; FOMC at

@@ -23,6 +23,8 @@
 - **Rule (frozen grid, 8 trials):** skip every coin's 4σ bids while the signal is below a threshold: signal ∈ {G,
   G_below} × threshold ∈ {0, the DEV 25th percentile of the hourly signal} × expiry scope ∈ {all live options,
   options expiring within 30 days}.
+- **HOLD protection:** the feature's values on HOLD days (and any threshold or distribution from them) are computed or
+  read only after the freeze commit.
 - **Costs:** frozen simulator at X2 (selection, gates), X1 (gate A2), S (reported).
 - **Selection statistic:** highest DEV paired HAC t at X2 with 5–50% of DEV parents skipped; ties → G, threshold 0,
   all options.

@@ -20,6 +20,8 @@
   fair value to the 4σ level). After a failure, skip the coin's 4σ bids from fill + 60 min for C hours. Grid:
   m in {0, 0.5} x C in {6, 24, 72} x scope in {that coin only, every coin when >= 2 coins failed within the same
   hour}.
+- **HOLD protection:** a parent's failure flag is an OUTCOME (take-profit hit, price at +60). Flags of HOLD-era
+  parents are computed only after the freeze commit.
 - **Costs:** frozen simulator at X2 (selection, gates), X1 (gate A2), S (reported).
 - **Selection statistic:** highest DEV paired HAC t at X2 among variants skipping >= 5% of DEV parents; ties ->
   shorter C, then coin scope.

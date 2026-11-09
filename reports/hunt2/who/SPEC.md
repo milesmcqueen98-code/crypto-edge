@@ -31,6 +31,8 @@
 - **Rule (frozen grid, 16 trials):** 4 features × W ∈ {5, 15} (rate ratio: {1, 5}) × removal share ∈ {15%, 30%}.
   The threshold is the DEV quantile of the feature over DEV parents that removes that share; it is then fixed in
   absolute units for HOLD. Parents with missing features (no prints) are kept.
+- **HOLD protection:** the feature's values on HOLD days (and any threshold or distribution from them) are computed or
+  read only after the freeze commit.
 - **Costs:** frozen simulator at X2 (selection and gates), X1 (gate A2) and S (reported).
 - **Fills and latency:** the frozen simulator's (1-second blend); the filter uses prints ≥ 1 s old at the fill.
 - **Selection statistic:** highest DEV paired HAC t at X2 (h2gates.dev_screen_a); ties → the smaller removal share.
