@@ -1,0 +1,10 @@
+{
+ "freeze_commit": "6013b3be51b8ef27eabd7a0de02eade40318a0fd",
+ "variant": "CPI_a2_b10",
+ "n_skip_sel": 17,
+ "n_parents_sel": 1155,
+ "n_skip_chk": 12,
+ "n_parents_chk": 412,
+ "n_skip_early": 10,
+ "n_parents_early": 744
+}
