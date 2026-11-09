@@ -1,0 +1,63 @@
+{
+ "BTC": {
+  "months": 71,
+  "first": "2021-01",
+  "last": "2026-11",
+  "meta_sources": [
+   "https://history.deribit.com expired=true: 125233",
+   "https://history.deribit.com expired=false: 937",
+   "https://www.deribit.com expired=false: 918"
+  ],
+  "n_instruments_traded": 80854,
+  "n_unparsed_names": 0,
+  "n_instruments": 80854,
+  "n_in_meta": 80854,
+  "n_meta_list": 126170,
+  "n_meta_expiry_mismatch": 0,
+  "n_excluded_listed_pre2021": 432,
+  "n_excluded_fallback_nometa": 0,
+  "n_nometa": 0,
+  "n_trades_used": 22980230,
+  "n_trades_out_of_month": 0,
+  "n_trades_dup": 0,
+  "n_trades_unknown_instrument": 0,
+  "n_snapshots": 51546,
+  "n_snapshots_done": 51546
+ },
+ "hourly_rows_dev_hold_other": [
+  10920,
+  22776,
+  17544
+ ],
+ "ETH": {
+  "months": 71,
+  "first": "2021-01",
+  "last": "2026-11",
+  "meta_sources": [
+   "https://history.deribit.com expired=true: 127395",
+   "https://history.deribit.com expired=false: 797",
+   "https://www.deribit.com expired=false: 786"
+  ],
+  "n_instruments_traded": 84682,
+  "n_unparsed_names": 0,
+  "n_instruments": 84682,
+  "n_in_meta": 84682,
+  "n_meta_list": 128192,
+  "n_meta_expiry_mismatch": 0,
+  "n_excluded_listed_pre2021": 450,
+  "n_excluded_fallback_nometa": 0,
+  "n_nometa": 0,
+  "n_trades_used": 16036874,
+  "n_trades_out_of_month": 0,
+  "n_trades_dup": 0,
+  "n_trades_unknown_instrument": 0,
+  "n_snapshots": 306,
+  "n_snapshots_done": 306
+ },
+ "friday_rows_dev_hold_other": [
+  130,
+  270,
+  212
+ ],
+ "secs": 36
+}
