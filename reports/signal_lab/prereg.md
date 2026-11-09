@@ -258,3 +258,6 @@ unread.
       model keeps the same share of that quarter's candidates as R2-08 (suffix M).
     - **Not tradable:** the reset uses the test quarter's own predictions (not its outcomes). It is a diagnostic of
       ranking skill at equal selectivity. It selects nothing.
+    - **Addendum, logged before it ran:** the first matched readings (registered seeds) were -0.21 (RF2), -0.28 (RF4),
+      +0.09 (RF2H) and +0.25 (RF0H) in the check era. RF0HM and RF2HM are refit with five seed triples to see whether
+      the history models' matched gains survive seed averaging. Information only.
