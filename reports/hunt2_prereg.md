@@ -129,7 +129,28 @@ The gates decide pass or fail; the score ranks and explains. Hand-scored parts g
 with a reason for each.
 
 ## Ideas
-(see below: the idea list, the screening rubric and the ten builds)
+The full list, its scoring rubric (prior 0–12: mechanism, testable on trade data, live from New York, new, clears 2×
+costs) and every score are in reports/hunt2/ideas.md, fixed with this file. Research memos: reports/hunt2/research/
+(R1 microstructure, R2 options/events/flows, R3 ML/statistics, R4 venue facts).
+
+**The ten builds** (the ten highest scores; ties to Path A, then to category coverage). Each SPEC
+(reports/hunt2/<id>/SPEC.md) is fixed with this file and binds its build:
+
+| Build | Path | Mechanism in one line | Data (trade-level part) | Trials |
+|---|---|---|---|---|
+| WHO | A | Skip fills whose pre-fill selling looks informed: blocks, low aggressor share, concentration, slow drift | Coinbase prints, 30 min before every parent fill, all eras | 16 |
+| EXH | A | Skip fills that arrive while aggressive selling is still at its peak, or before much forced volume has traded | Same prints | 8 |
+| MAC | A | Pull the ladder around CPI/NFP/PPI/FOMC releases (information, not forced flow) | Official calendars; parent prints for fill times | 6 |
+| BURN | A | After a coin's ladder fails to rebound, skip that coin (or the market) for hours | The frozen dataset's own outcomes | 12 |
+| SHAPE | A | Skip dislocations that arrive as a grind (high path efficiency, no air pocket, multi-hour drift) | Coinbase 1-minute candles, all eras | 8 |
+| XV | A | Skip dislocations that Bitstamp shows too (global repricing, not a local liquidity shock) | Coinbase and Bitstamp 1-minute candles, 2024–26 | 8 |
+| CROWD | A | Skip bids when perp funding says shorts, not longs, are crowded (no forced long liquidation) | Hyperliquid daily funding, 2023-05 .. | 8 |
+| GAMMA | A | Skip bids while option dealers are net short gamma (they sell into falls) | Every Deribit BTC option trade from 2021 (dealer inventory) | 8 |
+| LETF | B | Trade the leveraged-ETF rebalancing flow into CME's 4 pm settlement, and provide liquidity to it | Coinbase candles and prints 15:44–17:01 ET, ETF data, CFM perps | 12 |
+| EXP | B | Trade the dealers' predicted hedge unwind in Deribit's Friday 08:00 UTC settlement window, or fade it after | Deribit option trades, Coinbase candles and prints, CFM perps | 12 |
+
+Total budget: 98 DEV trials. Next in line if a build is blocked (score 9, Path A first, buildable on this
+simulator): LIQW, HAWK, TSC, ONE, then MACB.
 
 ## Deviation log
 (none yet)
