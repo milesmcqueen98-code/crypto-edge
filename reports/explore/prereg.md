@@ -151,4 +151,27 @@ Scored on check and 2022-23, the "binding cells".
 | Implementation | 5 | hand-scored at the freeze, before the read |
 
 ## Deviation log
-(none yet)
+1. **Before round 3 ran (Nov 9 2026, 09:20 ET).** Recorded before any round-3 variant was run.
+   - **New dimensions:** xsim gains three dimensions, all off in rounds 1-2, plus finer hold times. Parity at the
+     defaults is unchanged (parity.txt).
+     - sig_min: skip signals whose sigma is below 40 / 50 / 55 / 60 / 70 bp;
+     - bid_to: deeper bids rest at most 2 / 5 / 10 / 20 minutes after the signal;
+     - cancel_f: cancel deeper bids when the parent recovers 0.3 / 0.4 / 0.5 / 0.8 / 1.0 of its dislocation;
+     - hold times of 40, 50 and 55 minutes.
+   - **Why:** a selection-era attribution of the incumbent's fills.
+     - Signals with sigma below the median (57.6 bp) made about 0 bp per dollar; those above made about 85 bp. This
+       held in all five quarters and all three ADV terciles.
+     - Deeper fills in the first 2 minutes made 72-122 bp; later ones made -5 to 66 bp (noisy).
+   - **Wider than "one more refinement":** round 3 has 3,157 variants (scripts/explore/variants_r3.py).
+     - 1,500 random variants over a pruned grid. Levels with a round 1-2 OLS effect of -0.19 or worse and |t| >= 3
+       are dropped.
+     - Family searches with everything else at the incumbent: geometry (all 240 new combinations), exits (600) and
+       filters (600). These supply the family-best finalists, which rounds 1-2 could only fill from one-factor
+       variants.
+     - The new dimensions one at a time around the incumbent and the 10 best no-harm variants.
+   - **Information only:** a selection-rule tournament by CSCV (select_rules.py) estimates each short-list rule's
+     out-of-sample gain inside the selection era. The short-list rules above do not change.
+   - **Disclosed prior:** the sizing lab's holdout showed that the AI's lowest predicted-edge tercile was profitable
+     out of sample. That bears on strictness (r_min) finalists. It is used only in the hand-scored mechanism points,
+     not in selection.
+   - All round-3 variants count toward N.

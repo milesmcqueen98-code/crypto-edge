@@ -126,11 +126,16 @@ def boot_se(E, B=500):
 
 
 def effects(V):
+    import variants_r3
     R = V[V.origin == "random"].copy()
     base = V[V.id == "base"].iloc[0]
     rows = []
-    des = [json.loads(x) for x in R.design]
-    dims = [k for k in des[0] if k != "note"]
+    des = []
+    for x in R.design:                                            # rounds 1-2 designs lack the round-3 dimensions
+        d = dict(variants_r3.BASE3)
+        d.update({k: v for k, v in json.loads(x).items() if k != "note"})
+        des.append(d)
+    dims = list(variants_r3.BASE3)
     for dname in dims:
         lv = pd.Series([str(d[dname]) for d in des], index=R.index)
         for level, g in R.groupby(lv):
@@ -143,7 +148,7 @@ def effects(V):
     for d in des:
         X.append({f"{k}={d[k]}": 1.0 for k in dims})
     X = pd.DataFrame(X).fillna(0.0)
-    ref = [c for c in X.columns if any(c == f"{k}={json.loads(V[V.id == 'base'].design.iloc[0])[k]}" for k in dims)]
+    ref = [c for c in X.columns if any(c == f"{k}={variants_r3.BASE3[k]}" for k in dims)]
     X = X.drop(columns=ref)
     X.insert(0, "const", 1.0)
     y = R.sharpe_b250.to_numpy()

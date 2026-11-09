@@ -13,6 +13,11 @@ variant dimensions:
   adv_floor  skip signals whose coin trades less than this ADV (USD)
   slots    at most this many open parents at once (None = no limit)
   kappa, per_trade, cash_cap, theta   size cap (share of ADV), size (share of capital), positions cap, capture share
+Round 3 additions (None = off, the round 1-2 behaviour):
+  cancel_f  cancel the deeper bids when the parent's price recovers this fraction of its dislocation (0.3-1.0),
+           instead of at the parent's lowest take-profit (cancel "parent_tp" only)
+  bid_to   deeper bids rest at most this many minutes after the signal (bid timeout)
+  sig_min  skip signals whose sigma (the AI's volatility unit) is below this many basis points
 With the defaults it reproduces rungs.run on spot-only capacity (W0 / W2), checked in reports/explore/parity.txt.
 """
 import math
@@ -31,7 +36,8 @@ from edge import book as edge_book  # noqa: E402
 ERAS = {"selection": ("main", sim.SEL), "check": ("main", sim.CHK), "y2022_23": ("early", sim.EARLY)}
 H_MAX = 60
 BASE = dict(rungs={4.0: 1.0, 6.0: 1.0, 8.0: 1.0}, tp=[(0.6, 1.0)], H=60, cancel="parent_tp", r_min=1.0, adv_floor=0.0,
-            slots=None, kappa=0.002, per_trade=0.25, cash_cap=1.0, theta=0.5)
+            slots=None, kappa=0.002, per_trade=0.25, cash_cap=1.0, theta=0.5, cancel_f=None, bid_to=None,
+            sig_min=None)
 
 
 def ftag(f):
@@ -74,11 +80,18 @@ def evaluate(spec, era, C, want_equity=False):
     H, theta = int(s["H"]), float(s["theta"])
     par = P[P.k == 4.0].set_index(["ts", "coin"])
     ok = (par.pred / par.thr >= s["r_min"] - 1e-12) & (par.adv.fillna(0.0) >= s["adv_floor"])
+    if s.get("sig_min") is not None:
+        ok &= par.sig * 1e4 >= s["sig_min"] - 1e-9
     keep = set(par.index[ok])
     ptp = s["tp"].get(4.0, [(0.6, 1.0)])
-    f_cancel = min(f for f, _ in ptp)
-    pclose = par[f"tpo_{ftag(f_cancel)}"].where(par[f"tpo_{ftag(f_cancel)}"] >= 1, H).clip(upper=H)
-    pclose = pclose.where(pclose <= H, H)
+    f_tp = min(f for f, _ in ptp)
+
+    def close_at(f):
+        c = par[f"tpo_{ftag(f)}"].where(par[f"tpo_{ftag(f)}"] >= 1, H).clip(upper=H)
+        return c.where(c <= H, H)
+
+    pclose = close_at(f_tp)                                       # the parent's first take-profit (slots)
+    pcancel = pclose if s.get("cancel_f") is None else close_at(float(s["cancel_f"]))
     wsum = sum(s["rungs"].values())
     rows = []
     for k, w in s["rungs"].items():
@@ -88,10 +101,12 @@ def evaluate(spec, era, C, want_equity=False):
             if s.get("mode", "minute") == "minute":
                 R = R[R.f_off >= 1]                               # bot-like: no deeper fill in the parent's minute
             if s["cancel"] == "parent_tp":
-                pc = pclose.reindex(pd.MultiIndex.from_arrays([R.ts, R.coin])).to_numpy()
+                pc = pcancel.reindex(pd.MultiIndex.from_arrays([R.ts, R.coin])).to_numpy()
                 R = R[R.f_off.to_numpy() < pc]
             else:
                 R = R[R.f_off < H]
+            if s.get("bid_to") is not None:
+                R = R[R.f_off < s["bid_to"]]
         if w <= 0 and k != 4.0:
             continue
         for f, sh in s["tp"][k]:

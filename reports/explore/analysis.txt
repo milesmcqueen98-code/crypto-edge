@@ -1,34 +1,34 @@
-Variants analysed: 1060 (selection era, blended $250K unless noted)
+Variants analysed: 1504 (selection era, blended $250K unless noted)
 Incumbent: blended 2.399, minute 2.383, $1M blended 2.511
 
-Share of variants above the incumbent: 36.8%; no-harm: 14.1%
-Best blended Sharpe: 3.507 (rnd_0306)
-PBO (CSCV, 16 blocks, 12870 splits): 0.310; mean OOS Sharpe of the in-sample best 2.65 vs the median variant's 2.33
-SPA (vol-matched daily difference vs incumbent): T 2.35, p 0.400; StepM rejections at 5%: 0
+Share of variants above the incumbent: 54.4%; no-harm: 34.1%
+Best blended Sharpe: 3.788 (r2_rnd_0306_tp_d40_100)
+PBO (CSCV, 16 blocks, 12870 splits): 0.278; mean OOS Sharpe of the in-sample best 2.88 vs the median variant's 2.59
+SPA (vol-matched daily difference vs incumbent): T 3.20, p 0.081; StepM rejections at 5%: 0
 OLS of blended Sharpe on the design levels (random variants): R^2 0.61
 
 Top 20 no-harm variants (blended Sharpe at $250K):
-      id  sharpe_b250   lcb  sharpe_m250  sharpe_b1m  ret_b250  maxdd_b250  spa_t  stepm
-rnd_0306        3.507 2.855        3.518       3.035     0.278      -0.019  2.326  False
-rnd_0989        3.489 2.967        3.335       2.737     0.341      -0.016  1.979  False
-rnd_0661        3.448 2.708        2.876       3.152     0.239      -0.015  1.340  False
-rnd_0449        3.424 2.753        3.307       3.317     0.258      -0.028  2.346  False
-rnd_0189        3.406 2.860        3.290       2.870     0.306      -0.018  1.783  False
-rnd_0120        3.363 2.760        3.283       3.536     0.323      -0.032  2.146  False
-rnd_0929        3.238 2.665        3.169       3.115     0.265      -0.020  1.554  False
-rnd_0568        3.233 2.625        3.140       3.109     0.265      -0.020  1.734  False
-rnd_0035        3.199 2.661        3.219       2.700     0.290      -0.018  1.554  False
-rnd_0533        3.196 2.478        2.967       2.644     0.336      -0.043  1.678  False
-rnd_0834        3.185 2.605        3.250       3.566     0.322      -0.032  2.313  False
-rnd_0034        3.152 2.553        3.127       2.999     0.246      -0.023  1.848  False
-rnd_0444        3.149 2.526        3.161       3.052     0.324      -0.042  1.957  False
-rnd_0102        3.128 2.437        2.822       3.281     0.320      -0.035  2.031  False
-rnd_0383        3.119 2.552        3.071       2.887     0.320      -0.025  1.709  False
-rnd_0966        3.100 2.536        3.035       3.257     0.273      -0.022  1.751  False
-rnd_0225        3.078 2.425        2.983       3.245     0.287      -0.032  1.811  False
-rnd_0476        3.076 2.553        3.035       2.806     0.241      -0.018  1.397  False
-rnd_0112        3.073 2.509        2.967       3.117     0.265      -0.024  1.410  False
-rnd_0532        3.063 2.357        2.723       3.042     0.224      -0.027  0.929  False
+                          id  sharpe_b250   lcb  sharpe_m250  sharpe_b1m  ret_b250  maxdd_b250  spa_t  stepm
+      r2_rnd_0306_tp_d40_100        3.788 3.039        3.544       3.221     0.260      -0.020  2.611  False
+          r2_rnd_0306_tp_L3w        3.733 3.083        3.591       3.561     0.295      -0.025  2.536  False
+      r2_rnd_0189_tp_d80_100        3.709 3.062        3.546       2.908     0.270      -0.019  2.144  False
+         r2_rnd_0306_tp_L2lo        3.695 3.059        3.645       3.588     0.317      -0.023  3.203  False
+    r2_rnd_0449_cash_cap_1.0        3.677 3.054        3.548       3.289     0.294      -0.028  2.694  False
+           r2_rnd_0306_tp_L3        3.648 3.008        3.578       3.706     0.316      -0.024  3.061  False
+       r2_rnd_0306_tp_d40_80        3.646 2.964        3.454       3.389     0.269      -0.019  2.842  False
+r2_rnd_0989_cancel_parent_tp        3.608 3.047        3.422       2.932     0.319      -0.016  2.208  False
+       r2_rnd_0306_r_min_1.3        3.606 2.972        3.637       3.196     0.287      -0.017  2.247  False
+    r2_rnd_0306_cash_cap_1.0        3.597 2.948        3.636       3.019     0.298      -0.019  2.289  False
+          r2_rnd_0306_tp_f70        3.597 2.946        3.525       3.689     0.336      -0.029  2.889  False
+         r2_rnd_0306_slots_6        3.583 2.928        3.593       2.921     0.270      -0.017  2.291  False
+       r2_rnd_0929_r_min_1.3        3.580 2.960        3.471       3.416     0.294      -0.024  2.227  False
+         r2_rnd_0989_slots_8        3.579 3.013        3.407       3.146     0.336      -0.016  2.119  False
+           r2_rnd_0306_tp_L2        3.574 2.936        3.492       3.729     0.320      -0.026  3.096  False
+   r2_rnd_0306_rungset_R4610        3.566 2.896        3.507       3.125     0.289      -0.023  2.226  False
+            r2_rnd_0661_H_45        3.565 2.881        3.381       3.763     0.339      -0.029  2.513  False
+       r2_rnd_0989_alpha_0.5        3.565 2.998        3.415       2.810     0.350      -0.020  2.141  False
+       r2_rnd_0189_alpha_1.0        3.558 2.971        3.487       3.136     0.324      -0.023  2.445  False
+       r2_rnd_0306_tp_d80_60        3.549 2.887        3.469       3.723     0.337      -0.027  2.569  False
 
 Largest partial effects (OLS, |t| >= 2):
                 term   coef    se       t
