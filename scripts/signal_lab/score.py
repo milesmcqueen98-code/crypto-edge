@@ -121,27 +121,44 @@ def screenstats():
 
     rows = []
     for j, nm in enumerate(names):
-        rows.append(dict(spec=nm, t_vm=float(t[j]), stepm=bool(rej[j]), dsr_n19=dsr(d[:, j], sr0(len(names))),
-                         dsr_n9719=dsr(d[:, j], sr0(len(names) + 9700))))
+        rows.append(dict(spec=nm, t_vm=float(t[j]), stepm=bool(rej[j]), dsr_n=dsr(d[:, j], sr0(len(names))),
+                         dsr_n_plus_9700=dsr(d[:, j], sr0(len(names) + 9700))))
     R = S.merge(pd.DataFrame(rows), on="spec", how="left").sort_values("sharpe", ascending=False)
     R.to_csv(os.path.join(OUT, "screen_stats.csv"), index=False)
     lines = [f"Development screen (selection era, frozen simulator, S* theta 0.5, $250K): {len(names)} trials",
              f"Hansen SPA vs the incumbent (vol-matched daily difference): T {T:.2f}, p {p_spa:.3f}; StepM rejections at 5%: "
              f"{int(rej.sum())}", f"cross-spec SD of the improvement's annualized Sharpe {math.sqrt(var_d * 365):.3f}", "",
              R[["spec", "sharpe", "d_sharpe", "ret_yr", "maxdd", "trades", "share_kept", "overlap", "t_vm", "stepm",
-                "dsr_n19", "dsr_n9719"]].round(3).to_string(index=False)]
-    piv = S.pivot(index="label", columns="fset", values="d_sharpe").reindex(index=["R", "S4", "LD", "LS"])
-    lines += ["", "ΔSharpe vs the incumbent, label x feature set:", piv.round(3).to_string(),
-              "", "Mean by label: " + ", ".join(f"{k} {v:+.3f}" for k, v in piv.mean(1).items()),
-              "Mean by feature set: " + ", ".join(f"{k} {v:+.3f}" for k, v in piv.mean(0).items())]
+                "dsr_n", "dsr_n_plus_9700"]].round(3).to_string(index=False)]
+    S["h"] = S.spec.str.endswith("H")
+    piv = S[~S.h].pivot(index="label", columns="fset", values="d_sharpe").reindex(index=["R", "S4", "LD", "LS"])
+    g1 = piv[["F0", "F1", "F2", "F3", "F4"]]
+    lines += ["", "ΔSharpe vs the incumbent, label x feature set (no added history):", piv.round(3).to_string(),
+              "", "Round-1 grid (F0-F4) mean by label: " + ", ".join(f"{k} {v:+.3f}" for k, v in g1.mean(1).items()),
+              "Round-1 grid mean by feature set: " + ", ".join(f"{k} {v:+.3f}" for k, v in g1.mean(0).items())]
+    H = S[S.h].copy()
+    H["twin"] = H.spec.str[:-1]
+    H = H.merge(S[~S.h][["spec", "sharpe"]].rename(columns={"spec": "twin", "sharpe": "sharpe_twin"}), on="twin")
+    H["gain_from_history"] = H.sharpe - H.sharpe_twin
+    lines += ["", "With the 2021-23 candidates added to training (H):",
+              H[["spec", "sharpe", "d_sharpe", "sharpe_twin", "gain_from_history"]].round(3).to_string(index=False)]
     txt = "\n".join(lines) + "\n"
     open(os.path.join(OUT, "screen_stats.txt"), "w").write(txt)
     print(txt)
 
 
 # ------------------------------------------------------------------------------------------------ binding cells
+def twin(name, era):
+    """The book whose dataset a spec uses in an era: an H spec runs without H in 2022-23 (no earlier history exists),
+    so RF0H is R2-08 there and RF2H is RF2."""
+    if fsim.ERAS[era][0] == "early" and name.endswith("H"):
+        return INC if name == "RF0H" else name[:-1]
+    return name
+
+
 def tag_of(name, era):
     base = fsim.ERAS[era][0]
+    name = twin(name, era)
     if name == INC:
         return base
     t2 = f"{base}_{name}"
@@ -173,6 +190,11 @@ def cells(name, cfgs, eras):
     mp = os.path.join(CELLS, "meta.csv")
     for cfg in cfgs:
         for era in eras:
+            tw = os.path.join(CELLS, f"{twin(name, era)}__{cfg}__{era}.parquet")
+            if twin(name, era) != name and os.path.exists(tw):       # same dataset: reuse the twin's cell
+                pd.read_parquet(tw).to_parquet(os.path.join(CELLS, f"{name}__{cfg}__{era}.parquet"))
+                print(f"{name} {cfg} {era}: = {twin(name, era)}", flush=True)
+                continue
             out, meta = cell(name, cfg, era)
             out.to_parquet(os.path.join(CELLS, f"{name}__{cfg}__{era}.parquet"))
             st = fsim.stats(out["model"], lsim.CONFIGS[cfg]["C"], era)
@@ -221,8 +243,9 @@ def report():
         top5 = float(np.sort(g)[-5:].sum())
         tests.append(dict(spec=f, pooled_mean_vm=float(d.mean()), t_boot=float(d.mean() / bs.std(ddof=1)), p_raw=pvals[f],
                           pooled_gain=float(g.sum()), top5_share=(top5 / g.sum() if g.sum() > 0 else float("nan"))))
-    order = sorted(fins, key=lambda x: pvals[x])
-    holm, run = {}, 0.0
+    cand = [f["spec"] for f in F["finalists"] if f.get("role", "candidate") == "candidate"]
+    order = sorted(cand, key=lambda x: pvals[x])
+    holm, run = {f: pvals[f] for f in fins}, 0.0          # information-only finalists keep their raw p
     for i, f in enumerate(order):
         run = max(run, min(1.0, (len(order) - i) * pvals[f]))
         holm[f] = run

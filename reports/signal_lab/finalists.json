@@ -1,0 +1,14 @@
+{
+ "note": "Frozen from the selection era only (28 trials, rounds 1-3) by the rules in prereg.md (deviation 2), before any holdout number. Hand scores (mechanism /10, implementation /5) assigned now.",
+ "incumbent": "R2-08 (RF0)",
+ "finalists": [
+  {"spec": "RF2", "rule": "Best (non-H) and Main effects", "role": "candidate", "screen_sharpe": 3.039, "hand": [4, 4],
+   "why": "Mechanism 4: where a coin sits in its range and BTC's trend regime could separate capitulation from routine dips, and F2 was the best feature set under all four labels. Against: the same features were about neutral in the wick v2 lab, the gain disappears when F1 and calendar are added (RF3 -0.01), and explore v1 showed regime-specific patterns do not carry across eras. Implementation 4: eight candle features in the shared feature code, a retrain and a bot model swap with parity tests."},
+  {"spec": "RF4", "rule": "New data (single change)", "role": "candidate", "screen_sharpe": 2.620, "hand": [5, 2],
+   "why": "Mechanism 5: liquidity-provision returns rise with implied volatility (Nagel 2012), and DVOL is the market's own fear gauge. Against: hourly and daily regime variables give few independent regimes in about a year of training, and adding history on top did not help (RF4H). Implementation 2: three new live feeds (Deribit public API, VIX, Nasdaq futures) with outage handling; the Deribit source is unverified from the bot's server."},
+  {"spec": "RF2H", "rule": "Best with history", "role": "candidate", "screen_sharpe": 3.188, "hand": [6, 3],
+   "why": "Mechanism 6: F2 as above, plus more training history, which cuts estimation error; history helped under every label on development, and wick v3 showed the patterns are stable across eras. Against: the F2 part carries the same doubts as RF2, and in 2022-23 it runs without the history. Implementation 3: the eight features plus training on the 2021-23 minute data (13 coins)."},
+  {"spec": "RF0H", "rule": "History only (single change)", "role": "info", "screen_sharpe": 2.756, "hand": [7, 4],
+   "why": "Mechanism 7: a pure sample-size argument with no new degrees of freedom: the binding limit is the number of independent forced-selling episodes. It cannot gain in 2022-23 (no earlier history), so it cannot pass gate 1; information only. Implementation 4: a retrain that includes the 2021-23 candidates; no new live inputs."}
+ ]
+}

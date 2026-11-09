@@ -565,7 +565,7 @@ def chain(name):
         for q, (ms, t_) in models.items():
             m = np.asarray(q_of == q)
             if m.any():
-                px[m] = np.mean([mm.predict(f.loc[m, feats]) for mm in ms], axis=0)
+                px[m] = np.mean([mm.predict(f.loc[m, feats], num_threads=1) for mm in ms], axis=0)
                 th[m] = t_
         pd.DataFrame({"ts": d.idx[r], "pred": px}).to_parquet(os.path.join(out, f"{c}.parquet"), index=False)
         # check: the every-minute prediction at candidate minutes = the candidate-row prediction

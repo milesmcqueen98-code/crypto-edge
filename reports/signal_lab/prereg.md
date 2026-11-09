@@ -151,3 +151,15 @@ unread.
        target.
      - LS: dividing by sigma down-weights the high-sigma signals, where the profit is.
      - F5: outcome memory added nothing beyond the existing return and volatility features.
+3. **Freeze (Nov 9 2026, 14:51 ET), before any holdout number.** 28 trials ran on the selection era.
+   - **Round 3:** RF2H 3.188 (+0.82), S4F2H 3.076 (+0.71), RF4H 2.518 (+0.16).
+   - **Finalists** (finalists.json, with hand scores and reasons): RF2, RF4, RF2H; RF0H as information only.
+   - **Selection-era statistics** (screen_stats.txt):
+     - SPA p 0.14 against the incumbent; StepM: 0 of 28 significantly better.
+     - Deflated Sharpe of the improvement: at most 0.33 with N = 28, and about 0 with the 9,700 earlier setups.
+     - So nothing is significant in-sample once the trials are counted. The holdout decides. Explore v1 found the
+       same sign (SPA p 0.067) and no gain held.
+   - **Expectation, recorded before the read:** most or all of the screen gains will not hold. If anything holds, more
+     history is the likeliest, because it adds no new degrees of freedom.
+   - **Screen vs binding simulator:** the screen used the frozen simulator. The engine-faithful selection-era cells are
+     reported with the holdout cells; they do not change the list.
