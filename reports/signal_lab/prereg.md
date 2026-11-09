@@ -247,3 +247,14 @@ unread.
     - **Run:** the research walk-forward of R2-08 with seeds 7, 11, 23, 42 and 101, which bot/train_v2.py uses, on the
       frozen simulator in every era. It asks whether the research book (seeds 7, 11, 23) is representative of the
       model the bot trains. It selects nothing.
+11. **Matched-selectivity diagnostic (Nov 9 2026, 16:28 ET; information only, logged before it ran).**
+    - **Result of deviation 10:** with the bot's five seeds R2-08 scores 2.42 / 2.63 / 1.60 against the research book's
+      2.36 / 2.57 / 1.70. Representative.
+    - **Why:** the independent review noted that each model's threshold is the 60th percentile of its own training
+      predictions, so the challengers also differ in how selective they are. R2-08 keeps 39% of development
+      candidates; the features model keeps 33%. Stricter rules gain in-sample and lose out of sample (explore v1), so
+      the feature results may be a selectivity effect and not better ranking.
+    - **Runs** (frozen simulator, S*, every era): RF2, RF4, RF2H and RF0H with each quarter's threshold reset so the
+      model keeps the same share of that quarter's candidates as R2-08 (suffix M).
+    - **Not tradable:** the reset uses the test quarter's own predictions (not its outcomes). It is a diagnostic of
+      ranking skill at equal selectivity. It selects nothing.

@@ -69,6 +69,9 @@ def split(name):
       A0    arm when the predicted net is above 0 bp
     Returns (label, feature set, history start or False, window days or None, threshold override or None)."""
     hist, window, thr = False, None, None
+    matched = name.endswith("M")                              # M: selectivity matched to R2-08's (deviation 11)
+    if matched:
+        name = name[:-1]
     core_name = name
     for suf, t in (("Q50", ("q", 0.5)), ("Q40", ("q", 0.4)), ("Q30", ("q", 0.3)), ("Q20", ("q", 0.2)), ("A0", ("abs", 0.0))):
         if name.endswith(suf):
@@ -85,7 +88,7 @@ def split(name):
         core_name, hist = name[:-1], "2021-01-01"
     for l in sorted(LABELS, key=len, reverse=True):
         if core_name.startswith(l) and core_name[len(l):] in FSETS:
-            return l, core_name[len(l):], hist, window, thr
+            return l, core_name[len(l):], hist, window, thr, matched
     raise ValueError(name)
 
 
@@ -233,7 +236,7 @@ def memory_arrays(L):
 
 # ------------------------------------------------------------------------------------------------ walk-forward
 def wf(X, y, feats, periods, thr_q=0.6, seeds=(7, 11, 23), keep_models=False, hist=None, window_days=None,
-       thr_abs=None):
+       thr_abs=None, match_share=None):
     """core.walk_forward at R2-08's settings (episode weights, Huber, 250 rounds), also returning the models."""
     params = dict(wick.PARAMS)
     pred = pd.Series(np.nan, index=X.index)
@@ -257,10 +260,13 @@ def wf(X, y, feats, periods, thr_q=0.6, seeds=(7, 11, 23), keep_models=False, hi
         w = 1.0 / tr.groupby(["coin", "episode"]).ts.transform("size").to_numpy()
         ms = [lgb.train(params | {"seed": s}, lgb.Dataset(tr[feats], ytr, weight=w, categorical_feature=cat),
                         num_boost_round=wick.ROUNDS) for s in seeds]
-        pred[te.index] = np.mean([m.predict(te[feats]) for m in ms], axis=0)
+        pte = np.mean([m.predict(te[feats]) for m in ms], axis=0)
+        pred[te.index] = pte
         t_ = float(np.quantile(np.mean([m.predict(tr[feats]) for m in ms], axis=0), thr_q))
         if thr_abs is not None:
             t_ = float(thr_abs)
+        if match_share is not None:                           # diagnostic only: uses the test quarter's predictions
+            t_ = float(np.quantile(pte, 1.0 - match_share[str(per)]))
         thr[te.index] = t_
         if keep_models:
             models[str(per)] = (ms, t_)
@@ -303,7 +309,20 @@ class Lab:
         print(f"lab ready: {len(self.X):,} candidates, {len(self.ls.coins)} coins ({time.time() - t0:.0f}s)", flush=True)
 
     def fit(self, name, periods, keep_models=False, seeds=(7, 11, 23)):
-        l, f, use_hist, window, thr_o = split(name)
+        l, f, use_hist, window, thr_o, matched = split(name)
+        share = None
+        if matched:                                           # R2-08's kept share of candidates, quarter by quarter
+            key = (tuple(str(p) for p in periods), tuple(seeds))
+            if getattr(self, "_share", {}).get(key) is None:
+                p0, t0, _ = wf(self.X, label_of("R", self.lab, self.sp), list(wick.FEATS), periods,
+                               thr_q=self.ai_d.get("thr_q", 0.5), seeds=seeds)
+                sh = {}
+                for per in periods:
+                    m = (self.X.ts >= per.start_time) & (self.X.ts <= per.end_time) & p0.notna()
+                    if m.any():
+                        sh[str(per)] = float((p0[m] > t0[m]).mean())
+                self._share = {key: sh}
+            share = self._share[key]
         thr_q = self.ai_d.get("thr_q", 0.5) if not (thr_o and thr_o[0] == "q") else thr_o[1]
         thr_abs = thr_o[1] if (thr_o and thr_o[0] == "abs") else None
         feats = list(wick.FEATS) + FSETS[f]
@@ -314,7 +333,7 @@ class Lab:
             okh = hy.notna().to_numpy() & (self.hist.ts >= pd.Timestamp(use_hist)).to_numpy()
             hist = (self.hist[okh], hy.to_numpy()[okh])
         pred, thr, models = wf(self.X, y, feats, periods, thr_q=thr_q, keep_models=keep_models,
-                               hist=hist, seeds=seeds, window_days=window, thr_abs=thr_abs)
+                               hist=hist, seeds=seeds, window_days=window, thr_abs=thr_abs, match_share=share)
         return feats, pred, thr, models
 
     def export(self):
