@@ -1,0 +1,29 @@
+{
+ "idea": "gamma",
+ "path": "A",
+ "variant": "G|p25|all",
+ "signal": "G",
+ "thr": "p25",
+ "scope": "all",
+ "col": "G",
+ "thr_value": -40635076.417885385,
+ "thr_units": "USD per 1% move (sum inv x BS gamma x S^2 x 1%); = DEV 25th percentile of hourly G",
+ "rule": "skip every coin's 4-sigma bids (m = frozen_sim.SKIP) in every minute of an hour whose G (trades before h - 60 s) < thr_value",
+ "selection": "highest DEV paired HAC t at X2 among variants with 5-50% of DEV parents skipped (4 of 8 eligible); no tie",
+ "dev": {
+  "t_diff": -0.5168028963018039,
+  "mean_diff_bp": -0.2553447227650066,
+  "d_sharpe": -0.0834174964974463,
+  "cand_sharpe_x2": 1.5399477815597251,
+  "inc_sharpe_x2": 1.6233652780571717,
+  "n_skip": 236,
+  "n_parents": 1155,
+  "frac_parents": 0.2043290043290043,
+  "frac_hours": 0.25
+ },
+ "trials": 8,
+ "trial_code_commit": "5ca2d24cb27d0c5210e9859c690dc30c3b6fa56b",
+ "trial_code": "scripts/hunt2/gamma/gamma.py (dev sel)",
+ "hold_code": "scripts/hunt2/gamma/gamma_hold.py",
+ "derive_run": "42545078490 (scripts/hunt2/gamma/derive_deribit.py; HOLD file in its artifact hold_out/gamma_hourly_hold.parquet)"
+}
