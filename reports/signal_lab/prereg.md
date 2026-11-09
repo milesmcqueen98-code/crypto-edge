@@ -240,3 +240,10 @@ unread.
      so "the label fix did not help" needs a seed-averaged reading.
    - **Runs:** S4F0 and LDF0 with five seed triples, frozen simulator, every era. They select nothing and cannot
      become candidates today; a consistent gain would only shape the next pre-registered test.
+10. **R2-08 with the bot's own five seeds (Nov 9 2026, 16:24 ET; information only).** Logged a minute after the run was
+    started, before any of its results were seen.
+    - **Result of deviation 9:** the ladder label stays negative across seeds (-0.28 development, -0.41 check). The
+      spot-cost label is mixed: -0.06 development, +0.30 check (5 of 5 triples), -0.06 in 2022-23 (0 of 5).
+    - **Run:** the research walk-forward of R2-08 with seeds 7, 11, 23, 42 and 101, which bot/train_v2.py uses, on the
+      frozen simulator in every era. It asks whether the research book (seeds 7, 11, 23) is representative of the
+      model the bot trains. It selects nothing.
