@@ -53,3 +53,9 @@ Written by the orchestrator before any probe data exists. Branch owner/charter; 
   boundaries (signal lab 2 found this in history), so a bar built from trades may differ from the final candle for
   reasons other than lateness. Measure 3 tolerates small differences for that reason.
 - "Usable" says the inputs match. What the mismatch costs in P&L is not measured here.
+
+## Deviation log
+- **Nov 10 2026, 10:36 ET, before any probe data (orchestrator).** BTC is added to the coins, nine in all. BTC is not
+  traded, but the model's levels and its BTC features read BTC's newest candle every minute, and BTC's candle was among
+  the latest to fill in during the collector's first hour (33% of its dollar volume missing at first sight). The rule
+  is read on the nine coins together; BTC is also reported on its own.
