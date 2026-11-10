@@ -66,8 +66,8 @@ Deviations from the plan:
 
    Changes for the restarted run (no headers, addresses or cache-busting parameters; each request is an ordinary
    candle window):
-   - **The 6 s Exchange request stays the bot's exact URL** (the 5-minute window ending at the minute just
-     closed), so it sees what the bot sees, cache included.
+   - **The 6 s Exchange request keeps the 5-minute window ending at the minute just closed.** (Correction, entry
+     4: this is the collector's URL, not the bot's steady-state URL.)
    - **The other delays use the same end but start further back:** 1 s 6 minutes, 3 s 7, 10 s 8, 15 s 9, 25 s
      10, 40 s 11.
    - **The reference uses a 15-minute window.** It counts only if its response was generated at least 180 s
@@ -78,3 +78,19 @@ Deviations from the plan:
 
    Measures 1 to 5 and the decision rule are unchanged. One limit follows: another client can still fill the
    cache for any of these URLs first. The stored Age shows when that happened.
+
+   The second run (42852693023) was cancelled after about 3 minutes to add entries 4 and 5. It is not used.
+
+4. **The bot's own URL added as a source (`bot_url`; requested by the orchestrator, written before the run).** In
+   steady state the paper bot asks for start = T-4 min and end = T-1 min (bot/spot/engine.py update_spot: start =
+   newest stored minute minus 2; the newest stored minute is normally T-2). The probe requests exactly this URL
+   once per coin-minute at about 9.5 s after the boundary. That is after the paper bots have made their own
+   request, so the probe can never be the one that fills that cache entry early. It stores the cache status, the
+   Age, and the newest minute returned. This is a descriptive measure, not part of the rule.
+5. **Exchange trades also at 6 s (in the plan's deviation log, by the orchestrator, before the data).** The trades
+   URL is shared by every client and cached for 5 s, so a 1 s or 3 s answer may have been generated before the
+   minute closed, while a 6 s answer cannot. 6 s is also when the bot steps today. The rule reads trades at 1, 3
+   and 6 s the same way (material-error share at most 1%, all coins done within 2 s in at least 99% of minutes).
+   Pacing fits all three delays (about 115 Exchange requests a minute; slots of about 20 at 8 a second), so none
+   was dropped. Trades keep priority in a slot, so the 6 s candles go out about 1 to 2 s late, and the stored
+   times show it. The `Date` header is stored too, so the answer's generation time is also Date minus Age.

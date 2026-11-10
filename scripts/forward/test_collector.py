@@ -472,7 +472,7 @@ class CandleProbe(unittest.TestCase):
         pr = P.Probe(["AAA", "BBB", "GONE"], http=venue, log=lambda m: None, ex_interval=0.001, adv_interval=0.001)
         for q in qs:
             pr.schedule(q)
-        n = 3 * 4 * (len(P.CANDLE_DELAYS) + 1 + len(P.TRADE_DELAYS) + 1)
+        n = 3 * 4 * (len(P.CANDLE_DELAYS) + 1 + len(P.TRADE_DELAYS) + 1 + 1)     # + adv, ref, bot_url
         deadline = time.time() + 120                                   # wait for the rows, not for a fixed time
         while len(pr.rows) < n and time.time() < deadline:
             time.sleep(0.05)
@@ -484,7 +484,9 @@ class CandleProbe(unittest.TestCase):
         self.assertEqual(set(tr.n_trades), {4})
         cu = [u for u in venue.urls if u[0].endswith("/candles") and u[0].startswith(C.EXCHANGE)]
         self.assertEqual(len(cu), len(set(cu)))                         # no candle URL is asked twice
-        self.assertEqual(dict(P.window(qs[0], 6)), C.candle_params(qs[0]))   # 6 s is the bot's own request
+        self.assertEqual(dict(P.window(qs[0], 6)), C.candle_params(qs[0]))   # 6 s keeps the collector's window
+        bw = P.bot_window(pd.Timestamp("2026-11-10 12:00"))                   # the paper bot's steady-state request
+        self.assertEqual((bw["start"], bw["end"]), ("2026-11-10T11:56:00Z", "2026-11-10T11:59:00Z"))
         tab, per, ref, sig = P.measures(df)
         self.assertEqual(len(ref), 2 * 4)                               # AAA, BBB; GONE never traded
         self.assertTrue((tab.exact == 100).all() and (tab.material == 0).all())

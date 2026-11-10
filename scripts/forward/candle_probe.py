@@ -35,14 +35,15 @@ import collector as C  # noqa: E402
 COINS = ["BTC", "ETH", "SOL", "XRP", "DOGE", "HYPE", "ZEC", "PEPE", "ONDO"]   # BTC added by the plan's amendment
 CANDLE_DELAYS = (1, 3, 6, 10, 15, 25, 40)
 ADV_DELAY = 6
-TRADE_DELAYS = (1, 3)
+TRADE_DELAYS = (1, 3, 6)
 REF_AT = 230                  # seconds after q; the plan asks for 180 s or more
+BOT_URL_AT = 9.5              # the paper bot's steady-state URL, requested after the bots made their own request
 EX_INTERVAL = 0.125           # 8 a second on the Exchange host (public limit 10 a second, burst 15)
 ADV_INTERVAL = 0.125          # 8 a second on the Advanced host
 TIMEOUT = (2, 5)
 MAX_PAGES = 20
-PRIO = {"page": 0, "ex_trades": 1, "ex_candles": 2, "adv_candles": 2, "ref": 3}
-SOURCES = ("ex_candles", "adv_candles", "ex_trades", "ref")
+PRIO = {"page": 0, "ex_trades": 1, "ex_candles": 2, "adv_candles": 2, "bot_url": 2, "ref": 3}
+SOURCES = ("ex_candles", "adv_candles", "ex_trades", "bot_url", "ref")
 WINDOW_MINUTES = {1: 6, 3: 7, 6: 5, 10: 8, 15: 9, 25: 10, 40: 11, REF_AT: 15}   # 6 s = the bot's own window
 REF_MIN_GEN = 180            # a reference answer must have been generated at least this long after q
 
@@ -93,7 +94,21 @@ class ProbeHttp(C.Http):
         if r.status_code == 429:
             raise requests.HTTPError("429 rate limited")
         r.raise_for_status()
-        return r.json(), dict(cache=r.headers.get("cf-cache-status"), age=C.fnum(r.headers.get("age")))
+        d = r.headers.get("date")
+        try:
+            date = pd.Timestamp(d).timestamp() if d else math.nan
+        except (TypeError, ValueError):
+            date = math.nan
+        return r.json(), dict(cache=r.headers.get("cf-cache-status"), age=C.fnum(r.headers.get("age")), date=date)
+
+
+def bot_window(q):
+    """The paper bot's steady-state request at boundary q: start = q - 4 min, end = q - 1 min (bot/spot/engine.py
+    update_spot asks from its newest stored minute, normally q - 2, minus 2 minutes; bot/market.py spot_candles
+    sends end - 1 min)."""
+    q = pd.Timestamp(q).floor("min")
+    return {"granularity": 60, "start": (q - pd.Timedelta(minutes=4)).isoformat() + "Z",
+            "end": (q - pd.Timedelta(minutes=1)).isoformat() + "Z"}
 
 
 def window(q, delay):
@@ -184,7 +199,8 @@ class Probe:
                 return self.record(**b, status="stopped")
             t_req = time.time()
             try:
-                js, hd = self.http.fetch(f"{C.EXCHANGE}/products/{coin}-USD/candles", window(q, delay))
+                js, hd = self.http.fetch(f"{C.EXCHANGE}/products/{coin}-USD/candles",
+                                         bot_window(q) if source == "bot_url" else window(q, delay))
                 t_resp = time.time()
                 cs = C.parse_candles(js, q)
                 v = cs.get(b["minute"])
@@ -267,6 +283,8 @@ class Probe:
         for c in self.coins:
             self.adv.push(T + ADV_DELAY, PRIO["adv_candles"], self.adv_candles(c, q, ADV_DELAY, T + ADV_DELAY))
             self.ex.push(T + REF_AT, PRIO["ref"], self.ex_candles(c, q, REF_AT, T + REF_AT, source="ref"))
+            self.ex.push(T + BOT_URL_AT, PRIO["bot_url"],
+                         self.ex_candles(c, q, BOT_URL_AT, T + BOT_URL_AT, source="bot_url"))
 
     def minute_line(self, q):
         with self.lock:
@@ -304,6 +322,7 @@ class Probe:
                     started=pd.Timestamp(started, unit="s").isoformat(), ended=pd.Timestamp.now().isoformat(),
                     stopped=self.stopped, errors=self.errors, ex_interval=EX_INTERVAL, adv_interval=ADV_INTERVAL,
                     candle_delays=CANDLE_DELAYS, trade_delays=TRADE_DELAYS, adv_delay=ADV_DELAY, ref_at=REF_AT,
+                    bot_url_at=BOT_URL_AT, windows={str(k): v for k, v in WINDOW_MINUTES.items()},
                     rows=len(df))
         with open(os.path.join(out, "run.json"), "w") as fh:
             json.dump(meta, fh, indent=1)
@@ -325,6 +344,7 @@ def to_frame(rows):
     q = df.q.map(lambda x: x.timestamp())
     df["plan_s"], df["req_s"], df["resp_s"] = df.t_plan - q, df.t_req - q, df.t_resp - q
     df["gen_s"] = df.resp_s - df.age.fillna(0)          # when the venue made the answer (Age is whole seconds)
+    df["gen_date_s"] = (pd.to_numeric(df["date"], errors="coerce") if "date" in df else np.nan) - df.age.fillna(0) - q
     for c in ("t_plan", "t_req", "t_resp"):
         df[c] = pd.to_datetime(df[c], unit="s").astype("datetime64[ms]")
     return df.sort_values(["source", "coin", "minute", "delay"]).reset_index(drop=True)
@@ -472,14 +492,34 @@ def collector_check(root, coins):
                 first=str(ref.index.get_level_values(1).min()), last=str(ref.index.get_level_values(1).max()))
 
 
-def cache_table(df):
-    """Descriptive: how often each source and delay was answered from the cache, and how old the answer was."""
+def cache_table(df, by_coin=False):
+    """Descriptive: how often each source and delay was answered from the cache, how old the answer was (Age), and
+    how often the answer was made before the boundary (generation time = response time minus Age, and Date minus
+    Age as a check)."""
     d = df[df.status == "ok"]
-    g = d.groupby(["source", "delay"])
+    keys = ["source", "delay"] + (["coin"] if by_coin else [])
+    g = d.groupby(keys)
+    gd = d.get("gen_date_s", pd.Series(np.nan, index=d.index))
     return pd.DataFrame(dict(n=g.size(), hit_share=g.cache.apply(lambda x: round((x == "HIT").mean() * 100, 1)),
                              age_gt1_share=g.age.apply(lambda x: round((x.fillna(0) > 1).mean() * 100, 1)),
+                             age_gt10_share=g.age.apply(lambda x: round((x.fillna(0) > 10).mean() * 100, 1)),
                              age_med=g.age.median(), age_p95=g.age.quantile(.95), age_max=g.age.max(),
-                             gen_s_med=g.gen_s.median().round(2))).reset_index()
+                             gen_s_med=g.gen_s.median().round(2),
+                             made_before_q=g.gen_s.apply(lambda x: int((x < 0).sum())),
+                             made_before_q_by_date=gd.groupby([d[k] for k in keys]).apply(lambda x: int((x < 0).sum()))
+                             )).reset_index()
+
+
+def bot_url_table(df):
+    """The paper bot's own URL at 9.5 s, by coin: served from cache, a copy older than 10 s, newest minute stale."""
+    b = df[(df.source == "bot_url") & (df.status == "ok")]
+    g = b.groupby("coin")
+    stale = (b.newest.isna() | (b.newest < b.minute))
+    return pd.DataFrame(dict(n=g.size(), hit_share=g.cache.apply(lambda x: round((x == "HIT").mean() * 100, 1)),
+                             age_gt10_share=g.age.apply(lambda x: round((x.fillna(0) > 10).mean() * 100, 1)),
+                             age_max=g.age.max(),
+                             newest_stale_share=stale.groupby(b.coin).mean().mul(100).round(1),
+                             asked_minute_missing=g.present.apply(lambda x: round((~x).mean() * 100, 1)))).reset_index()
 
 
 def staleness(df):
@@ -526,6 +566,9 @@ def analyze(path, collector_root=None, out=None):
                for k, v in sig.items()}, ref_minutes=int(len(ref)))
     res["fresh_only"] = measures(df, fresh_only=True)[0]
     res["cache"] = cache_table(df)
+    res["cache_by_coin"] = cache_table(df, by_coin=True)
+    if "bot_url" in set(df.source):
+        res["bot_url"] = bot_url_table(df)
     if "newest" in df:
         res["staleness"] = staleness(df)
         if "BTC" in set(df.coin):
@@ -549,6 +592,9 @@ def analyze(path, collector_root=None, out=None):
         res["spread"].to_csv(os.path.join(out, "request_spread.csv"), index=False)
         res["fresh_only"].to_csv(os.path.join(out, "measures_fresh_only.csv"), index=False)
         res["cache"].to_csv(os.path.join(out, "cache.csv"), index=False)
+        res["cache_by_coin"].to_csv(os.path.join(out, "cache_by_coin.csv"), index=False)
+        if "bot_url" in res:
+            res["bot_url"].to_csv(os.path.join(out, "bot_url.csv"), index=False)
         if "staleness" in res:
             res["staleness"].to_csv(os.path.join(out, "staleness.csv"), index=False)
         if "btc_cross" in res:
