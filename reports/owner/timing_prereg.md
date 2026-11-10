@@ -86,3 +86,40 @@ For each minute q, with c = seconds after q when the stale bid is cancelled and 
   to prove the window complete (no extra request): the newest print stamped before the merged window's start, or the
   last print before q inside a merged window. Where it is unknown, P0's skip test falls back to no skip and the row is
   flagged. Nothing else about the window changes.
+
+## First reading (Nov 10 2026, 10:28 ET, orchestrator)
+- **By the plan's rule, read once:**
+  - P1 against P0 is -11.3% (check) and -16.6% (2022-23) of P&L, and +4.8% in selection. That is material in two eras
+    with the same sign.
+  - P2 against P1 is +8.6% (check) and +17.5% (2022-23), and -7.1% in selection. By the letter, P2 qualifies to be
+    built behind a switch.
+  - P3 against P1 is +2.8% / +0.1% / +13.1%: no material effect.
+- **What does not depend on how a changed parent is valued:**
+  - P1 fills 87% / 90% / 83% of P0's parents in the same minute (selection / check / 2022-23). P2 fills 97% / 96% / 95%.
+  - 14% / 18% / 20% of P0's fills come in the first 10 s of the minute.
+  - The prints confirm 96.5% / 95.9% / 93.0% of the candle research's parents.
+
+## Deviation 2 (Nov 10 2026, 10:28 ET, orchestrator; logged before the work it covers)
+- **What was found.** Most of every P&L difference comes from the plan's valuation and not from fill prices. A P0
+  parent that a policy misses loses its whole research ladder; a parent only the policy finds adds back its 4-sigma
+  rung alone. A parent that merely moves by a minute is booked as the loss of its deeper rungs.
+  - In 2022-23 the ladders removed from P1 sum to -$13,072 (131 parents). For P1a, which differs by 1.5 to 2.5 s, they
+    sum to -$2,841 (120 parents). About eleven ladders decide the reading.
+  - The selection era has the opposite sign in both readings.
+  - Pooled over the three eras in dollars, P1 is 5.8% below P0 and P2 is 3.4% above P1.
+  - The plan named this limit but not its size.
+- **Decision.** No engineering is commissioned on the first reading alone. A symmetric valuation is run on the same
+  prints, and the plan's 5% rule is applied to it. Fixed now, before any of it is computed:
+  - **S1** (from the committed derived data): every parent of every policy valued on its 4-sigma rung alone, by the
+    lab's exit rule and costs, in percent of P0's 4-sigma P&L.
+  - **S2:** the whole ladder re-simulated for every parent of every policy. Deeper rungs fill on prints from one
+    second after the parent's fill inside the fetched window, and on candles afterwards; exits follow the lab's rule.
+    The same method values P0, so the comparison is like for like. If the committed data cannot support S2, the missing
+    derived fields are fetched again for the same windows.
+  - **Reading.** S2 decides where it exists, otherwise S1. P2 or P3 is built behind a switch on timing grounds only if
+    it beats P1 by 5% of P&L or more with the same sign in at least two eras under the symmetric valuation as well.
+    If it does not, the first reading is recorded as an effect of the valuation.
+  - **Also reported, with no rule:** the share of P0's parents that each policy fills within one minute either side,
+    and how many of the added and lost parents are such moves.
+- **Question 1 (the pilot).** The expectation for the pilot is taken from the match rates above, which do not depend
+  on the valuation.
