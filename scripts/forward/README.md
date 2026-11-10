@@ -5,7 +5,7 @@ the bids, leverage state on the perp venues, and the candles exactly as the spot
 The bot (bot/spot/) decides 6 seconds after each minute closes; the collector is timed around that moment.
 It never trades and nothing in the bot reads it.
 
-## The four streams
+## The streams
 
 Universe: BTC plus the coins in bot/v2/model_meta.json (18 today). All times are UTC.
 
@@ -13,10 +13,11 @@ Universe: BTC plus the coins in bot/v2/model_meta.json (18 today). All times are
 |---|---|---|---|
 | `book` | Coinbase Exchange `GET /products/<coin>-USD/book?level=2` (the full aggregated book) | 18 requests, paced 5 a second, timed to finish by second 5 | coin, minute |
 | `hl` | Hyperliquid `POST /info {"type":"metaAndAssetCtxs"}` (one request) | second 5 | coin, minute (the universe coins; `--hl-all` for every perp) |
-| `candles` | Coinbase Exchange 1-minute candles, the request bot/market.py `spot_candles` makes, last 5 minutes | from second 6, paced 5 a second | revision (see below) |
+| `candles` | Coinbase Exchange 1-minute candles, the 5-minute window ending at the minute just closed (`spot_candles(coin, T-5 min, T)`) | from second 6, paced 5 a second | revision (see below) |
+| `candle_fetch` | the same answers as `candles` | with `candles` | coin, minute: one row per answer |
 | `cfm` | Coinbase Advanced public `GET /products?product_type=FUTURE` (one request), perp-style products only | second 12 | US perp product, minute (all 29) |
 
-**book**: `t` (when the response arrived), best bid and ask (price, size), `mid`,
+**book**: `t` (when the response arrived), `cache` and `age` (see "The venue's cache" below), best bid and ask (price, size), `mid`,
 `n_bid`/`n_ask` (levels returned), `bid_usd_<bp>` = USD resting on the bid side at prices within that many basis
 points below mid (5, 10, 25, 50, 100, 150, 200, 300, 400, 600, 800), `ask_usd_<bp>` the same above mid (5 to 100),
 and `bid_reach_bp`/`ask_reach_bp`, how far from mid the returned book goes. A bucket the returned book does not
@@ -27,8 +28,37 @@ for every coin (about 1 MB a minute for BTC, 3.7 MB for all 18; well within the 
 **candles**: a revision log. A row is written the first time a (coin, minute) candle is seen and again whenever
 any of open, high, low, close, volume changes in a later fetch; `seen` is when the response arrived, `rev` counts
 revisions (0 = first).
-Each candle is fetched five times (in minutes T+1 to T+5), so the log shows how complete a candle is when the bot
-decides and how it settles over the next four minutes. A minute with no trades has no candle (Coinbase omits it).
+Each candle is fetched five times (in minutes T+1 to T+5), so the log shows how complete a candle is at second 6
+and how it settles over the next four minutes. A minute with no trades has no candle (Coinbase omits it).
+The window is not the paper bot's steady-state request: the bot asks from its newest stored minute minus 2
+minutes (normally T-4 min to T-1 min), so the two URLs are the same only when the bot's previous newest candle was
+missing. The values of a minute do not depend on the window's start, but the cache does (below).
+
+**candle_fetch**: one row per candle answer: `coin`, `minute` (the minute of the fetch), `seen`, `cache`, `age`
+and `newest` (the newest candle minute in the answer). It splits "missing at 6 s" into "not yet written at the
+venue" (a fresh answer whose newest minute is older) and "an old cached copy" (a HIT with a large Age).
+
+### The venue's cache
+
+Coinbase answers through Cloudflare, cached by the exact URL (checked from a runner, Nov 10 2026):
+
+| endpoint | cache-control | seen |
+|---|---|---|
+| Exchange candles | `public, max-age=300, must-revalidate` | the identical URL was a HIT with the first answer for at least 181 s (Age 179); another window was a MISS and fresh |
+| Exchange trades (`limit=1000`) | `public, max-age=5, must-revalidate` | HIT with Age 0 to 3 |
+| Exchange book level 2 | `public, max-age=2, must-revalidate` | HIT with Age 0 to 1: a snapshot can be up to about 2 s old |
+| Advanced `/products?product_type=FUTURE` (cfm) | `public, max-age=14400` | HIT, no Age header |
+| Advanced `product_book`, `candles` | `public, max-age=14400` | HIT or EXPIRED, no Age header |
+
+So any client that asks a URL first fixes the answer for everyone asking the same URL, at that Cloudflare
+location, until it expires. `cache` (`cf-cache-status`: HIT, MISS, EXPIRED ...) and `age` (seconds, from the Age
+header) are stored for book and candle answers. The Advanced host sends no Age, so the cfm stream stores neither.
+
+**Data to exclude.** On Nov 10 2026, from 16:03 to 16:14 UTC, a probe run (the candle probe's first design, run
+42850392993) asked for the same candle URL as this collector, at 1 s after each minute. In that window the
+collector's 6 s candle answers for BTC, ETH, SOL, XRP, DOGE, HYPE, ZEC, PEPE and ONDO may be copies of the probe's
+1 s answers. Exclude those coin-minutes from any analysis of the 6 s candle. The `cache` and `age` columns did not
+exist yet then.
 
 **hl**: per perp: `name` as Hyperliquid lists it (kPEPE is 1000 PEPE; `px_mult` = 1000 and `coin` = PEPE),
 `open_interest` (in coin units of the listing), `mark`, `oracle`, `mid`, `funding` (hourly rate), `premium`,
@@ -55,8 +85,8 @@ forward/<stream>/<YYYY-MM-DD>/<HH>-<run id>.parquet    one per stream, hour and 
 forward/status.json                                    the latest heartbeat
 ```
 
-Storage is lossless and compact, about 6 MB a day for all four streams (book 2.6, hl 1.3, cfm 1.1,
-candles 1.2): zstd level 19, float columns byte-stream-split, no column statistics and no pandas metadata in the
+Storage is lossless and compact, about 6 MB a day for all streams (book 2.6, hl 1.3, cfm 1.1, candles
+1.2; candle_fetch adds about 0.3): zstd level 19, float columns byte-stream-split, no column statistics and no pandas metadata in the
 footer. Prices, open interest, funding, candle values and timestamps are float64 / ms; depths, sizes, reach and
 the 24h volumes are float32. Request send times (`t_req`) are not stored. Files before this change still carry
 `t_req`; the reader reads both.

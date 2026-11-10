@@ -79,7 +79,8 @@ Deviations from the plan:
    Measures 1 to 5 and the decision rule are unchanged. One limit follows: another client can still fill the
    cache for any of these URLs first. The stored Age shows when that happened.
 
-   The second run (42852693023) was cancelled after about 3 minutes to add entries 4 and 5. It is not used.
+   The second run (42852693023) was cancelled before its first minute boundary, to add entries 4 and 5. It
+   collected nothing.
 
 4. **The bot's own URL added as a source (`bot_url`; requested by the orchestrator, written before the run).** In
    steady state the paper bot asks for start = T-4 min and end = T-1 min (bot/spot/engine.py update_spot: start =

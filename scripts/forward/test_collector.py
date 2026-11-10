@@ -62,6 +62,8 @@ class FakeHttp:
     def request(self, method, url, timeout, **kw):
         with self.lock:
             self.calls.append((time.time(), url, kw.get("params")))
+        if kw.get("meta") is not None:                  # what the venue's cache headers would say
+            kw["meta"].update(cache="MISS", age=0.0)
         for k, v in self.routes.items():
             if k in url:
                 if callable(v):
@@ -262,7 +264,11 @@ class Files(unittest.TestCase):
         for stream, rows in (("book", book), ("hl", hl), ("cfm", cfm), ("candles", cl)):
             p = C.write_hour(self.d, stream, m, "rt", rows)
             exp = C.frame(stream, rows).sort_values(C.KEYS[stream], kind="stable").reset_index(drop=True)
-            pd.testing.assert_frame_equal(pd.read_parquet(p), exp)
+            back = pd.read_parquet(p)
+            empty = [c for c in exp if exp[c].isna().all() and str(exp[c].dtype) == "category"]
+            for c in empty:                                            # an all-missing category column (e.g. the
+                self.assertTrue(back[c].isna().all())                  # cache status of a fake venue) has no type
+            pd.testing.assert_frame_equal(back.drop(columns=empty), exp.drop(columns=empty))
             self.assertNotIn("t_req", exp)
             self.assertEqual(len(R.load(stream, m, root=self.d)), len(exp))
 
@@ -309,6 +315,10 @@ class Streams(unittest.TestCase):
             buf = {k[0]: v for k, v in c.buf.items()}
             self.assertEqual(sum(r["ok"] for r in buf["book"]), 2)
             self.assertEqual(len(buf["candles"]), 4)                   # 2 coins x 2 candles, first sightings
+            cf = buf["candle_fetch"]                                   # one row per candle answer
+            self.assertEqual([r["coin"] for r in cf], coins)
+            self.assertTrue(all(r["cache"] == "MISS" and r["age"] == 0 and r["newest"] is not pd.NaT for r in cf))
+            self.assertTrue(all(r["cache"] == "MISS" for r in buf["book"] if r["ok"]))
             self.assertEqual(len(buf["cfm"]), 2)
             self.assertEqual([r["ok"] for r in buf["hl"]], [False, False])   # missing rows, not stale ones
             self.assertGreaterEqual(c.err["hl:net"], 2)                # retried within the minute
