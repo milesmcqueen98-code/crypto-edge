@@ -58,3 +58,19 @@ FORWARD_TESTS.md.
     assumed is adopted on verification and tests, behind a switch, without needing a backtest gain.
 - **Collector storage:** 9.8 MB a day measured. The VM's clone is shallow, sparse and single-branch, so the data
   branch does not reach it. Lossless trims first, target about 6 MB a day.
+- **10:40. Timing study closed: the bot's timing stays as built.**
+  - Like-for-like valuation (whole ladder for every first bid, 4.8M deep prints): the live timing is +1.9% / -11.9% /
+    -11.9% against the research assumption (pooled -5.1%); fast re-pricing is -3.8% / +7.1% / +11.1% against the live
+    timing (pooled +2.6%).
+  - **Deviation 4:** the two-era condition is met for fast re-pricing, and nothing is built on it. The live bot with
+    calls 1.5 to 2.5 s faster (P1a) beats the central case by more than fast re-pricing does (pooled +6.3%), and the
+    slower-call case is also slightly ahead. The order by P&L is not the order of speed, so the measure cannot rank
+    timings: two seconds move 10-17% of first bids to other minutes and a few dozen ladders decide each era.
+  - What holds: every realistic timing is within a few percent of the research assumption (pooled +0.9% to -5.1%);
+    match rates of 83-90% in the same minute and 88-94% within two minutes; fills are spread evenly in the minute.
+  - **Rule B's reading fixed before the pilot:** a paper fill counts as matched when the live bot fills the same coin
+    within two minutes either side. The 70% bar stays.
+  - Queued for the next engine release: the heartbeat records when cancels and new bids finish each minute.
+- **10:36. Probe deviation, before data:** BTC added. The bid level of every coin is the coin's price 60 minutes ago
+  moved by beta times BTC's return to the newest close, less four sigma (edge/wick.py `levels`). So BTC's newest
+  candle is the input whose lateness moves every level.

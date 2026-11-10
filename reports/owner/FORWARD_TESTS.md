@@ -9,10 +9,18 @@ them.
 | Test | What it decides | Read when | Pass rule | Status | Source |
 |---|---|---|---|---|---|
 | A. Spot paper book, $250K | Whether the machinery and the fill frequency match the research | At least 3 weeks and 60 rungs: no earlier than Nov 27 2026 | No unexplained errors; every rung closes by its rule; 1-6 rung fills a day; mean net per dollar above 0 | Running since Nov 6. See PAPER_STATUS.md | bot/spot/README.md |
-| B. Live pilot, $10K | Whether real orders fill like paper | At least 3 weeks and 50 rungs | Live fills on at least 70% of the paper bot's fills (same coin and minute); mean live result before fees within 25 bp of paper; no balance warnings | Miles's to start | bot/spot/README.md |
+| B. Live pilot, $10K | Whether real orders fill like paper | At least 3 weeks and 50 rungs | Live fills on at least 70% of the paper bot's fills; mean live result before fees within 25 bp of paper; no balance warnings. Owner's reading of "same fill", fixed Nov 10 before the pilot: the same coin within two minutes either side (see the note below) | Miles's to start | bot/spot/README.md; this file |
 | C. Live, $100K (up to $250K) | Capture share, the largest unmeasured number | 6-8 weeks | Capture share at least 0.25; mean net above 0 after 150 rungs | After B | bot/spot/README.md |
 | Standing stop | Whether to stop | Any time after 150 rungs | Stop and review if mean net per dollar bought is below 0 | Standing | bot/spot/README.md |
 | Idle cash as USDC (ladder v5, C4) | Whether Coinbase pays rewards on this account's USDC, and on cash held by resting bids | One weekly or monthly payout after switching | Rewards at least half of expectation B (free cash only); stop on any rejected -USDC order, a program change, or USDC below 0.997 for 15 minutes | Needs the account's eligibility and `usdc-check` | reports/ladder_v5_prereg.md, bot/spot/run.py |
+
+**Note on rule B (fixed Nov 10 2026, before any pilot data).**
+- The timing study (reports/owner/timing/, 14.1M trade prints) shows that the live bot's order timing alone fills 83-90%
+  of the research's first bids in the same minute and 88-94% within two minutes. Trade prints confirm 93-96.5% of the
+  candle-based fills.
+- With a same-minute match, a pilot with perfect capture would be expected at about 77-87%, too close to the 70% bar to
+  say anything about capture. With a two-minute window it would be expected at about 82-91%. The 70% bar stays.
+- The same-minute rate is reported as well at the read.
 
 ## Challengers running or registered
 
@@ -35,5 +43,8 @@ them.
 | History-trained model at R2-08's selectivity | Whether 2021-23 history helps ranking forward | Optional shadow log at the next retrain | Not built |
 
 ## Closed
+- Live order timing (Nov 10 2026): the bot's timing stays as built. Every realistic timing is within a few percent of
+  the research assumption in pooled P&L, and the study cannot rank them (reports/owner/timing_prereg.md, "Final
+  reading").
 - The model on historical data: three rounds, no change (findings doc).
 - Trade-print features: no change (signal lab 2). A live shadow log of them is not worth building.
