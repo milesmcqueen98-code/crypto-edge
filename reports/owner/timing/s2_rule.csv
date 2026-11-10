@@ -1,0 +1,4 @@
+val,policy,vs,eras_up5,eras_down5,reading
+S2,P1,P0,0,2,worse by 5%+ in two eras
+S2,P2,P1,2,0,better by 5%+ in two eras
+S2,P3,P1,1,0,no material effect

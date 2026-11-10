@@ -125,3 +125,104 @@ added to the incumbent's daily series.
 - The API timings (8 s and 10 s) are assumptions. P1a and P1b bracket them.
 - The levels come from the repo's candles. The bot's levels come from candles fetched at q + 6 s, which this study
   does not check.
+
+# Part 2: symmetric valuation
+
+**Planned after the first reading was seen** (plan: "First reading", "Deviation 2", "Deviation 3"). The parents and
+fill prices are the same as in part 1; only the valuation changes. Code: scripts/owner/timing/part2.py (moves, S1)
+and part2_s2.py (S2).
+
+## The reading under the rule (S2 decides)
+- **P1 against P0: 5% or more worse in two eras under S2** (+1.9% / -11.9% / -11.9%) and under S1 (+3.7% / -16.8% /
+  -26.0%). The first reading's direction holds once a changed parent is valued on both sides. Pooled in dollars: -5.1%
+  (S2), -7.4% (S1).
+- **P2 against P1: 5% or more better in two eras under S2** (-3.8% / +7.1% / +11.1%; selection is below 5% in the
+  other direction) and under S1 (-9.7% / +10.9% / +27.2%). By the plan's rule, P2 still qualifies to be built behind a
+  switch and tested in the pilot. Pooled it is only +2.6% (S2) and +0.9% (S1). The selection era goes the other way
+  every time.
+- **P3 against P1: no material effect** (S2 +4.0% / -2.1% / +9.8%; S1 +3.6% / -6.5% / +14.1%).
+- Each difference comes from roughly 35 to 240 changed parents per era. No significance test was run (the plan has
+  none).
+
+## Moves (descriptive, no rule)
+Share of P0's parents the policy fills in the same coin at the same minute / within 1 minute / within 2 minutes:
+
+| era | P1 | P1a | P1b | P2 | P3 |
+|---|---|---|---|---|---|
+| sel | 0.870 / 0.893 / 0.909 | 0.894 / 0.913 / 0.925 | 0.828 / 0.863 / 0.888 | 0.970 / 0.974 / 0.975 | 0.900 / 0.921 / 0.934 |
+| chk | 0.900 / 0.926 / 0.935 | 0.892 / 0.923 / 0.933 | 0.854 / 0.890 / 0.904 | 0.959 / 0.971 / 0.974 | 0.900 / 0.931 / 0.938 |
+| early | 0.827 / 0.865 / 0.882 | 0.841 / 0.885 / 0.905 | 0.778 / 0.829 / 0.860 | 0.950 / 0.959 / 0.963 | 0.849 / 0.888 / 0.905 |
+
+- Of the parents only in the policy and only in P0, few pair up one to one as moves. For P1, 27 / 11 / 29 pairs fall
+  within 1 minute and 46 / 15 / 40 within 2 minutes, out of 152 / 42 / 131 lost parents. Most lost parents have no
+  policy parent in that coin nearby.
+- Paired moves enter at -0.7 / -16.4 / -13.5 bp against P0 (P1, within 1 minute, dollar-weighted). The medians are
+  -8.0 / -5.2 / +0.3 bp, on few pairs.
+- All policies: [moves.csv](moves.csv). The ten largest ladders removed from P1 per era, and whether P1 has a parent
+  in that coin within 2 minutes: [removed_top_p1.csv](removed_top_p1.csv).
+- In the selection era the four largest removed ladders are losers (-$3,223 HBAR, -$2,606 SOL, -$1,816 XRP, -$1,660
+  SUI). That is why selection goes the other way in part 1.
+
+## S1: every parent on its 4-sigma rung alone
+The lab's exit rule on candles, costs x2, at each parent's own price and minute. Sizes are those of part 1.
+
+| era | P0 4-sigma P&L | P1 vs P0 | P1a vs P0 | P1b vs P0 | P2 vs P0 | P3 vs P0 | P2 vs P1 | P3 vs P1 |
+|---|---|---|---|---|---|---|---|---|
+| sel | $37,291 | +3.7% (+0.08) | +5.9% (+0.03) | +3.6% (+0.11) | -6.4% (-0.10) | +7.5% (+0.09) | **-9.7%** (-0.18) | +3.6% (0.00) |
+| chk | $12,605 | **-16.8%** (-0.16) | -6.5% (-0.10) | -10.6% (-0.06) | -7.8% (-0.12) | -22.3% (-0.21) | **+10.9%** (+0.04) | -6.5% (-0.05) |
+| early | $15,818 | **-26.0%** (-0.23) | -19.9% (-0.15) | -20.7% (-0.14) | -5.8% (-0.06) | -15.5% (-0.12) | **+27.2%** (+0.18) | +14.1% (+0.12) |
+| pooled | $65,714 | -7.4% | -2.7% | -5.0% | -6.5% | -3.8% | +0.9% | +3.9% |
+
+In brackets: the change in daily Sharpe at S*. The difference is added to the incumbent's daily series, as in part 1.
+
+- **Coverage:** in the research book the 4-sigma rung is 52.8% (sel), 50.6% (chk) and 29.9% (early) of the ladder
+  P&L, so S1 covers about half of the book, and under a third in 2022-23.
+- **Check against the research's own 4-sigma result** (the parents P0 shares with the research): $36,574 vs $37,411
+  (-2.2%), $12,638 vs $14,326 (-11.8%), $16,147 vs $16,522 (-2.3%).
+  - S1 uses model costs and a full take-profit fill.
+  - The research uses print-measured remainder costs and capacity-limited take-profits.
+  - The check-era gap is not split further.
+- Files: [s1.csv](s1.csv), [s1_check.csv](s1_check.csv).
+
+## S2: the whole ladder, like for like
+Every parent of every policy, P0 included. The method is deviation 3:
+- The 6 and 8 sigma rungs rest from 1 s after the parent's fill and fill on prints inside [q, q + 70 s); after that,
+  candle lows until the parent's take-profit.
+- Sizes, capacity, shared sellers and take-profit capacity come from the research's evaluator, with the cash cap off.
+- The fee tier is the research book's, and remainder exits are priced from prints.
+- Deep prints: the first fetch's runner artifacts re-read, with no new request. They hold 4.79M prints at or below
+  the 6-sigma level plus a tick, on branch owner/timing-data, reports/owner/timing/data/out2.
+
+**Validation, read before any policy difference** (the parents P0 shares with the research; USD):
+
+| era | shared | A research ladder | B evaluator on frozen rows, no cash | C rows rebuilt here (candles), no cash | D P0 under S2 | D vs A | B vs A | D vs C |
+|---|---|---|---|---|---|---|---|---|
+| sel | 1115 | 69,524 | 86,035 | 86,041 | 88,427 | +27.2% | +23.7% | +2.8% |
+| chk | 395 | 28,361 | 31,409 | 31,408 | 33,224 | +17.1% | +10.7% | +5.8% |
+| early | 692 | 55,401 | 60,058 | 60,054 | 60,046 | +8.4% | +8.4% | -0.0% |
+
+- **The row builder reproduces the research's frozen rows.**
+  - Filled flags and fill minutes match on every rung, and take-profit minutes match on 99.8 to 100% of rungs.
+  - B and C agree to within $6 per era.
+  - Capacity differs by up to 20% on single rungs, and the 60-minute close by up to 2.6 bp. These come from the
+    current candle files against the frozen ones. They are not traced further.
+- **The gap between S2 and the research is the cash rule (B vs A: +24% / +11% / +8%).** S2 turns the cash cap off, as
+  the plan set. The print timing adds +2.8% / +5.8% / 0.0% (D vs C). So S2's levels are above the research. Only the
+  differences between policies are read, and every policy is valued the same way.
+
+| era | P0 ladder P&L | P1 vs P0 | P1a vs P0 | P1b vs P0 | P2 vs P0 | P3 vs P0 | P2 vs P1 | P3 vs P1 |
+|---|---|---|---|---|---|---|---|---|
+| sel | $90,057 | +1.9% (+0.12) | +7.8% (-0.04) | +3.5% (+0.23) | -1.9% (-0.08) | +6.0% (+0.12) | -3.8% (-0.20) | +4.0% (0.00) |
+| chk | $32,937 | **-11.9%** (-0.32) | -0.5% (-0.09) | -11.8% (-0.23) | -5.7% (-0.26) | -13.8% (-0.40) | **+7.1%** (+0.06) | -2.1% (-0.08) |
+| early | $59,993 | **-11.9%** (-0.43) | -8.7% (-0.28) | -11.3% (-0.29) | -2.1% (-0.07) | -3.2% (-0.12) | **+11.1%** (+0.36) | **+9.8%** (+0.31) |
+| pooled | $182,987 | -5.1% | +0.9% | -4.1% | -2.7% | -0.6% | +2.6% | +4.8% |
+
+Files: [s2.csv](s2.csv), [s2_check.csv](s2_check.csv), [s2_rowcheck.csv](s2_rowcheck.csv), per-parent results
+[s2_parents.csv.gz](s2_parents.csv.gz), and the readings [s1_rule.csv](s1_rule.csv) and [s2_rule.csv](s2_rule.csv).
+
+## Part 2 limits
+- The cash rule is off in S2. With it on, the research's ladder P&L is 8 to 24% lower. How much of each policy
+  difference would survive the cash rule is not measured.
+- S2 values every rung on the research's capacity and take-profit rules from candles; only the deeper fills use
+  prints.
+- The parents and their sizes are part 1's.
