@@ -7,9 +7,11 @@ W=$HERE/wickctl
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 mkdir "$T/bin"
 cat > "$T/bin/sudo" <<'S'
-#!/usr/bin/env bash
-while [ "${1:-}" = "-u" ]; do shift 2; done
-exec "$@"
+#!/usr/bin/env python3
+import os, sys
+a = sys.argv[1:]
+while a[:1] == ["-u"]: a = a[2:]
+os.execvp(a[0], a)
 S
 cat > "$T/bin/systemctl" <<'S'
 #!/usr/bin/env bash
