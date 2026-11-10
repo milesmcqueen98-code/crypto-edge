@@ -39,9 +39,10 @@ def reach(bids, asks):
 def main():
     coins = C.universe()
     print("universe", coins, flush=True)
+    skip_book = "--no-book" in sys.argv
     print("\n== book endpoints: coin | exchange L2: status ms KB nbid nask bid_reach_bp ask_reach_bp | "
           "advanced limit=1000 | advanced limit=5000", flush=True)
-    for coin in coins:
+    for coin in ([] if skip_book else coins):
         out = [coin]
         r, dt = timed("GET", f"{C.EXCHANGE}/products/{coin}-USD/book", params={"level": 2})
         if isinstance(r, Exception):
@@ -64,8 +65,8 @@ def main():
                 out.append(f"ADV{lim} {r.status_code} {r.text[:80]!r}")
             time.sleep(0.25)
         print(" | ".join(out), flush=True)
-    print("\n== exchange response headers (last call):", dict((k, v) for k, v in r.headers.items()
-                                                           if "limit" in k.lower() or "cf-" in k.lower()) if not isinstance(r, Exception) else r)
+    print("\n== exchange response headers (last call):", "skipped" if skip_book else dict((k, v) for k, v in r.headers.items()
+          if "limit" in k.lower() or "cf-" in k.lower()) if not isinstance(r, Exception) else r)
     print("\n== hyperliquid", flush=True)
     r, dt = timed("POST", C.HL_URL, json={"type": "metaAndAssetCtxs"})
     if isinstance(r, Exception) or not r.ok:
@@ -100,7 +101,6 @@ def main():
             print("example parsed", rows[0])
         time.sleep(0.5)
     print("\n== candles", flush=True)
-    import pandas as pd
     T = pd.Timestamp.now(tz="UTC").tz_localize(None).floor("min")
     r, dt = timed("GET", f"{C.EXCHANGE}/products/BTC-USD/candles", params=C.candle_params(T))
     print("candles", r.status_code if not isinstance(r, Exception) else r, f"{dt*1e3:.0f}ms", r.text[:300] if not isinstance(r, Exception) else "")
