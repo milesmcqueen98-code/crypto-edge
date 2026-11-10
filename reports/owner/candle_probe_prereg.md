@@ -1,4 +1,4 @@
-# Candle probe: when is the newest minute final, and from which source? Pre-registration (Nov 10 2026, 10:36 ET)
+# Candle probe: when is the newest minute final, and from which source? Pre-registration (Nov 10 2026, 10:27 ET)
 
 Written by the orchestrator before any probe data exists. Branch owner/charter; the probe runs from branch owner/plant.
 
