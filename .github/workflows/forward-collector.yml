@@ -1,0 +1,71 @@
+name: forward-collector
+
+# Forward data collector (scripts/forward/, README there): order-book depth, the bot's candle view, Hyperliquid and
+# Coinbase US perp state, once a minute, into the forward-data branch.
+#
+# Continuity: each run collects for ~5h45m. Five minutes before its end it dispatches its successor (input
+# predecessor = its own run id) and keeps collecting until its end, so the two overlap by ~3-4 minutes and there is no
+# gap; readers de-duplicate the overlap. The hourly schedule is only a safety net: a scheduled run that finds a
+# collector already collecting exits within a minute, and after a crash (no collector running) it takes over, so
+# collection resumes within about an hour. Duplicates resolve to the oldest run (scripts/forward/handover.py).
+# Inside a run, a collector process that dies is restarted after 10 seconds.
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: "minutes to collect"
+        default: "345"
+      predecessor:
+        description: "run id of the run that dispatched this one (set by the hand-over; leave empty by hand)"
+        default: ""
+
+permissions:
+  contents: write      # push to forward-data
+  actions: write       # list runs and dispatch the successor
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # only the collector and the coin list; never the repo's data folders
+          sparse-checkout: |
+            /scripts/forward/
+            /bot/v2/model_meta.json
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q pandas pyarrow requests
+      - name: Check for a running collector
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          python scripts/forward/handover.py check --predecessor "${{ inputs.predecessor }}"
+          rc=$?
+          if [ $rc -eq 0 ]; then echo "go=1" >> "$GITHUB_OUTPUT"; else echo "go=0" >> "$GITHUB_OUTPUT"; fi
+      - name: Collect
+        if: steps.check.outputs.go == '1'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          M=${{ inputs.minutes || '345' }}
+          END=$(( $(date +%s) + M * 60 ))
+          python scripts/forward/handover.py watch --predecessor "${{ inputs.predecessor }}" --end $END --minutes $M \
+            --pid collector.pid --stop-file collector.stop &
+          WATCH=$!
+          while [ ! -f collector.stop ] && [ $(date +%s) -lt $((END - 60)) ]; do
+            python scripts/forward/collector.py --out fwd --branch forward-data --until $END &
+            echo $! > collector.pid
+            wait $! || echo "collector exited with code $?"
+            [ -f collector.stop ] && break
+            if [ $(date +%s) -lt $((END - 60)) ]; then echo "collector stopped early: restarting in 10 s"; sleep 10; fi
+          done
+          kill $WATCH 2>/dev/null || true
+          python scripts/forward/read.py status --root fwd --days 1 || true
