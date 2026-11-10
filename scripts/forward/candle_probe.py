@@ -158,14 +158,16 @@ class Probe:
                 js = self.http.request("GET", f"{C.EXCHANGE}/products/{coin}-USD/candles", timeout=TIMEOUT,
                                        params=C.candle_params(q))
                 t_resp = time.time()
-                v = C.parse_candles(js, q).get(b["minute"])
+                cs = C.parse_candles(js, q)
+                v = cs.get(b["minute"])
+                newest = max(pd.Timestamp(int(x[0]), unit="s") for x in js) if js else pd.NaT
             except Exception as err:                    # noqa: BLE001
                 kind = self.fail(source, err)
                 if source == "ref" and tries < 3 and kind not in ("refused", "http429"):
                     self.ex.push(time.time() + 15, PRIO["ref"], self.ex_candles(coin, q, delay, plan, source, tries + 1))
                     return None
                 return self.record(**b, status=kind, t_req=t_req, t_resp=time.time())
-            self.record(**b, status="ok", t_req=t_req, t_resp=t_resp, present=v is not None,
+            self.record(**b, status="ok", t_req=t_req, t_resp=t_resp, present=v is not None, newest=newest,
                         **dict(zip(("open", "high", "low", "close", "volume"), v or (math.nan,) * 5)))
         return run
 
@@ -182,9 +184,11 @@ class Probe:
                                                "granularity": "ONE_MINUTE"})
                 t_resp = time.time()
                 v = adv_candle(js, b["minute"])
+                ks = (js or {}).get("candles") or []
+                newest = max(pd.Timestamp(int(k["start"]), unit="s") for k in ks) if ks else pd.NaT
             except Exception as err:                    # noqa: BLE001
                 return self.record(**b, status=self.fail("adv_candles", err), t_req=t_req, t_resp=time.time())
-            self.record(**b, status="ok", t_req=t_req, t_resp=t_resp, present=v is not None,
+            self.record(**b, status="ok", t_req=t_req, t_resp=t_resp, present=v is not None, newest=newest,
                         **dict(zip(("open", "high", "low", "close", "volume"), v or (math.nan,) * 5)))
         return run
 
