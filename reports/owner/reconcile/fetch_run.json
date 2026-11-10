@@ -1,0 +1,190 @@
+{
+ "utc_finished": "2026-11-10T19:34:24.039321+00:00",
+ "coins": [
+  "ETH",
+  "SOL",
+  "XRP",
+  "DOGE",
+  "LTC",
+  "LINK",
+  "BCH",
+  "SUI",
+  "XLM",
+  "HBAR",
+  "NEAR",
+  "AAVE",
+  "HYPE",
+  "ENA",
+  "PEPE",
+  "ONDO",
+  "ZEC"
+ ],
+ "coins_fetched": [
+  "BTC",
+  "ETH",
+  "SOL",
+  "XRP",
+  "DOGE",
+  "LTC",
+  "LINK",
+  "BCH",
+  "SUI",
+  "XLM",
+  "HBAR",
+  "NEAR",
+  "AAVE",
+  "HYPE",
+  "ENA",
+  "PEPE",
+  "ONDO",
+  "ZEC"
+ ],
+ "refused": null,
+ "dropped": [],
+ "errors": [],
+ "answers": 1278,
+ "live_minutes": 3630,
+ "fetch_from": "2026-10-26 22:25:00",
+ "fetch_to": "2026-11-10 13:30:00",
+ "cache_counts": {
+  "MISS": 1135,
+  "HIT": 106,
+  "REVALIDATED": 36,
+  "EXPIRED": 1
+ },
+ "newest_window": {
+  "BTC": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "EXPIRED",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:18:55 GMT",
+   "generated": "2026-11-10 19:18:55"
+  },
+  "ETH": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:19:10 GMT",
+   "generated": "2026-11-10 19:19:10"
+  },
+  "SOL": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:19:26 GMT",
+   "generated": "2026-11-10 19:19:26"
+  },
+  "XRP": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:19:42 GMT",
+   "generated": "2026-11-10 19:19:42"
+  },
+  "DOGE": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:19:58 GMT",
+   "generated": "2026-11-10 19:19:58"
+  },
+  "LTC": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:20:14 GMT",
+   "generated": "2026-11-10 19:20:14"
+  },
+  "LINK": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:20:30 GMT",
+   "generated": "2026-11-10 19:20:30"
+  },
+  "BCH": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:20:46 GMT",
+   "generated": "2026-11-10 19:20:46"
+  },
+  "SUI": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:21:02 GMT",
+   "generated": "2026-11-10 19:21:02"
+  },
+  "XLM": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:21:18 GMT",
+   "generated": "2026-11-10 19:21:18"
+  },
+  "HBAR": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:21:35 GMT",
+   "generated": "2026-11-10 19:21:35"
+  },
+  "NEAR": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:21:52 GMT",
+   "generated": "2026-11-10 19:21:52"
+  },
+  "AAVE": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:22:08 GMT",
+   "generated": "2026-11-10 19:22:08"
+  },
+  "HYPE": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:22:25 GMT",
+   "generated": "2026-11-10 19:22:25"
+  },
+  "ENA": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:22:42 GMT",
+   "generated": "2026-11-10 19:22:42"
+  },
+  "PEPE": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:22:56 GMT",
+   "generated": "2026-11-10 19:22:56"
+  },
+  "ONDO": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:23:12 GMT",
+   "generated": "2026-11-10 19:23:12"
+  },
+  "ZEC": {
+   "end": "2026-11-10 13:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Tue, 10 Nov 2026 19:23:28 GMT",
+   "generated": "2026-11-10 19:23:28"
+  }
+ },
+ "fetch_s": 288,
+ "compute_s": 656,
+ "rows": 61710,
+ "late_rows": 1574,
+ "valid_share": 1.0,
+ "workers": 4,
+ "above_thr": 46594
+}
