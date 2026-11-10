@@ -9,6 +9,20 @@ is reports/crypto-edge-findings.md; every forward test is in FORWARD_TESTS.md be
   kill switches. Research Sharpe matters only as a predictor of that.
 - **Do not overfit.** A change that cannot be told from noise is not adopted on a backtest.
 
+## Where the algorithm stands (re-scored at every review)
+Scores are the owner's judgment of what has been verified, not a forecast. The open points say where the work is.
+
+| Block | Weight | Before Nov 10 | Nov 10 2026 | What holds it back |
+|---|---|---|---|---|
+| Research evidence: out-of-sample Sharpe that held on unseen 2022-23 data | 25 | 17 | 17 | Best estimate at $250K is Sharpe 2.94 / 2.66 / 1.91 (selection / check / 2022-23, unverified costs doubled). It missed the deflated-Sharpe bar (0.77 against 0.95). Only time and live data add points |
+| The live bot matches the research: inputs, timing, fills | 20 | 6 | 9 | Timing is measured and within a few percent. The newest candle is not final in about a third of decisions, and paper books its fills on that candle too. Probe running |
+| Fills proven with real orders (capture share) | 20 | 3 | 3 | No live fill yet. Trade prints support the fill rule and the capacity. The pilot is the test |
+| Costs and idle cash | 10 | 4 | 4 | Fees are assumed; idle cash earns nothing until the USDC check; the fee rebate is unverified |
+| Controls and monitoring | 10 | 6 | 8 | Stops and the reconcile sweep were in place. Added: automatic paper status, an explained-error list, an update command that cannot start the bot |
+| Forward data for new information | 10 | 0 | 5 | The collector is built and tested; it has to run for months before anything can be read |
+| Process: plans before data, releases, records | 5 | 3 | 4 | Charter, registry, release notes and log exist. Two plans needed logged deviations on the first day |
+| **Total** | **100** | **39** | **50** | |
+
 ## What is frozen
 - **The model:** R2-08's label (net of realistic costs), its 23 features, the 60th-percentile threshold, a growing
   training window from 2024, quarterly retrains.

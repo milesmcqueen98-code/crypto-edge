@@ -74,3 +74,11 @@ FORWARD_TESTS.md.
 - **10:36. Probe deviation, before data:** BTC added. The bid level of every coin is the coin's price 60 minutes ago
   moved by beta times BTC's return to the newest close, less four sigma (edge/wick.py `levels`). So BTC's newest
   candle is the input whose lateness moves every level.
+- **10:45. Release 1 ready** (RELEASES.md): the candle merge fix, and `wickctl update` no longer starts a stopped bot.
+  - The fix passed the parity replay, the live-path simulation, the USDC test and the Coinbase sandbox test with
+    identical results before and after.
+  - Found in review: `wickctl update` always ended by starting the service, which runs live mode. An update on a VM
+    with the bot set up but not started would have begun live trading. Changed and tested (7 of 7). The first update
+    on the VM still runs the old copy, so the release note gives two manual commands for a bot that is not running.
+- **Scorecard added to the charter:** 50 of 100 (39 before today). The largest open blocks are fills proven with real
+  orders (17 points, the pilot) and the live bot matching the research (11 points, the candle probe and what follows).
