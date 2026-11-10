@@ -1,0 +1,19 @@
+group,ts,coin,ladder,bot_px,res_px,final_low,research_armed,rung4_pnl,ladder_pnl,in_decision,settled,final_open,open_above_res_px,research_fill_ts,bot_arm_prev60,bot_cash_short_pm3
+both,2026-11-07 20:46:00,BCH,BCH-85,248.9,248.92,243.84,True,-19.67,-3.06,True,True,254.86,True,2026-11-07 20:46:00,,
+both,2026-11-08 21:55:00,AAVE,AAVE-263,124.77,124.29,123.98,True,35.24,35.24,True,True,126.1,True,2026-11-08 21:55:00,,
+both,2026-11-08 21:55:00,BCH,BCH-248,236.68,235.83,235.53,True,38.96,38.95,True,True,240.72,True,2026-11-08 21:55:00,,
+research_only,2026-11-08 21:55:00,DOGE,,,0.06934,0.067,True,,,True,True,0.06919,False,,True,False
+both,2026-11-08 21:55:00,ENA,ENA-250,0.14674,0.1459,0.145,True,74.67,74.67,True,True,0.14863,True,2026-11-08 21:55:00,,
+research_only,2026-11-08 21:55:00,HBAR,,,0.06499,0.0645,True,,,True,True,0.06555,True,,True,True
+both,2026-11-08 21:55:00,HYPE,HYPE-290,74.46,74.18,73.92,True,-9.26,218.64,True,True,74.88,True,2026-11-08 21:55:00,,
+research_only,2026-11-08 21:55:00,LTC,,,50.264,49.25,True,,,True,True,50.418,True,,False,False
+both,2026-11-08 21:55:00,NEAR,NEAR-279,3.4841,3.4638,3.4472,True,295.91,295.91,True,True,3.5334,True,2026-11-08 21:55:00,,
+both,2026-11-08 21:55:00,ONDO,ONDO-284,0.34777,0.34617,0.34242,True,43.11,110.9,True,True,0.34947,True,2026-11-08 21:55:00,,
+research_only,2026-11-08 21:55:00,PEPE,,,4.84e-06,4.78e-06,True,,,True,True,4.91e-06,True,,True,True
+research_only,2026-11-08 21:55:00,SOL,,,86.81,84.95,True,,,True,True,86.7,False,,False,True
+both,2026-11-08 21:55:00,XLM,XLM-295,0.146217,0.145697,0.143613,True,-35.28,65.79,True,True,0.146248,True,2026-11-08 21:55:00,,
+both,2026-11-08 21:58:00,XRP,XRP-299,1.1038,1.107,1.1019,True,165.51,165.51,True,True,1.1051,False,2026-11-08 21:55:00,,
+both,2026-11-08 21:59:00,LINK,LINK-297,10.19,10.21,10.174,True,32.87,32.87,True,True,10.227,True,2026-11-08 21:55:00,,
+both,2026-11-08 21:59:00,SUI,SUI-296,0.808,0.8096,0.8044,True,95.01,95.01,True,True,0.8104,True,2026-11-08 21:55:00,,
+bot_only,2026-11-08 22:35:00,XRP,XRP-344,1.1061,1.1035,1.105,False,171.52,171.52,True,True,1.1067,True,2026-11-08 21:55:00,,
+bot_only,2026-11-09 07:46:00,HYPE,HYPE-520,72.95,72.73,72.71,False,69.69,238.51,True,True,72.96,True,,,

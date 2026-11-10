@@ -26,7 +26,12 @@ Rules:
   - First-bid fill (research): research armed at minute m and the final candle's low of minute m at or below the
     research price. After such a fill the research coin is treated as busy until the first later minute whose final
     high reaches the research take-profit (price x exp(0.6 x 4 x sigma)) or for 60 minutes, so one dip counts once.
-    Bot fill: the first rung-4 fill_entry of each ladder. Both: same coin and minute.
+    Only minutes the bot settled count (step m+1 settles minute m; the last decision minute before a start-up or a
+    gap, and the final minute, were never settled, so no bot fill can be seen in them).
+    Bot fill: the first rung-4 fill_entry of each ladder. "Both" (the plan's rule, per bot fill): research armed at
+    the bot's fill minute and the final low at or below the research price. "Research only": a research fill episode
+    with no bot first-bid fill on the coin from one minute before it until the research rung would have closed (so one
+    dip is not counted on both sides when the two fill a few minutes apart).
 """
 import argparse
 import json
@@ -243,6 +248,9 @@ def compute(ev, R, late, ticks, thr, end=common.END):
             r4pnl[e["ladder"]] = r4pnl.get(e["ladder"], 0.0) + e["pnl"]
         if e["kind"] == "ladder_close":
             ladpnl[e["ladder"]] = e["pnl"]
+    # A minute's fills are known only if the bot settled it: step m+1 settles minute m. The last decision minute
+    # before a start-up or a gap, and the final minute (13:30; the log ends there), were never settled.
+    settled = {t for t in dec if (t + MIN) in decset or (t + MIN) in set(common.error_minutes(ev))}
     rfill = []                                          # research first-bid fill episodes
     for c in coins:
         busy_until = None
@@ -250,7 +258,7 @@ def compute(ev, R, late, ticks, thr, end=common.END):
         for t in dec:
             if busy_until is not None and t <= busy_until:
                 continue
-            if not arm.at[t, c]:
+            if t not in settled or not arm.at[t, c]:
                 continue
             lo = sub["low"].get(t, np.nan)
             px = rpx(t, c)
@@ -260,9 +268,8 @@ def compute(ev, R, late, ticks, thr, end=common.END):
                 hi = sub["high"].loc[t + MIN: t + HOLD * MIN]
                 hit = hi[hi >= tp]
                 busy_until = hit.index[0] if len(hit) else t + HOLD * MIN
-                rfill.append((t, c, px, lo))
-    rf = pd.DataFrame(rfill, columns=["ts", "coin", "res_px", "final_low"])
-    rf_keys = {(t, c) for t, c in zip(rf.ts, rf.coin)}
+                rfill.append((t, c, px, lo, busy_until, sub["open"].get(t, np.nan)))
+    rf = pd.DataFrame(rfill, columns=["ts", "coin", "res_px", "final_low", "res_open_until", "final_open"])
     rows = []
     for lad, e in fills.items():
         t, c = e["t"].floor("min"), e["coin"]
@@ -272,23 +279,49 @@ def compute(ev, R, late, ticks, thr, end=common.END):
         res_fill = bool(armed and np.isfinite(lo) and np.isfinite(px) and lo <= px * (1 + 1e-12))
         rows.append(dict(group="both" if res_fill else "bot_only", ts=t, coin=c, ladder=lad, bot_px=e["px"],
                          res_px=px, final_low=lo, research_armed=armed, rung4_pnl=r4pnl.get(lad),
-                         ladder_pnl=ladpnl.get(lad), in_decision=t in decset))
-    for t, c, px, lo in rf.itertuples(index=False):
-        if not any(r["ts"] == t and r["coin"] == c for r in rows):
-            rows.append(dict(group="research_only", ts=t, coin=c, ladder=None, bot_px=np.nan, res_px=px, final_low=lo,
-                             research_armed=True, rung4_pnl=np.nan, ladder_pnl=np.nan, in_decision=True,
-                             bot_armed_pm1=any((t + k * MIN, c) in bot_arm_keys for k in range(-60, 1))))
+                         ladder_pnl=ladpnl.get(lad), in_decision=t in decset, settled=t in settled,
+                         final_open=rget(t, c, "open"), open_above_res_px=bool(rget(t, c, "open") > px)))
+    bot_fill_times = {}
+    for r in rows:
+        bot_fill_times.setdefault(r["coin"], []).append(r["ts"])
+    n_ep_matched = 0
+    for t, c, px, lo, until, op in rf.itertuples(index=False):
+        # the same dip: a bot first-bid fill on the coin from one minute before the research fill until the research
+        # rung would have closed (its take-profit minute or 60 minutes)
+        near = [b for b in bot_fill_times.get(c, []) if t - MIN <= b <= until]
+        if near:
+            n_ep_matched += 1
+            for r in rows:
+                if r["coin"] == c and r["ts"] in near:
+                    r.setdefault("research_fill_ts", t)
+            continue
+        rows.append(dict(group="research_only", ts=t, coin=c, ladder=None, bot_px=np.nan, res_px=px, final_low=lo,
+                         research_armed=True, rung4_pnl=np.nan, ladder_pnl=np.nan, in_decision=True, settled=True,
+                         final_open=op, open_above_res_px=bool(op > px),
+                         bot_arm_prev60=any((t - k * MIN, c) in bot_arm_keys for k in range(0, 61)),
+                         bot_cash_short_pm3=any((t + k * MIN, c) in cash_keys for k in range(-3, 4))))
     F = pd.DataFrame(rows).sort_values(["ts", "coin"]) if rows else pd.DataFrame()
     out["fills"] = F
     m4 = []
     for g in ("both", "bot_only", "research_only"):
         x = F[F.group == g] if len(F) else F
         m4.append(dict(group=g, n=int(len(x)), bot_rung4_pnl=float(x.rung4_pnl.sum()) if len(x) else 0.0,
-                       bot_ladder_pnl=float(x.ladder_pnl.sum()) if len(x) else 0.0))
+                       bot_ladder_pnl=float(x.ladder_pnl.sum()) if len(x) else 0.0,
+                       n_open_above_res_px=int(x.open_above_res_px.sum()) if len(x) else 0))
     out["m4"] = pd.DataFrame(m4)
     out["research_fill_episodes"] = int(len(rf))
-    out["research_fill_matched"] = int(sum(1 for k in rf_keys if k in {(r["ts"], r["coin"]) for r in rows
-                                                                        if r["group"] == "both"}))
+    out["research_fill_matched"] = int(n_ep_matched)
+    # research dips in minutes the bot never settled (listed, not counted)
+    uns = []
+    for c in coins:
+        sub = R.xs(c, level="coin")
+        for t in dec:
+            if t in settled or not arm.at[t, c]:
+                continue
+            lo, px = sub["low"].get(t, np.nan), rpx(t, c)
+            if np.isfinite(lo) and np.isfinite(px) and lo <= px * (1 + 1e-12):
+                uns.append(dict(ts=t, coin=c, res_px=px, final_low=lo))
+    out["unsettled_research_dips"] = pd.DataFrame(uns, columns=["ts", "coin", "res_px", "final_low"])
     return out
 
 
@@ -320,6 +353,8 @@ def main():
     o["cash_short"].to_csv(os.path.join(a.dir, "m3_cash_short.csv"), index=False, float_format="%.6g")
     o["fills"].to_csv(os.path.join(a.dir, "m4_fills.csv"), index=False, float_format="%.8g")
     o["m4"].to_csv(os.path.join(a.dir, "m4_summary.csv"), index=False, float_format="%.2f")
+    o["unsettled_research_dips"].to_csv(os.path.join(a.dir, "m4_unsettled_minutes.csv"), index=False,
+                                        float_format="%.8g")
     summ = dict(live=o["live"], m1=o["m1"], m2=o["m2"], m3=o["m3"], research_fill_episodes=o["research_fill_episodes"],
                 research_fill_matched=o["research_fill_matched"])
     json.dump(summ, open(os.path.join(a.dir, "summary.json"), "w"), indent=1, default=float)
