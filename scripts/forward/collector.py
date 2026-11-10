@@ -47,6 +47,7 @@ BOOK_LAST_START = 4.7        # no book request (or retry) starts after this seco
 CANDLE_AT, HL_AT, CFM_AT = 6.0, 5.0, 12.0
 RETRY_UNTIL = {"book": BOOK_LAST_START, "hl": 40.0, "candles": 40.0, "cfm": 50.0}
 CANDLE_MINUTES = 5           # the last 5 one-minute candles per request
+EPS = 1e-10                  # bucket boundaries are inclusive despite float rounding (100 * 1.005 = 100.49999...)
 GIT_NAME, GIT_EMAIL = "crypto-edge-bot", "crypto-edge-bot"
 
 
@@ -102,9 +103,9 @@ def depth_buckets(levels, ref, side, bps):
         cum = np.cumsum(usd)
         for i, bp in enumerate(bps):
             thr = ref * (1 - bp / 1e4)
-            if px[-1] > thr:
+            if px[-1] > thr * (1 + EPS):
                 continue                                       # not reached
-            k = int(np.searchsorted(-px, -thr, side="right"))  # levels with price >= thr
+            k = int(np.searchsorted(-px, -thr * (1 - EPS), side="right"))  # levels with price >= thr
             out[i] = cum[k - 1] if k else 0.0
     else:
         order = np.argsort(px, kind="stable")
@@ -112,9 +113,9 @@ def depth_buckets(levels, ref, side, bps):
         cum = np.cumsum(usd)
         for i, bp in enumerate(bps):
             thr = ref * (1 + bp / 1e4)
-            if px[-1] < thr:
+            if px[-1] < thr * (1 - EPS):
                 continue
-            k = int(np.searchsorted(px, thr, side="right"))    # levels with price <= thr
+            k = int(np.searchsorted(px, thr * (1 + EPS), side="right"))    # levels with price <= thr
             out[i] = cum[k - 1] if k else 0.0
     return out
 
@@ -624,12 +625,16 @@ class Collector:
         self._sleep_until(T0 + CFM_AT)
         js, t_req = self.call("cfm", T0, lambda: self.http.request(
             "GET", f"{ADV}/products", timeout=(2, 6),
-            params={"product_type": "FUTURE", "contract_expiry_type": "PERPETUAL", "limit": 500}),
+            # product_type FUTURE lists the US venue (Coinbase Derivatives, *-CDE); its perps say EXPIRING in
+            # contract_expiry_type, and filtering on PERPETUAL returns the international venue (*-PERP-INTX) instead
+            params={"product_type": "FUTURE", "limit": 500}),
             True, RETRY_UNTIL["cfm"])
         rows = None
         if js is not None:
             try:
                 rows = parse_cfm(js, None if self.cfm_all else self.coins, minute, pd.Timestamp(time.time(), unit="s"))
+                if (js.get("num_products") or 0) > len(js.get("products") or []):
+                    self.count("cfm", "truncated")
                 if rows:
                     self.last_names["cfm"] = [(r["coin"], r["product_id"]) for r in rows]
                 else:
