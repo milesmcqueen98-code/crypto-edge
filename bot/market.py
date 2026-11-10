@@ -14,6 +14,11 @@ _S.headers["User-Agent"] = "crypto-edge-bot/1.0"
 
 
 def _get(url, params=None, tries=5):
+    return _get_full(url, params, tries)[0]
+
+
+def _get_full(url, params=None, tries=5):
+    """_get's request, retries and timeout, returning (json, headers). (None, None) where _get returned None."""
     for a in range(tries):
         try:
             r = _S.get(url, params=params, timeout=15)
@@ -21,15 +26,20 @@ def _get(url, params=None, tries=5):
                 time.sleep(1 + a)
                 continue
             r.raise_for_status()
-            return r.json()
+            return r.json(), r.headers
         except requests.RequestException:
             if a == tries - 1:
                 raise
             time.sleep(0.5 + a)
+    return None, None
 
 
 class Refused(RuntimeError):
     """The venue refused a request (401, 403, 451 or a page that is not JSON). Never worked around."""
+
+
+class Limited(Refused):
+    """The venue answered 429 (rate limit) on the trades path. Not retried: the trades pass stops for that minute."""
 
 
 TRADES_RATE = 7.0               # trades requests per second at most (the research fetcher's pace; public limit 10)
@@ -38,7 +48,7 @@ _last_req = [0.0]
 
 def _get_h(url, params=None, tries=2):
     """Like _get, but returns (json, headers) and gives up sooner (the trades pass runs on a time budget).
-    Paced to TRADES_RATE requests per second. A refusal raises Refused at once."""
+    Paced to TRADES_RATE requests per second. A refusal raises Refused at once; a 429 raises Limited at once."""
     for a in range(tries):
         wait = _last_req[0] + 1.0 / TRADES_RATE - time.time()
         if wait > 0:
@@ -49,10 +59,7 @@ def _get_h(url, params=None, tries=2):
             if r.status_code in (401, 403, 451):
                 raise Refused(f"HTTP {r.status_code} on {url}: {r.text[:200]!r}")
             if r.status_code == 429:
-                if a == tries - 1:
-                    r.raise_for_status()
-                time.sleep(0.5)
-                continue
+                raise Limited(f"HTTP 429 on {url}")
             r.raise_for_status()
             try:
                 return r.json(), r.headers
@@ -184,15 +191,20 @@ def minute_trades_bar(coin, m, max_pages=20, deadline=None, get=None, clock=time
     return dict(bar=bar, verified=reason is None, reason=reason, pages=pages, gen=gen, newest=newest, n=n)
 
 
-def spot_candles(coin, start, end):
-    """1-minute candles [start, end) as a DataFrame indexed by minute (UTC, naive)."""
+def spot_candles(coin, start, end, meta=None):
+    """1-minute candles [start, end) as a DataFrame indexed by minute (UTC, naive). If a dict is passed as meta, it is
+    filled with the cache facts of the last answer (the newest minutes): gen (Date minus Age), age, cache, date."""
     rows = {}
     s = pd.Timestamp(start).floor("min")
     end = pd.Timestamp(end).floor("min")
     while s < end:
         e = min(end, s + pd.Timedelta(minutes=300))
-        js = _get(f"{EXCHANGE}/products/{coin}-USD/candles",
-                  {"granularity": 60, "start": s.isoformat() + "Z", "end": (e - pd.Timedelta(minutes=1)).isoformat() + "Z"})
+        js, hd = _get_full(f"{EXCHANGE}/products/{coin}-USD/candles",
+                           {"granularity": 60, "start": s.isoformat() + "Z", "end": (e - pd.Timedelta(minutes=1)).isoformat() + "Z"})
+        if meta is not None:
+            hd = hd or {}
+            meta.clear()
+            meta.update(gen=generated_at(hd), age=hd.get("Age"), cache=hd.get("cf-cache-status"), date=hd.get("Date"))
         for t, lo, hi, op, cl, vo in js or []:
             rows[t] = (op, hi, lo, cl, vo)
         s = e

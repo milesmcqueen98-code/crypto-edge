@@ -8,6 +8,9 @@ Part 1, a small synthetic market (update_spot and trades_pass only):
     nothing;
   - an unverified bar, an error and a refusal keep the candle row and are counted;
   - the time budget stops the pass and the rest fall back (counted);
+  - a refusal or a rate limit (the real bot/market.py classes) stops the pass; a rate limit counts as tb_fb_limited;
+  - trades_coins: listed coins are rebuilt, unlisted ones are never asked, unknown names raise at start-up;
+  - candle_old and btc_candle_old count candle answers made before the minute ended, and change nothing;
   - the next step's re-fetch replaces the trades-built row with the venue's candle, and a trades-built row does not
     move the re-fetch window.
 Part 2, the engine stepping through stored Oct 10 2025 crash data (bot/spot/replay_test.py ReplayMarket), paper broker:
@@ -16,6 +19,8 @@ Part 2, the engine stepping through stored Oct 10 2025 crash data (bot/spot/repl
     in that minute is missed; with trades the row is the final one and the fill is booked as in the clean run;
   - BTC stale with stale_guard on: no new or re-priced bids, exits still run, one stale_input event per stale minute,
     no error; with the guard off: as today, only counted;
+  - timing and data checks that raise: the step still settles, runs exits and writes last_minute (obs_error);
+    with the guard on such a minute places no new bid;
   - the heartbeat carries the new counters and the step timing, and both reset after each heartbeat.
 
 Usage: python bot/spot/newest_bar_test.py [--part1]
@@ -32,6 +37,7 @@ import pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, ROOT)
+from bot import market as BM  # noqa: E402
 from bot.spot import engine as E  # noqa: E402
 
 COLS = ["open", "high", "low", "close", "volume"]
@@ -61,6 +67,7 @@ class SynthMarket:
             self.final[c] = pd.DataFrame({"open": x, "high": x + 0.5, "low": x - 0.5, "close": x, "volume": 10.0},
                                          index=idx)
         self.slow = 0.0
+        self.Refused, self.Limited = BM.Refused, BM.Limited   # as LiveMarket: the real classes
 
     def spot_candles(self, coin, start, end):
         d = self.final[coin]
@@ -95,9 +102,9 @@ class SynthMarket:
 CLOCK = [0.0]
 
 
-def synth_engine(newest_bar, coins=("ETH", "SOL")):
+def synth_engine(newest_bar, coins=("ETH", "SOL"), **extra):
     sd = tempfile.mkdtemp(prefix="nb_part1_")
-    cfg = dict(CFG, newest_bar=newest_bar)
+    cfg = dict(CFG, newest_bar=newest_bar, **extra)
     eng = E.Engine(mode="paper", cfg=cfg, state_dir=sd, market=None, broker=E.PaperBroker(0.5),
                    clock=lambda: T0, echo=False)
     eng.coins = list(coins)                       # a two-coin universe for the data tests (models are not used here)
@@ -184,18 +191,70 @@ def _part1():
     check("error: counted, others still built", eng.counts.get("tb_fb_error") == 1 and eng.counts.get("tb_built") == 3
           and "timeout" in (eng._tb_err or ""), str(eng.counts))
 
-    class Refused(RuntimeError):
-        pass
-
     eng.counts = {}
     eng.market.tb[("BTC", m)] = "final"
-    eng.market.tb[("ETH", m)] = Refused("HTTP 403")
+    eng.market.tb[("ETH", m)] = BM.Refused("HTTP 403")
     eng.market.calls = []
     keep = eng.spot["SOL"].copy()
     eng.trades_pass(m)
     check("refusal: the pass stops at once, the rest fall back as errors",
           [c for c, _ in eng.market.calls] == ["BTC", "ETH"] and eng.counts.get("tb_fb_error") == 3
           and eng.spot["SOL"].equals(keep), str(eng.counts))
+    eng.counts = {}
+    eng.market.tb[("ETH", m)] = BM.Limited("HTTP 429")
+    eng.market.calls = []
+    eng.trades_pass(m)
+    check("rate limit: the pass stops at once, counted as tb_fb_limited (not as an error)",
+          [c for c, _ in eng.market.calls] == ["BTC", "ETH"] and eng.counts.get("tb_fb_limited") == 3
+          and "tb_fb_error" not in eng.counts and eng.spot["SOL"].equals(keep), str(eng.counts))
+    eng.counts = {}
+    eng.market.tb[("ETH", m)] = RuntimeError("Refused but not the class")       # name alone does not stop the pass
+    eng.market.calls = []
+    eng.trades_pass(m)
+    check("a plain error named like a refusal does not stop the pass", len(eng.market.calls) == 4
+          and eng.counts.get("tb_fb_error") == 1, str(eng.counts))
+    shutil.rmtree(sd)
+
+    # per-coin list: ETH listed, SOL not
+    eng, sd = synth_engine("trades", trades_coins=["BTC", "ETH"])
+    eng.market.first[("ETH", m)] = dict(open=1.0, high=2.0, low=0.5, close=1.5, volume=1.0)
+    eng.market.first[("SOL", m)] = dict(open=1.0, high=2.0, low=0.5, close=1.5, volume=1.0)
+    eng.update_spot(end)
+    sol = eng.spot["SOL"].copy()
+    eng.trades_pass(m)
+    check("trades_coins: a listed coin is rebuilt from trades", eng.spot["ETH"].loc[m].equals(fin["ETH"].loc[m]))
+    check("trades_coins: an unlisted coin is never asked and keeps its candle row",
+          "SOL" not in [c for c, _ in eng.market.calls] and eng.spot["SOL"].equals(sol) and "SOL" not in eng._cmax)
+    check("trades_coins: counters count listed coins only", eng.counts.get("tb_built") == 2
+          and eng.counts.get("tb_close_diff") == 1, str(eng.counts))
+    eng.market.first[("SOL", end)] = None                   # SOL's newest candle missing at the next step
+    eng.update_spot(end + pd.Timedelta(minutes=1))
+    eng.counts = {}
+    eng.data_checks(end)
+    check("trades_coins: newest_absent still covers every coin", eng.counts.get("newest_absent") == 1, str(eng.counts))
+    shutil.rmtree(sd)
+    try:
+        synth_engine("trades", trades_coins=["BTC", "DOGEX"])
+        check("trades_coins with an unknown coin raises at start-up", False)
+    except ValueError:
+        check("trades_coins with an unknown coin raises at start-up", True)
+
+    # age of the candle answers (counted only): BTC and ETH answers made before the minute ended, SOL's after
+    eng, sd = synth_engine("candles")
+    eng.update_spot(end)
+    tables = {c: eng.spot[c].copy() for c in eng.spot}
+    eng.market.candle_meta = {"BTC": {"gen": m + pd.Timedelta(seconds=30)}, "ETH": {"gen": m - pd.Timedelta(minutes=2)},
+                              "SOL": {"gen": end + pd.Timedelta(seconds=7)}}
+    st = eng.data_checks(m)
+    check("candle age: candle_old and btc_candle_old counted", eng.counts.get("candle_old") == 1
+          and eng.counts.get("btc_candle_old") == 1, str(eng.counts))
+    check("candle age: counting changes neither the tables nor the stale answer", st == (False, 0)
+          and all(eng.spot[c].equals(tables[c]) for c in tables))
+    eng.counts = {}
+    del eng.market.candle_meta
+    eng.data_checks(m)
+    check("candle age: a market without meta is skipped", "candle_old" not in eng.counts
+          and "btc_candle_old" not in eng.counts, str(eng.counts))
     shutil.rmtree(sd)
 
     # budget: each coin takes 3 s on an 8 s budget: BTC, ETH, SOL done (0, 3, 6 s), XRP not started (9 s > 8)
@@ -254,7 +313,7 @@ def make_market():
     return FirstSeen(START, END)
 
 
-def run(mkt, cfg_extra, tag, alter=None, drop_btc=()):
+def run(mkt, cfg_extra, tag, alter=None, drop_btc=(), patch=None):
     mkt.alter, mkt.drop_btc = dict(alter or {}), set(drop_btc)
     clock = {"t": START}
     sd = tempfile.mkdtemp(prefix=f"nb_{tag}_")
@@ -262,10 +321,14 @@ def run(mkt, cfg_extra, tag, alter=None, drop_btc=()):
     eng = E.Engine(mode="paper", cfg=cfg, state_dir=sd, market=mkt, broker=E.PaperBroker(cfg["paper_capture"]),
                    clock=lambda: clock["t"] + pd.Timedelta(seconds=6), echo=False)
     eng.start()
+    if patch:
+        patch(eng)
     after_hb = []
+    eng.lm_ok = True
     for t in pd.date_range(START, END, freq="min", inclusive="left"):
         clock["t"] = t
         eng.step(t)
+        eng.lm_ok = eng.lm_ok and json.load(open(os.path.join(sd, "state.json")))["last_minute"] == t.isoformat()
         if t.minute % 30 == 0:
             after_hb.append((dict(eng.counts), {k: list(v) for k, v in eng._tm.items()}))
     ev = [json.loads(x) for x in open(os.path.join(sd, "events.jsonl"))]
@@ -347,6 +410,35 @@ def part2():
           f"{[h['counts'].get('btc_stale') for h in hbH]} + {engH.counts.get('btc_stale')}")
     print(f"  (guard on: {reprice} re-prices in the whole run; guard off kept bidding: "
           f"{len([e for e in evH if e['kind'] == 'arm' and pd.Timestamp(e['ts']) in steps])} arms in the stale steps)")
+
+    # monitoring that raises: _mark (step timing) and data_checks fail in every stale minute
+    def broken(eng):
+        real_since, real_checks = eng._since, eng.data_checks
+
+        def since(t):
+            if t in steps:
+                raise RuntimeError("timing broke")
+            return real_since(t)
+
+        def checks(prev):
+            if prev + pd.Timedelta(minutes=1) in steps:
+                raise RuntimeError("check broke")
+            return real_checks(prev)
+        eng._since, eng.data_checks = since, checks
+
+    evO, _, engO = run(mkt, {}, "obs_error_guard_off", patch=broken)
+    nO = sum(e["counts"].get("obs_error", 0) for e in evO if e["kind"] == "heartbeat") + engO.counts.get("obs_error", 0)
+    check("monitoring raises, guard off: every decision as in the clean run, last_minute written every step",
+          decisions(evO) == decisions(evA) and engO.lm_ok)
+    check("monitoring raises, guard off: counted as obs_error (data, cancel, place and check per stale step)",
+          nO == 4 * len(steps), str(nO))
+    evP, _, engP = run(mkt, {"stale_guard": True}, "obs_error_guard_on", patch=broken)
+    siP = [e for e in evP if e["kind"] == "stale_input"]
+    exP = [e for e in evP if e["kind"] == "fill_exit" and e["coin"] == c and e["rung"] == 4]
+    check("monitoring raises, guard on: treated as stale (no new bid), exits still run, last_minute written",
+          len(siP) == len(steps) and not [e for e in evP if e["kind"] in ("arm", "rung") and pd.Timestamp(e["ts"]) in steps]
+          and len(exP) == 1 and exP[0]["ts"] == ex[0]["ts"] and engP.lm_ok
+          and not [e for e in evP if e["kind"] == "error"], f"{len(siP)} stale_input, exits {exP[:1]}")
 
     # heartbeat: counters and timing appear, then reset
     hb = [e for e in evA if e["kind"] == "heartbeat"]

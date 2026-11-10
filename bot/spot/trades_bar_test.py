@@ -183,5 +183,71 @@ try:
 except M.Refused:
     check("a refusal propagates", True)
 
+# 11. _get_h: a 429 raises Limited (a kind of Refused) at once, with no retry; 403 raises Refused
+
+
+class FakeResp:
+    def __init__(self, code):
+        self.status_code, self.text, self.headers = code, "x", {}
+
+    def json(self):
+        return []
+
+    def raise_for_status(self):
+        pass
+
+
+class FakeSession:
+    def __init__(self, code):
+        self.code, self.n = code, 0
+
+    def get(self, url, params=None, timeout=None):
+        self.n += 1
+        return FakeResp(self.code)
+
+
+real = M._S
+try:
+    for code, cls in ((429, M.Limited), (403, M.Refused)):
+        M._S = FakeSession(code)
+        try:
+            M._get_h("https://example.invalid/x", {}, tries=2)
+            check(f"_get_h on {code} raises {cls.__name__}", False)
+        except cls as err:
+            check(f"_get_h on {code} raises {cls.__name__} after one request", M._S.n == 1
+                  and isinstance(err, M.Refused), str(M._S.n))
+finally:
+    M._S = real
+
+# 12. spot_candles: same requests and result with or without meta; meta holds the last answer's cache facts
+
+
+class CandleSession:
+    def __init__(self):
+        self.calls = []
+
+    def get(self, url, params=None, timeout=None):
+        self.calls.append((url, dict(params), timeout))
+        r = FakeResp(200)
+        t0 = int(pd.Timestamp(params["start"][:-1]).timestamp())
+        r.json = lambda: [[t0 + 60 * i, 1.0, 3.0, 2.0, 2.5, 7.0] for i in range(3)]
+        r.headers = {"Date": http_date(E0 + pd.Timedelta(seconds=9)), "Age": "4", "cf-cache-status": "HIT"}
+        return r
+
+
+try:
+    M._S = CandleSession()
+    a1 = M.spot_candles("BTC", M0 - pd.Timedelta(minutes=2), M0 + pd.Timedelta(minutes=1))
+    c1 = M._S.calls
+    M._S = CandleSession()
+    meta = {}
+    a2 = M.spot_candles("BTC", M0 - pd.Timedelta(minutes=2), M0 + pd.Timedelta(minutes=1), meta=meta)
+    check("spot_candles with meta: same requests and same table", c1 == M._S.calls and a1.equals(a2) and len(a1) == 3,
+          str(c1))
+    check("spot_candles meta: gen = Date - Age, age, cache", meta.get("gen") == E0 + pd.Timedelta(seconds=5)
+          and meta.get("age") == "4" and meta.get("cache") == "HIT", str(meta))
+finally:
+    M._S = real
+
 print("TRADES BAR TEST " + ("FAILED: " + ", ".join(FAILS) if FAILS else "PASSED"))
 sys.exit(1 if FAILS else 0)
