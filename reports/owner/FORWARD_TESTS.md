@@ -18,8 +18,8 @@ them.
 - The timing study (reports/owner/timing/, 14.1M trade prints) shows that the live bot's order timing alone fills 83-90%
   of the research's first bids in the same minute and 88-94% within two minutes. Trade prints confirm 93-96.5% of the
   candle-based fills.
-- With a same-minute match, a pilot with perfect capture would be expected at about 77-87%, too close to the 70% bar to
-  say anything about capture. With a two-minute window it would be expected at about 82-91%. The 70% bar stays.
+- With a same-minute match, a pilot with perfect capture would be expected at about 77-86%, too close to the 70% bar to
+  say anything about capture. With a two-minute window it would be expected at about 82-90%. The 70% bar stays.
 - The same-minute rate is reported as well at the read.
 
 ## Challengers running or registered
@@ -29,7 +29,7 @@ them.
 | W2 rung weights (1:1:2), paper | Whether weighting the 8-sigma rung earns more per dollar without deeper drawdowns | With test A, then at each later read | No fixed rule was registered. Owner's rule, set Nov 10 with three days of data seen: adopt only if, after at least six months, its net P&L is at or above the main book's and its worst marked drawdown is within 1.1x. It is judged on return per dollar, because a Sharpe gain of this size cannot be confirmed in under several years | Running since Nov 7 | wick v4; this file |
 | Deeper ladders G1 (4/5/7/10 sigma) and G2 (4/5/6/8/10/12) | Whether more depth holds on new data | Once, on Nov 10 2026 - Mar 31 2027 | Positive Sharpe difference, the minute book at or above 0, risk within 1.1x | Registered; data accruing | reports/explore/prospective_prereg.md (branch explore/v1) |
 | Alt-perp carry on published funding (hunt 3) | Whether a carry sleeve rivals R2-08 | Once, Feb 1 2027 (Dec 1 - Jan 31) | Its own registered bar, at 1x and 2x costs; published funding within 2 bp a day of the rebuild | Needs published funding logged from Nov 15: the forward collector's `cfm` stream records it | hunt 3's prospective pre-registration (not on GitHub; summarised in the findings doc) |
-| Perp wick catcher, paper ($10K, v1 and R2-08) | Whether perp-only wicks are fillable | About 70 trades in the R2-08 book; 60 in each for the comparison | Stop R2-08 if realistic net per trade is below -12 bp after about 70 trades; back to v1 if v1's is higher after 60 in each | Running since Nov 6; one fill each in about 3.5 days. Research rates on perp prices are 0.8 fills a day (R2-08) and 1.05 (v1), so this is not unusual yet (chance about 0.26 and 0.10 if fills were independent). Owner's watch rule, set Nov 10: review the perp fill model if either book has 6 or fewer fills after 21 days | wick v2 lab; bot/README.md; this file |
+| Perp wick catcher, paper ($10K, v1 and R2-08) | Whether perp-only wicks are fillable | About 70 trades in the R2-08 book; 60 in each for the comparison | Stop R2-08 if realistic net per trade is below -12 bp after about 70 trades; back to v1 if v1's is higher after 60 in each | Running since Nov 6; one fill each in 3.3 days (R2-08) and 3.7 days (v1). Research rates on perp prices are 0.8 fills a day (R2-08) and 1.05 (v1), so this is not unusual yet (chance about 0.26 and 0.10 over those days if fills were independent). Owner's watch rule, set Nov 10: review the perp fill model if either book has 6 or fewer fills after 21 days | wick v2 lab; bot/README.md; this file |
 | H1 perp-only wicks at 5-6 pm ET | Whether the edge survives the real fee | After one authenticated order preview | Forward-test for 3 months only if the all-in fee is at or below $0.13 a contract | Needs the fee preview | edge hunt |
 | Sizing by the model's margin (C2a) and sweep depth (C7b) | Whether either survives on new data | A re-test on data after Nov 5 2026 | Ladder v5's gates | Not scheduled; low priority after the sizing lab | ladder v5 |
 

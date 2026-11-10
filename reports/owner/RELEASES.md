@@ -32,7 +32,7 @@ says what changed, why, how it was tested, and what Miles needs to do.
 - USDC quote test: passed.
 - Coinbase sandbox test (GitHub runner): 18 of 18 on the old code and on the new.
 - New `wickctl update` test: 7 of 7. It runs the real command against stand-ins for sudo, systemctl, git and install,
-  for a bot that was active, restarting, stopped or failed, and for a failed pull.
+  for a service that was active, activating (starting or restarting), inactive or failed, and for a failed pull.
 - Not tested: a real systemd machine. The stand-ins cover the order of calls and the messages.
 
 ### What Miles does

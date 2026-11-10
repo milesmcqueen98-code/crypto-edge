@@ -27,14 +27,15 @@ Scores are the owner's judgment of what has been verified, not a forecast. The o
 - **The model:** R2-08's label (net of realistic costs), its 23 features, the 60th-percentile threshold, a growing
   training window from 2024, quarterly retrains.
 - **The ladder:** bids 4, 6 and 8 sigma under fair value in thirds, take-profit at 0.6 of the dislocation, market
-  exit at 60 minutes, 25% of capital per signal, each rung capped at 0.2% of the coin's daily volume, positions and
+  exit at 60 minutes, each signal sized at the smaller of 25% of capital and 0.2% of the coin's daily volume and split in thirds across
+  the rungs, positions and
   resting bids within cash.
 - **Every safety check in bot/spot:** the STOP file, the 8% daily loss limit, the 25% drawdown stop, good-til-date
   bids, the reconcile sweep.
 
 ## Why the search on history is closed
 - Three rounds varied everything testable on the three eras: 4,691 ladder variants, 41 retrained models, and trade
-  prints. The best candidates landed at +0.03 to +0.17 Sharpe out of sample.
+  prints. In the two holdout eras the best candidates were ahead by +0.03 to +0.18 Sharpe.
 - The pooled holdout difference has a standard error of about 0.16 Sharpe. A real gain of +0.1 to +0.2 cannot be
   told from luck there, and each further search on the same eras mostly finds luck.
 - Both holdout eras have been read by thousands of trials. They are closed for choosing a model or a rule.
@@ -43,8 +44,8 @@ Scores are the owner's judgment of what has been verified, not a forecast. The o
 
 | Lever | Size | What it needs |
 |---|---|---|
-| Yield on idle cash (USDC rewards) | At the 3.50% on Coinbase's own page: about +1.5 points a year if only free cash earns, about +3.4 if cash held by resting bids earns too. Roughly +0.2 to +0.45 Sharpe at $250K, measured as the repo measures Sharpe (against zero). Against Treasury bills it removes a drag instead of adding an edge. The program may change on Jan 18 2027 (OCC rule). | Account eligibility (Miles), then the bot's USDC mode |
-| Coinbase One fee rebate | Preferred ($29.99 a month) returns 25% of Advanced spot fees up to 100 USDC a month: about +$70 a month net, +0.3 points a year. Premium ($299.99) has no cap: at the paper book's pace so far (about $2,200 a month in fees at $250K) about +$250 a month net, +1.2 points a year. Premium beats Preferred only above about $1,480 a month in fees. | Confirm on the account that API orders in the bot's portfolio earn the rebate (one month on Preferred shows it) |
+| Yield on idle cash (USDC rewards) | At the 3.50% on Coinbase's Coinbase One page (its USDC page shows 4.10%; the lower is used): about +1.5 points a year if only free cash earns, about +3.4 if cash held by resting bids earns too. Roughly +0.2 to +0.45 Sharpe at $250K, measured as the repo measures Sharpe (against zero). Against Treasury bills it removes a drag instead of adding an edge. The program may change on Jan 18 2027, when the OCC's rule on stablecoin rewards is reported to take effect. | Account eligibility (Miles), then the bot's USDC mode |
+| Coinbase One fee rebate | Preferred ($29.99 a month) returns 25% of Advanced spot fees up to 100 USDC a month: about +$70 a month net, +0.3 points a year. Premium ($299.99) has no cap: at the two paper books' pace over their first 3.6 days (about $1,900 to $2,200 a month in fees at $250K) about +$190 to +$250 a month net, +0.9 to +1.2 points a year. Premium beats Preferred only above about $1,480 a month in fees. | Confirm on the account that API orders in the bot's portfolio earn the rebate (one month on Preferred shows it) |
 | Capture share on live fills | 0.19 to 0.26 Sharpe between a share of 0.5 and 0.25 | The $10K pilot, then the $250K step |
 | Live inputs: the newest candle is often not final when the bot decides | P&L effect unknown. In the collector's first hour 32% of newest candles changed after the decision and 6% were missing. The model was trained on final candles | Candle probe (reports/owner/candle_probe_prereg.md); if it passes, the newest bar built from trades, behind a switch |
 | Live order timing | Measured on 14.1M trade prints (Nov 10). Every realistic timing is within a few percent of the research's zero-delay assumption in pooled P&L (+0.9% to -5.1%), and the study cannot rank them. The live timing fills 83-90% of the research's first bids in the same minute | Closed: timing stays as built. The pilot's rule B is read with these match rates |

@@ -104,7 +104,7 @@ For each minute q, with c = seconds after q when the stale bid is cancelled and 
   parent that a policy misses loses its whole research ladder; a parent only the policy finds adds back its 4-sigma
   rung alone. A parent that merely moves by a minute is booked as the loss of its deeper rungs.
   - In 2022-23 the ladders removed from P1 sum to -$13,072 (131 parents). For P1a, which differs by 1.5 to 2.5 s, they
-    sum to -$2,841 (120 parents). About eleven ladders decide the reading.
+    sum to -$2,841 (120 parents). A shift of about two seconds changes the total by $10,231.
   - The selection era has the opposite sign in both readings.
   - Pooled over the three eras in dollars, P1 is 5.8% below P0 and P2 is 3.4% above P1.
   - The plan named this limit but not its size.
@@ -162,15 +162,16 @@ For each minute q, with c = seconds after q when the stale bid is cancelled and 
   - P1a is the live bot with its calls 1.5 to 2.5 s faster. Under S2 it beats P1 by 5.8% and 12.9% in two eras
     (pooled +6.3%), which is more than P2 does, and it sits 0.9% above P0. The rule would qualify it too.
   - P1b, the live bot with slower calls, is also slightly above P1 in all three eras.
-  - The order by pooled P&L is P1a, P3, P2, P1b, P1. That is not the order of speed. A shift of two seconds moves
-    10-17% of the first bids to other minutes, and a few dozen ladders per era decide the sign.
+  - The order by pooled P&L is P1a, P3, P2, P1b, P1. That is not the order of speed. A shift of about two seconds
+    (P1a against P1) changes 6-9% of the first bids, and a few dozen ladders per era decide the sign.
 - **What the study does establish:**
   1. Every realistic timing is within a few percent of the research's zero-delay assumption in pooled P&L (P1a +0.9%,
      P3 -0.6%, P2 -2.7%, P1b -4.1%, P1 -5.1%). The research overstates P&L by a few percent at most on this count. The
      study cannot say which timing is best.
   2. The match rates are stable. The live timing fills 83-90% of the research's first bids in the same minute and
      88-94% within two minutes. Fast re-pricing fills 95-97% in the same minute.
-  3. Fills are spread evenly inside the minute: 14-20% of them fall in the first 10 s.
+  3. Fills are spread roughly evenly inside the minute: 14-20% of them fall in the first 10 s (an even spread
+     would be 17%), and the median fill comes at about 30 s.
   4. Removing the gap between the cancel and the new bid has no reliable effect.
 - **Decisions:**
   - The bot's timing stays as built.
@@ -179,3 +180,13 @@ For each minute q, with c = seconds after q when the stale bid is cancelled and 
   - The pilot's rule B is read with these match rates (reports/owner/FORWARD_TESTS.md).
   - The heartbeat should record when the cancels and the new bids actually finish each minute, so the pilot shows
     where the live bot sits between P1a and P1b. Queued for the next release that touches the engine.
+
+## Corrections (Nov 10 2026, 11:11 ET, after an independent fact-check)
+- **"A shift of two seconds moves 10-17% of the first bids" was wrong.** The 10-17% is the live timing against the
+  research assumption (P1 against P0: 83-90% matched in the same minute). The two-second shift is P1a against P1, and
+  it changes 5.6% / 6.1% / 8.5% of P1's first bids (selection / check / 2022-23). The text above now says 6-9%. The
+  verdict does not depend on it.
+- **"About eleven ladders decide the reading" was not established.** What the files show: the ladders removed from P1
+  and from P1a differ by $10,231 in 2022-23, and the ten largest removed ladders are $6.4K of P1's $13.1K. The text
+  above now states the dollar change only.
+- **"Fills are spread evenly"** now reads "roughly evenly", with the numbers.

@@ -25,7 +25,7 @@ FORWARD_TESTS.md.
 - **The Nov 7 paper error is explained.** A candle re-fetch that leaves out a minute an earlier fetch returned leaves
   the table out of order, and the next time slice fails. One minute with no new bids; the next minute repairs it. A
   one-line sort is being prepared and tested as release 1 (branch owner/release-1).
-- **Perp paper books: one fill each in about 3.5 days is not a signal yet.** The research rate on perp prices is 0.8
+- **Perp paper books: one fill each in 3.3 and 3.7 days is not a signal yet.** The research rate on perp prices is 0.8
   fills a day for R2-08 and 1.05 for v1 (bot/README.md). With those rates, one fill or fewer has a chance of about
   0.26 and 0.10 if fills were independent, and wicks cluster, so the true chances are higher. A watch rule is in the
   registry.
@@ -44,7 +44,7 @@ FORWARD_TESTS.md.
     era and 2022-23, and 4.8% above in selection. Fast re-pricing (P2) beats P1 by 8.6% and 17.5% and loses 7.1% in
     selection. Removing only the gap (P3) has no material effect.
   - **Deviation 2, logged before the follow-up:** the plan's valuation decides the reading (a missed parent loses its
-    whole ladder, an added one counts its first rung only; about eleven ladders decide 2022-23). Nothing is built on
+    whole ladder, an added one counts its first rung only; a two-second change in timing moves the 2022-23 total by $10,231). Nothing is built on
     it alone. A like-for-like valuation (S1: first rung only; S2: whole ladder re-simulated) is running, with the same
     5% rule.
   - Not in doubt: P1 fills 87% / 90% / 83% of P0's parents in the same minute; 14-20% of P0's fills come in the first
@@ -56,24 +56,24 @@ FORWARD_TESTS.md.
     40 s, Advanced candles, a bar built from trades at 1 and 3 s), with the decision rule fixed before any data.
   - **Charter: a fourth class of change, fidelity.** A fix that brings the live bot closer to what the research
     assumed is adopted on verification and tests, behind a switch, without needing a backtest gain.
-- **Collector storage:** 9.8 MB a day measured. The VM's clone is shallow, sparse and single-branch, so the data
-  branch does not reach it. Lossless trims first, target about 6 MB a day.
-- **10:40. Timing study closed: the bot's timing stays as built.**
+  - **Storage:** 9.8 MB a day measured. The VM's clone is shallow, sparse and single-branch, so the data branch does
+    not reach it. Lossless trims first, target about 6 MB a day.
+- **10:36. Probe deviation, before data:** BTC added. The bid level of every coin is the coin's price 60 minutes ago
+  moved by beta times BTC's return to the newest close, less four sigma (edge/wick.py `levels`). So BTC's newest
+  candle is the input whose lateness moves every level.
+- **10:39. Timing study closed: the bot's timing stays as built.**
   - Like-for-like valuation (whole ladder for every first bid, 4.8M deep prints): the live timing is +1.9% / -11.9% /
     -11.9% against the research assumption (pooled -5.1%); fast re-pricing is -3.8% / +7.1% / +11.1% against the live
     timing (pooled +2.6%).
   - **Deviation 4:** the two-era condition is met for fast re-pricing, and nothing is built on it. The live bot with
     calls 1.5 to 2.5 s faster (P1a) beats the central case by more than fast re-pricing does (pooled +6.3%), and the
     slower-call case is also slightly ahead. The order by P&L is not the order of speed, so the measure cannot rank
-    timings: two seconds move 10-17% of first bids to other minutes and a few dozen ladders decide each era.
+    timings: a shift of about two seconds changes 6-9% of first bids, and a few dozen ladders decide each era.
   - What holds: every realistic timing is within a few percent of the research assumption (pooled +0.9% to -5.1%);
-    match rates of 83-90% in the same minute and 88-94% within two minutes; fills are spread evenly in the minute.
+    match rates of 83-90% in the same minute and 88-94% within two minutes; fills are spread roughly evenly in the minute.
   - **Rule B's reading fixed before the pilot:** a paper fill counts as matched when the live bot fills the same coin
     within two minutes either side. The 70% bar stays.
   - Queued for the next engine release: the heartbeat records when cancels and new bids finish each minute.
-- **10:36. Probe deviation, before data:** BTC added. The bid level of every coin is the coin's price 60 minutes ago
-  moved by beta times BTC's return to the newest close, less four sigma (edge/wick.py `levels`). So BTC's newest
-  candle is the input whose lateness moves every level.
 - **10:45. Release 1 ready** (RELEASES.md): the candle merge fix, and `wickctl update` no longer starts a stopped bot.
   - The fix passed the parity replay, the live-path simulation, the USDC test and the Coinbase sandbox test with
     identical results before and after.
@@ -91,3 +91,14 @@ FORWARD_TESTS.md.
   minutes, so a stale BTC table would move every level without any error. The probe now records the age of the newest
   row by source, delay and coin. A stale-input guard is on the list for the next engine release whatever the probe
   shows.
+- **11:12. Corrections after an independent fact-check** (a separate agent checked about 125 claims in the owner's
+  documents against their sources).
+  - A shift of about two seconds changes 6-9% of first bids. The 10-17% written earlier is the live timing against
+    the research assumption.
+  - "About eleven ladders decide 2022-23" was not established; the entries now give the dollar change only.
+  - The pilot's expected match with perfect capture is about 77-86% in the same minute and 82-90% within two minutes
+    (the first version took the top of two ranges from different eras).
+  - Charter: the 0.2% of daily volume cap is on the whole signal, which is then split in thirds; the best candidates
+    were ahead by +0.03 to +0.18 Sharpe in the holdout eras; the fee rebate's Premium case is a range from both paper
+    books.
+  - Entries are back in time order.
