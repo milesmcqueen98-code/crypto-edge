@@ -116,6 +116,10 @@ class LiveMarket:
     def spot_candles(self, coin, start, end):
         return self.m.spot_candles(coin, start, end)
 
+    def trades_bar(self, coin, minute, deadline=None):
+        """Bar of one minute from the venue's trades, with proof of completeness (bot/market.py)."""
+        return self.m.minute_trades_bar(coin, minute, deadline=deadline)
+
     def best_bid(self, product):
         bids, _ = self.m.book(product, limit=1)
         return bids[0][0] if bids else np.nan
@@ -435,6 +439,14 @@ class Engine:
         self.counts = {}
         self._tp_dirty = set()
         self._no_buys = False                              # set while market data or cash is unavailable
+        # newest minute from trades (README, "Newest minute from trades"): "candles" (default) or "trades"
+        self.newest_bar = self.cfg.get("newest_bar", "candles")
+        if self.newest_bar not in ("candles", "trades"):
+            raise ValueError(f"newest_bar must be candles or trades, not {self.newest_bar}")
+        self._cmax = {}                                    # trades mode: newest minute that came from candles, per coin
+        self._timer = time.monotonic
+        self._tm = {"data": [], "cancel": [], "place": []}  # step timing, seconds after the minute
+        self._tb_err = None
         # entry bids expire on their own after ttl seconds (0: good-til-cancelled); the bot re-places them while alive
         self.ttl = int(self.state.get("gtd_ttl_s") or self.cfg.get("bid_ttl_s", 300) or 0)
         # share of each signal per rung (default: thirds); e.g. {"4": 1, "6": 1, "8": 2} is the wick v4 W2 challenger
@@ -486,13 +498,17 @@ class Engine:
         self.log("adv", t=t, adv_musd={c: round(v / 1e6, 1) for c, v in self.state["adv"].items() if v})
 
     def update_spot(self, end):
+        cm = getattr(self, "_cmax", {})                    # empty unless newest_bar is "trades"
         for c in ["BTC"] + self.coins:
             df = self.spot.get(c)
             # re-fetch the last 3 minutes too: the newest candle can still be filling in when first fetched
-            start = (df.index.max() - pd.Timedelta(minutes=2)) if df is not None and len(df) else end - pd.Timedelta(minutes=WINDOW_MIN)
+            # (newest_bar "trades": counted from the newest candle, so a row built from trades does not move it)
+            start = (cm.get(c, df.index.max()) - pd.Timedelta(minutes=2)) if df is not None and len(df) else end - pd.Timedelta(minutes=WINDOW_MIN)
             if start >= end:
                 continue
             new = self.market.spot_candles(c, start, end)
+            if c in cm and len(new):
+                cm[c] = max(cm[c], new.index.max())
             if df is None or not len(df):
                 df = new
             elif len(new):
@@ -501,6 +517,76 @@ class Engine:
             if len(df):
                 df = df.loc[end - pd.Timedelta(minutes=WINDOW_MIN):]
             self.spot[c] = df
+
+    def trades_pass(self, m):
+        """newest_bar "trades": rebuild minute m (the one that just closed) from the venue's trades for BTC and every
+        coin. A verified bar replaces or inserts m's row; a verified empty minute changes nothing; anything else keeps
+        the candle row (fallback) and is counted. Stops after trades_budget_s seconds; the rest fall back. Never raises."""
+        budget = float(self.cfg.get("trades_budget_s", 8.0))
+        t0 = self._timer()
+        todo = ["BTC"] + self.coins
+        for i, c in enumerate(todo):
+            if self._timer() - t0 > budget:
+                self.count("tb_fb_budget", len(todo) - i)
+                return
+            df = self.spot.get(c)
+            if c not in self._cmax:
+                self._cmax[c] = df.index.max() if df is not None and len(df) else m - pd.Timedelta(minutes=WINDOW_MIN)
+            try:
+                r = self.market.trades_bar(c, m, deadline=t0 + budget)
+            except Exception as err:
+                self.count("tb_fb_error")
+                self._tb_err = f"{c}: {err!r}"[:200]
+                if "Refused" in type(err).__name__:        # the venue said no: stop asking this minute
+                    self.count("tb_fb_error", len(todo) - i - 1)
+                    return
+                continue
+            if not r.get("verified"):
+                self.count("tb_fb_budget" if r.get("reason") == "deadline" else "tb_fb_unverified")
+                continue
+            bar = r.get("bar")
+            if bar is None:
+                self.count("tb_empty")                     # no trades: the candles have no row either
+                continue
+            self._put_bar(c, m, bar)
+
+    def _put_bar(self, c, m, bar):
+        df = self.spot.get(c)
+        cols = ["open", "high", "low", "close", "volume"]
+        row = pd.DataFrame([[float(bar[k]) for k in cols]], index=pd.DatetimeIndex([m]), columns=cols)
+        if df is None or not len(df) or m not in df.index:
+            self.count("tb_insert")                        # the candle had no row for this minute yet
+        else:
+            try:
+                tick = self.spec(c).tick
+            except Exception:
+                tick = 0.0
+            if abs(float(df.loc[m, "close"]) - row.close.iloc[0]) > tick * (1 + 1e-9):
+                self.count("tb_close_diff")
+        if df is None or not len(df):
+            df = row
+        else:
+            df = pd.concat([df, row])
+            df = df[~df.index.duplicated(keep="last")].sort_index()
+        self.spot[c] = df
+        self.count("tb_built")
+
+    def data_checks(self, m):
+        """Counts after the data step: BTC's newest traded minute is not m (stale), coins with no row for m. Returns
+        (stale, BTC's age in minutes; None when BTC has no traded row at all)."""
+        for c in self.coins:
+            df = self.spot.get(c)
+            if df is None or m not in df.index or not df.loc[m, "volume"] > 0:
+                self.count("newest_absent")
+        df = self.spot.get("BTC")
+        top = df.index[df.volume > 0].max() if df is not None and len(df) else None
+        if top is not None and top == m:
+            return False, 0
+        self.count("btc_stale")
+        return True, (None if top is None or pd.isna(top) else int((m - top) / pd.Timedelta(minutes=1)))
+
+    def _mark(self, k, t):
+        self._tm[k].append(round((pd.Timestamp(self.clock()) - t).total_seconds(), 2))
 
     def arrays(self, upto):
         idx = pd.date_range(upto - pd.Timedelta(minutes=WINDOW_MIN - 1), upto, freq="min")
@@ -765,12 +851,23 @@ class Engine:
         prev = t - pd.Timedelta(minutes=1)
         try:
             self.update_spot(t)
+            if self.newest_bar == "trades":
+                self.trades_pass(prev)
             self.refresh_adv(t)
             if self.broker.live:
                 self.cash_live = self.broker.cash() - self.cfg.get("usd_reserve", 500.0)
         except Exception:
             self._orders_only(prev, t)                     # exits and take-profits still run; no new bids
             raise
+        self._mark("data", t)
+        stale, age = self.data_checks(prev)
+        if stale and self.cfg.get("stale_guard", False):
+            self._orders_only(prev, t)                     # as when market data fails: exits run, no new bids
+            self.log("stale_input", t=t, coin="BTC", age_min=age)
+            self._heartbeat(t)
+            self.state["last_minute"] = t.isoformat()
+            self.save()
+            return
         self._new_day(t)
         self._settle(prev, t)
         idx, cf, vol = self.arrays(t)
@@ -781,6 +878,11 @@ class Engine:
         self._refresh_tps(t)                               # rungs that filled while their bids were being cancelled
         if self.broker.live and t.minute % 15 == 7:
             self.reconcile(t)                              # orphan orders, balance drift, fee tier
+        self._heartbeat(t)
+        self.state["last_minute"] = t.isoformat()
+        self.save()
+
+    def _heartbeat(self, t):
         if t.minute % 30 == 0:
             free = self.free_cash()
             self.log("heartbeat", t=t, equity=round(self.state["equity"], 2), mtm=round(self.mtm(t), 2),
@@ -789,10 +891,12 @@ class Engine:
                      open=sorted(f"{l['coin']}:{'/'.join(sorted(l['tranches']))}" for l in self.ladders() if l["tranches"]),
                      counts=self.counts, **({"usdc_avail": round(self.broker.last_usdc[0], 2),
                                              "usdc_hold": round(self.broker.last_usdc[1], 2)}
-                                            if getattr(self.broker, "last_usdc", None) is not None else {}))
+                                            if getattr(self.broker, "last_usdc", None) is not None else {}),
+                     step_s={k: [float(np.median(v)), max(v)] for k, v in self._tm.items() if v},
+                     **({"tb_err": self._tb_err} if self._tb_err else {}))
             self.counts = {}
-        self.state["last_minute"] = t.isoformat()
-        self.save()
+            self._tm = {k: [] for k in self._tm}
+            self._tb_err = None
 
     def _orders_only(self, prev, t):
         """Market data or cash unavailable this minute: book fills, run exits and keep take-profits, place no bids."""
@@ -1013,8 +1117,10 @@ class Engine:
         # two passes, so cash released by re-priced bids is free before any new bid needs it
         plans = [p for p in (self._arm_plan(c, pred, rows[c], alloc[c], t, armed.get(c)) for pred, c in cands
                              if c in alloc) if p]
+        self._mark("cancel", t)
         for p in plans:
             self._arm(*p)
+        self._mark("place", t)
 
     def _arm_plan(self, c, pred, row, usd, t, lad):
         """Decide the 4-sigma bid for coin c; cancel a stale one. Returns the arguments for _arm, or None."""
