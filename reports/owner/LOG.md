@@ -208,3 +208,22 @@ FORWARD_TESTS.md.
   the bar of the minute that just closed is built from the public trades list with the bot's proof of completeness.
   A 25-minute test run gave 450 rows, all verified. The production collector picks it up at its next hand-over
   (about 21:44 UTC). Storage rises to about 7.5 MB a day for all streams.
+- **14:45. Reconciliation result: the paper book against the research on final candles** (main 7fd3195;
+  reports/owner/reconcile/README.md). 59.4 live hours, 787 new first bids, 13 first-bid fills.
+  - **The bot's bid levels carry a late BTC.** Median error 0 bp; 5th and 95th percentiles about -23 and +13 bp; 40%
+    of bids more than 5 bp off and 10% more than 20 bp. Beta times BTC's last-minute return explains it (correlation
+    0.94, slope 0.98). The bot's price equals the one-minute-late price for 37% of bids, the two-minute-late price
+    for 18%, the final price for 26%, and none of these for 19%.
+  - **When BTC moves, the error is large.** In the third of bids with the largest last-minute BTC move, 83% are
+    more than 5 bp off and 27% more than 20 bp.
+  - **Scores.** For 19% of the bot's bids the research score is at or below the threshold; a late BTC accounts for
+    three quarters of those.
+  - **Bids in common:** 67% of the bot's new bids have a research bid within a minute; 77% the other way.
+  - **Fills:** 11 in common, 2 only in the bot, 5 only in the research (all in the Nov 8 21:55 UTC drop; three of
+    them blocked for cash in the bot).
+  - **What it cost in the one market-wide drop.** At 21:55 on Nov 8 the bot's seven fills in common were bought 36 to
+    59 bp above the research price (47 bp on $62,191, about $290). Those rungs earned $443; the book has made about
+    $1,540 in all. Three more fills came three to four minutes late.
+  - **The high fill count was the market.** The research would have had 16 first-bid fills in the same minutes.
+  - Limits: one book, 60 hours, 13 fills; the research side is the bot's own code on final candles, not the full
+    backtest.
