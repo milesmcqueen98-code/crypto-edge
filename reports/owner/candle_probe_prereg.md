@@ -59,3 +59,17 @@ Written by the orchestrator before any probe data exists. Branch owner/charter; 
   traded, but the model's levels and its BTC features read BTC's newest candle every minute, and BTC's candle was among
   the latest to fill in during the collector's first hour (33% of its dollar volume missing at first sight). The rule
   is read on the nine coins together; BTC is also reported on its own.
+- **Nov 10 2026, 11:16 ET, before any valid probe data (orchestrator).** The first long run was cancelled after 12 minutes
+  and its data discarded: Coinbase serves these public endpoints through a cache keyed by the exact address (candles
+  may be reused for 300 s, the trades list for 5 s), and the probe had asked one address per coin-minute at every
+  delay, so later delays got the first answer back. Changes for the new run, none of which works around the cache:
+  - Every delay other than 6 s, and the reference, uses its own ordinary window, so each is a fresh answer. The cache
+    status and age of every response are stored. A reference counts only if it was generated 180 s or more after the
+    minute closed.
+  - **Trades are also requested at 6 s.** A 1 s or 3 s trades answer can have been generated before the minute closed;
+    a 6 s answer cannot. 6 s is when the bot steps today. The decision rule reads trades at 1, 3 and 6 s alike.
+  - **One more source: the bot's own steady-state address** (the window from four minutes back to one minute back),
+    requested once per coin-minute at about 9.5 s, after the paper bots' own request so the probe cannot fill that
+    entry early. It shows how often the bots' own request is answered from a copy someone else made, and how old.
+  - Reported in addition: cache-hit shares and ages by source, delay and coin; the measures on fresh answers only; the
+    age of the newest row in each answer.
