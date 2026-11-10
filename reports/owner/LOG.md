@@ -227,3 +227,19 @@ FORWARD_TESTS.md.
   - **The high fill count was the market.** The research would have had 16 first-bid fills in the same minutes.
   - Limits: one book, 60 hours, 13 fills; the research side is the bot's own code on final candles, not the full
     backtest.
+- **15:06. Late-BTC replay result** (main 1dc5617; reports/owner/late_btc/README.md). The research replayed with
+  BTC late at every decision, models not retrained, fills on true prices.
+  - The true-BTC run reproduces R2-08's best estimate exactly (2.94 / 2.66 / 1.91, the same trades at the same
+    prices), and 600 decision minutes agree with the bot's own computation.
+  - **With BTC late as the probe saw it** (one minute in 70% of minutes, two in 30%; five seeds): Sharpe 2.41 / 2.86 /
+    1.21 for selection / check / 2022-23. About -0.5, +0.2 and -0.7. Yearly return 19.7% / 19.4% / 9.3% against
+    22.8% / 19.1% / 11.1%.
+  - Always one minute late: -0.44 / +0.24 / -1.04. The mix plus wrong older rows: -0.92 / +0.32 / -0.97.
+  - **The loss sits on crash days:** in 2022-23 five days carry about 70% of it (Nov 8 2022 alone about -1.8%); in
+    selection Oct 10 2025 is the largest. The worst day in 2022-23 goes from -2.1% to about -4.0% when BTC is one
+    minute late.
+  - **The paired daily test is weak:** most 90% intervals include zero. Read the cost as likely, and between nothing
+    and about one Sharpe point.
+  - **Reading.** This is larger than anything the three search rounds found (+0.03 to +0.18 Sharpe). The largest
+    lever on realised Sharpe so far is making the live inputs equal the research inputs. It agrees with the paper
+    book's own log (the Nov 8 drop).

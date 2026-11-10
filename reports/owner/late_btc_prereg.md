@@ -54,5 +54,22 @@ owner/late-btc.
 - ETH and the other coins also had late or unfinished candles of their own. That is not modelled here.
 - The simulator's fills come from candles, as in the research.
 
+## Result (Nov 10 2026; reports/owner/late_btc/README.md)
+- **Gate passed:** the true-BTC scenario reproduces Sharpe 2.94 / 2.66 / 1.91 and the same trades at the same prices.
+  **Exactness passed:** 600 decision minutes agree with the bot's own computation.
+- **Headline, S3 (the probe's mix, five seeds):** Sharpe 2.41 / 2.86 / 1.21 for selection / check / 2022-23, against
+  2.94 / 2.66 / 1.91. That is about -0.5, +0.2 and -0.7; yearly return 19.7% / 19.4% / 9.3% against 22.8% / 19.1% /
+  11.1%.
+- **Bracket:** S1 (always one minute late) -0.44 / +0.24 / -1.04; S4 (the mix plus wrong older rows) -0.92 / +0.32 /
+  -0.97.
+- **The loss sits on crash days.** In 2022-23 the five worst days carry about 70% of S1's loss; in selection Oct 10
+  2025 is the largest.
+- **The paired daily test is weak.** Most 90% intervals include zero. The cost is likely; its size is between nothing
+  and about one Sharpe point.
+- **How decisions move:** about 99% of armed coin-minutes stay armed and the level moves a median of 2 to 5 bp, but
+  only 38% to 62% of first-bid fills land on the same coin and minute.
+
 ## Deviation log
-(none yet)
+- The replay's own deviations (branch setup, volume of a missing minute, how the models are fitted, definitions the
+  plan left open, a check loosened from bit-identical to 1e-9 bp) were each written before the work they cover and
+  are listed in its README.
