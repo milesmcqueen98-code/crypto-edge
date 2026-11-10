@@ -1,0 +1,19 @@
+reports/signal_lab/prints_m60: the primary print-feature tables of signal lab 2 (prospective_prereg.md, deviation 4)
+under the names the pipeline reads. f6_main.parquet and f6_early.parquet are byte copies (cmp) of
+reports/signal_lab/prints/f6_main_m60.parquet and f6_early_m60.parquet (branch signal-lab-data, commit 440314f).
+SHA256 in this folder holds the sha256sum of the two copies and their two sources (check from the repository root
+with sha256sum -c reports/signal_lab/prints_m60/SHA256).
+
+Checks against the 0 s tables (reports/signal_lab/prints/f6_<era>.parquet), as main / early:
+- (coin, ts): the same keys in the same order: True / True (17,527 / 14,563 rows); duplicates 0 / 0; same columns: True / True.
+- big_thr_usd and adv_usd identical, NaN in the same places: values differing 0 / 0 and 0 / 0; NaN placement differing 0 / 0 and 0 / 0 (NaN: big_thr_usd 24 / 73, adv_usd 10 / 190).
+- Never larger than at 0 s, with a relative tolerance of 1e-12 (approved by the orchestrator; a 60 s value
+  above the 0 s value x (1 + 1e-12) is a violation): violations n_prints 0 / 0; usd_30 0 / 0; sell_usd_30 0 / 0; sell_usd_5 0 / 0; big_sell_usd_30 0 / 0; sweep_max_usd_30 0 / 0.
+- Without the tolerance (exact float64 comparison) the 60 s value is larger in: n_prints 0 / 0; usd_30 0 / 0; sell_usd_30 19 / 15; sell_usd_5 18 / 13; big_sell_usd_30 113 / 64; sweep_max_usd_30 0 / 0.
+  Ulp-level: of these, 1 ulp of the 0 s value sell_usd_30 18 / 15; sell_usd_5 18 / 12; big_sell_usd_30 102 / 61; 2 ulps sell_usd_30 1 / 0; sell_usd_5 0 / 1; big_sell_usd_30 11 / 3; other sell_usd_30 0 / 0; sell_usd_5 0 / 0; big_sell_usd_30 0 / 0.
+  Largest relative excess 4.4e-16, largest absolute excess 1.9e-09 USD.
+  Reason (orchestrator): a sum over a shorter slice can round 1 to 2 ulps above the sum over the longer one when
+  the dropped prints add nothing to that sum (no taker sell, or no big sell, in the last minute); the exact sums
+  are equal there.
+- Smaller / equal at 60 s: n_prints 17,471 / 56 (main), 14,464 / 99 (early); usd_30 17,471 / 56 (main), 14,464 / 99 (early); sell_usd_30 17,280 / 228 (main), 14,330 / 218 (early); sell_usd_5 17,270 / 239 (main), 14,336 / 214 (early); big_sell_usd_30 7,034 / 10,356 (main), 5,453 / 8,973 (early); sweep_max_usd_30 1,175 / 16,352 (main), 1,174 / 13,389 (early).
+- Information: the complete column is identical (True / True); rows with any print feature missing at 60 s 24 / 211 (0 s: 24 / 211).
