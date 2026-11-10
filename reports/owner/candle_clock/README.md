@@ -37,3 +37,13 @@ These are readings of the plan where it leaves a detail open, and one stricter s
   used and counted as a fallback.
 - **Halves and hours.** "First three hours" and "last three hours" are the first and last 180 of the 360 minutes.
   Hours are the six blocks of 60 minutes.
+
+## Addition to the plan (written Nov 10 2026, 18:43 UTC, after the main run, before the follow-up ran)
+
+- **What was seen.** In the main run (Actions run 42877348846) the unexplained boundaries fell on the same minutes for
+  nearly every coin: about 12:55, 14:05, 14:10 to 14:13, 14:27 and 15:20 UTC (16 to 18 of 18 coins each). For BTC
+  these are the only boundaries that are not explained.
+- **What is added.** One follow-up run (scripts/owner/candle_clock/diag.py) for BTC, ETH, SOL and DOGE at those minutes
+  and one minute either side. It prints the final candle next to the bar of trades stamped in the minute, and the
+  two-minute and five-minute volume totals of both. It is a description only. It changes no measure, no class rule
+  and no class. Same pace and refusal policy; derived values only.
