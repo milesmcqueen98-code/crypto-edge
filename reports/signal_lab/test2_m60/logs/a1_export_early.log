@@ -1,0 +1,31 @@
+/home/claude/wt/v6x/scripts/lab/core.py:81: RuntimeWarning: Mean of empty slice
+  self.basket_lp = np.nancumsum(np.nanmean(r, axis=0))          # equal-weight market factor (log level)
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+lab ready: 14,563 candidates, 13 coins (26s)
+F6 joined from /home/claude/wt/v6x/reports/signal_lab/prints_m60/f6_early.parquet: 14,563 candidates, 0 table rows unused; complete windows 1.0000 of the table; missing share csv_30 0.013, csv_5 0.013, sell_share_30 0.000, big_sell_share_30 0.005, sweep_max_30 0.013
+exported 14,563 candidates, 13 coins, 2021-01-04 07:21:00 .. 2023-12-31 22:58:00 to /home/claude/wt/v6x/reports/signal_lab/test2_m60/cand_early.parquet
