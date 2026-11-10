@@ -16,7 +16,6 @@ Every call's planned, request and response times are stored. Raw trades never le
 Reuses the collector's Http (refusal detection, user agent), RateLimiter and candle parser; changes nothing in it.
 """
 import argparse
-import heapq
 import itertools
 import json
 import math
@@ -81,36 +80,42 @@ def oldest(trades):
 
 # ------------------------------------------------------------------------------------------------ scheduling
 class Lane:
-    """One host: jobs run in order of (slot time, priority) once due, each start paced by the collector's
-    RateLimiter, the request itself on a worker thread."""
+    """One host: among the jobs already due, the lowest (priority, slot time) goes next, each start paced by the
+    collector's RateLimiter, the request itself on a worker thread. So trades never wait behind candles that are
+    still queued from an earlier slot."""
 
     def __init__(self, interval, pool):
         self.limiter = C.RateLimiter(interval)
-        self.pool, self.heap, self.cv, self.seq = pool, [], threading.Condition(), itertools.count()
+        self.pool, self.jobs, self.cv, self.seq = pool, [], threading.Condition(), itertools.count()
         threading.Thread(target=self.loop, daemon=True).start()
 
     def push(self, when, prio, fn):
         with self.cv:
-            heapq.heappush(self.heap, (when, prio, next(self.seq), fn))
+            self.jobs.append((when, prio, next(self.seq), fn))
             self.cv.notify()
 
     def pending(self):
         with self.cv:
-            return len(self.heap)
+            return len(self.jobs)
+
+    def _due(self):
+        now = time.time()
+        due = [j for j in self.jobs if j[0] <= now]
+        return min(due, key=lambda j: (j[1], j[0], j[2])) if due else None
 
     def loop(self):
         while True:
             with self.cv:
-                while not self.heap:
+                while not self.jobs:
                     self.cv.wait()
-                wait = self.heap[0][0] - time.time()
-                if wait > 0:
-                    self.cv.wait(timeout=wait)
+                if self._due() is None:
+                    self.cv.wait(timeout=max(0.0, min(j[0] for j in self.jobs) - time.time()))
                     continue
             self.limiter.acquire()
             with self.cv:
-                fn = heapq.heappop(self.heap)[3]
-            self.pool.submit(fn)
+                job = self._due()
+                self.jobs.remove(job)
+            self.pool.submit(job[3])
 
 
 class Probe:
