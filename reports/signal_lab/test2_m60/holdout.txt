@@ -1,0 +1,58 @@
+Signal lab 2: binding test on the engine-faithful simulator (model-priced exits unless stated); incumbent RF0 = R2-08 rebuilt by the lab as one 15-seed model; datasets <era>_<spec>_u15; Holm across RF6H, RF6
+
+== RF6H: FAIL  (gates 1-5: False False False True False); score 38.6/100
+era         sel    chk  early
+cfg                          
+S_0.5     0.259  0.039  0.146
+S_0.25    0.325  0.120  0.150
+cap_1M    0.592  0.173  0.237
+base_0.5 -0.115  0.141  0.136
+primary cells (Sharpe, incumbent, return, incumbent, max DD, incumbent, worst day, incumbent):
+       sharpe  sharpe_inc     ret  ret_inc   maxdd  maxdd_inc   worst  worst_inc
+era                                                                             
+sel    2.7427      2.4842  0.2115   0.1998 -0.0282    -0.0403 -0.0205    -0.0228
+chk    2.3510      2.3125  0.1682   0.1701 -0.0115    -0.0104 -0.0115    -0.0104
+early  1.6693      1.5235  0.1020   0.0958 -0.0261    -0.0225 -0.0228    -0.0221
+pooled holdout: bootstrap t 0.73, p 0.223, Holm 0.415; top-5-day share of the gain 2.26; by year {"2022": 0.1043, "2023": 0.0995, "2025": 0.2174, "2026": 0.147}
+print-priced (information): sel +0.149, chk -0.080, early +0.121
+
+== RF6: FAIL  (gates 1-5: False False False True False); score 39.3/100
+era         sel    chk  early
+cfg                          
+S_0.5     0.052  0.027  0.146
+S_0.25    0.098  0.029  0.150
+cap_1M    0.037  0.059  0.237
+base_0.5 -0.011 -0.058  0.136
+primary cells (Sharpe, incumbent, return, incumbent, max DD, incumbent, worst day, incumbent):
+       sharpe  sharpe_inc     ret  ret_inc   maxdd  maxdd_inc   worst  worst_inc
+era                                                                             
+sel    2.5364      2.4842  0.2064   0.1998 -0.0403    -0.0403 -0.0228    -0.0228
+chk    2.3391      2.3125  0.1716   0.1701 -0.0105    -0.0104 -0.0105    -0.0104
+early  1.6693      1.5235  0.1020   0.0958 -0.0261    -0.0225 -0.0228    -0.0221
+pooled holdout: bootstrap t 0.78, p 0.207, Holm 0.415; top-5-day share of the gain 1.70; by year {"2022": 0.1043, "2023": 0.0995, "2025": 0.2299, "2026": 0.1302}
+print-priced (information): sel +0.040, chk +0.019, early +0.121
+
+Scorecard:
+spec  sharpe  capacity  consistency  evidence  spread  risk  mechanism  implementation  total
+RF6H     5.8       5.1         13.8       0.0     0.0   6.0        6.0             2.0   38.6
+ RF6     5.4       3.7         12.5       0.0     0.0   8.7        6.0             3.0   39.3
+
+Sensitivity (deviation 1; ΔSharpe against the incumbent, S* theta 0.5, $250K, model-priced exits):
+  binding = the binding cell; armed_both = every non-candidate minute armed in both books; armed_cand_only = the candidate armed, the incumbent as built; frozen = the frozen simulator (no cash rule);
+  cash_effect_* = the armed book's Sharpe minus the book's own.
+== RF6H
+era                 sel    chk  early
+binding           0.259  0.039  0.146
+armed_both        0.392  0.010  0.146
+armed_cand_only   0.324  0.017  0.138
+frozen            0.507  0.030  0.137
+cash_effect_cand  0.065 -0.021 -0.008
+cash_effect_inc  -0.068  0.007 -0.009
+== RF6
+era                 sel    chk  early
+binding           0.052  0.027  0.146
+armed_both        0.111  0.044  0.146
+armed_cand_only   0.043  0.052  0.138
+frozen            0.024 -0.076  0.137
+cash_effect_cand -0.009  0.025 -0.008
+cash_effect_inc  -0.068  0.007 -0.009
