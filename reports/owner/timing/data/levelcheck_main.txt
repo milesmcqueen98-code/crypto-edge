@@ -1,0 +1,20 @@
+per-minute levels L(q) (scripts/lab LevelSet, R2-08) against the 4-sigma rows of the frozen dataset (main, 2025-01-01 .. 2026-11-06 exclusive)
+coin  parents  max_rel_diff  nan  parent_not_approved
+ ETH       71           0.0    0                    0
+ SOL      146           0.0    0                    0
+ XRP      135           0.0    0                    0
+DOGE      155           0.0    0                    0
+ LTC       72           0.0    0                    0
+LINK      113           0.0    0                    0
+ BCH       75           0.0    0                    0
+ SUI      145           0.0    0                    0
+ XLM       77           0.0    0                    0
+HBAR       78           0.0    0                    0
+NEAR       94           0.0    0                    0
+AAVE       76           0.0    0                    0
+HYPE        8           0.0    0                    0
+ ENA       74           0.0    0                    0
+PEPE       86           0.0    0                    0
+ONDO       99           0.0    0                    0
+ ZEC       63           0.0    0                    0
+largest relative difference 0.000e+00; parents 1567; parents not approved by the panel 0
