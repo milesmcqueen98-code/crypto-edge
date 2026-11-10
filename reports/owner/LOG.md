@@ -273,7 +273,8 @@ FORWARD_TESTS.md.
   - The 13:10 entry had held the 13:30 plan; it is now its own entry. The perp books have two fills each by now, not
     one.
   - "Other clients made the old copies" is the probe's best account, not a proven fact; the documents now say so.
-- **16:50. Collector: first hand-over worked.** The first run ended cleanly at its planned time (21:49 UTC, no errors,
-  nothing refused in 5 h 45 min) and had started its successor at 21:44 UTC. The successor runs the code now on
+- **16:50. Collector: first hand-over worked.** The first run ended cleanly at its planned time (21:49 UTC; no errors
+  and nothing refused in the four status files read during its 5 h 45 min) and had started its successor at 21:44
+  UTC. The successor runs the code now on
   `main`, with the age of each candle answer and the trades-bar stream. None of the hourly schedule runs fired during
   the first run, so the hand-over chain is what keeps collection going; the schedule is a weak backstop.
