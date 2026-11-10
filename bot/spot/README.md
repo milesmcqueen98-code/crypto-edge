@@ -313,6 +313,10 @@ Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
 - **Candle merge:** `python bot/spot/merge_test.py` checks the per-minute merge of re-fetched candles in `update_spot`. A re-fetch
   that skips a stored minute used to leave the index out of order and the window cut raised KeyError. The test shows the
   old lines raise and the engine does not, that re-fetched values win, and that a normal merge is unchanged. No network.
+- **Newest minute from trades:** `python bot/spot/trades_bar_test.py` (the trades bar and its proof of completeness,
+  against a fake trades endpoint) and `python bot/spot/newest_bar_test.py` (the two switches in the engine, on
+  synthetic tables and on the stored Oct 10 2025 crash). No network. `bot/spot/trades_bar_check.py` is the network
+  check for a GitHub runner (hunt2.yml).
 - **wickctl update:** `bash bot/spot/deploy/wickctl_test.sh` runs the real `update` branch against stub `sudo`, `systemctl`, `git` and
   `install`. It checks the order of calls for a bot that was active, activating, inactive or failed, and for a failed pull.
   Only a bot that was active or activating is started again. No network, no sudo.
