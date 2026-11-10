@@ -237,15 +237,41 @@ def _part1():
           eng.counts.get("rows_open") == 12, str(eng.counts))
     shutil.rmtree(sd)
 
-    # the 6-minute window only in trades mode and only for listed coins
+    # the 6-minute window in trades mode for every coin, listed or not; 3 minutes in candles mode
     eng, sd = synth_engine("trades", trades_coins=["BTC", "ETH"])
     eng.update_spot(end)
     eng.trades_pass(m)
     eng.market.starts = []
     eng.update_spot(end + pd.Timedelta(minutes=1))
     st = dict(eng.market.starts)
-    check("window: listed coins re-fetch 6 minutes, unlisted 3 as in candles mode",
-          st["ETH"] == m - pd.Timedelta(minutes=5) and st["SOL"] == m - pd.Timedelta(minutes=2), str(st))
+    check("window: trades mode re-fetches 6 minutes for listed and unlisted coins",
+          st["ETH"] == m - pd.Timedelta(minutes=5) and st["SOL"] == m - pd.Timedelta(minutes=5), str(st))
+    check("window: the unlisted coin is never asked for trades", "SOL" not in [x[0] for x in eng.market.calls])
+    shutil.rmtree(sd)
+
+    # an unlisted coin: an old copy never replaces a newer candle row; a newer answer does; rows_open counts it
+    eng, sd = synth_engine("trades", trades_coins=["BTC", "ETH"])
+    SM = eng.market
+    SM.lag = pd.Timedelta(seconds=10)
+    eng.update_spot(end)
+    eng.trades_pass(m)
+    end1 = end + pd.Timedelta(minutes=1)
+    SM.copy[("SOL", end1)] = copy_of("SOL", end, delta=5.0)
+    SM.lag = {"SOL": -pd.Timedelta(minutes=1, seconds=10)}  # made before the stored answer
+    eng.update_spot(end1)
+    check("unlisted: an old copy does not replace a newer candle row", eng.spot["SOL"].loc[m].equals(fin["SOL"].loc[m]))
+    SM.copy[("SOL", end1 + pd.Timedelta(minutes=1))] = copy_of("SOL", end, delta=7.0)
+    SM.lag = {"SOL": pd.Timedelta(seconds=1)}
+    eng.update_spot(end1 + pd.Timedelta(minutes=1))
+    check("unlisted: a newer answer replaces it", eng.spot["SOL"].loc[m, "close"] == fin["SOL"].loc[m, "close"] + 7.0)
+    shutil.rmtree(sd)
+    eng, sd = synth_engine("trades", trades_coins=["BTC"])
+    eng.market.lag = -pd.Timedelta(minutes=6)
+    eng.update_spot(end)
+    eng.counts = {}
+    eng.data_checks(m)
+    check("rows_open covers unlisted coins too (4 minutes x 3 coins)", eng.counts.get("rows_open") == 12,
+          str(eng.counts))
     shutil.rmtree(sd)
     eng, sd = synth_engine("candles")
     eng.update_spot(end)
@@ -421,6 +447,14 @@ def _part1():
     eng.trades_pass(m)
     check("budget: a bar cut by the deadline counts as budget", eng.counts.get("tb_fb_budget") == 1, str(eng.counts))
     shutil.rmtree(sd)
+
+    # every market method the engine calls must exist on LiveMarket (checked on the class, no network)
+    import re
+    src = open(E.__file__).read()
+    called = sorted(set(re.findall(r"self\.market\.(\w+)\(", src)))
+    missing = [x for x in called if not callable(getattr(E.LiveMarket, x, None))]
+    check("LiveMarket has every method the engine calls on the market", not missing and "trades_bars" in called,
+          f"called {called}, missing {missing}")
 
     # bad switch value
     try:

@@ -125,6 +125,10 @@ class LiveMarket:
         """Bar of one minute from the venue's trades, with proof of completeness (bot/market.py)."""
         return self.m.minute_trades_bar(coin, minute, deadline=deadline)
 
+    def trades_bars(self, coin, m0, m1, deadline=None):
+        """Bars of the minutes m0 .. m1 from one paging pass of the venue's trades (bot/market.py)."""
+        return self.m.minute_trades_bars(coin, m0, m1, deadline=deadline)
+
     def best_bid(self, product):
         bids, _ = self.m.book(product, limit=1)
         return bids[0][0] if bids else np.nan
@@ -456,7 +460,7 @@ class Engine:
                 raise ValueError(f"trades_coins has unknown coins: {bad}")
         self.trades_coins = None if tc is None else set(tc)    # None: BTC and every coin
         self._cmax = {}                                    # trades mode: newest minute that came from candles, per coin
-        # trades mode, listed coins: provenance of the last PROV_MIN minutes, {minute: (answer generation time or None,
+        # trades mode, every coin: provenance of the last PROV_MIN minutes, {minute: (answer generation time or None,
         # built from verified trades)}; a candle row counts as confirmed when its answer was made confirm_s after
         # its minute closed
         self._prov = {}
@@ -519,10 +523,10 @@ class Engine:
         cm = getattr(self, "_cmax", {})                    # empty unless newest_bar is "trades"
         for c in ["BTC"] + self.coins:
             df = self.spot.get(c)
-            tb = getattr(self, "newest_bar", "candles") == "trades" and self._listed(c)   # provenance rules apply
+            tb = getattr(self, "newest_bar", "candles") == "trades"   # trades mode: provenance rules, every coin
             # re-fetch the last 3 minutes too: the newest candle can still be filling in when first fetched
             # (newest_bar "trades": counted from the newest candle, so a row built from trades does not move it;
-            # listed coins re-fetch 6 minutes, so a row is seen again up to 5 minutes after it closed)
+            # every coin re-fetches 6 minutes, so a row is seen again up to 5 minutes after it closed)
             deep = 5 if tb else 2
             start = (cm.get(c, df.index.max()) - pd.Timedelta(minutes=deep)) if df is not None and len(df) else end - pd.Timedelta(minutes=WINDOW_MIN)
             if start >= end:
@@ -543,21 +547,18 @@ class Engine:
 
     PROV_MIN = 15
 
-    def _listed(self, c):
-        return getattr(self, "newest_bar", "candles") == "trades" and (self.trades_coins is None or c in self.trades_coins)
-
-    @staticmethod
     def _older(a, b):
         """Answer generation time a older than b; an unknown time is older than any known one."""
         if a is None:
             return b is not None
         return b is not None and a < b
+    _older = staticmethod(_older)
 
     def _confirmed(self, mm, g):
         return g is not None and g >= mm + pd.Timedelta(seconds=60 + self.confirm_s)
 
     def _prov_merge(self, c, df, new, end):
-        """Trades mode, listed coin: the rows of a candle answer that may replace or fill stored rows.
+        """Trades mode, any coin: the rows of a candle answer that may replace or fill stored rows.
         A candle row replaces a stored candle row only if its answer is not older, and never replaces a trades-built
         row or a verified empty minute (the venue's final candle can leave out trades that are in the public list).
         Rows older than the provenance window merge as in candles mode."""
@@ -583,7 +584,7 @@ class Engine:
         return new[np.array(keep, dtype=bool)] if len(new) else new
 
     def _open(self, c, mm):
-        """A listed coin's minute not yet trades-built nor confirmed by a late-enough candle answer."""
+        """A minute (of a coin on the trades list, in the trades pass) not yet trades-built nor confirmed by a late-enough candle answer."""
         p = self._prov.get(c, {}).get(mm)
         return p is None or (not p[1] and not self._confirmed(mm, p[0]))
 
@@ -594,7 +595,7 @@ class Engine:
         budget = float(self.cfg.get("trades_budget_s", 8.0))
         t0 = self._timer()
         todo = [c for c in ["BTC"] + self.coins if self.trades_coins is None or c in self.trades_coins]
-        # coins not listed keep the candle path untouched and are never asked for trades
+        # coins not listed are never asked for trades
         stop = getattr(self.market, "Refused", None)
         limited = getattr(self.market, "Limited", None)
         for i, c in enumerate(todo):
@@ -678,7 +679,7 @@ class Engine:
         if getattr(self, "newest_bar", "candles") == "trades":          # rows 3 to 6 minutes old still unconfirmed
             for c in ["BTC"] + self.coins:
                 df = self.spot.get(c)
-                if not self._listed(c) or df is None:
+                if df is None:
                     continue
                 for mm in pd.date_range(m - pd.Timedelta(minutes=5), m - pd.Timedelta(minutes=2), freq="min"):
                     if mm in df.index and self._open(c, mm):
@@ -706,8 +707,8 @@ class Engine:
         fresh answer with no row (a quiet minute) is fine: the close is carried forward as in the research. An answer
         made before mm ended, or of unknown age, is not. A market that reports no answer times (test fakes) passes."""
         end = mm + pd.Timedelta(minutes=1)
-        listed = self._listed(c)
-        p = self._prov.get(c, {}).get(mm) if listed else None
+        prov = getattr(self, "newest_bar", "candles") == "trades"       # provenance kept for every coin
+        p = self._prov.get(c, {}).get(mm) if prov else None
         if p is not None and p[1]:
             return True
         meta = getattr(self.market, "candle_meta", None)
@@ -715,7 +716,7 @@ class Engine:
             df = self.spot.get(c)
             if not (df is not None and mm in df.index and df.loc[mm, "volume"] > 0):
                 return False
-            if listed:
+            if prov:
                 g = p[0] if p is not None else None
             elif not isinstance(meta, dict):
                 return True
