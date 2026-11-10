@@ -281,3 +281,9 @@ FORWARD_TESTS.md.
 - **16:51. Owner's checks scheduled:** Nov 10 21:10 ET (first run of the third book and of the two new workflow
   jobs), Nov 11 08:30 ET (the hand-over chain, the data counters of all three books, the collector's new streams),
   Nov 14 09:00 ET (the three-day read of the third book, if it has its 4,000 minutes).
+- **17:02. Hand-over verified on the data** (the 16:56 check). The status file names the successor (run 42907961929,
+  planned end 03:29 UTC), with no errors and nothing refused. Book, candles, Hyperliquid and the perp list have no
+  gap from 16:05 to 21:59 UTC across the two runs. The new streams are writing: the trades bar from 21:44 (288 rows
+  in 16 minutes, all verified, one page each) and the age of candle answers from 21:45. In those first 15 minutes
+  BTC's candle answer was a cached copy in 87% of minutes (median age about a minute) and lacked the minute just
+  closed in 60%. One scheduled run did fire at 21:50 and stood down correctly because a collector was running.
