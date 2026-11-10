@@ -186,3 +186,11 @@ A candidate with no prints in its window gets missing values (LightGBM handles t
      same order, one process at a time. The cell step keeps cells already written (they are deterministic) and
      computes the missing one. Nothing else changes: same table, datasets, configurations, gates and scorecard.
    - It remains one holdout read.
+
+**Corrections to wording above (Nov 9 2026, 20:51 ET), found by an independent fact-check of the report. No rule, table or
+result changes.**
+- **Deviation 2:** prints and candles disagree in 13-20% of minutes, not 14-23%. The QA's "Equal" column leaves out
+  minutes with no volume on either side.
+- **Order of reads, as it happened:** the audit ran beside the selection readings, not after them. It started at
+  18:37 and gave its final pass at 19:15; the selection reading on the 60 s table finished at 19:19; the lock opened
+  at 19:19, after both. No holdout number existed before the lock.

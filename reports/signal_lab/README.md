@@ -147,8 +147,9 @@ implementation (the print-data job, the pipeline, the model runs). A separate Op
 the holdout was read. Five seed triples per arm; one holdout read.
 - **Plan:** prospective_prereg.md, written before any print was fetched. Five deviations, each logged before the work
   it covers. Log: progress2.md.
-- **Order of reads:** selection era, the audit (two passes), the lock (test2/AUDIT_PASSED, 19:19 ET), then the
-  seed-averaged reading and the binding test with nothing decided between them.
+- **Order of reads:** the selection readings and the two-pass audit side by side (audit 18:37 to 19:15; the 60 s
+  selection reading done 19:19), then the lock (test2/AUDIT_PASSED, 19:19 ET), then the seed-averaged reading and
+  the binding test with nothing decided between them. The audit's two reports: test2/AUDIT.md.
 - **One interruption:** a machine restart stopped the binding test after its chains and 11 of the incumbent's 12
   cells. No candidate cell existed yet; the remaining steps ran unchanged (deviation 5).
 
@@ -162,7 +163,7 @@ the holdout was read. Five seed triples per arm; one holdout read.
 **Data and timing:**
 - **Data job:** 79.1M prints, 10,042 merged windows, one feature row for each of 32,090 candidates. Gate passed: every
   window complete; print USD over candle USD has a median of 1.0002 in both eras.
-- **The repo's candles and the prints keep slightly different clocks.** They disagree in 14-23% of minutes. Most of it
+- **The repo's candles and the prints keep slightly different clocks.** They disagree in 13-20% of minutes. Most of it
   is harmless: the candles run ahead of the prints by about 8 s.
 - **The leak:** trades stamped before a candidate minute sit in its candle, or its previous candle is missing, for
   0.45% / 1.71% / 1.45% of candidates (selection / Apr - Nov 2026 / 2022-23).
@@ -176,7 +177,7 @@ the holdout was read. Five seed triples per arm; one holdout read.
 
 | Reading | RF6H | RF6 |
 |---|---|---|
-| Seed-averaged, frozen simulator (five seed triples) | +0.50 / +0.07 / as RF6 | -0.01 / -0.01 / +0.02 |
+| Seed-averaged, frozen simulator (five seed triples) | +0.50 / +0.07 / as RF6 | 0.00 / 0.00 / +0.02 |
 | The same at R2-08's selectivity | +0.42 / +0.18 / as RF6 | -0.05 / +0.04 / -0.06 |
 | Binding test: 15 seeds, engine-faithful, $250K, θ 0.5 | +0.26 / +0.04 / +0.15 | +0.05 / +0.03 / +0.15 |
 | Binding test at θ 0.25 | +0.33 / +0.12 / +0.15 | +0.10 / +0.03 / +0.15 |
@@ -196,17 +197,17 @@ the holdout was read. Five seed triples per arm; one holdout read.
   bit-identical to the first lab's.
 
 **Why:**
-- **The prints tell the model little that the candles do not.** Averaged over seeds they move R2-08 by -0.01 / -0.01 /
+- **The prints tell the model little that the candles do not.** Averaged over seeds they move R2-08 by 0.00 / 0.00 /
   +0.02. Taker-sell share follows the price path (rank correlation -0.34 to -0.38 with the window's return).
 - **RF6H's selection gain is the history again.** History alone was +0.37 in selection and -0.03 in Apr - Nov 2026.
 - **Beside the history the prints change selectivity, not ranking:** +0.13 / +0.11 at the model's own threshold
   (5 of 5 seed triples both times), +0.03 / +0.03 at R2-08's selectivity (3 of 5).
-- **The last minute adds nothing in sample.** The 0 s table, which includes it and the leak, did no better on the
-  selection era: RF6 +0.06 against -0.01, RF6H +0.43 against +0.50.
+- **The last minute adds nothing consistent in sample.** The 0 s table, which includes it and the leak, was not
+  consistently better on the selection era: RF6 +0.06 against 0.00, RF6H +0.43 against +0.50 (seed SD 0.14).
 - **The 2022-23 gain depends on the seed set:** +0.15 for the 15-seed model, +0.02 on average for the five 3-seed
-  triples (range -0.09 to +0.07).
-- **Every gain found so far is under the noise floor.** The pooled holdout difference has a standard error of 0.16
-  Sharpe over 2.6 years. A true +0.12 would need about 13 years of forward data to reach one-sided 5%.
+  triples (range -0.08 to +0.07).
+- **Every gain found so far is under the noise floor.** The pooled holdout difference has a standard error of 0.15
+  to 0.17 Sharpe over 2.6 years. A true +0.12 would need 11 to 13 years of forward data to reach one-sided 5%.
 
 **Next:**
 1. **Start the hourly open-interest and funding log.** The next model test needs it and it cannot be backfilled. As
@@ -223,4 +224,4 @@ the holdout was read. Five seed triples per arm; one holdout read.
 
 **Files:** test2_m60/ (selection.txt, seeded.txt, holdout.txt, sensitivity.csv, cells/), test2_m0/ (the 0 s table,
 selection era only), prints/ (QA.md, leak_flags.parquet), prints_m60/ (the tables the test read, with sha256),
-test2/AUDIT_PASSED. Data job: branch signal-lab-data (scripts/signal_lab/prints_*.py); raw prints are not stored.
+test2/AUDIT_PASSED, test2/AUDIT.md (the audit's two reports). Data job: branch signal-lab-data (scripts/signal_lab/prints_*.py); raw prints are not stored.

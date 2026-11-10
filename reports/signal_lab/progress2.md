@@ -107,3 +107,11 @@ print fetcher).
   README and the findings doc updated with the signal lab 2 section. Next: start the hourly log; next model test
   when about a year of it exists; the forward rules already fixed (paper, $10K pilot, capture share) decide R2-08's
   real Sharpe.
+- 20:51 Independent fact-check of the report doc, the README section and the findings text (a fresh Opus agent at max
+  effort, read-only): every binding, sensitivity and scorecard number recomputed from the daily cells and matching;
+  bootstrap p reproduced (0.223, 0.207). Nine wording or rounding corrections applied: RF6's seed-averaged means are
+  0.00 (not -0.01: -0.0049 and -0.0048); the 2022-23 triple range is -0.08 to +0.07; prints and candles disagree in
+  13-20% of minutes (not 14-23%); the pooled standard error is 0.15-0.17 (11 to 13 years for +0.12); "under +0.20
+  in a holdout era" holds in the primary configuration (both are +0.24 at $1M in 2022-23); the 0 s table is not
+  consistently better (better for RF6, worse for RF6H); the audit ran beside the selection readings. The audit's two
+  reports are now saved in test2/AUDIT.md. A chart of the result is in the report doc.
