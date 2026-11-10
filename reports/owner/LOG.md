@@ -208,7 +208,7 @@ FORWARD_TESTS.md.
   the bar of the minute that just closed is built from the public trades list with the bot's proof of completeness.
   A 25-minute test run gave 450 rows, all verified. The production collector picks it up at its next hand-over
   (about 21:44 UTC). Storage rises to about 7.5 MB a day for all streams.
-- **14:45. Reconciliation result: the paper book against the research on final candles** (main 7fd3195;
+- **14:41. Reconciliation result: the paper book against the research on final candles** (main 7fd3195;
   reports/owner/reconcile/README.md). 59.4 live hours, 787 new first bids, 13 first-bid fills.
   - **The bot's bid levels carry a late BTC.** Median error 0 bp; 5th and 95th percentiles about -23 and +13 bp; 40%
     of bids more than 5 bp off and 10% more than 20 bp. Beta times BTC's last-minute return explains it (correlation
