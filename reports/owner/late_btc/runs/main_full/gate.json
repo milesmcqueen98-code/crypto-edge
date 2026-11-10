@@ -1,0 +1,26 @@
+{
+ "trades": 1568,
+ "trades_ref": 1568,
+ "trades_identical": true,
+ "trades_max_pred_diff": 2.842170943040401e-14,
+ "panel_max_pred_diff": 0.0,
+ "panel_armed_mismatch": 0,
+ "panel_minutes": 16499520,
+ "sel": {
+  "sharpe": 2.9350836166557364,
+  "ret_pct": 22.79049101905688,
+  "target_sharpe": 2.94,
+  "target_ret_pct": 22.8,
+  "max_daily_diff_vs_R2_08_cell": 1.3877787807814457e-17,
+  "reproduces": true
+ },
+ "chk": {
+  "sharpe": 2.6609155677900613,
+  "ret_pct": 19.05378817031559,
+  "target_sharpe": 2.66,
+  "target_ret_pct": 19.1,
+  "max_daily_diff_vs_R2_08_cell": 3.469446951953614e-18,
+  "reproduces": true
+ },
+ "passed": true
+}
