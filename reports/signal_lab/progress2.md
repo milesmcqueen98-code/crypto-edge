@@ -76,3 +76,6 @@ print fetcher).
     RF0H), +0.13 (SD 0.05, 5 of 5; 0 s table: +0.06). History alone is +0.37.
   - So in sample the last minute before the fill adds nothing measurable, and the prints help only beside the
     history. The holdout decides.
+- 19:20 Lock opened (test2/AUDIT_PASSED, commit 355ee5b) after the audit's final pass and with the selection reading on
+  the 60 s table committed. The run agent starts the one holdout read: the seed-averaged reading (test2.py b), then
+  the binding test (test2.py c), on the 60 s table, with nothing decided between them. About two hours.
