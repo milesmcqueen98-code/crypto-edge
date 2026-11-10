@@ -243,3 +243,14 @@ FORWARD_TESTS.md.
   - **Reading.** This is larger than anything the three search rounds found (+0.03 to +0.18 Sharpe). The largest
     lever on realised Sharpe so far is making the live inputs equal the research inputs. It agrees with the paper
     book's own log (the Nov 8 drop).
+- **16:36. Release 2 on `main`** (4471a4f; reports/owner/RELEASES.md). Review of the finished build found three things,
+  fixed before the merge: the repair of a missed minute was wired only to the test market, not the live one; the
+  rule that an older answer never replaces a newer row covered only the six coins on trades and now covers all 18;
+  one decorator.
+  - Checked by the owner on the final code: the unit tests, the live-path simulation (540 minutes, 111 entries,
+    $11,723.34) and the parity replay (156 rungs, 88 parents, every rung identical).
+  - On a GitHub runner the new mode had its data ready at a median of 9.8 s after the minute (12.0 s at the latest),
+    with 48 of 48 bars built from trades and no fallback.
+  - The main and W2 paper books had resumed at 19:57 UTC on GitHub's late schedule. The next paper run is queued
+    behind that one; it starts all three books with the hand-over at about 01:50 UTC on Nov 11.
+  - Nothing changes for the main book, W2 or a live bot until release 3.

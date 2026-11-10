@@ -96,10 +96,15 @@ reported with a 100-point scorecard.
 - Never a rolling window: a one-year window cost about 1.0 Sharpe out of sample.
 
 ## Monitoring
-- **reports/owner/PAPER_STATUS.md:** refreshed after every paper run. Fills, net per dollar, errors, and progress
-  against forward rule A.
+- **reports/owner/PAPER_STATUS.md:** refreshed after every paper run. How much of the time each book was live,
+  fills, net per dollar, errors, progress against forward rule A, the data counters from each book's heartbeat (old
+  candle answers, a stale BTC, step times), and the third book's progress on its three-day rule.
 - **The forward collector** (scripts/forward, data on branch forward-data): minute-level book depth, the candles as
-  the bot sees them at decision time, open interest and funding.
+  the bot sees them at decision time with the age of each answer, a bar built from trades for every coin and minute,
+  open interest and funding. scripts/forward/input_checks.py turns it into a daily table of each input source
+  against the final candle.
+- **Paper against research** (scripts/owner/reconcile): the bot's logged bids and fills set against what its own
+  code computes from final candles. Run for Nov 6 to Nov 10; repeated at each read of a paper book.
 - **FORWARD_TESTS.md:** every open test, its read date and its pass rule.
 
 ## Stops (unchanged)
