@@ -1,0 +1,27 @@
+Signal lab 2, seed-averaged holdout reading (whole walk-forward; in 2022-23 RF6H is RF6 and RF6HM is RF6M)
+
+ΔSharpe against RF0 with the same seed triple (frozen simulator, S* theta 0.5, $250K): mean, SD across the five triples, range, triples positive; mean Sharpe of the arm and of RF0
+
+== sel
+       triples  d_mean   d_sd  d_min  d_max  positive  sharpe_mean  inc_mean
+spec                                                                        
+RF6          5  -0.005  0.047 -0.045  0.066         2        2.391     2.396
+RF6H         5   0.500  0.148  0.256  0.637         5        2.896     2.396
+RF6M         5  -0.054  0.154 -0.323  0.063         3        2.341     2.396
+RF6HM        5   0.418  0.208  0.061  0.609         5        2.814     2.396
+
+== chk
+       triples  d_mean   d_sd  d_min  d_max  positive  sharpe_mean  inc_mean
+spec                                                                        
+RF6          5  -0.005  0.081 -0.071  0.134         1        2.602     2.607
+RF6H         5   0.074  0.187 -0.135  0.282         3        2.681     2.607
+RF6M         5   0.040  0.203 -0.120  0.387         2        2.647     2.607
+RF6HM        5   0.178  0.151  0.010  0.316         5        2.785     2.607
+
+== early
+       triples  d_mean   d_sd  d_min  d_max  positive  sharpe_mean  inc_mean
+spec                                                                        
+RF6          5   0.023  0.063 -0.085  0.067         4        1.645     1.623
+RF6H         5   0.023  0.063 -0.085  0.067         4        1.645     1.623
+RF6M         5  -0.055  0.042 -0.106 -0.016         0        1.567     1.623
+RF6HM        5  -0.055  0.042 -0.106 -0.016         0        1.567     1.623

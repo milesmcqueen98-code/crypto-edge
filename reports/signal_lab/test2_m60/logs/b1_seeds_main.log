@@ -1,0 +1,539 @@
+/home/claude/wt/v6x/scripts/lab/core.py:81: RuntimeWarning: Mean of empty slice
+  self.basket_lp = np.nancumsum(np.nanmean(r, axis=0))          # equal-weight market factor (log level)
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+lab ready: 17,527 candidates, 17 coins (33s)
+  AAVE: 76 trades, venues ['spot', 'perp']
+  BCH: 75 trades, venues ['spot', 'perp']
+  DOGE: 156 trades, venues ['spot', 'perp']
+  ENA: 74 trades, venues ['spot', 'perp']
+  ETH: 71 trades, venues ['spot', 'perp']
+  HBAR: 78 trades, venues ['spot', 'perp']
+  HYPE: 8 trades, venues ['spot', 'perp']
+  LINK: 113 trades, venues ['spot', 'perp']
+  LTC: 72 trades, venues ['spot', 'perp']
+  NEAR: 94 trades, venues ['spot', 'perp']
+  ONDO: 99 trades, venues ['spot', 'perp']
+  PEPE: 86 trades, venues ['spot', 'perp']
+  SOL: 146 trades, venues ['spot', 'perp']
+  SUI: 145 trades, venues ['spot', 'perp']
+  XLM: 77 trades, venues ['spot', 'perp']
+  XRP: 135 trades, venues ['spot', 'perp']
+  ZEC: 63 trades, venues ['spot', 'perp']
+precomputed 4701 tranche rows for 1051 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF0', 'seeds': '(7, 11, 23)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.363207584274609, 'ret_yr': 0.21245136414979546}
+{'spec': 'RF0', 'seeds': '(7, 11, 23)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.5691171809189264, 'ret_yr': 0.1756066228349839}
+F6 joined from /home/claude/wt/v6x/reports/signal_lab/prints_m60/f6_main.parquet: 17,527 candidates, 0 table rows unused; complete windows 1.0000 of the table; missing share csv_30 0.001, csv_5 0.001, sell_share_30 0.000, big_sell_share_30 0.001, sweep_max_30 0.001
+  AAVE: 77 trades, venues ['spot', 'perp']
+  BCH: 76 trades, venues ['spot', 'perp']
+  DOGE: 161 trades, venues ['spot', 'perp']
+  ENA: 73 trades, venues ['spot', 'perp']
+  ETH: 74 trades, venues ['spot', 'perp']
+  HBAR: 78 trades, venues ['spot', 'perp']
+  HYPE: 8 trades, venues ['spot', 'perp']
+  LINK: 116 trades, venues ['spot', 'perp']
+  LTC: 73 trades, venues ['spot', 'perp']
+  NEAR: 93 trades, venues ['spot', 'perp']
+  ONDO: 97 trades, venues ['spot', 'perp']
+  PEPE: 86 trades, venues ['spot', 'perp']
+  SOL: 146 trades, venues ['spot', 'perp']
+  SUI: 143 trades, venues ['spot', 'perp']
+  XLM: 72 trades, venues ['spot', 'perp']
+  XRP: 138 trades, venues ['spot', 'perp']
+  ZEC: 67 trades, venues ['spot', 'perp']
+precomputed 4731 tranche rows for 1057 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6', 'seeds': '(7, 11, 23)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.3782660239899123, 'ret_yr': 0.2134106108370194}
+{'spec': 'RF6', 'seeds': '(7, 11, 23)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.5647287360112356, 'ret_yr': 0.17722660158616305}
+history rows carry F6 (14,563 rows, equal to /home/claude/wt/v6x/reports/signal_lab/prints_m60/f6_early.parquet)
+  AAVE: 74 trades, venues ['spot', 'perp']
+  BCH: 64 trades, venues ['spot', 'perp']
+  DOGE: 152 trades, venues ['spot', 'perp']
+  ENA: 72 trades, venues ['spot', 'perp']
+  ETH: 70 trades, venues ['spot', 'perp']
+  HBAR: 67 trades, venues ['spot', 'perp']
+  HYPE: 9 trades, venues ['spot', 'perp']
+  LINK: 108 trades, venues ['spot', 'perp']
+  LTC: 78 trades, venues ['spot', 'perp']
+  NEAR: 99 trades, venues ['spot', 'perp']
+  ONDO: 89 trades, venues ['spot', 'perp']
+  PEPE: 91 trades, venues ['spot', 'perp']
+  SOL: 127 trades, venues ['spot', 'perp']
+  SUI: 127 trades, venues ['spot', 'perp']
+  XLM: 78 trades, venues ['spot', 'perp']
+  XRP: 116 trades, venues ['spot', 'perp']
+  ZEC: 88 trades, venues ['spot', 'perp']
+precomputed 4524 tranche rows for 1011 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6H', 'seeds': '(7, 11, 23)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.945561618077163, 'ret_yr': 0.24589153059814522}
+{'spec': 'RF6H', 'seeds': '(7, 11, 23)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.6851713517608573, 'ret_yr': 0.1750066122252436}
+  AAVE: 76 trades, venues ['spot', 'perp']
+  BCH: 74 trades, venues ['spot', 'perp']
+  DOGE: 161 trades, venues ['spot', 'perp']
+  ENA: 72 trades, venues ['spot', 'perp']
+  ETH: 69 trades, venues ['spot', 'perp']
+  HBAR: 78 trades, venues ['spot', 'perp']
+  HYPE: 8 trades, venues ['spot', 'perp']
+  LINK: 116 trades, venues ['spot', 'perp']
+  LTC: 73 trades, venues ['spot', 'perp']
+  NEAR: 93 trades, venues ['spot', 'perp']
+  ONDO: 97 trades, venues ['spot', 'perp']
+  PEPE: 86 trades, venues ['spot', 'perp']
+  SOL: 146 trades, venues ['spot', 'perp']
+  SUI: 144 trades, venues ['spot', 'perp']
+  XLM: 73 trades, venues ['spot', 'perp']
+  XRP: 138 trades, venues ['spot', 'perp']
+  ZEC: 66 trades, venues ['spot', 'perp']
+precomputed 4707 tranche rows for 1052 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6M', 'seeds': '(7, 11, 23)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.375578915264286, 'ret_yr': 0.21247393501515835}
+{'spec': 'RF6M', 'seeds': '(7, 11, 23)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.449406938054049, 'ret_yr': 0.17128867941303616}
+  AAVE: 78 trades, venues ['spot', 'perp']
+  BCH: 68 trades, venues ['spot', 'perp']
+  DOGE: 154 trades, venues ['spot', 'perp']
+  ENA: 72 trades, venues ['spot', 'perp']
+  ETH: 68 trades, venues ['spot', 'perp']
+  HBAR: 67 trades, venues ['spot', 'perp']
+  HYPE: 10 trades, venues ['spot', 'perp']
+  LINK: 109 trades, venues ['spot', 'perp']
+  LTC: 80 trades, venues ['spot', 'perp']
+  NEAR: 98 trades, venues ['spot', 'perp']
+  ONDO: 87 trades, venues ['spot', 'perp']
+  PEPE: 91 trades, venues ['spot', 'perp']
+  SOL: 124 trades, venues ['spot', 'perp']
+  SUI: 133 trades, venues ['spot', 'perp']
+  XLM: 82 trades, venues ['spot', 'perp']
+  XRP: 119 trades, venues ['spot', 'perp']
+  ZEC: 87 trades, venues ['spot', 'perp']
+precomputed 4578 tranche rows for 1021 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6HM', 'seeds': '(7, 11, 23)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.8246217830040634, 'ret_yr': 0.24103822164946778}
+{'spec': 'RF6HM', 'seeds': '(7, 11, 23)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.8106734318474516, 'ret_yr': 0.18321495482180647}
+  AAVE: 78 trades, venues ['spot', 'perp']
+  BCH: 74 trades, venues ['spot', 'perp']
+  DOGE: 158 trades, venues ['spot', 'perp']
+  ENA: 75 trades, venues ['spot', 'perp']
+  ETH: 78 trades, venues ['spot', 'perp']
+  HBAR: 79 trades, venues ['spot', 'perp']
+  HYPE: 9 trades, venues ['spot', 'perp']
+  LINK: 116 trades, venues ['spot', 'perp']
+  LTC: 73 trades, venues ['spot', 'perp']
+  NEAR: 95 trades, venues ['spot', 'perp']
+  ONDO: 99 trades, venues ['spot', 'perp']
+  PEPE: 86 trades, venues ['spot', 'perp']
+  SOL: 146 trades, venues ['spot', 'perp']
+  SUI: 145 trades, venues ['spot', 'perp']
+  XLM: 78 trades, venues ['spot', 'perp']
+  XRP: 133 trades, venues ['spot', 'perp']
+  ZEC: 64 trades, venues ['spot', 'perp']
+precomputed 4755 tranche rows for 1061 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF0', 'seeds': '(1, 2, 3)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.367971626775379, 'ret_yr': 0.21487497703625658}
+{'spec': 'RF0', 'seeds': '(1, 2, 3)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.5084825821372196, 'ret_yr': 0.17507946688161102}
+  AAVE: 77 trades, venues ['spot', 'perp']
+  BCH: 73 trades, venues ['spot', 'perp']
+  DOGE: 156 trades, venues ['spot', 'perp']
+  ENA: 77 trades, venues ['spot', 'perp']
+  ETH: 71 trades, venues ['spot', 'perp']
+  HBAR: 78 trades, venues ['spot', 'perp']
+  HYPE: 9 trades, venues ['spot', 'perp']
+  LINK: 112 trades, venues ['spot', 'perp']
+  LTC: 73 trades, venues ['spot', 'perp']
+  NEAR: 92 trades, venues ['spot', 'perp']
+  ONDO: 99 trades, venues ['spot', 'perp']
+  PEPE: 87 trades, venues ['spot', 'perp']
+  SOL: 145 trades, venues ['spot', 'perp']
+  SUI: 144 trades, venues ['spot', 'perp']
+  XLM: 79 trades, venues ['spot', 'perp']
+  XRP: 132 trades, venues ['spot', 'perp']
+  ZEC: 64 trades, venues ['spot', 'perp']
+precomputed 4701 tranche rows for 1058 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6', 'seeds': '(1, 2, 3)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.3229235176316547, 'ret_yr': 0.2093628783357767}
+{'spec': 'RF6', 'seeds': '(1, 2, 3)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.4616310526179035, 'ret_yr': 0.17119029697950716}
+  AAVE: 73 trades, venues ['spot', 'perp']
+  BCH: 62 trades, venues ['spot', 'perp']
+  DOGE: 151 trades, venues ['spot', 'perp']
+  ENA: 71 trades, venues ['spot', 'perp']
+  ETH: 68 trades, venues ['spot', 'perp']
+  HBAR: 69 trades, venues ['spot', 'perp']
+  HYPE: 10 trades, venues ['spot', 'perp']
+  LINK: 109 trades, venues ['spot', 'perp']
+  LTC: 80 trades, venues ['spot', 'perp']
+  NEAR: 97 trades, venues ['spot', 'perp']
+  ONDO: 89 trades, venues ['spot', 'perp']
+  PEPE: 90 trades, venues ['spot', 'perp']
+  SOL: 125 trades, venues ['spot', 'perp']
+  SUI: 125 trades, venues ['spot', 'perp']
+  XLM: 80 trades, venues ['spot', 'perp']
+  XRP: 115 trades, venues ['spot', 'perp']
+  ZEC: 88 trades, venues ['spot', 'perp']
+precomputed 4503 tranche rows for 1013 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6H', 'seeds': '(1, 2, 3)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.913630649413979, 'ret_yr': 0.24341519615099116}
+{'spec': 'RF6H', 'seeds': '(1, 2, 3)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.7196823950328137, 'ret_yr': 0.17548742152965013}
+  AAVE: 76 trades, venues ['spot', 'perp']
+  BCH: 76 trades, venues ['spot', 'perp']
+  DOGE: 156 trades, venues ['spot', 'perp']
+  ENA: 78 trades, venues ['spot', 'perp']
+  ETH: 73 trades, venues ['spot', 'perp']
+  HBAR: 78 trades, venues ['spot', 'perp']
+  HYPE: 9 trades, venues ['spot', 'perp']
+  LINK: 115 trades, venues ['spot', 'perp']
+  LTC: 73 trades, venues ['spot', 'perp']
+  NEAR: 94 trades, venues ['spot', 'perp']
+  ONDO: 103 trades, venues ['spot', 'perp']
+  PEPE: 89 trades, venues ['spot', 'perp']
+  SOL: 148 trades, venues ['spot', 'perp']
+  SUI: 144 trades, venues ['spot', 'perp']
+  XLM: 79 trades, venues ['spot', 'perp']
+  XRP: 137 trades, venues ['spot', 'perp']
+  ZEC: 65 trades, venues ['spot', 'perp']
+precomputed 4776 tranche rows for 1079 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6M', 'seeds': '(1, 2, 3)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.3782520059322545, 'ret_yr': 0.21289853246043358}
+{'spec': 'RF6M', 'seeds': '(1, 2, 3)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.541222240541555, 'ret_yr': 0.1708905425263511}
+  AAVE: 78 trades, venues ['spot', 'perp']
+  BCH: 67 trades, venues ['spot', 'perp']
+  DOGE: 162 trades, venues ['spot', 'perp']
+  ENA: 71 trades, venues ['spot', 'perp']
+  ETH: 69 trades, venues ['spot', 'perp']
+  HBAR: 68 trades, venues ['spot', 'perp']
+  HYPE: 11 trades, venues ['spot', 'perp']
+  LINK: 112 trades, venues ['spot', 'perp']
+  LTC: 81 trades, venues ['spot', 'perp']
+  NEAR: 100 trades, venues ['spot', 'perp']
+  ONDO: 89 trades, venues ['spot', 'perp']
+  PEPE: 91 trades, venues ['spot', 'perp']
+  SOL: 126 trades, venues ['spot', 'perp']
+  SUI: 134 trades, venues ['spot', 'perp']
+  XLM: 81 trades, venues ['spot', 'perp']
+  XRP: 122 trades, venues ['spot', 'perp']
+  ZEC: 89 trades, venues ['spot', 'perp']
+precomputed 4650 tranche rows for 1043 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6HM', 'seeds': '(1, 2, 3)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.8431339249802883, 'ret_yr': 0.23823964220706495}
+{'spec': 'RF6HM', 'seeds': '(1, 2, 3)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.8106589759424994, 'ret_yr': 0.18241835695149244}
+  AAVE: 77 trades, venues ['spot', 'perp']
+  BCH: 70 trades, venues ['spot', 'perp']
+  DOGE: 153 trades, venues ['spot', 'perp']
+  ENA: 78 trades, venues ['spot', 'perp']
+  ETH: 76 trades, venues ['spot', 'perp']
+  HBAR: 78 trades, venues ['spot', 'perp']
+  HYPE: 9 trades, venues ['spot', 'perp']
+  LINK: 115 trades, venues ['spot', 'perp']
+  LTC: 72 trades, venues ['spot', 'perp']
+  NEAR: 95 trades, venues ['spot', 'perp']
+  ONDO: 99 trades, venues ['spot', 'perp']
+  PEPE: 87 trades, venues ['spot', 'perp']
+  SOL: 142 trades, venues ['spot', 'perp']
+  SUI: 144 trades, venues ['spot', 'perp']
+  XLM: 76 trades, venues ['spot', 'perp']
+  XRP: 134 trades, venues ['spot', 'perp']
+  ZEC: 62 trades, venues ['spot', 'perp']
+precomputed 4698 tranche rows for 1055 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF0', 'seeds': '(4, 5, 6)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.618728039926776, 'ret_yr': 0.22517323076144294}
+{'spec': 'RF0', 'seeds': '(4, 5, 6)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.4300254780856285, 'ret_yr': 0.1691220668352029}
+  AAVE: 76 trades, venues ['spot', 'perp']
+  BCH: 74 trades, venues ['spot', 'perp']
+  DOGE: 157 trades, venues ['spot', 'perp']
+  ENA: 75 trades, venues ['spot', 'perp']
+  ETH: 72 trades, venues ['spot', 'perp']
+  HBAR: 77 trades, venues ['spot', 'perp']
+  HYPE: 9 trades, venues ['spot', 'perp']
+  LINK: 112 trades, venues ['spot', 'perp']
+  LTC: 73 trades, venues ['spot', 'perp']
+  NEAR: 92 trades, venues ['spot', 'perp']
+  ONDO: 98 trades, venues ['spot', 'perp']
+  PEPE: 84 trades, venues ['spot', 'perp']
+  SOL: 150 trades, venues ['spot', 'perp']
+  SUI: 147 trades, venues ['spot', 'perp']
+  XLM: 76 trades, venues ['spot', 'perp']
+  XRP: 138 trades, venues ['spot', 'perp']
+  ZEC: 66 trades, venues ['spot', 'perp']
+precomputed 4725 tranche rows for 1069 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6', 'seeds': '(4, 5, 6)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.5741895322248447, 'ret_yr': 0.22538052438609368}
+{'spec': 'RF6', 'seeds': '(4, 5, 6)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.5638126491465645, 'ret_yr': 0.17693703191473462}
+  AAVE: 73 trades, venues ['spot', 'perp']
+  BCH: 61 trades, venues ['spot', 'perp']
+  DOGE: 157 trades, venues ['spot', 'perp']
+  ENA: 71 trades, venues ['spot', 'perp']
+  ETH: 67 trades, venues ['spot', 'perp']
+  HBAR: 68 trades, venues ['spot', 'perp']
+  HYPE: 10 trades, venues ['spot', 'perp']
+  LINK: 107 trades, venues ['spot', 'perp']
+  LTC: 79 trades, venues ['spot', 'perp']
+  NEAR: 98 trades, venues ['spot', 'perp']
+  ONDO: 88 trades, venues ['spot', 'perp']
+  PEPE: 90 trades, venues ['spot', 'perp']
+  SOL: 125 trades, venues ['spot', 'perp']
+  SUI: 127 trades, venues ['spot', 'perp']
+  XLM: 78 trades, venues ['spot', 'perp']
+  XRP: 118 trades, venues ['spot', 'perp']
+  ZEC: 86 trades, venues ['spot', 'perp']
+precomputed 4506 tranche rows for 1011 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6H', 'seeds': '(4, 5, 6)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.8746142108718584, 'ret_yr': 0.23797182166824452}
+{'spec': 'RF6H', 'seeds': '(4, 5, 6)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.7119392353864984, 'ret_yr': 0.17636029639498282}
+  AAVE: 73 trades, venues ['spot', 'perp']
+  BCH: 73 trades, venues ['spot', 'perp']
+  DOGE: 156 trades, venues ['spot', 'perp']
+  ENA: 75 trades, venues ['spot', 'perp']
+  ETH: 72 trades, venues ['spot', 'perp']
+  HBAR: 78 trades, venues ['spot', 'perp']
+  HYPE: 9 trades, venues ['spot', 'perp']
+  LINK: 113 trades, venues ['spot', 'perp']
+  LTC: 74 trades, venues ['spot', 'perp']
+  NEAR: 92 trades, venues ['spot', 'perp']
+  ONDO: 99 trades, venues ['spot', 'perp']
+  PEPE: 86 trades, venues ['spot', 'perp']
+  SOL: 151 trades, venues ['spot', 'perp']
+  SUI: 147 trades, venues ['spot', 'perp']
+  XLM: 75 trades, venues ['spot', 'perp']
+  XRP: 136 trades, venues ['spot', 'perp']
+  ZEC: 65 trades, venues ['spot', 'perp']
+precomputed 4719 tranche rows for 1063 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6M', 'seeds': '(4, 5, 6)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.295506232737061, 'ret_yr': 0.20839500955049117}
+{'spec': 'RF6M', 'seeds': '(4, 5, 6)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.816770141609781, 'ret_yr': 0.18831313672558192}
+  AAVE: 75 trades, venues ['spot', 'perp']
+  BCH: 63 trades, venues ['spot', 'perp']
+  DOGE: 158 trades, venues ['spot', 'perp']
+  ENA: 71 trades, venues ['spot', 'perp']
+  ETH: 68 trades, venues ['spot', 'perp']
+  HBAR: 68 trades, venues ['spot', 'perp']
+  HYPE: 11 trades, venues ['spot', 'perp']
+  LINK: 110 trades, venues ['spot', 'perp']
+  LTC: 81 trades, venues ['spot', 'perp']
+  NEAR: 98 trades, venues ['spot', 'perp']
+  ONDO: 89 trades, venues ['spot', 'perp']
+  PEPE: 91 trades, venues ['spot', 'perp']
+  SOL: 125 trades, venues ['spot', 'perp']
+  SUI: 134 trades, venues ['spot', 'perp']
+  XLM: 80 trades, venues ['spot', 'perp']
+  XRP: 120 trades, venues ['spot', 'perp']
+  ZEC: 87 trades, venues ['spot', 'perp']
+precomputed 4584 tranche rows for 1033 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6HM', 'seeds': '(4, 5, 6)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.680051314861773, 'ret_yr': 0.2269341087142215}
+{'spec': 'RF6HM', 'seeds': '(4, 5, 6)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.746384368028622, 'ret_yr': 0.1803697232048052}
+  AAVE: 76 trades, venues ['spot', 'perp']
+  BCH: 71 trades, venues ['spot', 'perp']
+  DOGE: 155 trades, venues ['spot', 'perp']
+  ENA: 76 trades, venues ['spot', 'perp']
+  ETH: 74 trades, venues ['spot', 'perp']
+  HBAR: 78 trades, venues ['spot', 'perp']
+  HYPE: 9 trades, venues ['spot', 'perp']
+  LINK: 111 trades, venues ['spot', 'perp']
+  LTC: 72 trades, venues ['spot', 'perp']
+  NEAR: 95 trades, venues ['spot', 'perp']
+  ONDO: 97 trades, venues ['spot', 'perp']
+  PEPE: 84 trades, venues ['spot', 'perp']
+  SOL: 145 trades, venues ['spot', 'perp']
+  SUI: 146 trades, venues ['spot', 'perp']
+  XLM: 75 trades, venues ['spot', 'perp']
+  XRP: 135 trades, venues ['spot', 'perp']
+  ZEC: 65 trades, venues ['spot', 'perp']
+precomputed 4689 tranche rows for 1051 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF0', 'seeds': '(8, 9, 10)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.2794458882979276, 'ret_yr': 0.2085038196234775}
+{'spec': 'RF0', 'seeds': '(8, 9, 10)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.7791351875530044, 'ret_yr': 0.1875883619102299}
+  AAVE: 76 trades, venues ['spot', 'perp']
+  BCH: 73 trades, venues ['spot', 'perp']
+  DOGE: 153 trades, venues ['spot', 'perp']
+  ENA: 74 trades, venues ['spot', 'perp']
+  ETH: 71 trades, venues ['spot', 'perp']
+  HBAR: 78 trades, venues ['spot', 'perp']
+  HYPE: 9 trades, venues ['spot', 'perp']
+  LINK: 115 trades, venues ['spot', 'perp']
+  LTC: 74 trades, venues ['spot', 'perp']
+  NEAR: 93 trades, venues ['spot', 'perp']
+  ONDO: 97 trades, venues ['spot', 'perp']
+  PEPE: 85 trades, venues ['spot', 'perp']
+  SOL: 149 trades, venues ['spot', 'perp']
+  SUI: 143 trades, venues ['spot', 'perp']
+  XLM: 74 trades, venues ['spot', 'perp']
+  XRP: 138 trades, venues ['spot', 'perp']
+  ZEC: 65 trades, venues ['spot', 'perp']
+precomputed 4698 tranche rows for 1060 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6', 'seeds': '(8, 9, 10)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.345281070882493, 'ret_yr': 0.21088599725652699}
+{'spec': 'RF6', 'seeds': '(8, 9, 10)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.743312981288806, 'ret_yr': 0.18549684757591364}
+  AAVE: 73 trades, venues ['spot', 'perp']
+  BCH: 65 trades, venues ['spot', 'perp']
+  DOGE: 149 trades, venues ['spot', 'perp']
+  ENA: 72 trades, venues ['spot', 'perp']
+  ETH: 67 trades, venues ['spot', 'perp']
+  HBAR: 67 trades, venues ['spot', 'perp']
+  HYPE: 10 trades, venues ['spot', 'perp']
+  LINK: 108 trades, venues ['spot', 'perp']
+  LTC: 79 trades, venues ['spot', 'perp']
+  NEAR: 97 trades, venues ['spot', 'perp']
+  ONDO: 88 trades, venues ['spot', 'perp']
+  PEPE: 90 trades, venues ['spot', 'perp']
+  SOL: 125 trades, venues ['spot', 'perp']
+  SUI: 127 trades, venues ['spot', 'perp']
+  XLM: 80 trades, venues ['spot', 'perp']
+  XRP: 118 trades, venues ['spot', 'perp']
+  ZEC: 86 trades, venues ['spot', 'perp']
+precomputed 4500 tranche rows for 1014 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6H', 'seeds': '(8, 9, 10)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.9162776966944457, 'ret_yr': 0.24783698829054607}
+{'spec': 'RF6H', 'seeds': '(8, 9, 10)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.6441262344331373, 'ret_yr': 0.17284522034427394}
+  AAVE: 76 trades, venues ['spot', 'perp']
+  BCH: 76 trades, venues ['spot', 'perp']
+  DOGE: 153 trades, venues ['spot', 'perp']
+  ENA: 75 trades, venues ['spot', 'perp']
+  ETH: 71 trades, venues ['spot', 'perp']
+  HBAR: 78 trades, venues ['spot', 'perp']
+  HYPE: 9 trades, venues ['spot', 'perp']
+  LINK: 114 trades, venues ['spot', 'perp']
+  LTC: 73 trades, venues ['spot', 'perp']
+  NEAR: 95 trades, venues ['spot', 'perp']
+  ONDO: 100 trades, venues ['spot', 'perp']
+  PEPE: 85 trades, venues ['spot', 'perp']
+  SOL: 147 trades, venues ['spot', 'perp']
+  SUI: 143 trades, venues ['spot', 'perp']
+  XLM: 74 trades, venues ['spot', 'perp']
+  XRP: 138 trades, venues ['spot', 'perp']
+  ZEC: 65 trades, venues ['spot', 'perp']
+precomputed 4713 tranche rows for 1058 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6M', 'seeds': '(8, 9, 10)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.34251257336047, 'ret_yr': 0.21083435276660872}
+{'spec': 'RF6M', 'seeds': '(8, 9, 10)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.7631591785304614, 'ret_yr': 0.1807919489395241}
+  AAVE: 75 trades, venues ['spot', 'perp']
+  BCH: 65 trades, venues ['spot', 'perp']
+  DOGE: 157 trades, venues ['spot', 'perp']
+  ENA: 71 trades, venues ['spot', 'perp']
+  ETH: 69 trades, venues ['spot', 'perp']
+  HBAR: 67 trades, venues ['spot', 'perp']
+  HYPE: 10 trades, venues ['spot', 'perp']
+  LINK: 109 trades, venues ['spot', 'perp']
+  LTC: 81 trades, venues ['spot', 'perp']
+  NEAR: 97 trades, venues ['spot', 'perp']
+  ONDO: 86 trades, venues ['spot', 'perp']
+  PEPE: 90 trades, venues ['spot', 'perp']
+  SOL: 126 trades, venues ['spot', 'perp']
+  SUI: 132 trades, venues ['spot', 'perp']
+  XLM: 81 trades, venues ['spot', 'perp']
+  XRP: 120 trades, venues ['spot', 'perp']
+  ZEC: 87 trades, venues ['spot', 'perp']
+precomputed 4566 tranche rows for 1029 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6HM', 'seeds': '(8, 9, 10)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.8885014299785365, 'ret_yr': 0.2466245948119322}
+{'spec': 'RF6HM', 'seeds': '(8, 9, 10)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.8005770160206733, 'ret_yr': 0.1825649104489204}
+  AAVE: 75 trades, venues ['spot', 'perp']
+  BCH: 73 trades, venues ['spot', 'perp']
+  DOGE: 156 trades, venues ['spot', 'perp']
+  ENA: 75 trades, venues ['spot', 'perp']
+  ETH: 74 trades, venues ['spot', 'perp']
+  HBAR: 77 trades, venues ['spot', 'perp']
+  HYPE: 8 trades, venues ['spot', 'perp']
+  LINK: 115 trades, venues ['spot', 'perp']
+  LTC: 73 trades, venues ['spot', 'perp']
+  NEAR: 95 trades, venues ['spot', 'perp']
+  ONDO: 97 trades, venues ['spot', 'perp']
+  PEPE: 84 trades, venues ['spot', 'perp']
+  SOL: 144 trades, venues ['spot', 'perp']
+  SUI: 146 trades, venues ['spot', 'perp']
+  XLM: 77 trades, venues ['spot', 'perp']
+  XRP: 133 trades, venues ['spot', 'perp']
+  ZEC: 63 trades, venues ['spot', 'perp']
+precomputed 4692 tranche rows for 1048 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF0', 'seeds': '(12, 13, 14)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.3497658562089163, 'ret_yr': 0.209040558393074}
+{'spec': 'RF0', 'seeds': '(12, 13, 14)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.7482962986023196, 'ret_yr': 0.1836916167207935}
+  AAVE: 76 trades, venues ['spot', 'perp']
+  BCH: 74 trades, venues ['spot', 'perp']
+  DOGE: 157 trades, venues ['spot', 'perp']
+  ENA: 74 trades, venues ['spot', 'perp']
+  ETH: 72 trades, venues ['spot', 'perp']
+  HBAR: 78 trades, venues ['spot', 'perp']
+  HYPE: 9 trades, venues ['spot', 'perp']
+  LINK: 111 trades, venues ['spot', 'perp']
+  LTC: 73 trades, venues ['spot', 'perp']
+  NEAR: 93 trades, venues ['spot', 'perp']
+  ONDO: 98 trades, venues ['spot', 'perp']
+  PEPE: 86 trades, venues ['spot', 'perp']
+  SOL: 147 trades, venues ['spot', 'perp']
+  SUI: 145 trades, venues ['spot', 'perp']
+  XLM: 76 trades, venues ['spot', 'perp']
+  XRP: 136 trades, venues ['spot', 'perp']
+  ZEC: 65 trades, venues ['spot', 'perp']
+precomputed 4707 tranche rows for 1058 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6', 'seeds': '(12, 13, 14)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.3340216410668897, 'ret_yr': 0.20846539433530453}
+{'spec': 'RF6', 'seeds': '(12, 13, 14)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.6774411141248216, 'ret_yr': 0.18169264166725968}
+  AAVE: 73 trades, venues ['spot', 'perp']
+  BCH: 62 trades, venues ['spot', 'perp']
+  DOGE: 157 trades, venues ['spot', 'perp']
+  ENA: 71 trades, venues ['spot', 'perp']
+  ETH: 68 trades, venues ['spot', 'perp']
+  HBAR: 69 trades, venues ['spot', 'perp']
+  HYPE: 9 trades, venues ['spot', 'perp']
+  LINK: 108 trades, venues ['spot', 'perp']
+  LTC: 78 trades, venues ['spot', 'perp']
+  NEAR: 100 trades, venues ['spot', 'perp']
+  ONDO: 89 trades, venues ['spot', 'perp']
+  PEPE: 91 trades, venues ['spot', 'perp']
+  SOL: 125 trades, venues ['spot', 'perp']
+  SUI: 131 trades, venues ['spot', 'perp']
+  XLM: 82 trades, venues ['spot', 'perp']
+  XRP: 113 trades, venues ['spot', 'perp']
+  ZEC: 87 trades, venues ['spot', 'perp']
+precomputed 4536 tranche rows for 1020 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6H', 'seeds': '(12, 13, 14)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.830668203450579, 'ret_yr': 0.23836839438711963}
+{'spec': 'RF6H', 'seeds': '(12, 13, 14)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.6441284352560834, 'ret_yr': 0.17267847976057235}
+  AAVE: 76 trades, venues ['spot', 'perp']
+  BCH: 74 trades, venues ['spot', 'perp']
+  DOGE: 156 trades, venues ['spot', 'perp']
+  ENA: 74 trades, venues ['spot', 'perp']
+  ETH: 69 trades, venues ['spot', 'perp']
+  HBAR: 78 trades, venues ['spot', 'perp']
+  HYPE: 9 trades, venues ['spot', 'perp']
+  LINK: 111 trades, venues ['spot', 'perp']
+  LTC: 73 trades, venues ['spot', 'perp']
+  NEAR: 93 trades, venues ['spot', 'perp']
+  ONDO: 100 trades, venues ['spot', 'perp']
+  PEPE: 86 trades, venues ['spot', 'perp']
+  SOL: 147 trades, venues ['spot', 'perp']
+  SUI: 145 trades, venues ['spot', 'perp']
+  XLM: 76 trades, venues ['spot', 'perp']
+  XRP: 136 trades, venues ['spot', 'perp']
+  ZEC: 65 trades, venues ['spot', 'perp']
+precomputed 4701 tranche rows for 1056 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6M', 'seeds': '(12, 13, 14)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.3150205130256594, 'ret_yr': 0.20718387492576637}
+{'spec': 'RF6M', 'seeds': '(12, 13, 14)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.6653384070896786, 'ret_yr': 0.18089354946914288}
+  AAVE: 76 trades, venues ['spot', 'perp']
+  BCH: 61 trades, venues ['spot', 'perp']
+  DOGE: 161 trades, venues ['spot', 'perp']
+  ENA: 72 trades, venues ['spot', 'perp']
+  ETH: 69 trades, venues ['spot', 'perp']
+  HBAR: 69 trades, venues ['spot', 'perp']
+  HYPE: 10 trades, venues ['spot', 'perp']
+  LINK: 109 trades, venues ['spot', 'perp']
+  LTC: 80 trades, venues ['spot', 'perp']
+  NEAR: 100 trades, venues ['spot', 'perp']
+  ONDO: 88 trades, venues ['spot', 'perp']
+  PEPE: 92 trades, venues ['spot', 'perp']
+  SOL: 124 trades, venues ['spot', 'perp']
+  SUI: 133 trades, venues ['spot', 'perp']
+  XLM: 81 trades, venues ['spot', 'perp']
+  XRP: 120 trades, venues ['spot', 'perp']
+  ZEC: 88 trades, venues ['spot', 'perp']
+precomputed 4596 tranche rows for 1031 trades -> pre_hunt_main_dose_seed.pkl
+{'spec': 'RF6HM', 'seeds': '(12, 13, 14)', 'n_seeds': 3, 'era': 'sel', 'sharpe': 2.8334309908582767, 'ret_yr': 0.2379851098946944}
+{'spec': 'RF6HM', 'seeds': '(12, 13, 14)', 'n_seeds': 3, 'era': 'chk', 'sharpe': 2.7580819246598853, 'ret_yr': 0.1811179923464229}

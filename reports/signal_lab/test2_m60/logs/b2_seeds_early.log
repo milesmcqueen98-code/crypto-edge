@@ -1,0 +1,255 @@
+/home/claude/wt/v6x/scripts/lab/core.py:81: RuntimeWarning: Mean of empty slice
+  self.basket_lp = np.nancumsum(np.nanmean(r, axis=0))          # equal-weight market factor (log level)
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+lab ready: 14,563 candidates, 13 coins (26s)
+  AAVE: 75 trades, venues ['spot']
+  BCH: 47 trades, venues ['spot']
+  DOGE: 90 trades, venues ['spot']
+  ETH: 78 trades, venues ['spot']
+  HBAR: 27 trades, venues ['spot']
+  LINK: 63 trades, venues ['spot']
+  LTC: 85 trades, venues ['spot']
+  NEAR: 42 trades, venues ['spot']
+  SOL: 84 trades, venues ['spot']
+  SUI: 30 trades, venues ['spot']
+  XLM: 51 trades, venues ['spot']
+  XRP: 23 trades, venues ['spot']
+  ZEC: 51 trades, venues ['spot']
+precomputed 2238 tranche rows for 578 trades -> pre_hunt_early_dose_seed.pkl
+{'spec': 'RF0', 'seeds': '(7, 11, 23)', 'n_seeds': 3, 'era': 'early', 'sharpe': 1.6980085289126317, 'ret_yr': 0.1021321105788141}
+F6 joined from /home/claude/wt/v6x/reports/signal_lab/prints_m60/f6_early.parquet: 14,563 candidates, 0 table rows unused; complete windows 1.0000 of the table; missing share csv_30 0.013, csv_5 0.013, sell_share_30 0.000, big_sell_share_30 0.005, sweep_max_30 0.013
+  AAVE: 79 trades, venues ['spot']
+  BCH: 52 trades, venues ['spot']
+  DOGE: 97 trades, venues ['spot']
+  ETH: 88 trades, venues ['spot']
+  HBAR: 28 trades, venues ['spot']
+  LINK: 78 trades, venues ['spot']
+  LTC: 89 trades, venues ['spot']
+  NEAR: 47 trades, venues ['spot']
+  SOL: 95 trades, venues ['spot']
+  SUI: 26 trades, venues ['spot']
+  XLM: 59 trades, venues ['spot']
+  XRP: 23 trades, venues ['spot']
+  ZEC: 51 trades, venues ['spot']
+precomputed 2436 tranche rows for 640 trades -> pre_hunt_early_dose_seed.pkl
+{'spec': 'RF6', 'seeds': '(7, 11, 23)', 'n_seeds': 3, 'era': 'early', 'sharpe': 1.7180437412175202, 'ret_yr': 0.10564588965527867}
+  AAVE: 75 trades, venues ['spot']
+  BCH: 49 trades, venues ['spot']
+  DOGE: 89 trades, venues ['spot']
+  ETH: 79 trades, venues ['spot']
+  HBAR: 29 trades, venues ['spot']
+  LINK: 68 trades, venues ['spot']
+  LTC: 86 trades, venues ['spot']
+  NEAR: 45 trades, venues ['spot']
+  SOL: 89 trades, venues ['spot']
+  SUI: 24 trades, venues ['spot']
+  XLM: 55 trades, venues ['spot']
+  XRP: 21 trades, venues ['spot']
+  ZEC: 49 trades, venues ['spot']
+precomputed 2274 tranche rows for 600 trades -> pre_hunt_early_dose_seed.pkl
+{'spec': 'RF6M', 'seeds': '(7, 11, 23)', 'n_seeds': 3, 'era': 'early', 'sharpe': 1.6050902907999394, 'ret_yr': 0.0997031553129405}
+  AAVE: 74 trades, venues ['spot']
+  BCH: 47 trades, venues ['spot']
+  DOGE: 88 trades, venues ['spot']
+  ETH: 83 trades, venues ['spot']
+  HBAR: 28 trades, venues ['spot']
+  LINK: 62 trades, venues ['spot']
+  LTC: 84 trades, venues ['spot']
+  NEAR: 43 trades, venues ['spot']
+  SOL: 83 trades, venues ['spot']
+  SUI: 29 trades, venues ['spot']
+  XLM: 48 trades, venues ['spot']
+  XRP: 24 trades, venues ['spot']
+  ZEC: 50 trades, venues ['spot']
+precomputed 2229 tranche rows for 576 trades -> pre_hunt_early_dose_seed.pkl
+{'spec': 'RF0', 'seeds': '(1, 2, 3)', 'n_seeds': 3, 'era': 'early', 'sharpe': 1.605998240038857, 'ret_yr': 0.09955359691652305}
+  AAVE: 76 trades, venues ['spot']
+  BCH: 47 trades, venues ['spot']
+  DOGE: 91 trades, venues ['spot']
+  ETH: 86 trades, venues ['spot']
+  HBAR: 26 trades, venues ['spot']
+  LINK: 72 trades, venues ['spot']
+  LTC: 87 trades, venues ['spot']
+  NEAR: 45 trades, venues ['spot']
+  SOL: 89 trades, venues ['spot']
+  SUI: 27 trades, venues ['spot']
+  XLM: 57 trades, venues ['spot']
+  XRP: 24 trades, venues ['spot']
+  ZEC: 51 trades, venues ['spot']
+precomputed 2334 tranche rows for 618 trades -> pre_hunt_early_dose_seed.pkl
+{'spec': 'RF6', 'seeds': '(1, 2, 3)', 'n_seeds': 3, 'era': 'early', 'sharpe': 1.6625640616308555, 'ret_yr': 0.10190854376749336}
+  AAVE: 76 trades, venues ['spot']
+  BCH: 47 trades, venues ['spot']
+  DOGE: 86 trades, venues ['spot']
+  ETH: 77 trades, venues ['spot']
+  HBAR: 27 trades, venues ['spot']
+  LINK: 67 trades, venues ['spot']
+  LTC: 84 trades, venues ['spot']
+  NEAR: 45 trades, venues ['spot']
+  SOL: 90 trades, venues ['spot']
+  SUI: 26 trades, venues ['spot']
+  XLM: 57 trades, venues ['spot']
+  XRP: 24 trades, venues ['spot']
+  ZEC: 50 trades, venues ['spot']
+precomputed 2268 tranche rows for 602 trades -> pre_hunt_early_dose_seed.pkl
+{'spec': 'RF6M', 'seeds': '(1, 2, 3)', 'n_seeds': 3, 'era': 'early', 'sharpe': 1.590236961383068, 'ret_yr': 0.09926124939798739}
+  AAVE: 76 trades, venues ['spot']
+  BCH: 47 trades, venues ['spot']
+  DOGE: 92 trades, venues ['spot']
+  ETH: 81 trades, venues ['spot']
+  HBAR: 26 trades, venues ['spot']
+  LINK: 64 trades, venues ['spot']
+  LTC: 85 trades, venues ['spot']
+  NEAR: 42 trades, venues ['spot']
+  SOL: 84 trades, venues ['spot']
+  SUI: 30 trades, venues ['spot']
+  XLM: 48 trades, venues ['spot']
+  XRP: 24 trades, venues ['spot']
+  ZEC: 49 trades, venues ['spot']
+precomputed 2244 tranche rows for 582 trades -> pre_hunt_early_dose_seed.pkl
+{'spec': 'RF0', 'seeds': '(4, 5, 6)', 'n_seeds': 3, 'era': 'early', 'sharpe': 1.664208474924589, 'ret_yr': 0.10230202211842446}
+  AAVE: 76 trades, venues ['spot']
+  BCH: 51 trades, venues ['spot']
+  DOGE: 95 trades, venues ['spot']
+  ETH: 84 trades, venues ['spot']
+  HBAR: 27 trades, venues ['spot']
+  LINK: 74 trades, venues ['spot']
+  LTC: 88 trades, venues ['spot']
+  NEAR: 51 trades, venues ['spot']
+  SOL: 92 trades, venues ['spot']
+  SUI: 26 trades, venues ['spot']
+  XLM: 58 trades, venues ['spot']
+  XRP: 23 trades, venues ['spot']
+  ZEC: 50 trades, venues ['spot']
+precomputed 2385 tranche rows for 635 trades -> pre_hunt_early_dose_seed.pkl
+{'spec': 'RF6', 'seeds': '(4, 5, 6)', 'n_seeds': 3, 'era': 'early', 'sharpe': 1.7199788806152676, 'ret_yr': 0.10484219411658956}
+  AAVE: 76 trades, venues ['spot']
+  BCH: 50 trades, venues ['spot']
+  DOGE: 90 trades, venues ['spot']
+  ETH: 79 trades, venues ['spot']
+  HBAR: 27 trades, venues ['spot']
+  LINK: 70 trades, venues ['spot']
+  LTC: 86 trades, venues ['spot']
+  NEAR: 47 trades, venues ['spot']
+  SOL: 90 trades, venues ['spot']
+  SUI: 25 trades, venues ['spot']
+  XLM: 54 trades, venues ['spot']
+  XRP: 23 trades, venues ['spot']
+  ZEC: 48 trades, venues ['spot']
+precomputed 2295 tranche rows for 613 trades -> pre_hunt_early_dose_seed.pkl
+{'spec': 'RF6M', 'seeds': '(4, 5, 6)', 'n_seeds': 3, 'era': 'early', 'sharpe': 1.558283570783155, 'ret_yr': 0.0994152240333616}
+  AAVE: 74 trades, venues ['spot']
+  BCH: 46 trades, venues ['spot']
+  DOGE: 90 trades, venues ['spot']
+  ETH: 76 trades, venues ['spot']
+  HBAR: 28 trades, venues ['spot']
+  LINK: 65 trades, venues ['spot']
+  LTC: 87 trades, venues ['spot']
+  NEAR: 42 trades, venues ['spot']
+  SOL: 80 trades, venues ['spot']
+  SUI: 31 trades, venues ['spot']
+  XLM: 48 trades, venues ['spot']
+  XRP: 24 trades, venues ['spot']
+  ZEC: 50 trades, venues ['spot']
+precomputed 2223 tranche rows for 574 trades -> pre_hunt_early_dose_seed.pkl
+{'spec': 'RF0', 'seeds': '(8, 9, 10)', 'n_seeds': 3, 'era': 'early', 'sharpe': 1.550284137932165, 'ret_yr': 0.09859929076699754}
+  AAVE: 77 trades, venues ['spot']
+  BCH: 49 trades, venues ['spot']
+  DOGE: 87 trades, venues ['spot']
+  ETH: 85 trades, venues ['spot']
+  HBAR: 27 trades, venues ['spot']
+  LINK: 73 trades, venues ['spot']
+  LTC: 90 trades, venues ['spot']
+  NEAR: 47 trades, venues ['spot']
+  SOL: 89 trades, venues ['spot']
+  SUI: 26 trades, venues ['spot']
+  XLM: 57 trades, venues ['spot']
+  XRP: 22 trades, venues ['spot']
+  ZEC: 50 trades, venues ['spot']
+precomputed 2337 tranche rows for 617 trades -> pre_hunt_early_dose_seed.pkl
+{'spec': 'RF6', 'seeds': '(8, 9, 10)', 'n_seeds': 3, 'era': 'early', 'sharpe': 1.6168693311971798, 'ret_yr': 0.10173731523718826}
+  AAVE: 76 trades, venues ['spot']
+  BCH: 49 trades, venues ['spot']
+  DOGE: 86 trades, venues ['spot']
+  ETH: 79 trades, venues ['spot']
+  HBAR: 27 trades, venues ['spot']
+  LINK: 70 trades, venues ['spot']
+  LTC: 85 trades, venues ['spot']
+  NEAR: 45 trades, venues ['spot']
+  SOL: 89 trades, venues ['spot']
+  SUI: 26 trades, venues ['spot']
+  XLM: 54 trades, venues ['spot']
+  XRP: 22 trades, venues ['spot']
+  ZEC: 50 trades, venues ['spot']
+precomputed 2274 tranche rows for 601 trades -> pre_hunt_early_dose_seed.pkl
+{'spec': 'RF6M', 'seeds': '(8, 9, 10)', 'n_seeds': 3, 'era': 'early', 'sharpe': 1.5110092557292363, 'ret_yr': 0.09645653080502141}
+  AAVE: 74 trades, venues ['spot']
+  BCH: 45 trades, venues ['spot']
+  DOGE: 87 trades, venues ['spot']
+  ETH: 81 trades, venues ['spot']
+  HBAR: 28 trades, venues ['spot']
+  LINK: 64 trades, venues ['spot']
+  LTC: 85 trades, venues ['spot']
+  NEAR: 41 trades, venues ['spot']
+  SOL: 82 trades, venues ['spot']
+  SUI: 29 trades, venues ['spot']
+  XLM: 50 trades, venues ['spot']
+  XRP: 23 trades, venues ['spot']
+  ZEC: 48 trades, venues ['spot']
+precomputed 2211 tranche rows for 572 trades -> pre_hunt_early_dose_seed.pkl
+{'spec': 'RF0', 'seeds': '(12, 13, 14)', 'n_seeds': 3, 'era': 'early', 'sharpe': 1.5941348013762464, 'ret_yr': 0.09928243247533328}
+  AAVE: 76 trades, venues ['spot']
+  BCH: 49 trades, venues ['spot']
+  DOGE: 91 trades, venues ['spot']
+  ETH: 83 trades, venues ['spot']
+  HBAR: 26 trades, venues ['spot']
+  LINK: 73 trades, venues ['spot']
+  LTC: 89 trades, venues ['spot']
+  NEAR: 47 trades, venues ['spot']
+  SOL: 89 trades, venues ['spot']
+  SUI: 26 trades, venues ['spot']
+  XLM: 59 trades, venues ['spot']
+  XRP: 23 trades, venues ['spot']
+  ZEC: 51 trades, venues ['spot']
+precomputed 2346 tranche rows for 616 trades -> pre_hunt_early_dose_seed.pkl
+{'spec': 'RF6', 'seeds': '(12, 13, 14)', 'n_seeds': 3, 'era': 'early', 'sharpe': 1.5094450018132708, 'ret_yr': 0.09655221289589909}
+  AAVE: 74 trades, venues ['spot']
+  BCH: 48 trades, venues ['spot']
+  DOGE: 84 trades, venues ['spot']
+  ETH: 80 trades, venues ['spot']
+  HBAR: 24 trades, venues ['spot']
+  LINK: 67 trades, venues ['spot']
+  LTC: 83 trades, venues ['spot']
+  NEAR: 46 trades, venues ['spot']
+  SOL: 89 trades, venues ['spot']
+  SUI: 25 trades, venues ['spot']
+  XLM: 56 trades, venues ['spot']
+  XRP: 21 trades, venues ['spot']
+  ZEC: 49 trades, venues ['spot']
+precomputed 2238 tranche rows for 595 trades -> pre_hunt_early_dose_seed.pkl
+{'spec': 'RF6M', 'seeds': '(12, 13, 14)', 'n_seeds': 3, 'era': 'early', 'sharpe': 1.5725238632450078, 'ret_yr': 0.09913563225688708}
