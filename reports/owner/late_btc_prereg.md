@@ -66,7 +66,8 @@ owner/late-btc.
   2025 is the largest.
 - **The paired daily test is weak.** Most 90% intervals include zero. The cost is likely; its size is between nothing
   and about one Sharpe point.
-- **How decisions move:** about 99% of armed coin-minutes stay armed and the level moves a median of 2 to 5 bp, but
+- **How decisions move:** about 99% of armed coin-minutes stay armed (93% to 96% in 2022-23) and the level moves a
+  median of 2 to 5 bp, but
   only 38% to 62% of first-bid fills land on the same coin and minute.
 
 ## Deviation log

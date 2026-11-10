@@ -133,7 +133,7 @@ FORWARD_TESTS.md.
     a minute held trades stamped in the first seconds of the next. Signal lab 2 saw the same in history.
   - The candle the bot would have read about 6 s after the minute matched the final candle in 42% of coin-minutes and
     was absent in 8%. BTC's was absent in 27% and matched in none.
-  - A study of the cut was planned before its data (candle_clock_prereg.md, 13:30) and run.
+- **13:30. Candle clock study planned before its data and started** (candle_clock_prereg.md).
 - **13:35. The paper books have run in real time only part of the time.** GitHub drops scheduled runs. From the first
   run to Nov 10 18:30 UTC the spot books ran 66.4 of 92.0 hours (72%); since Nov 8 12:25 UTC, 29.2 of 54.1 hours
   (54%). In a gap the bot places no new bids, and at the next start it only settles what was open.
@@ -145,8 +145,9 @@ FORWARD_TESTS.md.
 - **13:36. Candle probe result** (run 42853095116, 125 minutes, nine coins; reports/owner/candle_probe/README.md).
   - **By the rule: no source is usable at 25 s or less.** Trades bar 6.8%, 6.4% and 6.0% material error at 1, 3 and
     6 s; best candles 5.2% (Advanced, 6 s) and 5.8% (Exchange, 3 s and 10 s). The bar was 1%.
-  - **The trades are not late.** No material error for BTC, ETH, SOL, XRP or ZEC. The errors sit in PEPE, ONDO and
-    DOGE: trades near the minute boundary and one-tick differences.
+  - **The trades are not late.** At 6 s the trades bar had no material error for BTC, ETH, SOL, XRP or ZEC (few
+    counted minutes for the first four). The errors sit in PEPE, ONDO and DOGE, with one HYPE minute: trades near
+    the minute boundary and one-tick differences.
   - **The bot's own BTC address returned an old cached copy in 125 of 125 minutes,** always without the minute asked
     for and one to two minutes behind. ETH: a copy in 79% of minutes. The other seven coins: the minute missing in at
     most 2.4%. Some copies hold a minute still in progress, which none of our own requests ask for, so other clients
@@ -161,13 +162,14 @@ FORWARD_TESTS.md.
   a live feed carries the same trades, so it would not close the gap the probe found. The stale-copy fault is outside
   the rule and is fixed in release 2, as the 11:04 entry committed.
 - **13:50. Candle clock result** (six hours, 18 coins; reports/owner/candle_clock/README.md).
-  - **No coin has a steady offset.** BTC, ETH, SOL, XRP, LTC and ZEC are cut at the minute: the trades bar's
-    material-error share against the final candle was 0 to 0.6% in the last three hours.
+  - **No coin has a steady offset.** BTC, ETH, SOL and XRP are cut at the minute, and LTC and ZEC nearly so (a late
+    boundary in about 5% of minutes): for all six the trades bar's material-error share against the final candle
+    was 0 to 0.6% in the last three hours.
   - **The other twelve run late in 8% to 41% of boundaries,** by a median of 7 to 11 s, mostly after quiet minutes
-    (about 54% after a minute with 5 trades or fewer, about 2% after more than 50). No offset fixes that.
+    (about 54% after a minute with 5 trades or fewer, about 2% to 3% after more than 50). No offset fixes that.
   - **About 5% of minutes, the same ones for nearly every coin, have a final candle that leaves out trades** listed in
     the public trades (BTC 14:05 UTC: about 3.4 in the candle, 13.4 in the trades). The trades list has no gaps.
-  - Joined with the collector for 16:06 to 17:52 UTC: for the six, the trades bar matched the final candle in 97% or
+  - The study's per-minute match flags joined with the collector's first-seen candles, 16:06 to 17:52 UTC: for the six, the trades bar matched the final candle in 97% or
     more of minutes at every level of activity, and the first-seen candle in about 70% of busy minutes. For the
     twelve, the first-seen candle matched the final candle exactly a little more often than the trades bar (82%
     against 74% of minutes), and the two were about even on material errors.
@@ -254,3 +256,20 @@ FORWARD_TESTS.md.
   - The main and W2 paper books had resumed at 19:57 UTC on GitHub's late schedule. The next paper run is queued
     behind that one; it starts all three books with the hand-over at about 01:50 UTC on Nov 11.
   - Nothing changes for the main book, W2 or a live bot until release 3.
+- **16:49. Corrections after an independent fact-check of the afternoon's documents** (about 140 claims checked
+  against their sources: none wrong, ten imprecise; fixed in place, listed here).
+  - The probe's "no material error for BTC, ETH, SOL, XRP or ZEC" holds for the trades bar at 6 s. At 1 s ZEC had
+    1.7%, and HYPE had one such minute too.
+  - LTC and ZEC are not cut at the minute every time: about 5% of their boundaries run late. They are on the trades
+    list because their material-error share is 1% or less.
+  - The late-cut shares by activity (54% and 2%) were computed over 14 coins; for the twelve alone the second figure
+    is about 3%.
+  - Fee rebate arithmetic: at $1,900 to $2,200 a month in fees the Premium tier nets about +$175 to +$250, and at
+    $2,800 to $3,200 about +$400 to +$500 (the entries above say +$190 to +$250 and +$400 to +$490).
+  - Idle cash: with the paper book's mean free cash (45.5%), 3.50% on free cash only is about +1.6 points a year,
+    not +1.5.
+  - "About 99% of armed coin-minutes stay armed" in the replay holds for the selection and check eras; in 2022-23 it
+    is 93% to 96%.
+  - The 13:10 entry had held the 13:30 plan; it is now its own entry. The perp books have two fills each by now, not
+    one.
+  - "Other clients made the old copies" is the probe's best account, not a proven fact; the documents now say so.

@@ -80,9 +80,9 @@ Written by the orchestrator before any probe data exists. Branch owner/charter; 
     candle answers have 5.2% (Advanced, 6 s) and 5.8% (Exchange, 3 s and 10 s). Trades pass the timing test (all nine
     coins done within 2 s in every minute). By the rule that is the third branch: no change now, and a live trade
     feed as its own project.
-  - **Why the branch's remedy is dropped.** The trades are not late. The trades bar has no material error for BTC,
-    ETH, SOL, XRP and ZEC. Its errors sit in PEPE, ONDO and DOGE and come from trades near the minute boundary and
-    from one-tick differences (one PEPE tick is 19 bp, more than half its one-minute sigma). A live feed carries the
+  - **Why the branch's remedy is dropped.** The trades are not late. At 6 s the trades bar has no material error for
+    BTC, ETH, SOL, XRP and ZEC. Its errors sit in PEPE, ONDO and DOGE (and one HYPE minute) and come from trades near
+    the minute boundary and from one-tick differences (one PEPE tick is 19 bp, more than half its one-minute sigma). A live feed carries the
     same trades, so it would not close that gap. The project is not started.
   - **What replaces it.** The candle clock study (candle_clock_prereg.md, written at 13:30 ET before its data)
     classes each coin by where the venue cuts its candle. A coin cut at the minute may take its newest bar from

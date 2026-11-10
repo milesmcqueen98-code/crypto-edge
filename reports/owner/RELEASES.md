@@ -35,7 +35,7 @@ says what changed, why, how it was tested, and what Miles needs to do.
 - **The trades list is a source that works** for six coins: cached for five seconds at most, and a bar built from it
   matches the final candle (reports/owner/candle_clock/README.md). The other twelve coins stay on candles, because
   Coinbase cuts their candles late after quiet minutes.
-- **The paper books were live only about two thirds of the time,** because GitHub drops scheduled runs.
+- **The paper books were live only about 70% of the time,** because GitHub drops scheduled runs.
 
 ### Effect on trading
 - **None with the defaults.** The main paper book, W2 and a live bot keep today's inputs and today's decisions. In

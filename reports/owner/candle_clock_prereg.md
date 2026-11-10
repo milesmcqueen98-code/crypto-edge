@@ -73,10 +73,11 @@ owner/candle-clock.
   class A):
   - A: none.
   - B: BTC, ETH, SOL, XRP, LTC, ZEC. Their fitted offset is zero, so for them the bar cut at the minute is the bar.
-    Its material-error share in the last three hours was 0 for five of them and 0.6% for LTC.
+    Its material-error share in the last three hours was 0 for five of them and 0.6% for LTC. LTC and ZEC still run
+    late in about 5% of boundaries, and SOL in one.
   - C: DOGE, LINK, BCH, SUI, XLM, HBAR, NEAR, AAVE, HYPE, ENA, PEPE, ONDO. In 8% to 41% of their boundaries the
     candle runs late, by a median of about 7 to 11 s. Late candles follow quiet minutes: about 54% of boundaries
-    after a minute with 5 trades or fewer, about 2% after a minute with more than 50.
+    after a minute with 5 trades or fewer, about 2% to 3% after a minute with more than 50.
 - **Under the looser reading** (unexplained boundaries left out) BTC, ETH, SOL and XRP would be A. The list of coins
   that take their newest bar from trades is the same six under both readings.
 - **Unexplained boundaries (about 5%) fall on the same minutes for nearly every coin.** In those minutes the venue's
