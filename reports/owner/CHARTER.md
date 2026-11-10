@@ -32,19 +32,30 @@ is reports/crypto-edge-findings.md; every forward test is in FORWARD_TESTS.md be
 | Yield on idle cash (USDC rewards) | At the 3.50% on Coinbase's own page: about +1.5 points a year if only free cash earns, about +3.4 if cash held by resting bids earns too. Roughly +0.2 to +0.45 Sharpe at $250K, measured as the repo measures Sharpe (against zero). Against Treasury bills it removes a drag instead of adding an edge. The program may change on Jan 18 2027 (OCC rule). | Account eligibility (Miles), then the bot's USDC mode |
 | Coinbase One fee rebate | Preferred ($29.99 a month) returns 25% of Advanced spot fees up to 100 USDC a month: about +$70 a month net, +0.3 points a year. Premium ($299.99) has no cap: at the paper book's pace so far (about $2,200 a month in fees at $250K) about +$250 a month net, +1.2 points a year. Premium beats Preferred only above about $1,480 a month in fees. | Confirm on the account that API orders in the bot's portfolio earn the rebate (one month on Preferred shows it) |
 | Capture share on live fills | 0.19 to 0.26 Sharpe between a share of 0.5 and 0.25 | The $10K pilot, then the $250K step |
-| Live order timing | Unknown until measured (timing study, Nov 10) | Trade prints now; the pilot later |
+| Live inputs: the newest candle is often not final when the bot decides | P&L effect unknown. In the collector's first hour 32% of newest candles changed after the decision and 6% were missing. The model was trained on final candles | Candle probe (reports/owner/candle_probe_prereg.md); if it passes, the newest bar built from trades, behind a switch |
+| Live order timing | First reading: the live timing is 5.8% of P&L below the research assumption (pooled, three eras), and fast re-pricing 3.4% above the live timing. Both lean on how a changed fill is valued, so a like-for-like valuation is running. Not in doubt: the live timing fills 83-90% of the research's first bids in the same minute | Timing study part 2 (reports/owner/timing_prereg.md); then the pilot |
 | New information: open interest, funding, book depth | Unknown; none exists historically | The forward collector, then about a year of data |
 | 15 seeds at each retrain | No change in expected Sharpe. Cuts the luck of one retrain's seeds from about 0.10 to about 0.06 Sharpe (scaled from the 0.13-0.15 measured for three seeds) | Next retrain |
 
 ## How a change gets in
-Three classes, by what the change touches:
+Four classes, by what the change touches:
 
-1. **Accounting (no prediction):** idle-cash yield, fees, ensemble size.
+1. **Fidelity (the live bot differs from what the research assumed):** inputs the model was not trained on, bids that
+   do not rest when the research assumed they did, bugs.
+   - Adopt when the fix is verified to bring the live bot closer to the research assumption and the bot's regression
+     tests pass. Measure the size when that is cheap. No backtest gain is required, because nothing about the model or
+     the rules changes.
+   - Anything that touches live orders or inputs still ships behind a switch, runs as a side-by-side paper book first,
+     and goes out as a release.
+   - This class never covers a change to the research assumption itself. That is class 3 or 4.
+2. **Accounting (no prediction):** idle-cash yield, fees, ensemble size.
    - Adopt when the mechanism is verified on the live account and a no-harm check passes.
-2. **Execution (how orders are placed, not which signals):** re-pricing speed, order sequencing, fill detection.
+3. **Execution (a deliberate change in how orders are placed, beyond matching the research):** order sequencing,
+   passive exits, queue tactics.
    - Measure first on prints or live fills, pre-registered. Build it only if it is worth 5% of P&L or more with the
-     same sign in at least two eras. Then run it behind a switch in the pilot before any wider use.
-3. **Model and strategy (what to trade):** features, labels, thresholds, rungs, exits, universe.
+     same sign in at least two eras, under a valuation that treats added and lost fills alike. Then run it behind a
+     switch in the pilot before any wider use.
+4. **Model and strategy (what to trade):** features, labels, thresholds, rungs, exits, universe.
    - Only with new information, or as a forward test registered before its data exists (FORWARD_TESTS.md).
    - Seed-average at least five seed triples per arm, read each challenger at R2-08's selectivity as well as its
      own, and have a separate agent audit for look-ahead before any holdout read.

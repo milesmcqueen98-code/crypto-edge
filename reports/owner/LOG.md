@@ -36,3 +36,25 @@ FORWARD_TESTS.md.
     ($299.99) has no cap (Coinbase One page, undated). Not known: whether API orders in the bot's portfolio count.
   - The OCC's final rule on stablecoin rewards takes effect Jan 18 2027 and reviews programs case by case (reported).
     Rewards may stop or change then.
+- **10:11. The machine's disk filled up** (several full checkouts of the repo, 1.8 GB each). Finished, fully pushed
+  worktrees were removed; nothing was lost. One agent's tests were interrupted and are being re-run.
+- **10:26. Timing study, first reading** (reports/owner/timing/README.md on branch owner/timing; 14.1M prints, 29,686
+  studied minutes).
+  - By the plan's rule: the live timing (P1) is 11.3% and 16.6% of P&L below the research assumption (P0) in the check
+    era and 2022-23, and 4.8% above in selection. Fast re-pricing (P2) beats P1 by 8.6% and 17.5% and loses 7.1% in
+    selection. Removing only the gap (P3) has no material effect.
+  - **Deviation 2, logged before the follow-up:** the plan's valuation decides the reading (a missed parent loses its
+    whole ladder, an added one counts its first rung only; about eleven ladders decide 2022-23). Nothing is built on
+    it alone. A like-for-like valuation (S1: first rung only; S2: whole ladder re-simulated) is running, with the same
+    5% rule.
+  - Not in doubt: P1 fills 87% / 90% / 83% of P0's parents in the same minute; 14-20% of P0's fills come in the first
+    10 s of a minute; prints confirm 93-96.5% of the candle research's parents.
+- **10:27. The collector's first hour shows the bot decides on unfinished candles.** Of 753 newest candles read 6 s
+  after the minute closed, 31.6% changed later (close 28%, volume 30%, low 12%) and 6% were missing.
+  - The research used final candles. This is a gap between research and the live or paper bot, not a model change.
+  - **Candle probe pre-registered** (candle_probe_prereg.md): when is each source final (Exchange candles at 1 to
+    40 s, Advanced candles, a bar built from trades at 1 and 3 s), with the decision rule fixed before any data.
+  - **Charter: a fourth class of change, fidelity.** A fix that brings the live bot closer to what the research
+    assumed is adopted on verification and tests, behind a switch, without needing a backtest gain.
+- **Collector storage:** 9.8 MB a day measured. The VM's clone is shallow, sparse and single-branch, so the data
+  branch does not reach it. Lossless trims first, target about 6 MB a day.
