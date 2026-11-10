@@ -102,3 +102,20 @@ FORWARD_TESTS.md.
     were ahead by +0.03 to +0.18 Sharpe in the holdout eras; the fee rebate's Premium case is a range from both paper
     books.
   - Entries are back in time order.
+- **11:18. Cause of the stale candles: a public cache.** Coinbase serves its public candle and trade endpoints through a
+  cache keyed by the exact address. A candle answer may be reused for 300 s, the trades list for 5 s.
+  - The probe's first long run asked one address at every delay, so later delays got the first answer back. It was
+    cancelled after 12 minutes and its data discarded. The new run is logged in the plan: its own window for each
+    delay, cache status and age stored, trades also at 6 s, and the bot's own address read at 9.5 s.
+  - The bot's request can therefore be answered with a copy that another client made up to five minutes earlier. For
+    BTC that moves every level, with no error.
+  - The collector and the probe do not share addresses with the bots in the normal case: the bot's window starts four
+    minutes back, the collector's five.
+- **11:18. Decision: release 2 is being built now, behind switches, without waiting for the probe** (branch
+  owner/release-2).
+  - The newest minute's bar built from the trades list, with proof that it is complete and the candle as the fallback.
+    The trades list is reusable for 5 s at most, so an answer read 6 s after the minute closes was made after it closed.
+  - A guard that places no new bids in a minute when BTC's newest candle is missing.
+  - Heartbeat counters for all of this, and the times at which the data, the cancels and the new bids finish.
+  - A third paper book runs it side by side. Defaults stay as today, so nothing changes until it is switched on, and
+    the probe's rule decides that.

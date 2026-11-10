@@ -41,6 +41,7 @@ HL_URL = "https://api.hyperliquid.xyz/info"
 BID_BPS = (5, 10, 25, 50, 100, 150, 200, 300, 400, 600, 800)
 ASK_BPS = (5, 10, 25, 50, 100)
 STREAMS = ("book", "hl", "candles", "cfm")
+DATA = STREAMS + ("candle_fetch",)   # candle_fetch: one row per candle answer (cache status, Age, newest minute)
 CB_INTERVAL = 0.2            # seconds between Coinbase request starts: 5 a second, under the 6/s budget
 BOOK_DONE = 5.0              # the book burst should be complete by this second of the minute
 BOOK_LATENCY = 0.6           # expected response time of the slowest book request (from the runner probe)
@@ -121,13 +122,14 @@ def depth_buckets(levels, ref, side, bps):
     return out
 
 
-def book_row(coin, minute, bids, asks, t_req, t):
+def book_row(coin, minute, bids, asks, t_req, t, cache=None, age=math.nan):
     bids = sorted(bids, key=lambda x: -x[0])
     asks = sorted(asks, key=lambda x: x[0])
     bb = bids[0] if bids else (math.nan, math.nan)
     ba = asks[0] if asks else (math.nan, math.nan)
     mid = (bb[0] + ba[0]) / 2 if bids and asks else math.nan
-    r = dict(coin=coin, minute=minute, t_req=t_req, t=t, ok=True, bid=bb[0], bid_sz=bb[1], ask=ba[0], ask_sz=ba[1],
+    r = dict(coin=coin, minute=minute, t_req=t_req, t=t, ok=True, cache=cache, age=age,
+             bid=bb[0], bid_sz=bb[1], ask=ba[0], ask_sz=ba[1],
              mid=mid, n_bid=len(bids), n_ask=len(asks),
              bid_reach_bp=(1 - bids[-1][0] / mid) * 1e4 if bids and np.isfinite(mid) else math.nan,
              ask_reach_bp=(asks[-1][0] / mid - 1) * 1e4 if asks and np.isfinite(mid) else math.nan)
@@ -150,7 +152,10 @@ def missing_book_row(coin, minute, t_req):
 
 
 def candle_params(T):
-    """Exactly what bot/market.py spot_candles(coin, T - 5 min, T) sends for the window ending at minute T."""
+    """What bot/market.py spot_candles(coin, T - 5 min, T) sends: the 5-minute window ending at the minute before T.
+    The paper bot's steady-state request starts later (T - 4 min: update_spot asks from its newest stored minute,
+    normally T - 2, minus 2 minutes), so this URL equals the bot's only when its previous newest candle was missing.
+    The window is kept as it is; the values for a minute do not depend on the window's start."""
     s = pd.Timestamp(T).floor("min") - pd.Timedelta(minutes=CANDLE_MINUTES)
     e = pd.Timestamp(T).floor("min")
     return {"granularity": 60, "start": s.isoformat() + "Z", "end": (e - pd.Timedelta(minutes=1)).isoformat() + "Z"}
@@ -290,11 +295,12 @@ def parse_cfm(js, coins=None, minute=None, t=None):
 # ------------------------------------------------------------------------------------------------ storage
 F32, F64, MS = "float32", "float64", "datetime64[ms]"
 SCHEMA = {
-    "book": dict(coin="category", minute=MS, t=MS, ok="bool", bid=F64, bid_sz=F32, ask=F64, ask_sz=F32,
+    "book": dict(coin="category", minute=MS, t=MS, ok="bool", cache="category", age=F32, bid=F64, bid_sz=F32, ask=F64, ask_sz=F32,
                  mid=F64, n_bid="int32", n_ask="int32", bid_reach_bp=F32, ask_reach_bp=F32,
                  **{f"bid_usd_{b}": F32 for b in BID_BPS}, **{f"ask_usd_{b}": F32 for b in ASK_BPS}),
     "candles": dict(coin="category", minute=MS, seen=MS, open=F64, high=F64, low=F64, close=F64,
                     volume=F64, rev="int16"),
+    "candle_fetch": dict(coin="category", minute=MS, seen=MS, cache="category", age=F32, newest=MS),
     "hl": dict(coin="category", minute=MS, t=MS, ok="bool", name="category", px_mult="int16", open_interest=F64,
                mark=F64, oracle=F64, mid=F64, funding=F64, premium=F32, impact_bid=F64, impact_ask=F64,
                day_ntl_vlm=F32, prev_day_px=F64),
@@ -305,7 +311,7 @@ SCHEMA = {
                 trading_disabled="bool"),
 }
 KEYS = {"book": ["coin", "minute"], "hl": ["coin", "minute"], "cfm": ["product_id", "minute"],
-        "candles": ["coin", "minute", "seen"]}
+        "candles": ["coin", "minute", "seen"], "candle_fetch": ["coin", "minute"]}
 
 
 def frame(stream, rows):
@@ -454,8 +460,13 @@ class Http:
         self.s = requests.Session()
         self.s.headers["User-Agent"] = USER_AGENT
 
-    def request(self, method, url, timeout, **kw):
+    def request(self, method, url, timeout, meta=None, **kw):
+        """JSON of a 200 answer. `meta`, if given, receives the answer's cache status and Age: Coinbase answers
+        through a URL-keyed Cloudflare cache (Exchange candles max-age 300 s), so an answer can be an old copy."""
         r = self.s.request(method, url, timeout=timeout, **kw)
+        if meta is not None:
+            meta["cache"] = r.headers.get("cf-cache-status")
+            meta["age"] = fnum(r.headers.get("age"))
         body = r.text[:400].lower() if r.status_code != 200 else ""
         if r.status_code in (403, 451) or "captcha" in body or "just a moment" in body or "cf-chl" in body:
             raise Refused(f"{r.status_code} {url.split('?')[0]} {r.text[:120]!r}")
@@ -477,7 +488,7 @@ class Collector:
         self.buf = collections.defaultdict(list)          # (stream, hour) -> rows
         self.blk = threading.Lock()
         self.err = collections.Counter()                  # f"{stream}:{kind}" -> count since start
-        self.rows_hist = {s: collections.deque() for s in STREAMS}   # (minute, n ok rows)
+        self.rows_hist = {s: collections.deque() for s in DATA}      # (minute, n ok rows)
         self.refused = {}
         self.threads = {}
         self.last_names = {"hl": [], "cfm": []}
@@ -545,13 +556,15 @@ class Collector:
 
     # ---- streams
     def fetch_book(self, coin):
+        """(bids, asks, meta) with the answer's cache status and Age in meta."""
+        meta = {}
         if self.book_source == "exchange":
             js = self.http.request("GET", f"{EXCHANGE}/products/{coin}-USD/book", timeout=(1.5, 2.5),
-                                   params={"level": 2})
-            return parse_exchange_book(js)
+                                   params={"level": 2}, meta=meta)
+            return (*parse_exchange_book(js), meta)
         js = self.http.request("GET", f"{ADV}/product_book", timeout=(1.5, 2.5),
-                               params={"product_id": f"{coin}-USD", "limit": 1000})
-        return parse_adv_book(js)
+                               params={"product_id": f"{coin}-USD", "limit": 1000}, meta=meta)
+        return (*parse_adv_book(js), meta)
 
     def s_book(self, T0, minute):
         start = T0 + BOOK_DONE - BOOK_LATENCY - (len(self.coins) - 1) * CB_INTERVAL
@@ -587,7 +600,9 @@ class Collector:
                 self.count("book", "missing")
             else:
                 try:
-                    rows.append(book_row(coin, minute, r[0], r[1], treq, pd.Timestamp(t, unit="s")))
+                    meta = r[2] if len(r) > 2 else {}
+                    rows.append(book_row(coin, minute, r[0], r[1], treq, pd.Timestamp(t, unit="s"),
+                                         meta.get("cache"), meta.get("age", math.nan)))
                     times.append(t - T0)
                 except Exception:                       # noqa: BLE001
                     self.count("book", "parse")
@@ -599,17 +614,25 @@ class Collector:
     def s_candles(self, T0, minute):
         self._sleep_until(T0 + CANDLE_AT)
         n, first, last = 0, None, None
+        fetches = []
         for coin in self.coins:
+            meta = {}
             try:
                 js, t_req = self.call("candles", T0, lambda: self.http.request(
-                    "GET", f"{EXCHANGE}/products/{coin}-USD/candles", timeout=(2, 4), params=candle_params(minute)),
-                    True, RETRY_UNTIL["candles"])
+                    "GET", f"{EXCHANGE}/products/{coin}-USD/candles", timeout=(2, 4), params=candle_params(minute),
+                    meta=meta), True, RETRY_UNTIL["candles"])
             except Refused:
                 return
             if js is None:
                 self.count("candles", "missing")
                 continue
             seen = time.time()
+            try:
+                newest = pd.Timestamp(max(int(x[0]) for x in js), unit="s") if js else pd.NaT
+            except (TypeError, ValueError, IndexError):
+                newest = pd.NaT
+            fetches.append(dict(coin=coin, minute=minute, seen=pd.Timestamp(seen, unit="s"), cache=meta.get("cache"),
+                                age=meta.get("age", math.nan), newest=newest))
             first = first if first is not None else t_req - T0
             last = seen - T0
             try:
@@ -620,6 +643,7 @@ class Collector:
                 continue
             n += 1
             self.emit("candles", minute, rows)
+        self.emit("candle_fetch", minute, fetches)
         self.candles.prune(minute)
         self.minute_info[minute]["candles"] = (n, round(first, 2) if first is not None else None,
                                                round(last, 2) if last is not None else None)

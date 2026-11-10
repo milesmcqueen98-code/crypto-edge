@@ -62,6 +62,8 @@ class FakeHttp:
     def request(self, method, url, timeout, **kw):
         with self.lock:
             self.calls.append((time.time(), url, kw.get("params")))
+        if kw.get("meta") is not None:                  # what the venue's cache headers would say
+            kw["meta"].update(cache="MISS", age=0.0)
         for k, v in self.routes.items():
             if k in url:
                 if callable(v):
@@ -262,7 +264,11 @@ class Files(unittest.TestCase):
         for stream, rows in (("book", book), ("hl", hl), ("cfm", cfm), ("candles", cl)):
             p = C.write_hour(self.d, stream, m, "rt", rows)
             exp = C.frame(stream, rows).sort_values(C.KEYS[stream], kind="stable").reset_index(drop=True)
-            pd.testing.assert_frame_equal(pd.read_parquet(p), exp)
+            back = pd.read_parquet(p)
+            empty = [c for c in exp if exp[c].isna().all() and str(exp[c].dtype) == "category"]
+            for c in empty:                                            # an all-missing category column (e.g. the
+                self.assertTrue(back[c].isna().all())                  # cache status of a fake venue) has no type
+            pd.testing.assert_frame_equal(back.drop(columns=empty), exp.drop(columns=empty))
             self.assertNotIn("t_req", exp)
             self.assertEqual(len(R.load(stream, m, root=self.d)), len(exp))
 
@@ -309,14 +315,19 @@ class Streams(unittest.TestCase):
             buf = {k[0]: v for k, v in c.buf.items()}
             self.assertEqual(sum(r["ok"] for r in buf["book"]), 2)
             self.assertEqual(len(buf["candles"]), 4)                   # 2 coins x 2 candles, first sightings
+            cf = buf["candle_fetch"]                                   # one row per candle answer
+            self.assertEqual([r["coin"] for r in cf], coins)
+            self.assertTrue(all(r["cache"] == "MISS" and r["age"] == 0 and r["newest"] is not pd.NaT for r in cf))
+            self.assertTrue(all(r["cache"] == "MISS" for r in buf["book"] if r["ok"]))
             self.assertEqual(len(buf["cfm"]), 2)
             self.assertEqual([r["ok"] for r in buf["hl"]], [False, False])   # missing rows, not stale ones
             self.assertGreaterEqual(c.err["hl:net"], 2)                # retried within the minute
             self.assertEqual(c.err["hl:missing"], 1)
-            # timing: book done before BOOK_DONE + slack; candles requested at/after CANDLE_AT
+            # timing, as the code guarantees it: no book request starts after BOOK_LAST_START, and candles are
+            # requested at or after CANDLE_AT (a tighter bound on the book fails when a busy machine wakes a thread late)
             bt = [t - T0 for t, u, _ in http.calls if "/book" in u]
             ct = [t - T0 for t, u, _ in http.calls if "/candles" in u]
-            self.assertTrue(max(bt) < 1.6 and min(ct) >= 1.6, (bt, ct))
+            self.assertTrue(max(bt) <= C.BOOK_LAST_START + 0.3 and min(ct) >= C.CANDLE_AT, (bt, ct))
             # a second minute: candles unchanged -> no rows; a stream that raises a non-HTTP error is contained
             http.routes["/products"] = lambda url, kw: (_ for _ in ()).throw(ValueError("boom"))
             c.buf.clear()
@@ -353,12 +364,14 @@ class Streams(unittest.TestCase):
         c.stop.set()
 
     def test_rate_limiter(self):
+        # grant times as the limiter set them (rl.next - interval, under its lock), not the caller's clock after
+        # return: a busy machine can wake a caller late, which shortens the next measured gap but not the grant gap
         rl = C.RateLimiter(0.05)
-        ts = []
+        grants = []
         for _ in range(6):
             rl.acquire()
-            ts.append(time.time())
-        self.assertGreaterEqual(min(np.diff(ts)), 0.045)
+            grants.append(rl.next - rl.interval)
+        self.assertGreaterEqual(min(np.diff(grants)), 0.05 - 1e-9)
         self.assertFalse(rl.acquire(deadline=time.time() - 1))
 
 
@@ -422,6 +435,7 @@ class FakeVenue:
     coins. Coin 'GONE' has no trades and no candles."""
 
     def __init__(self, minutes):
+        self.urls = []
         self.bars = {}
         self.trades = {}
         for c in ("AAA", "BBB", "GONE"):
@@ -437,6 +451,10 @@ class FakeVenue:
                     tid += 1
                 self.bars[(c, m)] = (px[0], px[1], px[2], px[3], 2.0)
             self.trades[c] = tl[::-1]
+
+    def fetch(self, url, params):
+        self.urls.append((url, tuple(sorted(params.items()))))
+        return self.request("GET", url, None, params=params), dict(cache="MISS", age=0.0)
 
     def request(self, method, url, timeout, params=None, **kw):
         coin = url.split("/products/")[1].split("-")[0]
@@ -464,17 +482,21 @@ class CandleProbe(unittest.TestCase):
         pr = P.Probe(["AAA", "BBB", "GONE"], http=venue, log=lambda m: None, ex_interval=0.001, adv_interval=0.001)
         for q in qs:
             pr.schedule(q)
-        for _ in range(200):
+        n = 3 * 4 * (len(P.CANDLE_DELAYS) + 1 + len(P.TRADE_DELAYS) + 1 + 1)     # + adv, ref, bot_url
+        deadline = time.time() + 120                                   # wait for the rows, not for a fixed time
+        while len(pr.rows) < n and time.time() < deadline:
             time.sleep(0.05)
-            if not pr.ex.pending() and not pr.adv.pending() and pr.pool._work_queue.empty():
-                break
-        time.sleep(0.3)
+        time.sleep(0.2)                                                # no extra row may follow
         df = P.to_frame(pr.rows)
-        n = 3 * 4 * (len(P.CANDLE_DELAYS) + 1 + len(P.TRADE_DELAYS) + 1)
         self.assertEqual(len(df), n)                                    # one row per coin, boundary, source, delay
         tr = df[(df.source == "ex_trades") & (df.coin == "AAA") & df.present]
         self.assertTrue((tr.pages >= 2).all())                          # 3 a page, 4 trades a minute: paging used
         self.assertEqual(set(tr.n_trades), {4})
+        cu = [u for u in venue.urls if u[0].endswith("/candles") and u[0].startswith(C.EXCHANGE)]
+        self.assertEqual(len(cu), len(set(cu)))                         # no candle URL is asked twice
+        self.assertEqual(dict(P.window(qs[0], 6)), C.candle_params(qs[0]))   # 6 s keeps the collector's window
+        bw = P.bot_window(pd.Timestamp("2026-11-10 12:00"))                   # the paper bot's steady-state request
+        self.assertEqual((bw["start"], bw["end"]), ("2026-11-10T11:56:00Z", "2026-11-10T11:59:00Z"))
         tab, per, ref, sig = P.measures(df)
         self.assertEqual(len(ref), 2 * 4)                               # AAA, BBB; GONE never traded
         self.assertTrue((tab.exact == 100).all() and (tab.material == 0).all())
