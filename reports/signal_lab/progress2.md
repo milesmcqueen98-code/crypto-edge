@@ -61,3 +61,10 @@ print fetcher).
   5 s / 60 s: selection 0.45% / 0.44% / 0.00%; Apr - Nov 2026 1.71% / 1.68% / 0.05%; 2022-23 1.45% / 1.45% / 0.14%.
   Only 60 s is under the 0.5% bar in every read era. Deviation 4 logged: the 60 s table is the primary; the test
   does not use the last minute before the fill.
+- 19:15 Audit's second pass: final pass. The margin code keeps every feature before q - 60 s (unit test passes on 42
+  cases); its recount of the leak flags matches deviation 4 exactly; even if every missing-candle merge also counted
+  at 60 s the shares would be 0.01% / 0.29% / 0.34%; no sign of a lag above 60 s. The 60 s tables match the 0 s
+  tables on keys, order, threshold and ADV (sha256 main 583d3de7..., early 9e652994...), and the exported history
+  rows carry exactly the 60 s features. One sanity check of mine was too strict (sums 1-2 float units above the 0 s
+  table, a rounding artifact); a 1e-12 tolerance was approved. The lock is created once the selection reading on the
+  60 s table has finished and is logged.
