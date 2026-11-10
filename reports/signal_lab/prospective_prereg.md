@@ -151,3 +151,26 @@ A candidate with no prints in its window gets missing values (LightGBM handles t
    - **Before the lock file is created,** the auditor checks the margin code and the leak counts.
    - **Selection reading on the 0 s table** (run under deviation 2; test2_m0/): information unless the rule picks
      0 s.
+4. **The rule's outcome: the 60 s table is the primary (Nov 9 2026, 19:07 ET).** Before any holdout number.
+   - **Diagnostic** (data agent; prints and candles only; branch signal-lab-data 440314f, reports/signal_lab/prints/
+     QA.md and leak_flags.parquet). The repo's candles mostly lead the prints: trades stamped in the first seconds of
+     a minute sit in the previous candle (median 8 s), which cannot leak. The leak direction is rare and is mostly a
+     missing candle whose minute sits in the next one. Every measured offset in the leak direction is under 60 s.
+   - **Candidates leaking under each margin** (deviations 2 and 3):
+
+     | Read era | Candidates | 0 s | 5 s | 60 s |
+     |---|---|---|---|---|
+     | Selection (Jan 2025 - Mar 2026) | 7,788 | 0.45% | 0.44% | 0.00% |
+     | Check (Apr - Nov 5 2026) | 4,095 | 1.71% | 1.68% | 0.05% |
+     | 2022-23 | 10,603 | 1.45% | 1.45% | 0.14% |
+
+     Training-only years: 2021 0.18% / 0.18% / 0.00%; 2024 0.34% / 0.34% / 0.07%.
+   - **Upper bounds for 0 s and 5 s** (the last candidate of each merged window, whose own minute was not fetched,
+     cannot be decided): 1.8%, 5.3% and 5.1%.
+   - **So the test uses the 60 s table:** every feature's window ends at q - 60 s, i.e. [q - 30 min, q - 60 s) and
+     [q - 5 min, q - 60 s). The big-print threshold and the ADV do not move. Tables: f6_main_m60.parquet and
+     f6_early_m60.parquet, copied to reports/signal_lab/prints_m60/ under the names the pipeline reads.
+   - **Limits, stated now:** the test does not use the last minute before the fill, which may be the most informative
+     one. A candle lag above 60 s cannot be measured by this diagnostic.
+   - **Readings:** selection, seed-averaged holdout and binding test on the 60 s table, in reports/signal_lab/
+     test2_m60/. The 0 s table stays information on the selection era only (test2_m0/). The 5 s table is not used.

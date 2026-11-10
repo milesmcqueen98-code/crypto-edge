@@ -56,3 +56,8 @@ print fetcher).
   1.6% (selection / Apr - Nov 2026 / 2022-23) once candidates with a missing previous candle are counted. Deviation 3
   logged: the 0.5% bar per read era, missing previous candles count as leaks under 0 s and 5 s, one margin for every
   row, and a second audit pass on the margin code before the lock is created.
+- 19:07 Data agent's follow-up done (signal-lab-data 440314f): boundary diagnostic, per-candidate leak flags, and the
+  5 s and 60 s tables. The candles mostly lead the prints by about 8 s (harmless). Leaking candidates under 0 s /
+  5 s / 60 s: selection 0.45% / 0.44% / 0.00%; Apr - Nov 2026 1.71% / 1.68% / 0.05%; 2022-23 1.45% / 1.45% / 0.14%.
+  Only 60 s is under the 0.5% bar in every read era. Deviation 4 logged: the 60 s table is the primary; the test
+  does not use the last minute before the fill.
