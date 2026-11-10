@@ -20,7 +20,30 @@ p = argparse.ArgumentParser()
 p.add_argument("--minutes", type=float, default=10)
 p.add_argument("--state-dir", default="/tmp/tb_smoke")
 p.add_argument("--config", default=os.path.join(HERE, "config.tb.json"), help="repo-relative or absolute")
+p.add_argument("--repair-probe", action="store_true",
+               help="instead: start the engine on live data, mark the 4 minutes before the newest as open for the "
+                    "listed coins, run one trades pass and print its counts (shows the repair path on the real market)")
 a = p.parse_args()
+
+if a.repair_probe:
+    import pandas as pd
+    sys.path.insert(0, ROOT)
+    from bot.spot.engine import Engine
+    cfg = json.load(open(os.path.join(ROOT, a.config)))
+    eng = Engine(mode="paper", cfg=cfg, state_dir=a.state_dir, echo=False)
+    eng.start()
+    print("start-up counts (start-up repair included):", json.dumps(eng.counts), flush=True)
+    t = eng.clock().floor("min")
+    eng.update_spot(t)
+    m = t - pd.Timedelta(minutes=1)
+    listed = [c for c in ["BTC"] + eng.coins if eng.trades_coins is None or c in eng.trades_coins]
+    for c in listed:
+        for k in range(1, 5):
+            eng._prov.get(c, {}).pop(m - pd.Timedelta(minutes=k), None)
+    eng.counts = {}
+    eng.trades_pass(m)
+    print(f"repair probe at {m}: listed {listed}; counts", json.dumps(eng.counts), flush=True)
+    sys.exit(0 if eng.counts.get("tb_rebuilt") == 4 * len(listed) else 1)
 
 # start at minute 20 or 50 of the hour: the backfill takes a few minutes and the steps then cross :30 or :00
 while int(time.time() // 60) % 30 != 20:
