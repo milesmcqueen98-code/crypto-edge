@@ -17,6 +17,7 @@ See scripts/forward/README.md.
 """
 import argparse
 import collections
+import glob
 import json
 import math
 import os
@@ -464,6 +465,8 @@ class Collector:
         self.stop = threading.Event()
         self.log = log or (lambda m: print(m, flush=True))
         self.pub_thread = None
+        if git:                                         # a restarted process re-offers files a dead one never pushed
+            git.add(glob.glob(os.path.join(out, "forward", "*", "*", "*.parquet")))
 
     # ---- helpers
     def count(self, stream, kind, n=1):

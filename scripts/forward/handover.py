@@ -39,8 +39,10 @@ class GH:
         self.repo = repo or os.environ["GITHUB_REPOSITORY"]
         self.wf = workflow or "forward-collector.yml"
         self.s = requests.Session()
-        self.s.headers.update({"Authorization": f"Bearer {token or os.environ['GITHUB_TOKEN']}",
-                               "Accept": "application/vnd.github+json", "User-Agent": "crypto-edge-bot/1.0"})
+        self.s.headers.update({"Accept": "application/vnd.github+json", "User-Agent": "crypto-edge-bot/1.0"})
+        token = token or os.environ.get("GITHUB_TOKEN")
+        if token:                                       # without one, reads of a public repo still work (dispatch not)
+            self.s.headers["Authorization"] = f"Bearer {token}"
 
     def get(self, path, **params):
         for a in range(4):
