@@ -1,6 +1,11 @@
 # Live order timing against the research assumption: results (Nov 10 2026)
 
-Plan: [reports/owner/timing_prereg.md](../timing_prereg.md) (fixed before any print was fetched; one deviation-log entry).
+Plan: [reports/owner/timing_prereg.md](../timing_prereg.md) (fixed before any print was fetched; deviations logged there).
+
+**Owner's verdict (Nov 10 2026): the bot's timing stays as built.** The whole-ladder valuation in part 2 meets the
+plan's two-era condition for fast re-pricing, but the bracket of the live bot's own timings (P1a, P1, P1b) spreads
+wider than any difference between policies, so the measure cannot rank them. Every realistic timing is within a
+few percent of the research assumption. The full reading and the reasons are in the plan's "Final reading".
 This is a measurement of simulation accuracy. Nothing was tuned and there is no pass or fail.
 
 ## The result
