@@ -1,8 +1,18 @@
-# Crypto edge: findings and live rules (updated Nov 9, 2026, signal lab; hunt 3; explore v1; sizing lab; edge hunt 2; ladder v6 sizing; Gemini venue test)
+# Crypto edge: findings and live rules (updated Nov 9, 2026, signal lab 2; signal lab; hunt 3; explore v1; sizing lab; edge hunt 2; ladder v6 sizing; Gemini venue test)
 
 Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly signals, paper-trading bot)
 
 ## Status at a glance
+- **Signal lab 2 (Nov 9): trade-print features for R2-08's model; no change (section below).**
+  - Five forced-selling features from 79.1M Coinbase prints, added to R2-08's model with and without the 2021–23
+    history. Opus agents built and ran it under one orchestrator; an independent audit passed before the one holdout
+    read.
+  - Averaged over seeds, the prints add nothing to R2-08 (−0.01 / −0.01 / +0.02). Binding test: +0.26 / +0.04 / +0.15
+    with history and +0.05 / +0.03 / +0.15 without, against a +0.20 bar (pooled p 0.21–0.22; 38.6 and 39.3 /100).
+  - A candle-clock check moved the feature windows 60 s earlier: trades stamped before a candidate minute sit in its
+    candle, or its previous candle is missing, for up to 1.7% of candidates.
+  - Model tests on history are exhausted. The next one needs about a year of open-interest and funding logs, and that
+    logger is not on GitHub yet.
 - **Signal lab (Nov 9): 41 retrained versions of R2-08's AI model; none beat it out of sample, so the model stays as
   it is (section below).**
   - Tried: three new labels (spot costs, the whole ladder, per sigma), five added feature sets (cascade state, position
@@ -155,6 +165,93 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   (section below).
 - **Maker round (Nov 6): rejected.** Two-sided quoting at the touch loses 0.7–0.9 bp per dollar before fees in all 36 setups.
 - **C3 upgrade round (Nov 6):** turnover cuts tie on Sharpe; C3 unchanged, still a paper-trade candidate.
+
+## Signal lab 2 (Nov 9): forced-selling features from trade prints; no change
+Goal set by Miles: continue the signal lab by running its pre-registered next test. Record: branch signal-lab
+(reports/signal_lab/prospective_prereg.md with five logged deviations, progress2.md, test2_m60/, prints/QA.md);
+data job on branch signal-lab-data.
+
+**Result: no change.** RF6H 38.6 / 100 and RF6 39.3 / 100. Both fail gates 1, 2, 3 and 5. R2-08 keeps its model and
+no new paper book opens. Final report: the "Signal Lab 2: Report" doc (https://claude.ai/artifact/R4kib7NPnS2BaG1LkarYaB).
+
+**How it was run (set by Miles):** the main agent orchestrated and kept the protocol. Opus agents at max effort did all
+implementation (the print-data job, the pipeline, the model runs). A separate Opus agent audited for look-ahead before
+the holdout was read. Five seed triples per arm; one holdout read.
+- **Plan:** prospective_prereg.md, written before any print was fetched. Five deviations, each logged before the work
+  it covers. Log: progress2.md.
+- **Order of reads:** selection era, the audit (two passes), the lock (test2/AUDIT_PASSED, 19:19 ET), then the
+  seed-averaged reading and the binding test with nothing decided between them.
+- **One interruption:** a machine restart stopped the binding test after its chains and 11 of the incumbent's 12
+  cells. No candidate cell existed yet; the remaining steps ran unchanged (deviation 5).
+
+**What was tested:**
+- **Five features** from Coinbase trade prints before each candidate fill minute: taker-sell USD over daily volume
+  (30 and 5 minutes), taker-sell share, the share of it in large prints, and the largest one-second sweep.
+- **RF6:** R2-08's label and 23 features plus the five. **RF6H (primary):** the same with the 2021–23 candidates added
+  to training. Nothing tuned.
+- **Incumbent:** R2-08 rebuilt by the lab's pipeline as one 15-seed model.
+
+**Data and timing:**
+- **Data job:** 79.1M prints, 10,042 merged windows, one feature row for each of 32,090 candidates. Gate passed: every
+  window complete; print USD over candle USD has a median of 1.0002 in both eras.
+- **The repo's candles and the prints keep slightly different clocks.** They disagree in 14–23% of minutes. Most of it
+  is harmless: the candles run ahead of the prints by about 8 s.
+- **The leak:** trades stamped before a candidate minute sit in its candle, or its previous candle is missing, for
+  0.45% / 1.71% / 1.45% of candidates (selection / Apr – Nov 2026 / 2022–23).
+- **Rule, logged before the diagnostic reported:** the smallest of 0 s, 5 s and 60 s with under 0.5% of candidates
+  leaking in every read era. Only 60 s qualifies (0.00% / 0.05% / 0.14%). So every feature window ends 60 s before
+  the candidate minute, and the test does not use the last minute before the fill.
+- **Audit:** no look-ahead in the feature code, the ADV, the join, the walk-forward, the every-minute panel, the lock
+  or the scorer. Its own recount of the leak flags matched.
+
+**Results** (ΔSharpe against R2-08; selection / Apr – Nov 2026 / 2022–23; in 2022–23 RF6H runs as RF6):
+
+| Reading | RF6H | RF6 |
+|---|---|---|
+| Seed-averaged, frozen simulator (five seed triples) | +0.50 / +0.07 / as RF6 | −0.01 / −0.01 / +0.02 |
+| The same at R2-08's selectivity | +0.42 / +0.18 / as RF6 | −0.05 / +0.04 / −0.06 |
+| Binding test: 15 seeds, engine-faithful, $250K, θ 0.5 | +0.26 / +0.04 / +0.15 | +0.05 / +0.03 / +0.15 |
+| Binding test at θ 0.25 | +0.33 / +0.12 / +0.15 | +0.10 / +0.03 / +0.15 |
+| Binding test at $1M | +0.59 / +0.17 / +0.24 | +0.04 / +0.06 / +0.24 |
+| Binding test at research volumes, 1× costs | −0.12 / +0.14 / +0.14 | −0.01 / −0.06 / +0.14 |
+| Frozen simulator, 15 seeds (no cash rule) | +0.51 / +0.03 / +0.14 | +0.02 / −0.08 / +0.14 |
+| Every other minute armed, both books | +0.39 / +0.01 / +0.15 | +0.11 / +0.04 / +0.15 |
+
+- **Gates:** both fail gate 1 (+0.20 in each era), gate 2 (research volumes), gate 3 (drawdown within 1.1×) and
+  gate 5 (pooled holdout p 0.22 and 0.21; Holm 0.41). Both pass gate 4 (no losing year).
+- **Scorecard (RF6H / RF6):** Sharpe gain 5.8 / 5.4 of 25; capacity 5.1 / 3.7 of 10; consistency 13.8 / 12.5 of 15
+  (11 and 10 of 12 cells positive); evidence 0 / 0 of 15; spread 0 / 0 of 10; risk 6.0 / 8.7 of 10; mechanism 6 / 6 of
+  10; implementation 2 / 3 of 5.
+- **The gain sits on a few days:** the five best days carry more than the whole pooled holdout gain (2.3× and 1.7×).
+- **Checks:** every chain's built-in checks passed (0 armed-state mismatches, 0 deep-path mismatches). The gates and
+  scorecard were recomputed from the daily series with separate code and match to 1e-15. R2-08's seed-triple rows are
+  bit-identical to the first lab's.
+
+**Why:**
+- **The prints tell the model little that the candles do not.** Averaged over seeds they move R2-08 by −0.01 / −0.01 /
+  +0.02. Taker-sell share follows the price path (rank correlation −0.34 to −0.38 with the window's return).
+- **RF6H's selection gain is the history again.** History alone was +0.37 in selection and −0.03 in Apr – Nov 2026.
+- **Beside the history the prints change selectivity, not ranking:** +0.13 / +0.11 at the model's own threshold
+  (5 of 5 seed triples both times), +0.03 / +0.03 at R2-08's selectivity (3 of 5).
+- **The last minute adds nothing in sample.** The 0 s table, which includes it and the leak, did no better on the
+  selection era: RF6 +0.06 against −0.01, RF6H +0.43 against +0.50.
+- **The 2022–23 gain depends on the seed set:** +0.15 for the 15-seed model, +0.02 on average for the five 3-seed
+  triples (range −0.09 to +0.07).
+- **Every gain found so far is under the noise floor.** The pooled holdout difference has a standard error of 0.16
+  Sharpe over 2.6 years. A true +0.12 would need about 13 years of forward data to reach one-sided 5%.
+
+**Next:**
+1. **Start the hourly open-interest and funding log.** The next model test needs it and it cannot be backfilled. As
+   of Nov 9 the logger written in hunt 3 is not on GitHub (no workflow, script or branch). Hunt 3's forward test
+   needs it running from the default branch by Nov 15.
+2. **Next model test, once about a year of that log exists:** open-interest and funding features in R2-08's model,
+   with this lab's pipeline, gates, 60 s rule and seed averaging.
+3. **The forward rules already fixed decide R2-08's real Sharpe:** paper, the $10K pilot, then capture share at $250K.
+   Capture share alone is worth 0.19–0.26 Sharpe (θ 0.5 against 0.25 in R2-08's cells: 2.48 / 2.31 / 1.52 against
+   2.29 / 2.05 / 1.26).
+4. **At the next retrain:** 15 seeds instead of 5 (first lab: same expected Sharpe, less seed noise).
+5. **Not built:** a live shadow log of the print features. It needs a new live data path for an effect that cannot be
+   confirmed in under a decade.
 
 ## Signal lab (Nov 9): what R2-08's model is taught and shown; no change
 Goal set by Miles: raise R2-08's out-of-sample Sharpe at $250K by improving what the model knows (features, labels,
@@ -2147,7 +2244,8 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
 - Walk-forward retraining every quarter, with an 8-day purge between training data and the test period.
 - Hyperparameters frozen before seeing any results.
 - Weekly-only trend checks were fragile: 7%–26% CAGR depending on the weekday. Fixed with daily checks and averaging across all 7 weekday phases.
-- The signal lab ran 41 retrained versions of R2-08's model (Nov 9).
+- The signal lab ran 41 retrained versions of R2-08's model (Nov 9); signal lab 2 read two more, with trade-print
+  features, once each.
 - Explore v1 alone ran 4,691 variants of the spot ladder (Nov 9); Hunt 3 added 258 DEV trials of 66 new models (N = 9,658).
 - About 484 variants in the earlier rounds (incl. the maker, C3 upgrade and scale-2 rounds), 19 books and 146 signal tests
   in the Medallion round, about 2,000 setups in the execution round and 130 in the wick v2 lab, so an improvement
@@ -2156,6 +2254,12 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
   CI runner.
 
 ## Known gaps
+- The repo's 1-minute candles and Coinbase's prints keep slightly different clocks (signal lab 2). In candidate
+  windows, 7.8% of minute boundaries have the first seconds of a minute (median 8 s) in the previous candle, and 0.9%
+  (2024–26) to 1.7% (2021–23) of minutes have prints but no candle. Print features must end 60 s before the
+  candidate minute.
+- The hourly open-interest and funding logger (hunt 3) is not on GitHub as of Nov 9: no workflow, script or branch.
+  Until it runs from the default branch, no forward data accrues for hunt 3's forward test or for a model test.
 - Hyperliquid liquidation, open-interest and wallet history isn't free, so the flow-identity ideas (who was
   liquidated vs who is informed) wait for forward-collected data (edge hunt 2). Open interest and funding are now
   logged hourly with the CFM funding job (scripts/fetch_hl.py, data/hl/oi_log.csv) once it runs from the default

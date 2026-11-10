@@ -92,3 +92,18 @@ print fetcher).
   processes and agents stopped; files survived. On disk: both chains complete with clean checks (main 19:52, early
   20:00), 11 of the incumbent's 12 cells, no candidate cell. Deviation 5 logged: the read resumes with the driver's
   remaining steps unchanged. Interim outputs committed.
+- 20:09 Run agent resumed with the driver's remaining ten steps (cells, sensitivity cells, report), one at a time.
+- 20:28 Holdout read complete (test2_m60/holdout.txt; all steps exit 0; outputs pushed at 42433b4). Binding test,
+  ΔSharpe against R2-08 at $250K, θ 0.5, selection / Apr - Nov 2026 / 2022-23: RF6H +0.26 / +0.04 / +0.15; RF6 +0.05 /
+  +0.03 / +0.15. Both FAIL (gates 1, 2, 3 and 5; gate 4 passes). Pooled holdout p 0.22 and 0.21, Holm 0.41. Scores:
+  RF6H 38.6 / 100, RF6 39.3 / 100. Sensitivity (every other minute armed; frozen simulator; print-priced exits):
+  holdout eras stay between -0.08 and +0.15.
+- 20:30 Orchestrator's checks: the gates and scorecard recomputed from the cell series with separate code match the
+  report to 1e-15 (own bootstrap p 0.23 for both); the by-hand per-triple figures re-run by script and confirmed
+  (prints beside history +0.13 / +0.11, 5 of 5; at R2-08's selectivity +0.03 / +0.03, 3 of 5).
+- 20:35 Checked GitHub for the forward data the plan's verdict points to: the hourly open-interest and funding logger
+  written in hunt 3 is not there (no cfm-funding workflow, no scripts/fetch_hl.py, no hunt3 branch).
+- 20:35 Verdict: no change. Report doc filled ("Signal Lab 2: Report", https://claude.ai/artifact/R4kib7NPnS2BaG1LkarYaB);
+  README and the findings doc updated with the signal lab 2 section. Next: start the hourly log; next model test
+  when about a year of it exists; the forward rules already fixed (paper, $10K pilot, capture share) decide R2-08's
+  real Sharpe.
