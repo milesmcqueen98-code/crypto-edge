@@ -497,7 +497,7 @@ class Engine:
                 df = new
             elif len(new):
                 df = pd.concat([df, new])
-                df = df[~df.index.duplicated(keep="last")]
+                df = df[~df.index.duplicated(keep="last")].sort_index()    # a re-fetch can skip a stored minute
             if len(df):
                 df = df.loc[end - pd.Timedelta(minutes=WINDOW_MIN):]
             self.spot[c] = df
