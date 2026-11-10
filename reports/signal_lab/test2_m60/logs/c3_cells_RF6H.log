@@ -1,0 +1,12 @@
+RF6H S_0.5 sel: model 2.743 / 21.15%, print 3.055 / 23.19%
+RF6H S_0.5 chk: model 2.351 / 16.82%, print 2.670 / 18.75%
+RF6H S_0.5 early: = RF6
+RF6H S_0.25 sel: model 2.617 / 18.86%, print 2.944 / 20.79%
+RF6H S_0.25 chk: model 2.171 / 15.32%, print 2.491 / 17.16%
+RF6H S_0.25 early: = RF6
+RF6H cap_1M sel: model 2.604 / 16.06%, print 2.818 / 17.20%
+RF6H cap_1M chk: model 1.170 / 7.56%, print 1.506 / 8.69%
+RF6H cap_1M early: = RF6
+RF6H base_0.5 sel: model 2.464 / 22.46%, print 2.593 / 23.41%
+RF6H base_0.5 chk: model 2.721 / 19.35%, print 2.859 / 20.23%
+RF6H base_0.5 early: = RF6
