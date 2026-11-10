@@ -4,7 +4,7 @@
 Usage: python scripts/owner/paper_status.py [REPO_ROOT] [--now ISO_TIME]
 
 Reads paper_spot/, paper_spot_w2/, paper/ and paper_v2/ (events.jsonl and state.json) under REPO_ROOT (default: the
-repo this file lives in) and writes reports/owner/PAPER_STATUS.md. Standard library only, no network. A missing
+repo this file lives in) and writes reports/owner/PAPER_STATUS.md. Reads reports/owner/explained_errors.json for errors the owner has explained (a missing or bad file means none are). Standard library only, no network. A missing
 folder, an empty log, a truncated last line or an event kind it has not seen never stops the report.
 """
 import json
@@ -20,6 +20,7 @@ RULE_A = ("Paper for at least 3 weeks and at least 60 rungs; pass if there are n
 LAST_LINE = ("Paper fills assume the research's capture share; they check the machinery and the fill frequency, "
              "not whether real orders fill.")
 ERR_CHARS = 160
+EXPLAINED_FILE = os.path.join("reports", "owner", "explained_errors.json")
 
 # key, folder, label, starting capital, spot-style book (rungs, ladders) or perp book
 BOOKS = [
@@ -93,6 +94,49 @@ def table(headers, rows):
     for r in rows:
         out.append("| " + " | ".join(clean(c) for c in r) + " |")
     return "\n".join(out)
+
+
+# ---------------------------------------------------------------- explained errors
+def load_explanations(root):
+    """Returns (entries, note). A missing or malformed file gives no entries and a one-line note."""
+    path = os.path.join(root, EXPLAINED_FILE)
+    try:
+        with open(path, encoding="utf-8") as f:
+            raw = json.load(f)
+    except (OSError, ValueError):
+        return [], "No list of explained errors could be read, so every error counts as unexplained."
+    if not isinstance(raw, list):
+        return [], "The list of explained errors is not a list, so every error counts as unexplained."
+    entries, skipped = [], 0
+    for o in raw:
+        ok = isinstance(o, dict) and isinstance(o.get("match"), str) and o["match"]
+        t0 = parse_ts(o.get("from")) if ok else None
+        t1 = parse_ts(o.get("to")) if ok else None
+        books = o.get("books") if ok else None
+        if not (ok and t0 and t1 and isinstance(books, list)):
+            skipped += 1
+            continue
+        entries.append({"match": o["match"], "from": t0, "to": t1, "books": [str(b) for b in books],
+                        "explained": str(o.get("explained", "")), "fix": str(o.get("fix", ""))})
+    note = f"{skipped} entry(ies) in the list of explained errors could not be read and were ignored." if skipped else None
+    return entries, note
+
+
+def classify_errors(book_key, error_events, entries):
+    """Splits error events (time, message) into explained [(time, message, entry)] and unexplained [(time, message)].
+    Explained needs all three: the message contains the match text, the time is inside the window, the book is listed."""
+    explained, unexplained = [], []
+    for t, msg in error_events:
+        hit = None
+        for en in entries:
+            if book_key in en["books"] and en["match"] in msg and t is not None and en["from"] <= t <= en["to"]:
+                hit = en
+                break
+        if hit:
+            explained.append((t, msg, hit))
+        else:
+            unexplained.append((t, msg))
+    return explained, unexplained
 
 
 # ---------------------------------------------------------------- loading
@@ -170,11 +214,15 @@ def stats(book, capital, spot_style):
     s["ladders"] = len(closes)
     s["ladders_win"] = sum(1 for e in closes if (num(e.get("pnl")) or 0.0) > 0)
     s["errors"] = len(errors)
+    s["error_events"] = [(e["_t"], str(e.get("error", e.get("message", "(no message)")))) for e in errors]
+    s["explained"] = []
+    s["unexplained"] = len(errors)
     msgs = Counter()
     for e in errors:
         m = clean(e.get("error", e.get("message", "(no message)")))
         msgs[m[:ERR_CHARS]] += 1
     s["error_msgs"] = msgs
+    s["unexplained_msgs"] = msgs
     s["bids"] = s["kinds"].get("bid", 0)
     s["cancels"] = s["kinds"].get("cancel", 0)
     s["halts"] = s["kinds"].get("halt", 0)
@@ -237,7 +285,7 @@ def stats(book, capital, spot_style):
 def rule_a(s):
     days, rungs = s["days"] or 0.0, s["fills"]
     net = s["net_bp"]
-    if s["errors"] > 0 or (net is not None and net <= 0):
+    if s.get("unexplained", s["errors"]) > 0 or (net is not None and net <= 0):
         return "CHECK"
     if days >= 21 and rungs >= 60 and net is not None:
         return "ON TRACK"
@@ -270,6 +318,13 @@ def build_report(root, now):
             loaded[key] = {"status": "empty", "events": [], "bad": 0, "state": None}
             st[key] = stats(loaded[key], cap, spot_style)
             notes.append(f"{label}: could not be fully read ({clean(type(exc).__name__)}); shown as empty.")
+    entries, expl_note = load_explanations(root)
+    for key in st:
+        ex, un = classify_errors(key, st[key]["error_events"], entries)
+        st[key]["explained"] = ex
+        st[key]["unexplained"] = len(un)
+        m = Counter(clean(msg)[:ERR_CHARS] for _, msg in un)
+        st[key]["unexplained_msgs"] = m
     labels = {k: lab for k, _, lab, _, _ in BOOKS}
     kinds_spot = {k: spot for k, _, _, _, spot in BOOKS}
 
@@ -305,13 +360,23 @@ def build_report(root, now):
             ["Days", f"{sp['days']:.1f} of 21"],
             ["Rungs", f"{sp['fills']} of 60"],
             ["Mean net per dollar", bp(sp["net_bp"])],
-            ["Errors", str(sp["errors"])]]), ""]
-        if sp["error_msgs"]:
-            L += [table(["Error message (first 160 characters)", "Count"],
-                        [[m, str(n)] for m, n in sp["error_msgs"].most_common()]), ""]
+            ["Errors (total)", str(sp["errors"])],
+            ["Explained", str(len(sp["explained"]))],
+            ["Unexplained", str(sp["unexplained"])]]), ""]
+        if expl_note:
+            L += [expl_note, ""]
+        if sp["explained"]:
+            L += ["Explained errors:", "",
+                  table(["Time (UTC)", "Error (first 160 characters)", "Explanation", "Queued fix"],
+                        [[fmt_t(t), clean(msg)[:ERR_CHARS], en["explained"], en["fix"]]
+                         for t, msg, en in sp["explained"]]), ""]
+        if sp["unexplained_msgs"] and sp["unexplained"]:
+            L += ["Unexplained errors:", "",
+                  table(["Error message (first 160 characters)", "Count"],
+                        [[m, str(n)] for m, n in sp["unexplained_msgs"].most_common()]), ""]
         L += [f"Status: **{rule_a(sp)}**", "",
-              "CHECK means errors are present or net is at or below 0. NOT YET means the 3 weeks and 60 rungs are not "
-              "reached. ON TRACK means both are reached with no errors and net above 0. The owner declares any pass.", ""]
+              "CHECK means unexplained errors are present or net is at or below 0. NOT YET means the 3 weeks and 60 rungs are not "
+              "reached. ON TRACK means both are reached with no unexplained errors and net above 0. The owner declares any pass.", ""]
 
     # spot detail
     L += ["## Spot book detail", ""]
@@ -326,7 +391,10 @@ def build_report(root, now):
         L += ["Fills and net per dollar by rung:", "",
               table(["Rung", "Fills", "Dollars bought", "Exit events", "Exit P&L", "Net per dollar"], rr), ""]
         end = (sp["newest"] or now).date()
-        days = [end - timedelta(days=i) for i in range(13, -1, -1)]
+        start = end - timedelta(days=13)
+        if sp["first"] is not None and sp["first"].date() > start:
+            start = sp["first"].date()
+        days = [start + timedelta(days=i) for i in range((end - start).days + 1)]
         L += ["P&L of exits by day, last 14 days:", "",
               table(["Day (UTC)", "Exit P&L"], [[d.isoformat(), money(sp["daily"].get(d, 0.0))] for d in days]), ""]
         if sp["shorts"]:
@@ -381,12 +449,13 @@ def build_report(root, now):
     for key in ("v1", "r2"):
         s = st[key]
         if s["status"] != "ok":
-            prow.append([labels[key], s["status"] + " log", "-", "-", "-", "-"])
+            prow.append([labels[key], s["status"] + " log", "-", "-", "-", "-", "-"])
         else:
-            prow.append([labels[key], str(s["fills"]), bp(s["mean_net_bp"]), money(s["equity"]),
+            fpd = f"{s['fills'] / s['days']:.2f}" if s["days"] else "n/a"
+            prow.append([labels[key], str(s["fills"]), fpd, bp(s["mean_net_bp"]), money(s["equity"]),
                          pct(s["change_pct"]), f"{s['bids']:,}"])
-    L += [table(["Book", "Fills", "Net per trade", "Equity", "Change", "Bids placed"], prow), "",
-          "Net per trade is the mean of the net bp of each exit.", ""]
+    L += [table(["Book", "Fills", "Fills per day", "Net per trade", "Equity", "Change", "Bids placed"], prow), "",
+          "Net per trade is the mean of the net bp of each exit. Fills per day is fills divided by days run.", ""]
 
     # data notes
     for key, _, label, _, _ in BOOKS:

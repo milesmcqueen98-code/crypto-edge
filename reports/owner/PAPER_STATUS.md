@@ -1,13 +1,13 @@
 # Paper trading status
 
-Report made 2026-11-10 14:15 UTC.
+Report made 2026-11-10 14:16 UTC.
 
 | Book | Newest event | Age | Flag |
 |---|---|---|---|
 | Spot (main) | 2026-11-10 13:30 UTC | 0.8 h ago | ok |
 | Spot W2 | 2026-11-10 13:30 UTC | 0.8 h ago | ok |
-| Perp v1 (control) | 2026-11-10 06:55 UTC | 7.3 h ago | ok |
-| Perp R2-08 | 2026-11-10 06:55 UTC | 7.3 h ago | ok |
+| Perp v1 (control) | 2026-11-10 06:55 UTC | 7.4 h ago | ok |
+| Perp R2-08 | 2026-11-10 06:55 UTC | 7.4 h ago | ok |
 
 A book is flagged STALE when its newest event is more than 8 hours old.
 
@@ -31,15 +31,19 @@ Days run from the first to the newest event. Change is against starting capital 
 | Days | 3.6 of 21 |
 | Rungs | 21 of 60 |
 | Mean net per dollar | 81.0 bp |
-| Errors | 1 |
+| Errors (total) | 1 |
+| Explained | 1 |
+| Unexplained | 0 |
 
-| Error message (first 160 characters) | Count |
-|---|---|
-| KeyError("Cannot get left slice bound for non-monotonic index with a missing label Timestamp('2026-10-27 21:19:00'). Either sort the index or specify an existin | 1 |
+Explained errors:
 
-Status: **CHECK**
+| Time (UTC) | Error (first 160 characters) | Explanation | Queued fix |
+|---|---|---|---|
+| 2026-11-07 21:19 UTC | KeyError("Cannot get left slice bound for non-monotonic index with a missing label Timestamp('2026-10-27 21:19:00'). Either sort the index or specify an existin | The spot engine re-fetches the last three minutes of candles each minute, and when a re-fetch left out a minute that an earlier fetch had returned, the table was left out of order and the next time slice failed, so that one minute placed no new bids and the next minute's fetch repaired it. | A one-line sort of the index in update_spot (bot/spot/engine.py) is queued for the next release. |
 
-CHECK means errors are present or net is at or below 0. NOT YET means the 3 weeks and 60 rungs are not reached. ON TRACK means both are reached with no errors and net above 0. The owner declares any pass.
+Status: **NOT YET (too early)**
+
+CHECK means unexplained errors are present or net is at or below 0. NOT YET means the 3 weeks and 60 rungs are not reached. ON TRACK means both are reached with no unexplained errors and net above 0. The owner declares any pass.
 
 ## Spot book detail
 
@@ -55,15 +59,6 @@ P&L of exits by day, last 14 days:
 
 | Day (UTC) | Exit P&L |
 |---|---|
-| 2026-10-28 | $0.00 |
-| 2026-10-29 | $0.00 |
-| 2026-10-30 | $0.00 |
-| 2026-10-31 | $0.00 |
-| 2026-11-01 | $0.00 |
-| 2026-11-02 | $0.00 |
-| 2026-11-03 | $0.00 |
-| 2026-11-04 | $0.00 |
-| 2026-11-05 | $0.00 |
 | 2026-11-06 | $0.00 |
 | 2026-11-07 | -$3.06 |
 | 2026-11-08 | $1,305 |
@@ -98,11 +93,11 @@ A few days and a few dozen fills cannot separate the two weightings; a gap this 
 
 ## Perp books
 
-| Book | Fills | Net per trade | Equity | Change | Bids placed |
-|---|---|---|---|---|---|
-| Perp v1 (control) | 1 | 192.5 bp | $10,046 | +0.46% | 18,979 |
-| Perp R2-08 | 1 | 97.0 bp | $10,024 | +0.24% | 16,833 |
+| Book | Fills | Fills per day | Net per trade | Equity | Change | Bids placed |
+|---|---|---|---|---|---|---|
+| Perp v1 (control) | 1 | 0.27 | 192.5 bp | $10,046 | +0.46% | 18,979 |
+| Perp R2-08 | 1 | 0.30 | 97.0 bp | $10,024 | +0.24% | 16,833 |
 
-Net per trade is the mean of the net bp of each exit.
+Net per trade is the mean of the net bp of each exit. Fills per day is fills divided by days run.
 
 Paper fills assume the research's capture share; they check the machinery and the fill frequency, not whether real orders fill.

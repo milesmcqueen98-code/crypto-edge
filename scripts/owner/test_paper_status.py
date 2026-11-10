@@ -164,6 +164,70 @@ def main():
         except Exception as exc:
             check("garbage values do not raise", False, repr(exc))
 
+    # explained errors: window, message, book
+    msg = "KeyError(\"Cannot get left slice bound for non-monotonic index with a missing label\")"
+    entry_ok = {"match": "Cannot get left slice bound", "from": "2026-11-07T21:00:00Z", "to": "2026-11-07T22:00:00Z",
+                "books": ["spot"], "explained": "Because of a known bug.", "fix": "A sort is queued."}
+
+    def explained_root(tmp, spot_errors, w2_errors, expl_text):
+        for folder, errs in (("paper_spot", spot_errors), ("paper_spot_w2", w2_errors)):
+            write(tmp, folder, [{"ts": "2026-11-07T00:00:00", "kind": "backfill"}] +
+                  [{"ts": t, "kind": "error", "error": m} for t, m in errs])
+        os.makedirs(os.path.join(tmp, "reports", "owner"), exist_ok=True)
+        if expl_text is not None:
+            with open(os.path.join(tmp, "reports", "owner", "explained_errors.json"), "w") as f:
+                f.write(expl_text)
+
+    def unexplained(tmp, key, folder, spot_style=True):
+        entries, _ = ps.load_explanations(tmp)
+        s = ps.stats(ps.load_book(tmp, folder), 250000.0, spot_style)
+        ex, un = ps.classify_errors(key, s["error_events"], entries)
+        return len(ex), len(un)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        explained_root(tmp, [("2026-11-07T21:19:07", msg)], [("2026-11-07T21:19:07", msg)], json.dumps([entry_ok]))
+        check("error inside the window is explained", unexplained(tmp, "spot", "paper_spot") == (1, 0))
+        check("wrong book stays unexplained", unexplained(tmp, "w2", "paper_spot_w2") == (0, 1))
+        text = ps.build_report(tmp, NOW)
+        check("report shows the three error rows", "| Errors (total) | 1 |" in text and "| Explained | 1 |" in text
+              and "| Unexplained | 0 |" in text)
+        check("report shows explanation and fix", "Because of a known bug." in text and "A sort is queued." in text)
+        check("rule A is NOT YET when the only error is explained", "Status: **NOT YET (too early)**" in text)
+        check("summary keeps total error count", "| 1 |" in text.split("## Summary")[1].split("##")[0])
+
+    with tempfile.TemporaryDirectory() as tmp:
+        explained_root(tmp, [("2026-11-08T21:19:07", msg), ("2026-11-07T20:59:59", msg)], [], json.dumps([entry_ok]))
+        check("same message outside the window stays unexplained", unexplained(tmp, "spot", "paper_spot") == (0, 2))
+        text = ps.build_report(tmp, NOW)
+        check("unexplained errors give CHECK", "Status: **CHECK**" in text and "| Unexplained | 2 |" in text)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        explained_root(tmp, [("2026-11-07T21:19:07", msg)], [], "{this is not json")
+        try:
+            entries, note = ps.load_explanations(tmp)
+            text = ps.build_report(tmp, NOW)
+            check("malformed explanation file does not raise", entries == [] and note is not None
+                  and "| Unexplained | 1 |" in text and "every error counts as unexplained" in text)
+        except Exception as exc:
+            check("malformed explanation file does not raise", False, repr(exc))
+    with tempfile.TemporaryDirectory() as tmp:
+        explained_root(tmp, [("2026-11-07T21:19:07", msg)], [], None)
+        try:
+            ps.build_report(tmp, NOW)
+            check("missing explanation file does not raise", True)
+        except Exception as exc:
+            check("missing explanation file does not raise", False, repr(exc))
+
+    # report fixes: daily table starts at the first event; perp fills per day
+    with tempfile.TemporaryDirectory() as tmp:
+        build_root(tmp)
+        text = ps.build_report(tmp, NOW)
+        day_rows = [l for l in text.split("P&L of exits by day")[1].split("\n\n")[1].splitlines() if l.startswith("| 2026")]
+        check("daily table starts at the first event", day_rows[0].startswith("| 2026-11-07 ") and len(day_rows) <= 14, day_rows[:2])
+        check("perp table has fills per day", "Fills per day" in text)
+        v1 = ps.stats(ps.load_book(tmp, "paper"), 10000.0, False)
+        check("perp days run", v1["days"] is not None and abs(v1["days"] - 2 / 24) < 1e-9, v1["days"])
+
     print("\n" + ("all passed" if not FAILS else f"{len(FAILS)} failed: {FAILS}"))
     sys.exit(1 if FAILS else 0)
 
