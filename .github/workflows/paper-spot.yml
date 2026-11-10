@@ -34,6 +34,7 @@ jobs:
             reports
             paper_spot
             paper_spot_w2
+            paper_spot_tb
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -44,16 +45,19 @@ jobs:
           python bot/spot/run.py paper --minutes $M > spot.out 2>&1 &
           # wick v4 W2 challenger (1/4, 1/4, 1/2): failed the pre-registered rule, looked better post hoc; forward A/B
           python bot/spot/run.py paper --minutes $M --config bot/spot/config.w2.json --state-dir paper_spot_w2 > w2.out 2>&1 &
+          # newest minute from the venue's trades, with the stale-input guard (bot/spot/README.md); same rules otherwise
+          python bot/spot/run.py paper --minutes $M --config bot/spot/config.tb.json --state-dir paper_spot_tb > tb.out 2>&1 &
           wait
           grep -E '"kind": "(fill_entry|fill_exit|halt|error|warning|catch_up)"' spot.out | tail -n 30 || true
           python bot/spot/run.py report | tail -n 30
           python bot/spot/run.py report --state-dir paper_spot_w2 | tail -n 30
+          python bot/spot/run.py report --state-dir paper_spot_tb | tail -n 30
       - name: Commit paper log
         if: always()
         run: |
           git config user.name "crypto-edge-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add paper_spot paper_spot_w2 2>/dev/null || git add paper_spot
+          git add paper_spot paper_spot_w2 paper_spot_tb 2>/dev/null || git add paper_spot paper_spot_w2 2>/dev/null || git add paper_spot
           git diff --cached --quiet && exit 0
           git commit -m "Spot paper log $(date -u +%Y-%m-%dT%H:%MZ)"
           # -X theirs: on a conflict in the paper logs this run's (newer) version wins instead of the push failing

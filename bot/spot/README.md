@@ -249,9 +249,34 @@ so fills are the same. It is off (`"quote": "USD"`) because the backtest assumes
 - Taxes: every rung is a short-term trade, so there are thousands of lots a year. Coinbase reports sales on Form 1099-DA.
   Use its tax export or crypto tax software, and ask a CPA how the wash-sale rule treats crypto for you.
 
+## Newest minute from trades (optional; off by default)
+The bot reads candles 6 s after each minute closes. The candle for the minute that just closed is often not final yet:
+in one hour of forward data 31.6% of them changed later and 6% were missing. Coinbase also serves candles through a
+cache that can be up to 5 minutes old. The research used final candles. Two switches in the config close this gap.
+Both default to today's behaviour.
+- `"newest_bar": "candles"` (default) uses the candles as today. `"trades"` rebuilds the minute that just closed for
+  BTC and every coin from Coinbase's public trades list (`bot/market.py`, `minute_trades_bar`). The bar is used only
+  if it is proven complete: paging reached a trade older than the minute, and the first page was made after the
+  minute ended (its Date header minus its Age header, or it holds a later trade). Anything else keeps the candle row
+  (the fallback). Older minutes still come from candles, and the next minute's candle re-fetch replaces the
+  trades-built row. The pass stops after `"trades_budget_s"` seconds (default 8); the coins not done keep their
+  candle. Nothing else changes: same model, rules, orders and checks.
+- `"stale_guard": false` (default). With `true`, if BTC's newest traded minute is not the one that just closed, the
+  minute is run like a market-data failure for new bids only: exits and take-profits run, no new or re-priced bids,
+  and resting bids are left to expire. It logs one `stale_input` event with BTC's age in minutes. It is not an
+  error. (In paper, bids do not expire by themselves, so a resting paper bid stays until the next normal minute.)
+- Heartbeat counters (always on): `tb_built` bars built from trades, `tb_insert` of those where the candle had no
+  row, `tb_close_diff` where the trades close and the candle close differ by more than one tick, `tb_empty` verified
+  empty minutes, fallbacks `tb_fb_unverified`, `tb_fb_error` and `tb_fb_budget`, `btc_stale` minutes,
+  `newest_absent` (coin-minutes with no row for the minute that just closed). `step_s` gives, since the last
+  heartbeat, the median and the maximum seconds after the minute at which the data step, the cancel pass and the
+  place pass of the 4-sigma bids finished. `tb_err` is the last trades error, when there was one.
+- The paper workflow runs a third book with both switches on (`config.tb.json`, `paper_spot_tb/`).
+
 ## Paper run
-`.github/workflows/paper-spot.yml` runs two paper books every 6 hours on GitHub Actions: the incumbent (`paper_spot/`) and
-the wick v4 W2 challenger (rungs ¼, ¼, ½; `paper_spot_w2/`, config `config.w2.json`). Both use:
+`.github/workflows/paper-spot.yml` runs three paper books every 6 hours on GitHub Actions: the incumbent (`paper_spot/`),
+the wick v4 W2 challenger (rungs ¼, ¼, ½; `paper_spot_w2/`, config `config.w2.json`) and the newest-minute-from-trades
+book (`paper_spot_tb/`, config `config.tb.json`, section above). All use:
 - $250K paper capital, θ = 0.5 capture, VIP-1 fees;
 - live public Coinbase data, no keys;
 - it commits `paper_spot/` back to the repo.
