@@ -79,3 +79,10 @@ For each minute q, with c = seconds after q when the stale bid is cancelled and 
 - Levels come from the repo's candles, whose clock runs ahead of the prints by about 8 s in about 8% of minute
   boundaries (signal lab 2). The bot computes its levels from candles fetched at q + 6 s, which the forward collector
   now records, so this can be checked on new data.
+
+## Deviation log
+- **Nov 10 2026, before any print is fetched (implementer).** The last print before P0's placement time (q + 0) is
+  stamped before q, outside the fetched window [q, q + 70 s). It is taken from the last page the fetcher already reads
+  to prove the window complete (no extra request): the newest print stamped before the merged window's start, or the
+  last print before q inside a merged window. Where it is unknown, P0's skip test falls back to no skip and the row is
+  flagged. Nothing else about the window changes.
