@@ -200,3 +200,7 @@ FORWARD_TESTS.md.
     Either the market was active or the late BTC input added fills. The replay and the third paper book will tell.
 - **14:08. Paper status report extended** (main 7c76d7a): running time per book, every rate per calendar day and per
   running day, the new data counters, and the third book's progress on its three-day rule.
+- **14:08. Paper book against the research: reconciliation planned and started** (paper_reconcile_plan.md, branch
+  owner/reconcile). For every minute the main paper book was live, the bid level and score it would have computed
+  from final candles are set against the bids and fills in its log. It shows how far the late inputs moved the
+  bot's decisions on real forward data, and whether they explain the extra fills.
