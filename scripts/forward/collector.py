@@ -384,7 +384,6 @@ class GitPublisher:
             raise RuntimeError(f"git {' '.join(args[:3])}: {r.stderr.strip()[-300:]}")
         return r
 
-    @staticmethod
     def setup(workdir, branch, repo=REPO, remote="origin"):
         """Make `workdir` a no-checkout worktree of `repo` on the remote branch's tip (blobs not downloaded)."""
         if os.path.exists(os.path.join(workdir, ".git")):
@@ -398,6 +397,8 @@ class GitPublisher:
             g("config", f"remote.{remote}.partialclonefilter", "blob:none")
         g("fetch", "--depth=1", "--filter=blob:none", remote, branch)
         g("worktree", "add", "--no-checkout", "--detach", os.path.abspath(workdir), "FETCH_HEAD")
+
+    setup = staticmethod(setup)
 
     def add(self, paths):
         with self.lock:
