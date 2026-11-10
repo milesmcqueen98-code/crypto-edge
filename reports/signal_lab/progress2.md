@@ -79,3 +79,12 @@ print fetcher).
 - 19:20 Lock opened (test2/AUDIT_PASSED, commit 355ee5b) after the audit's final pass and with the selection reading on
   the 60 s table committed. The run agent starts the one holdout read: the seed-averaged reading (test2.py b), then
   the binding test (test2.py c), on the 60 s table, with nothing decided between them. About two hours.
+- 19:35 Holdout read, first half: the seed-averaged reading is in (run agent; test2_m60/seeded.txt; 19:23-19:34;
+  R2-08's 15 triple-and-era rows are bit-identical to the first lab's). ΔSharpe against R2-08, mean (SD), triples
+  positive, selection / Apr - Nov 2026 / 2022-23:
+  - RF6: -0.01 (0.05), 2 of 5 / -0.01 (0.08), 1 of 5 / +0.02 (0.06), 4 of 5.
+  - RF6H: +0.50 (0.15), 5 of 5 / +0.07 (0.19), 3 of 5 / runs as RF6.
+  - At R2-08's selectivity: RF6M -0.05 / +0.04 / -0.06 (0 of 5); RF6HM +0.42 / +0.18 (5 of 5) / runs as RF6M.
+  - The prints beside the history (RF6H against the first lab's RF0H, same seeds; by hand, to be re-run by script
+    after the chain): +0.13 / +0.11, 5 of 5 both; at R2-08's selectivity +0.03 / +0.03, 3 of 5 both.
+  - The binding test (test2.py c) started at 19:34 with nothing decided in between.
