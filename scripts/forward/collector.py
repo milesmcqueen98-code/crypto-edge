@@ -338,7 +338,7 @@ def hour_path(out, stream, hour, run):
 
 
 def write_hour(out, stream, hour, run, rows):
-    df = frame(stream, rows)
+    df = frame(stream, rows).sort_values(KEYS[stream], kind="stable").reset_index(drop=True)
     p = hour_path(out, stream, hour, run)
     os.makedirs(os.path.dirname(p), exist_ok=True)
     tmp = p + ".tmp"
@@ -710,9 +710,10 @@ class Collector:
                 while d and d[0][0] < cut:
                     d.popleft()
             rows = {s: int(sum(n for _, n in self.rows_hist[s])) for s in STREAMS}
-            minutes = {s: len(self.rows_hist[s]) for s in STREAMS}
-        st = dict(run=self.run, heartbeat=now.isoformat() + "Z", started=self.started.isoformat() + "Z",
-                  planned_end=(pd.Timestamp(self.until, unit="s").isoformat() + "Z") if self.until else None,
+            minutes = {s: len({m for m, _ in self.rows_hist[s]}) for s in STREAMS}
+        iso = lambda t: f"{pd.Timestamp(t):%Y-%m-%dT%H:%M:%S}Z"
+        st = dict(run=self.run, heartbeat=iso(now), started=iso(self.started),
+                  planned_end=iso(pd.Timestamp(self.until, unit="s")) if self.until else None,
                   rows_last_hour=rows, bursts_last_hour=minutes, errors=dict(sorted(self.err.items())),
                   refused=self.refused, coins=self.coins, book_source=self.book_source)
         p = os.path.join(self.out, "forward", "status.json")
