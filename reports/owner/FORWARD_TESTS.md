@@ -1,0 +1,39 @@
+# Forward tests: every open question that only new data can answer (Nov 10 2026)
+
+One row per test. A test is read once, on the date and by the rule fixed before its data existed. Nothing here is
+decided on a backtest. The rules were written in the documents named in the last column; this file only collects
+them.
+
+## The incumbent, live
+
+| Test | What it decides | Read when | Pass rule | Status | Source |
+|---|---|---|---|---|---|
+| A. Spot paper book, $250K | Whether the machinery and the fill frequency match the research | At least 3 weeks and 60 rungs: no earlier than Nov 27 2026 | No unexplained errors; every rung closes by its rule; 1-6 rung fills a day; mean net per dollar above 0 | Running since Nov 6. See PAPER_STATUS.md | bot/spot/README.md |
+| B. Live pilot, $10K | Whether real orders fill like paper | At least 3 weeks and 50 rungs | Live fills on at least 70% of the paper bot's fills (same coin and minute); mean live result before fees within 25 bp of paper; no balance warnings | Miles's to start | bot/spot/README.md |
+| C. Live, $100K (up to $250K) | Capture share, the largest unmeasured number | 6-8 weeks | Capture share at least 0.25; mean net above 0 after 150 rungs | After B | bot/spot/README.md |
+| Standing stop | Whether to stop | Any time after 150 rungs | Stop and review if mean net per dollar bought is below 0 | Standing | bot/spot/README.md |
+| Idle cash as USDC (ladder v5, C4) | Whether Coinbase pays rewards on this account's USDC, and on cash held by resting bids | One weekly or monthly payout after switching | Rewards at least half of expectation B (free cash only); stop on any rejected -USDC order, a program change, or USDC below 0.997 for 15 minutes | Needs the account's eligibility and `usdc-check` | reports/ladder_v5_prereg.md, bot/spot/run.py |
+
+## Challengers running or registered
+
+| Test | What it decides | Read when | Pass rule | Status | Source |
+|---|---|---|---|---|---|
+| W2 rung weights (1:1:2), paper | Whether weighting the 8-sigma rung earns more per dollar without deeper drawdowns | With test A, then at each later read | No fixed rule was registered. Owner's rule, set Nov 10 with three days of data seen: adopt only if, after at least six months, its net P&L is at or above the main book's and its worst marked drawdown is within 1.1x. It is judged on return per dollar, because a Sharpe gain of this size cannot be confirmed in under several years | Running since Nov 7 | wick v4; this file |
+| Deeper ladders G1 (4/5/7/10 sigma) and G2 (4/5/6/8/10/12) | Whether more depth holds on new data | Once, on Nov 10 2026 - Mar 31 2027 | Positive Sharpe difference, the minute book at or above 0, risk within 1.1x | Registered; data accruing | reports/explore/prospective_prereg.md (branch explore/v1) |
+| Alt-perp carry on published funding (hunt 3) | Whether a carry sleeve rivals R2-08 | Once, Feb 1 2027 (Dec 1 - Jan 31) | Its own registered bar, at 1x and 2x costs; published funding within 2 bp a day of the rebuild | Needs published funding logged from Nov 15: the forward collector's `cfm` stream records it | hunt 3's prospective pre-registration (not on GitHub; summarised in the findings doc) |
+| Perp wick catcher, paper ($10K, v1 and R2-08) | Whether perp-only wicks are fillable | About 70 trades in the R2-08 book; 60 in each for the comparison | Stop R2-08 if realistic net per trade is below -12 bp after about 70 trades; back to v1 if v1's is higher after 60 in each | Running since Nov 6; one fill each so far | wick v2 lab |
+| H1 perp-only wicks at 5-6 pm ET | Whether the edge survives the real fee | After one authenticated order preview | Forward-test for 3 months only if the all-in fee is at or below $0.13 a contract | Needs the fee preview | edge hunt |
+| Sizing by the model's margin (C2a) and sweep depth (C7b) | Whether either survives on new data | A re-test on data after Nov 5 2026 | Ladder v5's gates | Not scheduled; low priority after the sizing lab | ladder v5 |
+
+## Waiting for data that is only now being collected
+
+| Test | What it decides | Read when | Status |
+|---|---|---|---|
+| Open interest and funding as model inputs | Whether leverage state adds information the candles lack | Pre-register when about a year of the collector's `hl` and `cfm` streams exists | Collector started Nov 10 2026 |
+| Order-book depth as a model input and as a capture-share estimate | Whether a thin book under the bid predicts the rebound, and how much of the volume is ours to take | Pre-register when about a year of the `book` stream exists; the capture-share use can be read with test C | Collector started Nov 10 2026 |
+| Candles as the bot sees them | Whether the bot decides on finished candles | Read after two weeks of the `candles` stream | Collector started Nov 10 2026 |
+| History-trained model at R2-08's selectivity | Whether 2021-23 history helps ranking forward | Optional shadow log at the next retrain | Not built |
+
+## Closed
+- The model on historical data: three rounds, no change (findings doc).
+- Trade-print features: no change (signal lab 2). A live shadow log of them is not worth building.
