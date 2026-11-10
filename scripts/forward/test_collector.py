@@ -417,5 +417,78 @@ class Handover(unittest.TestCase):
         self.assertEqual(H.decide(100, [50, 120]), ("exit", 50))                     # scheduled run during normal ops
 
 
+class FakeVenue:
+    """Exchange candles, Exchange trades (3 a page, newest first, paged by `after`) and Advanced candles for a few
+    coins. Coin 'GONE' has no trades and no candles."""
+
+    def __init__(self, minutes):
+        self.bars = {}
+        self.trades = {}
+        for c in ("AAA", "BBB", "GONE"):
+            tl = []
+            tid = 1
+            for i, m in enumerate(minutes):
+                if c == "GONE":
+                    continue
+                px = [100 + i, 101 + i, 99 + i, 100.5 + i]          # open, high, low, close
+                for k, p_ in enumerate(px):
+                    tl.append(dict(time=(m + pd.Timedelta(seconds=10 * k + 1)).isoformat() + "Z", trade_id=tid,
+                                   price=str(p_), size="0.5", side="buy"))
+                    tid += 1
+                self.bars[(c, m)] = (px[0], px[1], px[2], px[3], 2.0)
+            self.trades[c] = tl[::-1]
+
+    def request(self, method, url, timeout, params=None, **kw):
+        coin = url.split("/products/")[1].split("-")[0]
+        if url.endswith("/trades"):
+            tl = self.trades[coin]
+            if params.get("after"):
+                tl = [t for t in tl if t["trade_id"] < params["after"]]
+            return tl[:3]
+        if url.startswith(C.ADV):
+            s, e = int(params["start"]), int(params["end"])
+            return {"candles": [dict(start=str(int(m.timestamp())), open=v[0], high=v[1], low=v[2], close=v[3],
+                                     volume=v[4]) for (c, m), v in self.bars.items()
+                                if c == coin and s <= m.timestamp() <= e]}
+        s, e = pd.Timestamp(params["start"][:-1]), pd.Timestamp(params["end"][:-1])
+        return [[int(m.timestamp()), v[2], v[1], v[0], v[3], v[4]] for (c, m), v in self.bars.items()
+                if c == coin and s <= m <= e]
+
+
+class CandleProbe(unittest.TestCase):
+    def test_probe_end_to_end(self):
+        import candle_probe as P
+        q0 = pd.Timestamp.now().floor("min") - pd.Timedelta(minutes=20)
+        qs = [q0 + pd.Timedelta(minutes=i) for i in range(4)]
+        venue = FakeVenue([q - pd.Timedelta(minutes=k) for q in qs[:1] for k in range(6, 0, -1)] + qs[:3])
+        pr = P.Probe(["AAA", "BBB", "GONE"], http=venue, log=lambda m: None, ex_interval=0.001, adv_interval=0.001)
+        for q in qs:
+            pr.schedule(q)
+        for _ in range(200):
+            time.sleep(0.05)
+            if not pr.ex.pending() and not pr.adv.pending() and pr.pool._work_queue.empty():
+                break
+        time.sleep(0.3)
+        df = P.to_frame(pr.rows)
+        n = 3 * 4 * (len(P.CANDLE_DELAYS) + 1 + len(P.TRADE_DELAYS) + 1)
+        self.assertEqual(len(df), n)                                    # one row per coin, boundary, source, delay
+        tr = df[(df.source == "ex_trades") & (df.coin == "AAA") & df.present]
+        self.assertTrue((tr.pages >= 2).all())                          # 3 a page, 4 trades a minute: paging used
+        self.assertEqual(set(tr.n_trades), {4})
+        tab, per, ref, sig = P.measures(df)
+        self.assertEqual(len(ref), 2 * 4)                               # AAA, BBB; GONE never traded
+        self.assertTrue((tab.exact == 100).all() and (tab.material == 0).all())
+        tt = P.trades_timing(df[df.coin != "GONE"])
+        self.assertTrue((tt.pages_mean >= 2).all())
+        self.assertEqual(P.decide(tab, tt)[0], "A")
+        late = tab.copy()
+        late.loc[late.source == "ex_trades", "material"] = 5.0
+        self.assertEqual(P.decide(late, tt)[0], "B")
+        late.loc[late.source != "ex_trades", "material"] = 5.0
+        self.assertEqual(P.decide(late, tt)[0], "C")
+        self.assertEqual(P.reduce_trades(venue.trades["AAA"], qs[0] - pd.Timedelta(minutes=1))[:5],
+                         venue.bars[("AAA", qs[0] - pd.Timedelta(minutes=1))])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)
