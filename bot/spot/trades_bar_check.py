@@ -7,8 +7,9 @@ Each minute t, 6 s after it starts, for BTC and the 17 coins, as the engine does
      of its 3-minute re-fetch); this gives the first-seen candle of minute m = t - 1 min and the re-fetched candle of
      m - 1 min;
   2. the trades pass for m with the engine's budget (8 s) and the same function (bot/market.py minute_trades_bar);
-  3. the final candle of the minute built 3 minutes earlier, fetched with an address nobody else uses (start m - 10 min,
-     end m - 3 min), so the public cache cannot hand back an old copy made by someone else.
+  3. the final candle of the minute built LAG (6) minutes earlier, fetched with an address unlikely to be shared
+     (start 13 minutes before that minute, end at it). The public cache can still hand back an old copy, so only
+     answers without an Age header (cache MISS) count as final; the rest are reported apart.
 Then, per coin and overall: share verified, pages, seconds used for all coins, and the share of minutes where the
 trades bar, the engine's row (trades bar if verified, else the candle) and the first-seen candle each match the final
 candle (close, high, low exactly; volume within 0.5%). An absent row matches an absent final row.
@@ -48,9 +49,12 @@ def match(a, b):
             and abs(a["volume"] - b["volume"]) <= 0.005 * max(b["volume"], 1e-12))
 
 
-def final_candles(coin, m):
-    """Candles [m - 10 min, m - 3 min] through the header helper, with the answer's age."""
-    s, e = m - pd.Timedelta(minutes=10), m - pd.Timedelta(minutes=3)
+LAG = 6
+
+
+def final_candles(coin, mf):
+    """Candles [mf - 13 min, mf] through the header helper, with the answer's age."""
+    s, e = mf - pd.Timedelta(minutes=13), mf
     js, hd = M._get_h(f"{M.EXCHANGE}/products/{coin}-USD/candles",
                       {"granularity": 60, "start": s.isoformat() + "Z", "end": e.isoformat() + "Z"})
     rows = {pd.Timestamp(r[0], unit="s"): dict(open=float(r[3]), high=float(r[2]), low=float(r[1]), close=float(r[4]),
@@ -63,7 +67,7 @@ def main(minutes, budget):
     first, refetch, tb, timing, finals, errs = {}, {}, {}, [], {}, []
     stop = time.time() + 60 * minutes
     n_loop = 0
-    while time.time() < stop or n_loop < 3:                # three more steps at the end for the last finals
+    while time.time() < stop or n_loop < LAG:              # LAG more steps at the end for the last finals
         if time.time() >= stop:
             n_loop += 1
         nxt = (math.floor(time.time() / 60) + 1) * 60 + 6
@@ -103,12 +107,12 @@ def main(minutes, budget):
                     errs.append(f"trades {c} {m}: {err!r}"[:200])
                     tb[(c, m)] = dict(verified=False, reason="error", pages=0, s=time.monotonic() - a)
         t2, w2 = time.monotonic(), time.time()
-        # 3. final candles of the minute built 3 minutes ago (and the 6 minutes before it, unused)
-        mf = m - pd.Timedelta(minutes=3)
+        # 3. final candles of the minute built LAG minutes ago
+        mf = m - pd.Timedelta(minutes=LAG)
         if any((c, mf) in tb for c in COINS):
             for c in COINS:
                 try:
-                    rows, age, cache = final_candles(c, m)
+                    rows, age, cache = final_candles(c, mf)
                     finals[(c, mf)] = (rows.get(mf), age, cache)
                 except Exception as err:  # noqa: BLE001
                     errs.append(f"final {c} {mf}: {err!r}"[:200])
@@ -141,6 +145,14 @@ def main(minutes, budget):
                          final_age=age, final_cache=cache))
     R = pd.DataFrame(rows)
     T = pd.DataFrame(timing)
+    os.makedirs("out", exist_ok=True)
+    R.to_csv("out/tb_check_rows.csv", index=False)
+    pd.DataFrame([dict(coin=c, minute=m, **{k: v for k, v in r.items() if k != "bar"}, **(r.get("bar") or {}))
+                  for (c, m), r in tb.items()]).to_csv("out/tb_check_trades.csv", index=False)
+    print(f"final answers: {int(R.final_age.isna().sum())} without Age (used), {int(R.final_age.notna().sum())} "
+          f"cached copies (left out)")
+    R_all = R
+    R = R[R.final_age.isna()].copy()
     pd.set_option("display.width", 200)
     pd.set_option("display.max_columns", 30)
     if not len(R):
@@ -161,15 +173,15 @@ def main(minutes, budget):
     })
     print("\nPER COIN (trades_vs_final over verified minutes; engine_row = trades bar if verified, else the candle)")
     print(out.to_string())
-    tot = dict(minutes=len(R) // len(COINS), coin_minutes=len(R), verified=round(R.verified.mean(), 3),
+    tot = dict(coin_minutes=len(R), verified=round(R.verified.mean(), 3),
                pages_mean=round(R.pages.mean(), 2), pages_max=int(R.pages.max()),
                trades_vs_final=round(R.tb_match.mean(), 3), engine_row_vs_final=round(R.eng_match.mean(), 3),
                first_seen_vs_final=round(R.first_match.mean(), 3), first_seen_absent=round(R.first_absent.mean(), 3),
                refetch_vs_final=round(R.refetch_match.mean(), 3))
     print("\nOVERALL", json.dumps(tot))
     print("unverified reasons:", R[~R.verified].reason.value_counts().to_dict())
-    print("final candle answers: Age", R.final_age.value_counts(dropna=False).head(8).to_dict(),
-          "cf-cache-status", R.final_cache.value_counts(dropna=False).to_dict())
+    print("final candle answers (all): Age", R_all.final_age.value_counts(dropna=False).head(8).to_dict(),
+          "cf-cache-status", R_all.final_cache.value_counts(dropna=False).to_dict())
     tt = T[T.minute.isin(R.minute.unique())]
     print("\nseconds per step for all coins: candles median %.2f max %.2f; trades median %.2f max %.2f; "
           "data step done at median %.2f max %.2f s after the minute"
