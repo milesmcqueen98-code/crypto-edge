@@ -278,3 +278,6 @@ FORWARD_TESTS.md.
   UTC. The successor runs the code now on
   `main`, with the age of each candle answer and the trades-bar stream. None of the hourly schedule runs fired during
   the first run, so the hand-over chain is what keeps collection going; the schedule is a weak backstop.
+- **16:51. Owner's checks scheduled:** Nov 10 21:10 ET (first run of the third book and of the two new workflow
+  jobs), Nov 11 08:30 ET (the hand-over chain, the data counters of all three books, the collector's new streams),
+  Nov 14 09:00 ET (the three-day read of the third book, if it has its 4,000 minutes).
