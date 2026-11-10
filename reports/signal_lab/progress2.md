@@ -88,3 +88,7 @@ print fetcher).
   - The prints beside the history (RF6H against the first lab's RF0H, same seeds; by hand, to be re-run by script
     after the chain): +0.13 / +0.11, 5 of 5 both; at R2-08's selectivity +0.03 / +0.03, 3 of 5 both.
   - The binding test (test2.py c) started at 19:34 with nothing decided in between.
+- 20:08 The container restarted at about 20:06 during the binding test (step 3 of 12, the incumbent's cells). All
+  processes and agents stopped; files survived. On disk: both chains complete with clean checks (main 19:52, early
+  20:00), 11 of the incumbent's 12 cells, no candidate cell. Deviation 5 logged: the read resumes with the driver's
+  remaining steps unchanged. Interim outputs committed.

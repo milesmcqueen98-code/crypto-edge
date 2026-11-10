@@ -1,0 +1,42 @@
+{
+ "spec": "RF6H",
+ "base": "main",
+ "trades": 1503,
+ "seeds": "u15",
+ "periods": "2025Q1..2026Q4",
+ "twin": "RF0H_u15",
+ "rule": "deviation 1: own prediction at candidate minutes, twin shifted by (spec - twin threshold) elsewhere",
+ "panel_check": 7.625229983432291e-06,
+ "panel_checked": 11883,
+ "cand_armed_mismatch": 0,
+ "cand_nan_mismatch": 0,
+ "other_armed_mismatch": 0,
+ "moved_other": 1,
+ "moved_cand": 0,
+ "twin_check": {
+  "panel_check": 7.6228302248182445e-06,
+  "panel_checked": 11883
+ },
+ "deep": 3004,
+ "deep_bad": 0,
+ "armed_mean": 0.6868229500009697,
+ "armed": {
+  "ETH": 0.26085146719419716,
+  "SOL": 0.6329500494559842,
+  "XRP": 0.5927062726673261,
+  "DOGE": 0.7062469090009891,
+  "LTC": 0.5907342152983844,
+  "LINK": 0.7001607319485658,
+  "BCH": 0.6967905126937026,
+  "SUI": 0.8654127514012528,
+  "XLM": 0.7804236729310914,
+  "HBAR": 0.676592894823607,
+  "NEAR": 0.921265042861853,
+  "AAVE": 0.7530786350148369,
+  "HYPE": 0.3816683151994725,
+  "ENA": 0.7278797807451368,
+  "PEPE": 0.8715422024398286,
+  "ONDO": 0.8687850313221233,
+  "ZEC": 0.6489016650181338
+ }
+}

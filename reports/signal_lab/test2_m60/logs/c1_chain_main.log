@@ -1,0 +1,386 @@
+/home/claude/wt/v6x/scripts/lab/core.py:81: RuntimeWarning: Mean of empty slice
+  self.basket_lp = np.nancumsum(np.nanmean(r, axis=0))          # equal-weight market factor (log level)
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+lab ready: 17,527 candidates, 17 coins (33s)
+  AAVE: 76 trades, venues ['spot', 'perp']
+  BCH: 72 trades, venues ['spot', 'perp']
+  DOGE: 157 trades, venues ['spot', 'perp']
+  ENA: 77 trades, venues ['spot', 'perp']
+  ETH: 74 trades, venues ['spot', 'perp']
+  HBAR: 78 trades, venues ['spot', 'perp']
+  HYPE: 9 trades, venues ['spot', 'perp']
+  LINK: 114 trades, venues ['spot', 'perp']
+  LTC: 72 trades, venues ['spot', 'perp']
+  NEAR: 94 trades, venues ['spot', 'perp']
+  ONDO: 97 trades, venues ['spot', 'perp']
+  PEPE: 85 trades, venues ['spot', 'perp']
+  SOL: 144 trades, venues ['spot', 'perp']
+  SUI: 146 trades, venues ['spot', 'perp']
+  XLM: 76 trades, venues ['spot', 'perp']
+  XRP: 132 trades, venues ['spot', 'perp']
+  ZEC: 63 trades, venues ['spot', 'perp']
+precomputed 4695 tranche rows for 1051 trades -> pre_hunt_main_RF0_u15.pkl
+main_RF0_u15: 1566 trades, 4695 tranche rows (66s)
+F6 joined from /home/claude/wt/v6x/reports/signal_lab/prints_m60/f6_main.parquet: 17,527 candidates, 0 table rows unused; complete windows 1.0000 of the table; missing share csv_30 0.001, csv_5 0.001, sell_share_30 0.000, big_sell_share_30 0.001, sweep_max_30 0.001
+  AAVE: 76 trades, venues ['spot', 'perp']
+  BCH: 74 trades, venues ['spot', 'perp']
+  DOGE: 156 trades, venues ['spot', 'perp']
+  ENA: 73 trades, venues ['spot', 'perp']
+  ETH: 72 trades, venues ['spot', 'perp']
+  HBAR: 78 trades, venues ['spot', 'perp']
+  HYPE: 9 trades, venues ['spot', 'perp']
+  LINK: 113 trades, venues ['spot', 'perp']
+  LTC: 73 trades, venues ['spot', 'perp']
+  NEAR: 93 trades, venues ['spot', 'perp']
+  ONDO: 97 trades, venues ['spot', 'perp']
+  PEPE: 85 trades, venues ['spot', 'perp']
+  SOL: 148 trades, venues ['spot', 'perp']
+  SUI: 145 trades, venues ['spot', 'perp']
+  XLM: 75 trades, venues ['spot', 'perp']
+  XRP: 137 trades, venues ['spot', 'perp']
+  ZEC: 65 trades, venues ['spot', 'perp']
+precomputed 4704 tranche rows for 1059 trades -> pre_hunt_main_RF6_u15.pkl
+main_RF6_u15: 1569 trades, 4704 tranche rows (102s)
+history rows carry F6 (14,563 rows, equal to /home/claude/wt/v6x/reports/signal_lab/prints_m60/f6_early.parquet)
+  AAVE: 73 trades, venues ['spot', 'perp']
+  BCH: 62 trades, venues ['spot', 'perp']
+  DOGE: 153 trades, venues ['spot', 'perp']
+  ENA: 71 trades, venues ['spot', 'perp']
+  ETH: 68 trades, venues ['spot', 'perp']
+  HBAR: 68 trades, venues ['spot', 'perp']
+  HYPE: 9 trades, venues ['spot', 'perp']
+  LINK: 108 trades, venues ['spot', 'perp']
+  LTC: 78 trades, venues ['spot', 'perp']
+  NEAR: 98 trades, venues ['spot', 'perp']
+  ONDO: 89 trades, venues ['spot', 'perp']
+  PEPE: 90 trades, venues ['spot', 'perp']
+  SOL: 125 trades, venues ['spot', 'perp']
+  SUI: 129 trades, venues ['spot', 'perp']
+  XLM: 80 trades, venues ['spot', 'perp']
+  XRP: 115 trades, venues ['spot', 'perp']
+  ZEC: 87 trades, venues ['spot', 'perp']
+precomputed 4506 tranche rows for 1013 trades -> pre_hunt_main_RF6H_u15.pkl
+main_RF6H_u15: 1503 trades, 4506 tranche rows (164s)
+RF0H_u15: fitted as a print spec's twin (every-minute predictions only) (210s)
+extras [] (210s)
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+quarter 2025Q1: every-minute predictions done (319s)
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+quarter 2025Q2: every-minute predictions done (431s)
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+quarter 2025Q3: every-minute predictions done (544s)
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+quarter 2025Q4: every-minute predictions done (659s)
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+quarter 2026Q1: every-minute predictions done (770s)
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+quarter 2026Q2: every-minute predictions done (882s)
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+quarter 2026Q3: every-minute predictions done (993s)
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+/home/claude/wt/v6x/edge/wick.py:115: RuntimeWarning: Mean of empty slice
+  "alts_mean_z60": p(np.nanmean(oz, axis=0)) if others else np.full(len(x), np.nan),
+quarter 2026Q4: every-minute predictions done (1047s)
+main_RF0_u15: panel check on 11,883 candidate minutes, max |every-minute - candidate prediction| 7.62e-06; armed 0.750 of minutes; deep paths 3130 rungs, 0 mismatches (1057s)
+main_RF0_u15_armed: 4,117,573 non-candidate minutes raised to armed; armed 1.000 of minutes; dataset cloned from main_RF0_u15 (1058s)
+main_RF6_u15: panel check on 11,883 candidate minutes, max |every-minute - candidate prediction| 7.59e-06; armed 0.750 of minutes; deep paths 3136 rungs, 0 mismatches (1068s)
+main_RF6_u15: mixed panel (twin RF0_u15): candidate armed-state mismatches 0, non-candidate mismatches with the twin's armed state 0; values moved one ulp 0 / 0; twin check see the twin's own chain json
+main_RF6_u15_armed: 4,117,573 non-candidate minutes raised to armed; armed 1.000 of minutes; dataset cloned from main_RF6_u15 (1069s)
+main_RF6H_u15: panel check on 11,883 candidate minutes, max |every-minute - candidate prediction| 7.63e-06; armed 0.687 of minutes; deep paths 3004 rungs, 0 mismatches (1079s)
+main_RF6H_u15: mixed panel (twin RF0H_u15): candidate armed-state mismatches 0, non-candidate mismatches with the twin's armed state 0; values moved one ulp 1 / 0; twin check {'panel_check': 7.6228302248182445e-06, 'panel_checked': 11883}
+main_RF6H_u15_armed: 5,159,367 non-candidate minutes raised to armed; armed 1.000 of minutes; dataset cloned from main_RF6H_u15 (1080s)

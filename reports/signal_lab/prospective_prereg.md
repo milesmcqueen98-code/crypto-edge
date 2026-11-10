@@ -174,3 +174,15 @@ A candidate with no prints in its window gets missing values (LightGBM handles t
      one. A candle lag above 60 s cannot be measured by this diagnostic.
    - **Readings:** selection, seed-averaged holdout and binding test on the 60 s table, in reports/signal_lab/
      test2_m60/. The 0 s table stays information on the selection era only (test2_m0/). The 5 s table is not used.
+5. **The read was interrupted by a container restart and is resumed unchanged (Nov 9 2026, 20:08 ET).**
+   - **What happened:** the machine restarted at about 20:06 ET during the binding test's third step (the
+     incumbent's cells). Every process stopped. The files survived.
+   - **State on disk, checked before anything was rerun:**
+     - both chains had finished with clean checks (every-minute values within 2e-5 of the candidate predictions; 0
+       armed-state mismatches; 0 deep-path mismatches);
+     - 11 of the incumbent's 12 cells were written and are complete;
+     - no candidate cell had been computed, so no binding number for RF6 or RF6H exists or was seen.
+   - **Resumption:** the remaining steps of the same driver, as `test2.py c --dry` prints them from step 3 on, in the
+     same order, one process at a time. The cell step keeps cells already written (they are deterministic) and
+     computes the missing one. Nothing else changes: same table, datasets, configurations, gates and scorecard.
+   - It remains one holdout read.

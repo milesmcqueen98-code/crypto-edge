@@ -1,0 +1,11 @@
+RF0 S_0.5 sel: model 2.484 / 19.98%, print 2.906 / 22.76%
+RF0 S_0.5 chk: model 2.313 / 17.01%, print 2.750 / 19.63%
+RF0 S_0.5 early: model 1.524 / 9.58%, print 1.750 / 10.54%
+RF0 S_0.25 sel: model 2.291 / 17.84%, print 2.727 / 20.50%
+RF0 S_0.25 chk: model 2.051 / 15.07%, print 2.487 / 17.57%
+RF0 S_0.25 early: model 1.264 / 8.31%, print 1.499 / 9.24%
+RF0 cap_1M sel: model 2.013 / 13.52%, print 2.346 / 15.18%
+RF0 cap_1M chk: model 0.997 / 6.96%, print 1.490 / 8.56%
+RF0 cap_1M early: model 0.425 / 4.48%, print 0.620 / 4.92%
+RF0 base_0.5 sel: model 2.579 / 24.77%, print 2.755 / 26.14%
+RF0 base_0.5 chk: model 2.580 / 19.53%, print 2.769 / 20.75%

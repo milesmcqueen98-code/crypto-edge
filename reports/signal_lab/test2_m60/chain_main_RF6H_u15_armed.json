@@ -1,0 +1,28 @@
+{
+ "spec": "RF6H",
+ "base": "main",
+ "of": "main_RF6H_u15",
+ "rule": "every non-candidate minute armed (deviation 1 sensitivity); values not above the threshold raised to the smallest float32 above it",
+ "raised": 5159367,
+ "other_unarmed": 0,
+ "armed_mean": 0.9995209557611372,
+ "armed": {
+  "ETH": 0.998707962413452,
+  "SOL": 0.9993653148697659,
+  "XRP": 0.9993426475436861,
+  "DOGE": 0.999232401912298,
+  "LTC": 0.9993910731948565,
+  "LINK": 0.9994456808440488,
+  "BCH": 0.9994580448400923,
+  "SUI": 0.9995353198153644,
+  "XLM": 0.9996033217936037,
+  "HBAR": 0.9995930184635674,
+  "NEAR": 0.9997290224200461,
+  "AAVE": 0.9995981701285855,
+  "HYPE": 0.9998392680514342,
+  "ENA": 0.9998227827233762,
+  "PEPE": 0.9997980547312891,
+  "ONDO": 0.9996651417738213,
+  "ZEC": 0.9997290224200461
+ }
+}

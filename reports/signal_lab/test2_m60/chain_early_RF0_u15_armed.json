@@ -1,0 +1,25 @@
+{
+ "spec": "RF0",
+ "base": "early",
+ "of": "early_RF0_u15",
+ "rule": "every non-candidate minute armed (deviation 1 sensitivity); values not above the threshold raised to the smallest float32 above it",
+ "raised": 12563850,
+ "other_unarmed": 0,
+ "armed_mean": 0.9993771952932912,
+ "armed": {
+  "ETH": 0.9983447488584475,
+  "SOL": 0.9992484779299847,
+  "XRP": 0.9998097412480974,
+  "DOGE": 0.9990620243531202,
+  "LTC": 0.9990334855403349,
+  "LINK": 0.9992627473363774,
+  "BCH": 0.9992713089802131,
+  "SUI": 0.9999362633181126,
+  "XLM": 0.9994035388127854,
+  "HBAR": 0.9997212709284627,
+  "NEAR": 0.9996689497716895,
+  "AAVE": 0.9994197108066971,
+  "ZEC": 0.9997212709284627
+ },
+ "cand_armed_changed": 0
+}
