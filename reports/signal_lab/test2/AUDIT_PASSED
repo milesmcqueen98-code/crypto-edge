@@ -1,0 +1,17 @@
+Signal lab 2: holdout lock opened by the orchestrator, 2026-11-09 19:19 ET (shell clock).
+
+Why: the independent look-ahead audit (a separate Opus agent at max effort, read-only) gave its final pass after two
+rounds. Round 1: pass with conditions (the candle clock). Round 2: final pass on the margin code, the leak counts and
+the 60 s tables. The plan's deviations 2 to 4 (reports/signal_lab/prospective_prereg.md) were logged before this file.
+
+What may now be read, once: the check era (Apr 1 - Nov 5 2026) and 2022-23 for RF6 and RF6H, as one read made of
+  python scripts/signal_lab/test2.py b --f6 reports/signal_lab/prints_m60 --out reports/signal_lab/test2_m60
+  python scripts/signal_lab/test2.py c --f6 reports/signal_lab/prints_m60 --out reports/signal_lab/test2_m60
+in that order, one process at a time, with no decision between them.
+
+Table (windows end 60 s before the candidate minute), sha256:
+  583d3de7722160d128cfd2f2abd3ba88a20f69b96e4a1896ac469ec6935d01b6  reports/signal_lab/prints_m60/f6_main.parquet
+  9e65299409ea6434d67b6153dbef43d5673749742113167e54613228aedb982f  reports/signal_lab/prints_m60/f6_early.parquet
+
+State at the lock: branch signal-lab at 2d3f8b7 (selection reading on the 60 s table committed); data branch
+signal-lab-data at 440314f. No holdout number for RF6 or RF6H exists before this file.
