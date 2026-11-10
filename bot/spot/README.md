@@ -244,7 +244,8 @@ so fills are the same. It is off (`"quote": "USD"`) because the backtest assumes
   - the heartbeat alert if the server goes silent.
 - Weekly, run `wickctl report`, and look at the paper book's report next to it (`git pull` and `python bot/spot/run.py
   report` on your computer). Compare fills, net per rung and capture share.
-- Code updates: `wickctl update`.
+- Code updates: `wickctl update` pulls the latest code and restarts the bot only if it was running. A bot that was stopped
+  stays stopped, so an update never starts live trading by itself.
 - Taxes: every rung is a short-term trade, so there are thousands of lots a year. Coinbase reports sales on Form 1099-DA.
   Use its tax export or crypto tax software, and ask a CPA how the wash-sale rule treats crypto for you.
 
@@ -287,6 +288,9 @@ Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
 - **Candle merge:** `python bot/spot/merge_test.py` checks the per-minute merge of re-fetched candles in `update_spot`. A re-fetch
   that skips a stored minute used to leave the index out of order and the window cut raised KeyError. The test shows the
   old lines raise and the engine does not, that re-fetched values win, and that a normal merge is unchanged. No network.
+- **wickctl update:** `bash bot/spot/deploy/wickctl_test.sh` runs the real `update` branch against stub `sudo`, `systemctl`, `git` and
+  `install`. It checks the order of calls for a bot that was active, activating, inactive or failed, and for a failed pull.
+  Only a bot that was active or activating is started again. No network, no sudo.
 - **Coinbase sandbox:** `python bot/spot/sandbox_test.py` (GitHub workflow `sandbox-test`) sends every live-broker
   call through the official SDK to Coinbase's Advanced Trade sandbox. The sandbox answers with static responses in the
   production format.
