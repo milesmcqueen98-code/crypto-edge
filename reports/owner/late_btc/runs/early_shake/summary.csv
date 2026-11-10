@@ -1,0 +1,2 @@
+scen,era,sharpe,ret_yr,maxdd,worst_day,sharpe_model,ret_yr_model,first_fills_min,rung_fills_min,first_fills_inst,rung_fills_inst,fill_usd,pnl_usd,net_bp_per_usd,trades,armed_minutes
+S0,early,1.9131478566723183,0.11139261095976295,-0.021362350922814022,-0.021362350922814043,1.6835784883185536,0.10162826951549558,727,449,727,492,9521896.773939298,55658.183436431864,58.45283220121021,744,979866
