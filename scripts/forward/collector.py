@@ -290,18 +290,18 @@ def parse_cfm(js, coins=None, minute=None, t=None):
 # ------------------------------------------------------------------------------------------------ storage
 F32, F64, MS = "float32", "float64", "datetime64[ms]"
 SCHEMA = {
-    "book": dict(coin="category", minute=MS, t_req=MS, t=MS, ok="bool", bid=F64, bid_sz=F32, ask=F64, ask_sz=F32,
+    "book": dict(coin="category", minute=MS, t=MS, ok="bool", bid=F64, bid_sz=F32, ask=F64, ask_sz=F32,
                  mid=F64, n_bid="int32", n_ask="int32", bid_reach_bp=F32, ask_reach_bp=F32,
                  **{f"bid_usd_{b}": F32 for b in BID_BPS}, **{f"ask_usd_{b}": F32 for b in ASK_BPS}),
-    "candles": dict(coin="category", minute=MS, t_req=MS, seen=MS, open=F64, high=F64, low=F64, close=F64,
+    "candles": dict(coin="category", minute=MS, seen=MS, open=F64, high=F64, low=F64, close=F64,
                     volume=F64, rev="int16"),
     "hl": dict(coin="category", minute=MS, t=MS, ok="bool", name="category", px_mult="int16", open_interest=F64,
                mark=F64, oracle=F64, mid=F64, funding=F64, premium=F32, impact_bid=F64, impact_ask=F64,
-               day_ntl_vlm=F64, prev_day_px=F64),
+               day_ntl_vlm=F32, prev_day_px=F64),
     "cfm": dict(coin="category", minute=MS, t=MS, ok="bool", product_id="category", price=F64, mid_market=F64,
                 best_bid=F64, best_ask=F64, mark_price=F64, index_price=F64, settlement_price=F64,
                 open_interest=F64, contract_size=F32, funding_rate=F64, funding_time=MS, funding_interval_s=F32,
-                volume_24h=F64, quote_volume_24h=F64, im_long=F32, im_short=F32, om_long=F32, om_short=F32,
+                volume_24h=F32, quote_volume_24h=F32, im_long=F32, im_short=F32, om_long=F32, om_short=F32,
                 trading_disabled="bool"),
 }
 KEYS = {"book": ["coin", "minute"], "hl": ["coin", "minute"], "cfm": ["product_id", "minute"],
@@ -337,12 +337,31 @@ def hour_path(out, stream, hour, run):
     return p
 
 
+ZSTD_LEVEL = 19
+
+
+def write_parquet(df, path, byte_stream_split=True):
+    """Compact lossless parquet: zstd 19; float columns byte-stream-split (much better for float mantissas), other
+    columns dictionary-encoded; no column statistics and no pandas metadata blob in the footer (an hourly file pays
+    those every hour, ~1 MB a day in all). The arrow schema is kept, so categories, datetime64[ms], bool, ints and
+    float32 read back unchanged."""
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    t = pa.Table.from_pandas(df, preserve_index=False).replace_schema_metadata(None)
+    fl = [f.name for f in t.schema if pa.types.is_floating(f.type)] if byte_stream_split else []
+    pq.write_table(t, path, compression="zstd", compression_level=ZSTD_LEVEL, write_statistics=False,
+                   use_byte_stream_split=fl or False,
+                   use_dictionary=[f.name for f in t.schema if f.name not in fl] if fl else True,
+                   store_schema=True)
+
+
 def write_hour(out, stream, hour, run, rows):
+    """t_req (when the request left) is not stored: book keeps t and candles keep seen, the response times."""
     df = frame(stream, rows).sort_values(KEYS[stream], kind="stable").reset_index(drop=True)
     p = hour_path(out, stream, hour, run)
     os.makedirs(os.path.dirname(p), exist_ok=True)
     tmp = p + ".tmp"
-    df.to_parquet(tmp, compression="zstd", index=False)
+    write_parquet(df, tmp, byte_stream_split=stream != "candles")   # candle values repeat; dictionary wins there
     os.replace(tmp, p)
     return p
 

@@ -251,6 +251,21 @@ class Files(unittest.TestCase):
         cov = R.coverage("book", df)
         self.assertEqual((cov[0]["minutes"], cov[0]["gaps"]), (8, 0))
 
+    def test_storage_round_trip(self):
+        """The compact writer is lossless: every stream reads back exactly as frame() built it (values, NaN, dtypes
+        including categories, datetime64[ms], bool and float32), and t_req is not stored."""
+        m = pd.Timestamp("2026-11-10 12:00")
+        hl = C.parse_hl(HL, ["BTC", "PEPE"], m, m + pd.Timedelta(seconds=5.3))
+        cfm = C.parse_cfm(CFM, None, m, m + pd.Timedelta(seconds=12.1))
+        book = self.rows(m) + [C.missing_book_row("ETH", m, m)]
+        cl = C.CandleLog().update("BTC", C.parse_candles(CANDLES, T), m, m + pd.Timedelta(seconds=6.7))
+        for stream, rows in (("book", book), ("hl", hl), ("cfm", cfm), ("candles", cl)):
+            p = C.write_hour(self.d, stream, m, "rt", rows)
+            exp = C.frame(stream, rows).sort_values(C.KEYS[stream], kind="stable").reset_index(drop=True)
+            pd.testing.assert_frame_equal(pd.read_parquet(p), exp)
+            self.assertNotIn("t_req", exp)
+            self.assertEqual(len(R.load(stream, m, root=self.d)), len(exp))
+
 
 class Streams(unittest.TestCase):
     def setUp(self):

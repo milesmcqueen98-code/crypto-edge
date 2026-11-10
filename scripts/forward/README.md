@@ -16,7 +16,7 @@ Universe: BTC plus the coins in bot/v2/model_meta.json (18 today). All times are
 | `candles` | Coinbase Exchange 1-minute candles, the request bot/market.py `spot_candles` makes, last 5 minutes | from second 6, paced 5 a second | revision (see below) |
 | `cfm` | Coinbase Advanced public `GET /products?product_type=FUTURE` (one request), perp-style products only | second 12 | US perp product, minute (all 29) |
 
-**book**: sample time (`t_req` request sent, `t` response received), best bid and ask (price, size), `mid`,
+**book**: `t` (when the response arrived), best bid and ask (price, size), `mid`,
 `n_bid`/`n_ask` (levels returned), `bid_usd_<bp>` = USD resting on the bid side at prices within that many basis
 points below mid (5, 10, 25, 50, 100, 150, 200, 300, 400, 600, 800), `ask_usd_<bp>` the same above mid (5 to 100),
 and `bid_reach_bp`/`ask_reach_bp`, how far from mid the returned book goes. A bucket the returned book does not
@@ -25,7 +25,8 @@ reach is missing (NaN), never zero. Why the Exchange endpoint: the Advanced `pro
 for every coin (about 1 MB a minute for BTC, 3.7 MB for all 18; well within the runner's bandwidth).
 
 **candles**: a revision log. A row is written the first time a (coin, minute) candle is seen and again whenever
-any of open, high, low, close, volume changes in a later fetch; `seen` is when, `rev` counts revisions (0 = first).
+any of open, high, low, close, volume changes in a later fetch; `seen` is when the response arrived, `rev` counts
+revisions (0 = first).
 Each candle is fetched five times (in minutes T+1 to T+5), so the log shows how complete a candle is when the bot
 decides and how it settles over the next four minutes. A minute with no trades has no candle (Coinbase omits it).
 
@@ -50,9 +51,15 @@ are paced at 5 a second; the client identifies as `crypto-edge-bot/1.0`.
 ## Files
 
 ```
-forward/<stream>/<YYYY-MM-DD>/<HH>-<run id>.parquet    one per stream, hour and run; zstd; never rewritten
+forward/<stream>/<YYYY-MM-DD>/<HH>-<run id>.parquet    one per stream, hour and run; never rewritten
 forward/status.json                                    the latest heartbeat
 ```
+
+Storage is lossless and compact, about 6 MB a day for all four streams (book 2.6, hl 1.3, cfm 1.1,
+candles 1.2): zstd level 19, float columns byte-stream-split, no column statistics and no pandas metadata in the
+footer. Prices, open interest, funding, candle values and timestamps are float64 / ms; depths, sizes, reach and
+the 24h volumes are float32. Request send times (`t_req`) are not stored. Files before this change still carry
+`t_req`; the reader reads both.
 
 A file is written when its hour closes (and the partial hour at exit). If a name is taken (a restarted process
 in the same run), `-2`, `-3` ... is appended. Two runs overlapping during a hand-over both write the same hour;
