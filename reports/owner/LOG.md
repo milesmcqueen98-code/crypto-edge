@@ -182,3 +182,11 @@ FORWARD_TESTS.md.
     verified, inputs are verified faulty, and the fix is not on yet.
   - **Advice to Miles: hold the pilot until the new mode is the default.** A pilot now would trade on the late BTC
     input.
+- **13:57. Late-BTC replay planned and started** (late_btc_prereg.md, branch owner/late-btc). It replays the research
+  with BTC one and two minutes late at every decision, models not retrained, fills on true prices. It prices the
+  fault; nothing is chosen with it.
+- **13:58. Collector: a trades-bar stream and a daily input check ordered.** They give the collector's own daily record
+  of the trades bar against the final candle, which the three-day rule (item 6) and the candle clock plan require.
+- **Known and not fixed in release 2: the perp paper bots.** They fetch each spot minute once and never look again
+  (bot/engine.py), so their inputs are first-seen candles, BTC included. Their forward test is lower priority; the
+  spot bot's data handling can be carried over later.
