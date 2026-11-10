@@ -284,6 +284,9 @@ Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
     minutes (187 unconfirmed cancels, 11 take-profit server errors, 4 unreadable market sells injected), no orphaned
     orders, no leftover coins.
   - USDC quote test: passed.
+- **Candle merge:** `python bot/spot/merge_test.py` checks the per-minute merge of re-fetched candles in `update_spot`. A re-fetch
+  that skips a stored minute used to leave the index out of order and the window cut raised KeyError. The test shows the
+  old lines raise and the engine does not, that re-fetched values win, and that a normal merge is unchanged. No network.
 - **Coinbase sandbox:** `python bot/spot/sandbox_test.py` (GitHub workflow `sandbox-test`) sends every live-broker
   call through the official SDK to Coinbase's Advanced Trade sandbox. The sandbox answers with static responses in the
   production format.
