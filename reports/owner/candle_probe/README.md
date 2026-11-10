@@ -50,3 +50,31 @@ Deviations from the plan:
    Advanced candle response. That tells a stale response from a missing minute. It changes no measure and no part
    of the rule. Nothing about the request was changed to get around it (no headers, no addresses, no
    cache-busting parameters).
+
+3. **The venue answers from a URL-keyed cache: requests made distinct (written before the restarted run).** A
+   runner diagnostic (run 42851465479, LTC, a coin outside the probe, 16:09 UTC) showed:
+   - Exchange candle responses carry `cache-control: public, max-age=300` and come from Cloudflare (`cf-cache-status`).
+   - The identical URL (the bot's 5-minute window) was a MISS at 1.5 s and then a HIT with the 1.5 s body at 4,
+     11, 31, 61, 121 and 181 s (Age 2 to 179).
+   - A window with a different start was a MISS each time, with fresh values (close 50.169 at 1.5 s, 50.136 at 4 s).
+   - Exchange trades (`limit=1000`) carry `max-age=5`: a trades answer can be up to 5 s old.
+
+   The first 125-minute run (42850392993) asked the same URL at every delay and for the reference, so its later
+   delays and its reference were copies of the first answer. It was cancelled after about 10 minutes and is not
+   used. The stale BTC candles of entry 2 are the same effect: an earlier request for that URL, by someone else,
+   was served to the probe.
+
+   Changes for the restarted run (no headers, addresses or cache-busting parameters; each request is an ordinary
+   candle window):
+   - **The 6 s Exchange request stays the bot's exact URL** (the 5-minute window ending at the minute just
+     closed), so it sees what the bot sees, cache included.
+   - **The other delays use the same end but start further back:** 1 s 6 minutes, 3 s 7, 10 s 8, 15 s 9, 25 s
+     10, 40 s 11.
+   - **The reference uses a 15-minute window.** It counts only if its response was generated at least 180 s
+     after the boundary (response time minus Age); otherwise the coin-minute does not count.
+   - **Every response's `cf-cache-status` and `Age` are stored** (for trades, those of the first page).
+   - **Descriptive additions, not plan measures:** the share of cached answers per source and delay, the answer's
+     age, and the measures restricted to fresh answers.
+
+   Measures 1 to 5 and the decision rule are unchanged. One limit follows: another client can still fill the
+   cache for any of these URLs first. The stored Age shows when that happened.
