@@ -337,13 +337,14 @@ def part2():
     hbs = [e for e in evG if e["kind"] == "heartbeat" and pd.Timestamp(e["ts"]) in steps]
     check("guard on: heartbeats still run during the stale minutes and count btc_stale",
           bool(hbs) and all(h["counts"].get("btc_stale", 0) > 0 for h in hbs), str([h["counts"] for h in hbs]))
-    evH, _, _ = run(mkt, {"stale_guard": False}, "guard_off", drop_btc=stale)
+    evH, _, engH = run(mkt, {"stale_guard": False}, "guard_off", drop_btc=stale)
     evH0, _, _ = run(mkt, {}, "guard_absent", drop_btc=stale)
     check("guard off: no stale_input; decisions as with no guard key", not [e for e in evH if e["kind"] == "stale_input"]
           and decisions(evH) == decisions(evH0))
     hbH = [e for e in evH if e["kind"] == "heartbeat"]
-    check("guard off: btc_stale counted", sum(h["counts"].get("btc_stale", 0) for h in hbH) == len(stale),
-          str([h["counts"].get("btc_stale") for h in hbH]))
+    n_st = sum(h["counts"].get("btc_stale", 0) for h in hbH) + engH.counts.get("btc_stale", 0)   # + after the last
+    check("guard off: btc_stale counted once per stale minute", n_st == len(stale),
+          f"{[h['counts'].get('btc_stale') for h in hbH]} + {engH.counts.get('btc_stale')}")
     print(f"  (guard on: {reprice} re-prices in the whole run; guard off kept bidding: "
           f"{len([e for e in evH if e['kind'] == 'arm' and pd.Timestamp(e['ts']) in steps])} arms in the stale steps)")
 
@@ -353,7 +354,7 @@ def part2():
         set(h["step_s"]) == {"data", "cancel", "place"} and all(len(v) == 2 for v in h["step_s"].values()) for h in hb)
         and hb[-1]["step_s"]["data"] == [6.0, 6.0], str(hb[-1].get("step_s")))
     check("heartbeat: newest_absent counted (minutes with no row for a coin)",
-          any("newest_absent" in h["counts"] for h in hb) or True, str([h["counts"].get("newest_absent") for h in hb]))
+          any("newest_absent" in h["counts"] for h in hb), str([h["counts"].get("newest_absent") for h in hb]))
     check("heartbeat: counts and timing reset after each heartbeat",
           all(cnt == {} and all(not v for v in tm.values()) for cnt, tm in hbA + hbC), str(hbA[:1]))
 
