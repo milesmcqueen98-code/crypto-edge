@@ -1,0 +1,41 @@
+{
+ "run": "42850829239",
+ "heartbeat": "2026-11-10T16:33:56Z",
+ "started": "2026-11-10T16:04:22Z",
+ "planned_end": "2026-11-10T21:49:21Z",
+ "rows_last_hour": {
+  "book": 522,
+  "hl": 522,
+  "candles": 691,
+  "cfm": 841
+ },
+ "bursts_last_hour": {
+  "book": 29,
+  "hl": 29,
+  "candles": 29,
+  "cfm": 29
+ },
+ "errors": {},
+ "refused": {},
+ "coins": [
+  "BTC",
+  "ETH",
+  "SOL",
+  "XRP",
+  "DOGE",
+  "LTC",
+  "LINK",
+  "BCH",
+  "SUI",
+  "XLM",
+  "HBAR",
+  "NEAR",
+  "AAVE",
+  "HYPE",
+  "ENA",
+  "PEPE",
+  "ONDO",
+  "ZEC"
+ ],
+ "book_source": "exchange"
+}
