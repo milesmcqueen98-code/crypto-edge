@@ -1,8 +1,22 @@
-# Crypto edge: findings and live rules (updated Nov 9, 2026, signal lab 2; signal lab; hunt 3; explore v1; sizing lab; edge hunt 2; ladder v6 sizing; Gemini venue test)
+# Crypto edge: findings and live rules (updated Nov 10, 2026, owner's round; signal lab 2; signal lab; hunt 3; explore v1; sizing lab; edge hunt 2; ladder v6 sizing; Gemini venue test)
 
 Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly signals, paper-trading bot)
 
 ## Status at a glance
+- **Owner's round (Nov 10): a fault in the live bot's BTC input found, priced and fixed behind a switch; no model
+  change (section below).**
+  - Miles handed the algorithm to Claude. The search on history is closed; the work is now how closely the live bot
+    follows the research, forward data, idle cash and fees, and monitoring (reports/owner/CHARTER.md).
+  - The bot's request for BTC's newest candle was answered with an old cached copy in every minute of a two-hour
+    probe, one to two minutes behind. The paper book's own log shows it: the error in its bid levels is beta times
+    BTC's last-minute move (correlation 0.94), and in the Nov 8 drop it bought seven coins 36 to 59 bp above the
+    research price.
+  - On history a late BTC costs about half a Sharpe point in two of three eras (2.94 / 2.66 / 1.91 becomes 2.41 /
+    2.86 / 1.21), the loss sitting on crash days. That is more than any model change the search rounds found.
+  - Release 2 builds the newest bar of six coins from the trades list and checks the age of every answer. It is off
+    by default; a third paper book runs it, and a three-day rule fixed in advance decides when it becomes the default.
+  - Live order timing was measured on 14.1M trade prints and stays as built. The paper books ran in real time only
+    about two thirds of the time; a hand-over now starts each run after the last. Scorecard: 47 of 100 (39 before).
 - **Signal lab 2 (Nov 9): trade-print features for R2-08's model; no change (section below).**
   - Five forced-selling features from 79.1M Coinbase prints, added to R2-08's model with and without the 2021–23
     history. Opus agents built and ran it under one orchestrator; an independent audit passed before the one holdout
@@ -165,6 +179,163 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   (section below).
 - **Maker round (Nov 6): rejected.** Two-sided quoting at the touch loses 0.7–0.9 bp per dollar before fees in all 36 setups.
 - **C3 upgrade round (Nov 6):** turnover cuts tie on Sharpe; C3 unchanged, still a paper-trade candidate.
+
+## Owner's round (Nov 10): the live bot against its own research; a fault in its BTC input found, priced and fixed behind a switch
+
+On Nov 10 Miles handed the algorithm to Claude: how it is built and structured is the owner's call, and the goal is
+the best algorithm a Coinbase Advanced account can run. The standing plan is reports/owner/CHARTER.md on `main`,
+with the list of forward tests (FORWARD_TESTS.md), the release notes (RELEASES.md) and a dated log (LOG.md) beside it.
+
+**Decision: no further search on history.** Three rounds found nothing above the noise (the pooled holdout's standard
+error is about 0.16 Sharpe), and both holdout eras are used up. The work moved to what can still be measured or
+earned: how closely the live bot follows the research, new forward data, idle cash and fees, and monitoring.
+
+**Scorecard (owner's judgment of what is verified): 47 of 100, from 39.**
+
+| Block | Weight | Before | Nov 10 |
+|---|---|---|---|
+| Research evidence | 25 | 17 | 17 |
+| The live bot matches the research (inputs, timing, fills) | 20 | 6 | 6 |
+| Fills proven with real orders | 20 | 3 | 3 |
+| Costs and idle cash | 10 | 4 | 4 |
+| Controls and monitoring | 10 | 6 | 8 |
+| Forward data | 10 | 0 | 5 |
+| Process | 5 | 3 | 4 |
+
+The second block stood at 9 after the timing study and went back to 6 when the candle probe showed a fault in the
+bot's inputs. The fix is built and not yet the default.
+
+### The bot's BTC input was an old cached copy (found Nov 10)
+- **Finding.** Coinbase serves its public candles through a cache that keeps an answer for up to five minutes, keyed
+  by the exact request. In a two-hour probe the bot's own request for BTC's newest candle came back as an old copy
+  in 125 of 125 minutes, one to two minutes behind, with no error. ETH: a copy in 79% of minutes. The other coins:
+  the minute missing in at most 2.4%.
+- **Why it matters.** Every coin's bid level is its price 60 minutes ago moved by beta times BTC's return to the
+  newest close, less four sigma, and several model features read BTC. The bot fills a missing close forward. Its last
+  look at a minute is 126 s after the minute closes, so a row can also stay wrong for good. The research always used
+  BTC's true close.
+- **Who makes the copies.** Other clients asking for the same window earlier. Some copies hold a minute still in
+  progress, which none of the repo's code requests. Who they are is not known. One runner location was measured.
+- **A source that works.** The public trades list is cached for five seconds at most. A bar built from it had no
+  material error for BTC, ETH, SOL, XRP and ZEC in the probe.
+- **The probe's own rule** (pre-registered): no source reached a material-error share of 1% at 25 s or less on the
+  nine coins together (trades 6.0% at 6 s; best candle 5.2%). Its remedy for that case, a live trade feed, was
+  dropped with a logged deviation: the trades are not late, so a live feed would carry the same differences.
+- **On answers that were not copies, the venue's candle is final by about 25 s** after the minute.
+
+### What the fault did to the paper book (its own log against final candles, Nov 6 to Nov 10)
+- **Method.** For every minute the main paper book was live (59.4 hours), the bid level and model score were
+  recomputed with the bot's own code on final candles and set against the 787 new bids and 13 first-bid fills in its
+  log (plan written first: reports/owner/paper_reconcile_plan.md).
+- **The level error is a late BTC.** Median 0 bp; 5th and 95th percentiles about -23 and +13 bp; 10% of bids more than
+  20 bp off. Beta times BTC's last-minute return explains it (correlation 0.94, slope 0.98). In the third of bids
+  with the largest BTC move, 27% were more than 20 bp off.
+- **Bids and fills in common.** 67% of the bot's new bids have a research bid within a minute, 77% the other way.
+  First-bid fills: 11 in common, 2 only in the bot, 5 only in the research.
+- **In the one market-wide drop (Nov 8, 21:55 UTC)** the book bought seven coins 36 to 59 bp above the research
+  price: 47 bp on $62,191, about $290, on a book that has made about $1,540.
+- **The high fill count was the market:** the research would have had 16 first-bid fills in the same minutes.
+
+### What a late BTC costs on history (pre-registered replay)
+- **Method.** R2-08 replayed with BTC late at every decision the way the bot fills it forward; models not
+  retrained; fills, exits and P&L on true prices. With true BTC the replay reproduces the best estimate exactly
+  (2.94 / 2.66 / 1.91 and the same trades at the same prices).
+- **Result at $250K (Sharpe; selection / check / 2022–23):**
+
+| Scenario | Selection | Check | 2022–23 |
+|---|---|---|---|
+| True BTC (the research) | 2.94 | 2.66 | 1.91 |
+| Always one minute late | 2.50 | 2.91 | 0.87 |
+| The probe's mix: one minute late in 70% of minutes, two in 30% (five seeds) | 2.41 | 2.86 | 1.21 |
+| The mix, plus 30% of older BTC minutes wrong (five seeds) | 2.02 | 2.98 | 0.94 |
+
+- **Reading.** About half a Sharpe point lost in two eras and nothing visible in the third. The loss sits on crash
+  days (in 2022–23 five days carry about 70% of it; the worst day goes from −2.1% to about −4.0% with BTC one minute
+  late). The paired daily intervals mostly include zero, so the cost is likely and its size is between nothing and
+  about one Sharpe point.
+- **It is larger than anything the three search rounds found** (+0.03 to +0.18 Sharpe). The largest lever on realised
+  Sharpe so far is making the live inputs equal the research inputs.
+- **Limits.** The mix comes from one two-hour probe; the paper book's own log shows a late BTC at 55% or more of its
+  bids. Each era is one price path, and a level change of a few bp reshuffles which dips fill.
+
+### Where Coinbase cuts its candles (pre-registered study, six hours, 18 coins)
+- **No coin has a steady offset** between its candles and the trade timestamps.
+- **Six coins are cut at the minute:** BTC, ETH, SOL, XRP, LTC, ZEC. A bar built from trades matched the final candle
+  with a material-error share of 0 to 0.6% out of sample.
+- **Twelve coins run late in 8% to 41% of minute boundaries:** the candle of a minute takes trades stamped in the
+  first seconds of the next (median 7 to 11 s). It follows quiet trading: about 54% of boundaries after a minute with
+  5 trades or fewer, about 2% after a minute with more than 50. No offset fixes it. Signal lab 2 had seen the same in
+  history.
+- **In about 5% of minutes, the same ones for nearly every coin, the final candle leaves out trades** that are in
+  the public trades list (BTC 14:05 UTC: about 3.4 in the candle, 13.4 in the trades). The trades list has no gaps.
+- **Consequence for the bot:** the six take their newest bar from trades; the twelve stay on the candle answer, read
+  with its age checked. For the twelve a first look about 6 s after the minute was materially off in about 3% to
+  19% of minutes by coin, mostly quiet ones. That gap stays open.
+
+### Live order timing (pre-registered; closed, timing stays as built)
+- **Question:** the research assumes each minute's bid rests for the whole minute. The live bot re-prices about 6 s
+  after the minute closes, in two passes, so an old bid rests for the first seconds and then no bid for a moment.
+  Paper cannot see this. What does it cost, and would faster re-pricing help?
+- **Method:** 14.1M Coinbase trade prints for 29,686 candidate minutes in the three eras; six timing policies fixed
+  before any print was fetched (the research assumption, the bot as built with fast and slow brackets, fast
+  re-pricing, and as built without the gap).
+- **First reading, by the plan's rule:** the live timing was 11.3% and 16.6% of P&L below the research assumption in
+  two eras and 4.8% above in the third; fast re-pricing beat the live timing by 8.6% and 17.5% and lost 7.1%.
+- **That reading leaned on how a changed fill was valued** (a missed first bid lost its whole ladder, an added one
+  counted its first rung only). A like-for-like valuation, logged as a deviation before it was computed, re-simulated
+  the whole ladder for every first bid on 4.8M deeper prints.
+- **Like-for-like result (selection / check / 2022–23, pooled):**
+
+| Against the research assumption | Selection | Check | 2022–23 | Pooled |
+|---|---|---|---|---|
+| Bot as built, faster calls (6.5 s / 7.5 s) | +7.8% | −0.5% | −8.7% | +0.9% |
+| Bot as built, central (8 s / 10 s) | +1.9% | −11.9% | −11.9% | −5.1% |
+| Bot as built, slower calls (12 s / 15 s) | +3.5% | −11.8% | −11.3% | −4.1% |
+| As built, no gap (8 s / 8 s) | +6.0% | −13.8% | −3.2% | −0.6% |
+| Fast re-pricing (1 s / 1.3 s) | −1.9% | −5.7% | −2.1% | −2.7% |
+
+- **Verdict:** the order by P&L is not the order of speed. A shift of about two seconds changes 6–9% of first bids,
+  and a few dozen ladders decide each era. The plan's two-era condition is met for fast re-pricing, but the
+  same rule would also favour the bot with slightly faster calls, by more. The measure cannot rank timings, so nothing
+  is built on timing grounds (logged as a deviation).
+- **What holds:**
+  - Every realistic timing is within a few percent of the research assumption in pooled P&L.
+  - The live timing fills 83–90% of the research's first bids in the same minute and 88–94% within two minutes.
+  - Fills are spread roughly evenly inside the minute (14–20% in the first 10 s; an even spread would be 17%).
+  - Trade prints confirm 93–96.5% of the candle research's first bids.
+- **Pilot rule B, read with this** (fixed before any pilot data): a paper fill counts as matched when the live bot
+  fills the same coin within two minutes either side. The 70% bar stays.
+
+### The paper books ran in real time only part of the time
+- GitHub drops scheduled runs. Its run history shows runs for 66.4 of the 92.0 hours from the first run to Nov 10
+  18:30 UTC (72%). The main book's own log holds 60.5 of the 87.0 hours to its last event (69.5%): one run on Nov 7
+  never saved its log. While stopped, a book places no new bids.
+- Fills and fees per calendar day so far understate the rate while running. PAPER_STATUS.md now shows every rate both
+  ways. Per running day the main book has 8.3 rung fills against forward rule A's 1 to 6; the reconciliation above
+  shows that was the market.
+
+### Built on Nov 10
+- **Release 1** (reports/owner/RELEASES.md): the Nov 7 paper error is fixed (the candle table is sorted after each
+  merge), and `wickctl update` no longer starts a bot that was stopped.
+- **Release 2:** a new input mode behind a switch. The six coins' newest bar comes from trades and is used only when
+  proven complete; the bot remembers when the answer behind each recent row was made, so an older answer never
+  replaces a newer row; with the guard on it places no new bid on an input it knows to be old. Every book's heartbeat
+  now counts old candle answers and a stale BTC. A third paper book runs the new mode, and each paper run starts the
+  next. Defaults are unchanged. The mode becomes the default by a rule fixed before the third book's first run: three
+  clean days, six conditions, no P&L test (FORWARD_TESTS.md).
+- **Paper status** (reports/owner/PAPER_STATUS.md): refreshed after every paper run; live time per book, rates per
+  calendar and per running day, the data counters, the third book's progress on its rule. The perp books' one fill
+  each in 3.3 and 3.7 days is not unusual against the research's 0.8 and 1.05 fills a day on perp prices.
+- **Forward collector** (scripts/forward/, data on branch forward-data): every minute, order-book depth for 18
+  coins, the candles as the bot first sees them and as they end up, the age of each candle answer, a bar built from
+  trades for every coin, Hyperliquid open interest and funding, and all 29 Coinbase US perps with their published
+  funding. About 7.5 MB a day.
+- **Levers that need the account** (charter): USDC rewards on idle cash (about +1.5 to +3.4 points a year at $250K if
+  this account is eligible), and the Coinbase One fee rebate (about +0.3 points a year on Preferred; on Premium about
+  +0.9 to +1.2 at the paper books' pace per calendar day and about +1.9 to +2.4 at a full-time pace, if API orders
+  count).
+- **Known and open:** the twelve coins that stay on candles; the perp paper bots, which fetch each spot minute once
+  and never look again; the pilot, which should wait until the new input mode is the default.
 
 ## Signal lab 2 (Nov 9): forced-selling features from trade prints; no change
 Goal set by Miles: continue the signal lab by running its pre-registered next test. Record: branch signal-lab
@@ -2259,8 +2430,10 @@ Results: P&L per dollar traded before fees, measured as the realized spread agai
   windows, 7.8% of minute boundaries have the first seconds of a minute (median 8 s) in the previous candle, and 0.9%
   (2024–26) to 1.7% (2021–23) of minutes have prints but no candle. Print features must end 60 s before the
   candidate minute.
-- The hourly open-interest and funding logger (hunt 3) is not on GitHub as of Nov 9: no workflow, script or branch.
-  Until it runs from the default branch, no forward data accrues for hunt 3's forward test or for a model test.
+- Open interest and funding are logged from Nov 10 2026 by the forward collector (scripts/forward, branch
+  forward-data): Hyperliquid every minute, and Coinbase's published perp funding. Nothing earlier exists in the repo.
+- The live bot's inputs are not the research's until release 2's input mode is the default (owner's round): BTC
+  and ETH candles arrive as old copies, and twelve coins' candles are cut late after quiet minutes.
 - Hyperliquid liquidation, open-interest and wallet history isn't free, so the flow-identity ideas (who was
   liquidated vs who is informed) wait for forward-collected data (edge hunt 2). Hunt 3 wrote an hourly logger for open
   interest and funding (scripts/fetch_hl.py, data/hl/oi_log.csv, with the CFM funding job); it logs nothing until it
