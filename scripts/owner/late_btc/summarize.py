@@ -40,6 +40,18 @@ def paired(d, B=5000, seed=11):
     return float(x.mean()), float(np.quantile(bs, 0.05)), float(np.quantile(bs, 0.95))
 
 
+EXTRA = ["armed_kept", "armed_new", "lvl_bp_med", "lvl_bp_p95", "fills_s0_armed", "fills_s0_kept", "fills_new"]
+
+
+def read_summary(path):
+    """summary.csv is appended scenario by scenario under S0's header; later rows carry the decision measures too."""
+    lines = open(path).read().splitlines()
+    names = lines[0].split(",")
+    names += [x for x in EXTRA if x not in names]
+    import io
+    return pd.read_csv(io.StringIO("\n".join(lines[1:])), header=None, names=names)
+
+
 def family(s):
     return s[:2]
 
@@ -47,7 +59,7 @@ def family(s):
 def main(dirs):
     S, daily = [], {}
     for dr in dirs:
-        S.append(pd.read_csv(os.path.join(dr, "summary.csv")))
+        S.append(read_summary(os.path.join(dr, "summary.csv")))
         for f in os.listdir(dr):
             if f.startswith("daily_"):
                 era, scen = f[6:-4].split("_", 1)
