@@ -21,7 +21,7 @@ import sys
 import pandas as pd
 
 KEYS = {"book": ["coin", "minute"], "hl": ["coin", "minute"], "cfm": ["product_id", "minute"],
-        "candles": ["coin", "minute"], "candle_fetch": ["coin", "minute"]}
+        "candles": ["coin", "minute"], "candle_fetch": ["coin", "minute"], "tbar": ["coin", "minute"]}
 VALUES = ["open", "high", "low", "close", "volume"]
 
 
@@ -39,6 +39,9 @@ def dedupe(stream, df):
     if stream == "candle_fetch":                        # one row per answer; two overlapping runs keep both
         return df.drop_duplicates(["coin", "minute", "seen"]).sort_values(["coin", "minute", "seen"],
                                                                            kind="stable").reset_index(drop=True)
+    if stream == "tbar":                                # overlap: a verified bar first, then the earliest
+        df = df.sort_values(["verified", "t"], ascending=[False, True], kind="stable", na_position="last")
+        return df.drop_duplicates(["coin", "minute"]).sort_values(["minute", "coin"], kind="stable").reset_index(drop=True)
     if stream == "candles":
         df = df.drop_duplicates(["coin", "minute", "seen"] + VALUES)
         df = df.sort_values(["coin", "minute", "seen"], kind="stable")
@@ -65,7 +68,7 @@ def load(stream, start, end=None, root=".", raw=False):
         d["file"] = os.path.basename(f)
         parts.append(d)
     df = pd.concat(parts, ignore_index=True)
-    for c in ("coin", "name", "product_id", "file", "cache"):
+    for c in ("coin", "name", "product_id", "file", "cache", "reason"):
         if c in df:
             df[c] = df[c].astype("category")
     df = df[(df.minute >= start) & (df.minute < end)]
@@ -76,13 +79,15 @@ def coverage(stream, df):
     """Per UTC day: minutes with data, gaps (runs of missing minutes between first and last), failed rows."""
     if df.empty:
         return []
+    if stream == "tbar":                                # a failed row here is an unverified bar
+        df = df.assign(ok=df.verified)
     if stream in ("candles", "candle_fetch"):
         m = df.seen.dt.floor("min")                     # the minute each fetch happened
         okm = m
         failed = 0
     else:
-        okm = df.loc[df.ok, "minute"]
-        failed = int((~df.ok).sum())
+        okm = df.loc[df.ok, "minute"] if "ok" in df else df.minute
+        failed = int((~df.ok).sum()) if "ok" in df else 0
     out = []
     for day, g in pd.Series(okm.unique()).groupby(pd.Series(okm.unique()).dt.floor("D")):
         mins = pd.DatetimeIndex(sorted(g))
