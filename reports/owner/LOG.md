@@ -119,3 +119,66 @@ FORWARD_TESTS.md.
   - Heartbeat counters for all of this, and the times at which the data, the cancels and the new bids finish.
   - A third paper book runs it side by side. Defaults stay as today, so nothing changes until it is switched on, and
     the probe's rule decides that.
+- **13:09. Release 2, first build reviewed; sent back for a second pass** (branch owner/release-2).
+  - With the switches at their defaults every log line except the heartbeat is identical to `main` (parity replay 156
+    rungs and 88 parents; live-path simulation 540 minutes, 111 entries, $11,723.34). The heartbeat gains counters.
+  - Its new tests pass in the owner's own run.
+  - Asked for before the merge: monitoring code that cannot stop a step; a rate-limit answer stops the trades pass
+    for that minute; a per-coin list; the third paper book in its own job; a hand-over between paper runs.
+- **13:10. Seen in release 2's runner check: the venue cuts many candles after the minute** (run 42865444628, 18 coins,
+  30 minutes each, 17:29 to 17:59 UTC).
+  - A bar built from the public trades matched the final candle in every minute for BTC, ETH, SOL, XRP, LTC and ZEC,
+    and in 30% to 90% of minutes for the other twelve (77% of all 540 coin-minutes).
+  - Where they differed, volume had moved between two adjacent minutes with the total unchanged: the final candle of
+    a minute held trades stamped in the first seconds of the next. Signal lab 2 saw the same in history.
+  - The candle the bot would have read about 6 s after the minute matched the final candle in 42% of coin-minutes and
+    was absent in 8%. BTC's was absent in 27% and matched in none.
+  - A study of the cut was planned before its data (candle_clock_prereg.md, 13:30) and run.
+- **13:35. The paper books have run in real time only part of the time.** GitHub drops scheduled runs. From the first
+  run to Nov 10 18:30 UTC the spot books ran 66.4 of 92.0 hours (72%); since Nov 8 12:25 UTC, 29.2 of 54.1 hours
+  (54%). In a gap the bot places no new bids, and at the next start it only settles what was open.
+  - Fills and fees per calendar day therefore understate the rate while the bot runs.
+  - **Correction to the fee pace in the charter.** The $1,900 to $2,200 a month was measured over 3.6 calendar days
+    in which the books ran about 76% of the time. At a full-time pace it is about $2,500 to $2,900 a month, which
+    puts the Premium tier at about +$340 to +$420 a month net instead of +$190 to +$250. Still a few days of data.
+  - Release 2 adds a hand-over, so each paper run starts the next.
+- **13:36. Candle probe result** (run 42853095116, 125 minutes, nine coins; reports/owner/candle_probe/README.md).
+  - **By the rule: no source is usable at 25 s or less.** Trades bar 6.8%, 6.4% and 6.0% material error at 1, 3 and
+    6 s; best candles 5.2% (Advanced, 6 s) and 5.8% (Exchange, 3 s and 10 s). The bar was 1%.
+  - **The trades are not late.** No material error for BTC, ETH, SOL, XRP or ZEC. The errors sit in PEPE, ONDO and
+    DOGE: trades near the minute boundary and one-tick differences.
+  - **The bot's own BTC address returned an old cached copy in 125 of 125 minutes,** always without the minute asked
+    for and one to two minutes behind. ETH: a copy in 79% of minutes. The other seven coins: the minute missing in at
+    most 2.4%. Some copies hold a minute still in progress, which none of our own requests ask for, so other clients
+    made them. Who they are is not known.
+  - **On answers that were not copies, the venue's candle is final by about 25 s** (material error 4.3% at 10 s, 1.2%
+    at 15 s, 0.0% at 25 s and 40 s).
+  - **What that means for the bot as it runs today.** Its last look at a minute is 126 s after the minute closes. If
+    that answer is a copy older than about 100 s, the row stays partial or missing, and a missing close is filled
+    forward for up to 30 minutes. So BTC's table, which every bid level reads, can be wrong well beyond the newest row.
+    What this has cost is not measured.
+- **13:48. Deviation logged in the probe's plan.** The rule's third branch (specify a live trade feed) is not followed:
+  a live feed carries the same trades, so it would not close the gap the probe found. The stale-copy fault is outside
+  the rule and is fixed in release 2, as the 11:04 entry committed.
+- **13:50. Candle clock result** (six hours, 18 coins; reports/owner/candle_clock/README.md).
+  - **No coin has a steady offset.** BTC, ETH, SOL, XRP, LTC and ZEC are cut at the minute: the trades bar's
+    material-error share against the final candle was 0 to 0.6% in the last three hours.
+  - **The other twelve run late in 8% to 41% of boundaries,** by a median of 7 to 11 s, mostly after quiet minutes
+    (about 54% after a minute with 5 trades or fewer, about 2% after more than 50). No offset fixes that.
+  - **About 5% of minutes, the same ones for nearly every coin, have a final candle that leaves out trades** listed in
+    the public trades (BTC 14:05 UTC: about 3.4 in the candle, 13.4 in the trades). The trades list has no gaps.
+  - Joined with the collector for 16:06 to 17:52 UTC: for the six, the trades bar matched the final candle in 97% or
+    more of minutes at every level of activity, and the first-seen candle in about 70% of busy minutes. For the
+    twelve, the first-seen candle matched the final candle exactly a little more often than the trades bar (82%
+    against 74% of minutes), and the two were about even on material errors.
+- **13:52. Decisions.**
+  - **Release 2's new mode ("verified inputs"):** the six coins take their newest bar from trades, and a trades row is
+    never replaced by a candle row. The twelve stay on candles, read with the answer's age checked; an older answer
+    never replaces a newer row; recent rows are looked at again for six minutes instead of three. With the guard on,
+    no new bid is placed on an input the bot knows to be old.
+  - **Defaults do not change.** A third paper book runs the new mode. The rule for making it the default (three clean
+    days, six conditions, no P&L test) is in FORWARD_TESTS.md, fixed before that book's first run.
+  - **Scorecard re-scored: 47 of 100.** The block "the live bot matches the research" goes from 9 back to 6: timing is
+    verified, inputs are verified faulty, and the fix is not on yet.
+  - **Advice to Miles: hold the pilot until the new mode is the default.** A pilot now would trade on the late BTC
+    input.

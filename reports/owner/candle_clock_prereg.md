@@ -66,5 +66,36 @@ owner/candle-clock.
 - If the candle is cut by a time the public trades do not show, no run of trades explains it. That shows up as
   unexplained boundaries.
 
+## Result (Nov 10 2026; reports/owner/candle_clock/README.md)
+- **Window:** 12:24 to 18:24 UTC, 18 coins, 6,480 boundaries; runs 42877348846 and 42878184379. Nothing refused.
+- **No coin has a steady offset.** For every coin the best single offset is zero, within about 0.03 s.
+- **Classes, by the strict reading the study fixed before its data** (an unexplained boundary counts against
+  class A):
+  - A: none.
+  - B: BTC, ETH, SOL, XRP, LTC, ZEC. Their fitted offset is zero, so for them the bar cut at the minute is the bar.
+    Its material-error share in the last three hours was 0 for five of them and 0.6% for LTC.
+  - C: DOGE, LINK, BCH, SUI, XLM, HBAR, NEAR, AAVE, HYPE, ENA, PEPE, ONDO. In 8% to 41% of their boundaries the
+    candle runs late, by a median of about 7 to 11 s. Late candles follow quiet minutes: about 54% of boundaries
+    after a minute with 5 trades or fewer, about 2% after a minute with more than 50.
+- **Under the looser reading** (unexplained boundaries left out) BTC, ETH, SOL and XRP would be A. The list of coins
+  that take their newest bar from trades is the same six under both readings.
+- **Unexplained boundaries (about 5%) fall on the same minutes for nearly every coin.** In those minutes the venue's
+  final candle holds less volume than the public trades (BTC 14:05 UTC: about 3.4 in the candle, 13.4 in the trades).
+  The trade ids have no gaps, so the trades list is the complete record.
+
+## What follows (orchestrator, Nov 10 2026, 13:52 ET)
+- **The six B coins take their newest bar from trades in release 2's new mode,** cut at the minute. That is what B
+  with a zero offset means; no offset table is needed.
+- **A trades-built row is not replaced by a candle row.** The plan did not foresee candles that leave out trades;
+  where that happens the trades row is the complete one.
+- **The twelve C coins stay on the venue's candle answer,** read with its age checked. A first look about 6 s after
+  the minute was materially off for them in about 3% to 19% of minutes, by coin (collector, 16:06 to 17:52 UTC), mostly
+  after quiet minutes. That gap stays open.
+- **Still required before any of this is the default for live orders:** the collector's daily record of the same
+  measure (the plan's first limit), and the three-day paper rule in FORWARD_TESTS.md.
+
 ## Deviation log
-(none yet)
+- **Nov 10 2026, 18:43 UTC (study agent, after the main run and before the follow-up ran).** One descriptive follow-up
+  run was added for BTC, ETH, SOL and DOGE at the minutes left unexplained for nearly every coin. It changes no
+  measure, class rule or class. The study's own readings of details the plan left open were written before any data
+  and are listed in its README.

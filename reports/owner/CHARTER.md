@@ -15,13 +15,16 @@ Scores are the owner's judgment of what has been verified, not a forecast. The o
 | Block | Weight | Before Nov 10 | Nov 10 2026 | What holds it back |
 |---|---|---|---|---|
 | Research evidence: out-of-sample Sharpe that held on unseen 2022-23 data | 25 | 17 | 17 | Best estimate at $250K is Sharpe 2.94 / 2.66 / 1.91 (selection / check / 2022-23, unverified costs doubled). It missed the deflated-Sharpe bar (0.77 against 0.95). Only time and live data add points |
-| The live bot matches the research: inputs, timing, fills | 20 | 6 | 9 | Timing is measured and within a few percent. The newest candle is not final in about a third of decisions, and paper books its fills on that candle too. Probe running |
+| The live bot matches the research: inputs, timing, fills | 20 | 6 | 6 | Timing is measured and within a few percent. Inputs are measured and faulty: the bot's BTC candle request returned an old cached copy in every minute of a two-hour probe (ETH in 79%), and rows can stay wrong. The fix (release 2) is built behind a switch and not on yet |
 | Fills proven with real orders (capture share) | 20 | 3 | 3 | No live fill yet. Trade prints support the fill rule and the capacity. The pilot is the test |
 | Costs and idle cash | 10 | 4 | 4 | Fees are assumed; idle cash earns nothing until the USDC check; the fee rebate is unverified |
 | Controls and monitoring | 10 | 6 | 8 | Stops and the reconcile sweep were in place. Added: automatic paper status, an explained-error list, an update command that cannot start the bot |
 | Forward data for new information | 10 | 0 | 5 | The collector is built and tested; it has to run for months before anything can be read |
 | Process: plans before data, releases, records | 5 | 3 | 4 | Charter, registry, release notes and log exist. Two plans needed logged deviations on the first day |
-| **Total** | **100** | **39** | **50** | |
+| **Total** | **100** | **39** | **47** | |
+
+Re-scored at 13:50 ET on Nov 10, after the candle probe. In the morning the second block stood at 9 and the total at
+50. The probe did not make the bot worse; it showed a fault that was already there.
 
 ## What is frozen
 - **The model:** R2-08's label (net of realistic costs), its 23 features, the 60th-percentile threshold, a growing
@@ -45,9 +48,9 @@ Scores are the owner's judgment of what has been verified, not a forecast. The o
 | Lever | Size | What it needs |
 |---|---|---|
 | Yield on idle cash (USDC rewards) | At the 3.50% on Coinbase's Coinbase One page (its USDC page shows 4.10%; the lower is used): about +1.5 points a year if only free cash earns, about +3.4 if cash held by resting bids earns too. Roughly +0.2 to +0.45 Sharpe at $250K, measured as the repo measures Sharpe (against zero). Against Treasury bills it removes a drag instead of adding an edge. The program may change on Jan 18 2027, when the OCC's rule on stablecoin rewards is reported to take effect. | Account eligibility (Miles), then the bot's USDC mode |
-| Coinbase One fee rebate | Preferred ($29.99 a month) returns 25% of Advanced spot fees up to 100 USDC a month: about +$70 a month net, +0.3 points a year. Premium ($299.99) has no cap: at the two paper books' pace over their first 3.6 days (about $1,900 to $2,200 a month in fees at $250K) about +$190 to +$250 a month net, +0.9 to +1.2 points a year. Premium beats Preferred only above about $1,480 a month in fees. | Confirm on the account that API orders in the bot's portfolio earn the rebate (one month on Preferred shows it) |
+| Coinbase One fee rebate | Preferred ($29.99 a month) returns 25% of Advanced spot fees up to 100 USDC a month: about +$70 a month net, +0.3 points a year. Premium ($299.99) has no cap: at the two paper books' pace over their first 3.6 days (about $1,900 to $2,200 a month in fees at $250K) about +$190 to +$250 a month net, +0.9 to +1.2 points a year. The books ran in real time about 76% of those days; at a full-time pace the fees would be about $2,500 to $2,900 a month and Premium about +$340 to +$420 a month net, +1.6 to +2.0 points a year. Premium beats Preferred only above about $1,480 a month in fees. | Confirm on the account that API orders in the bot's portfolio earn the rebate (one month on Preferred shows it) |
 | Capture share on live fills | 0.19 to 0.26 Sharpe between a share of 0.5 and 0.25 | The $10K pilot, then the $250K step |
-| Live inputs: the newest candle is often not final when the bot decides | P&L effect unknown. In the collector's first hour 32% of newest candles changed after the decision and 6% were missing. The model was trained on final candles | Candle probe (reports/owner/candle_probe_prereg.md); if it passes, the newest bar built from trades, behind a switch |
+| Live inputs: old cached copies for BTC and ETH, unfinished candles for the rest | P&L effect unknown. In a two-hour probe the bot's own BTC request returned an old copy every minute, one to two minutes behind (ETH in 79% of minutes). For the twelve coins that stay on candles a first look was materially off in about 3% to 19% of minutes, mostly quiet ones. Every bid level reads BTC's newest close, and the model was trained on final candles | Release 2 (verified inputs), made the default by the three-day rule in FORWARD_TESTS.md. A replay with BTC held late, to price the fault |
 | Live order timing | Measured on 14.1M trade prints (Nov 10). Every realistic timing is within a few percent of the research's zero-delay assumption in pooled P&L (+0.9% to -5.1%), and the study cannot rank them. The live timing fills 83-90% of the research's first bids in the same minute | Closed: timing stays as built. The pilot's rule B is read with these match rates |
 | New information: open interest, funding, book depth | Unknown; none exists historically | The forward collector, then about a year of data |
 | 15 seeds at each retrain | No change in expected Sharpe. Cuts the luck of one retrain's seeds from about 0.10 to about 0.06 Sharpe (scaled from the 0.13-0.15 measured for three seeds) | Next retrain |

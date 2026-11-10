@@ -73,3 +73,30 @@ Written by the orchestrator before any probe data exists. Branch owner/charter; 
     entry early. It shows how often the bots' own request is answered from a copy someone else made, and how old.
   - Reported in addition: cache-hit shares and ages by source, delay and coin; the measures on fresh answers only; the
     age of the newest row in each answer.
+- **Nov 10 2026, 13:48 ET, after the result (orchestrator). The rule's third branch is not followed, for a reason the
+  plan did not foresee.**
+  - **The result.** Run 42853095116 (125 minutes, nine coins; reports/owner/candle_probe/README.md). No source reaches
+    a material-error share of 1% at 25 s or less: the trades bar has 6.8%, 6.4% and 6.0% at 1, 3 and 6 s; the best
+    candle answers have 5.2% (Advanced, 6 s) and 5.8% (Exchange, 3 s and 10 s). Trades pass the timing test (all nine
+    coins done within 2 s in every minute). By the rule that is the third branch: no change now, and a live trade
+    feed as its own project.
+  - **Why the branch's remedy is dropped.** The trades are not late. The trades bar has no material error for BTC,
+    ETH, SOL, XRP and ZEC. Its errors sit in PEPE, ONDO and DOGE and come from trades near the minute boundary and
+    from one-tick differences (one PEPE tick is 19 bp, more than half its one-minute sigma). A live feed carries the
+    same trades, so it would not close that gap. The project is not started.
+  - **What replaces it.** The candle clock study (candle_clock_prereg.md, written at 13:30 ET before its data)
+    classes each coin by where the venue cuts its candle. A coin cut at the minute may take its newest bar from
+    trades. The others stay on the venue's candle answer until their cut is known.
+  - **A defect the rule does not cover.** The bot's own BTC address returned an old cached copy in every one of the
+    125 minutes (ETH in 79%), always without the minute asked for. That is a fault in how the bot reads its inputs,
+    not a choice between sources, and the log entry of 11:04 already committed to a guard whatever the probe showed.
+    It is fixed in release 2: the bot reads the age of every answer, never lets an older answer replace a newer or
+    verified row, rebuilds recent rows of the listed coins from trades, and with the guard on places no new bid on an
+    input it knows to be old.
+  - **Nothing is switched on by this entry.** Release 2 keeps today's behaviour by default. A third paper book runs
+    the new mode, and the rule for making it the default is fixed in FORWARD_TESTS.md before that book's first run.
+  - **Limits of the result, as reported.** The counted sample is mostly HYPE, ZEC, ONDO and PEPE (117 to 125 minutes
+    each). BTC, ETH, SOL and XRP count 8 minutes each and DOGE none, because their reference answers were themselves
+    old copies. A wider reading that keeps those minutes (749 coin-minutes) gives the same outcome. On answers that
+    were not copies, the venue's own candle was final by about 25 s (material-error share 4.3% at 10 s, 1.2% at
+    15 s, 0.0% at 25 s and 40 s).
