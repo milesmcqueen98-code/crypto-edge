@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # wickctl: control the live spot bot. Installed to /usr/local/bin by setup_vm.sh; run it as your normal (sudo) user.
 set -uo pipefail
-D=/home/wick/crypto-edge
+D=${WICK_DIR:-/home/wick/crypto-edge}   # WICK_DIR is only for wickctl_test.sh
 CFG=bot/spot/config.live.json
 
 py() {   # run bot/spot/run.py as the wick user, with the keys loaded
@@ -27,8 +27,17 @@ case "${1:-help}" in
   restart)    sudo systemctl restart wickbot ;;
   stop)       sudo systemctl stop wickbot; echo "Service stopped. Resting bids expire on their own within minutes;" \
                 "take-profits stay. To also sell everything: wickctl flatten" ;;
-  update)     sudo systemctl stop wickbot; sudo -u wick git -C $D pull --ff-only && \
-                sudo install -m 755 $D/bot/spot/deploy/wickctl /usr/local/bin/wickctl; sudo systemctl start wickbot ;;
+  update)     was=$(systemctl is-active wickbot)   # active, activating, inactive or failed
+              sudo systemctl stop wickbot
+              if sudo -u wick git -C $D pull --ff-only; then
+                sudo install -m 755 $D/bot/spot/deploy/wickctl /usr/local/bin/wickctl; msg="Code updated."
+              else
+                msg="The pull failed; the code is unchanged."
+              fi
+              case "$was" in
+                active|activating) sudo systemctl start wickbot; echo "$msg The bot was running and is restarted." ;;
+                *) echo "$msg The bot was not running and stays stopped. Start it with: wickctl start" ;;
+              esac ;;
   *) cat <<'EOF'
 wickctl configure        enter the API key, capital, alerts and the live switch
 wickctl paper-test [N]   run N minutes on live data with no keys and no orders (checks the install)
@@ -42,7 +51,7 @@ wickctl stop             stop the bot process
 wickctl flatten          stop the bot, cancel every bot order and sell every open position at market
 wickctl cancel-all       stop the bot and cancel every bot order (positions stay)
 wickctl reset-halt       clear the 25% drawdown stop after you've looked at why it fired
-wickctl update           pull the latest code and restart
+wickctl update           pull the latest code; restart the bot only if it was running
 EOF
   ;;
 esac
