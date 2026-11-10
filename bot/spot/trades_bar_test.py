@@ -183,6 +183,19 @@ try:
 except M.Refused:
     check("a refusal propagates", True)
 
+# 10b. several minutes in one paging pass: completeness must reach before the oldest, freshness the newest
+v = FakeVenue([(-70, 1, 1), (-50, 2, 1), (-10, 3, 2), (5, 4, 1), (59, 5, 1), (61, 6, 1)])
+r = M.minute_trades_bars("BTC", M0 - pd.Timedelta(minutes=1), M0, get=v.get)
+check("two minutes: verified, a bar for each", r["verified"] and r["bars"][M0 - pd.Timedelta(minutes=1)]
+      == dict(open=2.0, high=3.0, low=2.0, close=3.0, volume=3.0) and r["bars"][M0]["close"] == 5.0, str(r["bars"]))
+v = FakeVenue([(-50, 2, 1), (-10, 3, 2), (5, 4, 1), (61, 6, 1)])
+r = M.minute_trades_bars("BTC", M0 - pd.Timedelta(minutes=1), M0, get=v.get)
+check("two minutes: no trade before the oldest minute but the list ended: verified", r["verified"] and r["pages"] == 2)
+v = FakeVenue([(-70, 1, 1), (-10, 3, 2), (5, 4, 1)], gen=E0 - pd.Timedelta(seconds=1))
+r = M.minute_trades_bars("BTC", M0 - pd.Timedelta(minutes=1), M0, get=v.get)
+check("two minutes: first page made before the newest minute ended: unverified", not r["verified"]
+      and r["reason"] == "stale_first_page")
+
 # 11. _get_h: a 429 raises Limited (a kind of Refused) at once, with no retry; 403 raises Refused
 
 
@@ -246,6 +259,21 @@ try:
           str(c1))
     check("spot_candles meta: gen = Date - Age, age, cache", meta.get("gen") == E0 + pd.Timedelta(seconds=5)
           and meta.get("age") == "4" and meta.get("cache") == "HIT", str(meta))
+    class BadHeaders(dict):
+        def get(self, k, d=None):
+            raise RuntimeError("headers broke")
+
+    class BadSession(CandleSession):
+        def get(self, url, params=None, timeout=None):
+            r = CandleSession.get(self, url, params, timeout)
+            r.headers = BadHeaders(x=1)
+            return r
+
+    M._S = BadSession()
+    meta = {"old": 1}
+    a3 = M.spot_candles("BTC", M0 - pd.Timedelta(minutes=2), M0 + pd.Timedelta(minutes=1), meta=meta)
+    check("spot_candles: a meta failure never raises, leaves meta empty, same table", a3.equals(a1) and meta == {},
+          str(meta))
 finally:
     M._S = real
 

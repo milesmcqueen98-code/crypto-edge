@@ -125,19 +125,30 @@ def trades_to_bar(rows, m):
 
 
 def minute_trades_bar(coin, m, max_pages=20, deadline=None, get=None, clock=time.monotonic):
-    """The trades of one coin for the minute [m, m + 60 s), from Coinbase Exchange's public trades list (newest first,
-    1000 a page, paged back with the CB-AFTER cursor), reduced to a bar, with proof of completeness.
+    """The trades of one coin for the minute [m, m + 60 s), reduced to a bar, with proof of completeness: the
+    one-minute form of minute_trades_bars. Returns dict(bar (None = no trades in the minute), verified, reason (None
+    when verified), pages, gen (first page's generation time), newest (newest trade time seen), n (trades in the
+    minute))."""
+    m = pd.Timestamp(m)
+    r = minute_trades_bars(coin, m, m, max_pages=max_pages, deadline=deadline, get=get, clock=clock)
+    return dict(bar=r["bars"][m], verified=r["verified"], reason=r["reason"], pages=r["pages"], gen=r["gen"],
+                newest=r["newest"], n=r["n"][m])
+
+
+def minute_trades_bars(coin, m0, m1, max_pages=20, deadline=None, get=None, clock=time.monotonic):
+    """The trades of one coin for the minutes m0 .. m1 (inclusive), from Coinbase Exchange's public trades list (newest
+    first, 1000 a page, paged back with the CB-AFTER cursor), reduced to one bar per minute, with proof of completeness.
 
     verified is True only if both hold:
-      (i) paging reached a trade stamped before m, or the venue's list ended (an empty page);
-      (ii) the first page was generated at or after m + 60 s (Date minus Age), or it holds a trade stamped at or
-           after m + 60 s.
+      (i) paging reached a trade stamped before m0, or the venue's list ended (an empty page);
+      (ii) the first page was generated at or after m1 + 60 s (Date minus Age), or it holds a trade stamped at or
+           after m1 + 60 s.
     Also unverified: the page cap, the deadline (a time.monotonic value), or any row that could not be read.
-    Returns dict(bar (None = no trades in the minute), verified, reason (None when verified), pages, gen (first page's
-    generation time), newest (newest trade time seen), n (trades in the minute)). `get` is _get_h (tests pass a fake)."""
+    Returns dict(bars {minute: bar or None}, verified, reason, pages, gen, newest, n {minute: trades}).
+    `get` is _get_h (tests pass a fake)."""
     get = get or _get_h
-    m = pd.Timestamp(m)
-    e = m + pd.Timedelta(minutes=1)
+    m0, m1 = pd.Timestamp(m0), pd.Timestamp(m1)
+    e = m1 + pd.Timedelta(minutes=1)
     rows, pages, bad, gen, newest, reason = [], 0, 0, None, None, None
     reached = ended = first_late = False
     params, cur = {"limit": 1000}, None
@@ -169,8 +180,8 @@ def minute_trades_bar(coin, m, max_pages=20, deadline=None, get=None, clock=time
         top = max(x[0] for x in pg)
         newest = top if newest is None else max(newest, top)
         if pages == 1:
-            first_late = top >= e                          # a trade after the minute: the page saw its end
-        if min(x[0] for x in pg) < m:
+            first_late = top >= e                          # a trade after the newest minute: the page saw its end
+        if min(x[0] for x in pg) < m0:
             reached = True
             break
         nxt = hd.get("CB-AFTER") or hd.get("cb-after")
@@ -180,20 +191,22 @@ def minute_trades_bar(coin, m, max_pages=20, deadline=None, get=None, clock=time
             cur = min(x[1] for x in pg)
         params = {"limit": 1000, "after": cur}
     fresh = (gen is not None and gen >= e) or first_late
-    bar = trades_to_bar(rows, m)
     if reason is None and bad:
         reason = "malformed"
     if reason is None and not (reached or ended):
         reason = "incomplete"
     if reason is None and not fresh:
         reason = "stale_first_page"
-    n = len({r[1] for r in rows if m <= r[0] < e})
-    return dict(bar=bar, verified=reason is None, reason=reason, pages=pages, gen=gen, newest=newest, n=n)
+    mins = list(pd.date_range(m0, m1, freq="min"))
+    bars = {mm: trades_to_bar(rows, mm) for mm in mins}
+    n = {mm: len({r[1] for r in rows if mm <= r[0] < mm + pd.Timedelta(minutes=1)}) for mm in mins}
+    return dict(bars=bars, verified=reason is None, reason=reason, pages=pages, gen=gen, newest=newest, n=n)
 
 
 def spot_candles(coin, start, end, meta=None):
     """1-minute candles [start, end) as a DataFrame indexed by minute (UTC, naive). If a dict is passed as meta, it is
-    filled with the cache facts of the last answer (the newest minutes): gen (Date minus Age), age, cache, date."""
+    filled with the cache facts of the last answer (the newest minutes): gen (Date minus Age), age, cache, date, and
+    start (rows at or after it came from that answer)."""
     rows = {}
     s = pd.Timestamp(start).floor("min")
     end = pd.Timestamp(end).floor("min")
@@ -202,9 +215,16 @@ def spot_candles(coin, start, end, meta=None):
         js, hd = _get_full(f"{EXCHANGE}/products/{coin}-USD/candles",
                            {"granularity": 60, "start": s.isoformat() + "Z", "end": (e - pd.Timedelta(minutes=1)).isoformat() + "Z"})
         if meta is not None:
-            hd = hd or {}
-            meta.clear()
-            meta.update(gen=generated_at(hd), age=hd.get("Age"), cache=hd.get("cf-cache-status"), date=hd.get("Date"))
+            try:                                           # monitoring only: never raises into the data path
+                meta.clear()
+                hd = hd or {}
+                meta.update(gen=generated_at(hd), age=hd.get("Age"), cache=hd.get("cf-cache-status"),
+                            date=hd.get("Date"), start=s)  # rows at or after start came from this answer
+            except Exception:
+                try:
+                    meta.clear()
+                except Exception:
+                    pass
         for t, lo, hi, op, cl, vo in js or []:
             rows[t] = (op, hi, lo, cl, vo)
         s = e

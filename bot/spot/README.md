@@ -251,35 +251,57 @@ so fills are the same. It is off (`"quote": "USD"`) because the backtest assumes
 
 ## Newest minute from trades (optional; off by default)
 **The gap.** Each minute, 6 s after it closes, the bot reads 1-minute candles and decides its bids. The research used
-final candles. Live, the newest candle is often not final yet:
-- In one hour of forward data, 31.6% of the newest candles changed later, and 6% were missing.
-- Coinbase serves candles through a public cache keyed by the request address (kept up to 300 s). Anyone's earlier
-  request for the same address can hand the bot an old copy, with no error.
-- Every coin's bid level moves with BTC's newest close, so an old BTC candle moves every bid.
+final candles. Live, the candles it reads are often not final:
+- Coinbase serves candles through a public cache keyed by the request address. A copy lives up to 300 s. Anyone's
+  earlier request for the same address hands the bot that old copy, with no error.
+- The bot's own steady-state BTC address came back as a copy in every minute of a 125-minute probe. The minute just
+  closed was always missing, and the newest row was 1 to 2 minutes behind.
+- The bot re-fetches each minute for 3 minutes. If every answer in that time is an old copy, the row stays partial or
+  missing for good, and the bot carries the last close forward. So older rows can be wrong too, not only the newest.
+- Every coin's bid level moves with BTC's newest close, so a wrong BTC row moves every bid.
+- An answer that is not a copy is final by about 25 s after its minute closes.
 
-**The switches** (in the config file; the defaults keep today's behaviour):
+**The switches** (in the config file; the defaults keep today's behaviour exactly):
 - `"newest_bar"`: `"candles"` (default) as today, or `"trades"`.
-  - With `"trades"`, the minute that just closed is rebuilt from Coinbase's public trades list (`bot/market.py`,
-    `minute_trades_bar`), for the coins in `"trades_coins"` only.
-  - The bar is used only if it is proven complete: paging reached a trade older than the minute, and the first page
-    was made after the minute ended (Date header minus Age header, or the page holds a later trade).
-  - Anything else keeps the candle row (the fallback). Older minutes still come from candles. The next minute's
-    candle re-fetch replaces the trades-built row.
+- `"trades_coins"`: the coins rebuilt from trades (default: BTC and every coin). Coins not listed use candles exactly
+  as in candles mode and are never asked for trades. An unknown name stops the bot at start-up. The trades book lists
+  BTC, ETH, SOL, XRP, LTC and ZEC.
+  - **Why a list.** For the other twelve coins Coinbase cuts the candle late after quiet minutes (8% to 41% of
+    minute boundaries): the 17:32 candle holds trades stamped in the first seconds of 17:33. A bar built from the
+    trade stamps then differs from the final candle the research used, and no fixed offset fixes it. For the six
+    listed coins the bar cut at the minute matches the final candle (0 to 0.6% material errors out of sample).
+- With `"trades"`, for each listed coin, each minute:
+  - The minute that just closed is rebuilt from Coinbase's public trades list (`bot/market.py`,
+    `minute_trades_bars`). So is any of the 4 minutes before it that is still open (repair). An open minute has no
+    trades-built row and no candle row from an answer made at least `"confirm_s"` seconds (default 25) after the
+    minute closed; such a candle row is "confirmed". Start-up repairs the last minutes of the backfill the same way.
+  - All of those minutes come from one paging pass. It is used only if it is proven complete: paging reached a trade
+    older than the oldest minute (or the list ended), and the first page was made after the newest minute ended
+    (Date header minus Age header, or the page holds a later trade). Anything else keeps the candle rows.
   - The pass stops after `"trades_budget_s"` seconds (default 8). A refusal or a rate limit (HTTP 429) stops it at
     once for that minute, with no retry. The coins not done keep their candle.
-- `"trades_coins"`: the coins rebuilt from trades. Default: BTC and every coin. Coins not listed use candles exactly
-  as before and are never asked for trades. An unknown name stops the bot at start-up.
-  - **Why a list.** For some coins Coinbase cuts the candle a few seconds after the minute mark: the 17:32 candle
-    holds trades stamped in the first seconds of 17:33. For those coins a bar built from trade stamps cannot equal the
-    final candle the research used. In a 30-minute check, trades bars equalled the final candle every minute for BTC,
-    ETH, SOL, XRP, LTC and ZEC, and in 30 to 90% of minutes for the others. A separate study measures the cut per
-    coin; the list follows it. The trades book lists BTC, ETH, SOL and XRP for now.
-- `"stale_guard"`: `false` (default). With `true`, if BTC's newest traded minute is not the one that just closed, the
-  minute runs like a market-data failure, for new bids only:
-  - exits and take-profits run;
-  - no new or re-priced bids; resting bids are left to expire;
-  - one `stale_input` event with BTC's age in minutes; not an error.
+  - Candles are re-fetched for the last 6 minutes instead of 3, so every row is seen again until a copy can no longer
+    be older than its minute.
+  - **Which row wins.** The bot remembers, for the last 15 minutes, when the answer behind each row was made (Date
+    minus Age; unknown counts as older than any known time) and whether the row was built from trades.
+    - A candle row replaces a stored candle row only if its answer is not older.
+    - A candle row never replaces a trades-built row (or a verified empty minute). Coinbase's final candle sometimes
+      leaves out trades that are in the public list (about 5% of minutes; BTC 14:05 UTC: 3.4 in the candle, 13.4 in
+      the trades), so the trades row is the complete one.
+  - So for the listed coins the recent rows are trades-built and stay so. Only the start-up backfill and the rows the
+    trades pass could not build come from candles.
+- `"stale_guard"`: `false` (default). With `true`:
+  - BTC counts as stale unless its row for the minute that just closed is trades-built or comes from an answer made
+    after that minute closed (and, as before, unless that minute is BTC's newest traded one). A stale minute runs like
+    a market-data failure, for new bids only: exits and take-profits run, no new or re-priced bids, resting bids are
+    left to expire, one `stale_input` event (BTC's age in minutes), not an error.
+  - Any other coin gets no new or re-priced 4-sigma bid that minute (`skip_old`) when its newest candle answer was
+    made before that minute ended, or has no readable time, unless its row is trades-built. Its resting bid stays;
+    exits, take-profits and deeper rungs run as before. A fresh answer with no row (a quiet minute with no trades) is
+    decided on as today, with the close carried forward as in the research; `newest_absent` still counts it.
+  - BTC trades every minute, so for BTC an absent row is always a fault.
   - In paper, bids do not expire by themselves, so a resting paper bid stays until the next normal minute.
+  - A test market that reports no answer times only needs the row.
 - Nothing else changes: same model, rules, orders and checks.
 - Monitoring cannot stop a step. If the timing or the data checks fail, it is counted (`obs_error`) and the step goes
   on. With the guard on, a failed check counts as stale (no new bids that minute).
@@ -298,6 +320,9 @@ final candles. Live, the newest candle is often not final yet:
 | `newest_absent` | coin-minutes with no row for the minute that just closed (all coins) |
 | `candle_old` | coin-minutes whose newest candle answer was made before that minute ended, so it cannot be final for it (17 coins) |
 | `btc_candle_old` | the same for BTC |
+| `tb_rebuilt` | earlier open minutes repaired from trades (listed coins) |
+| `rows_open` | rows 3 to 6 minutes old of listed coins that are neither trades-built nor confirmed (per step, summed) |
+| `skip_old` | coins with no new bid this minute because their newest candle answer was old or of unknown age (guard on) |
 | `obs_error` | timing or data checks that failed (the step went on) |
 
 `candle_old` and `btc_candle_old` only count; they read the answer's Date and Age headers and change no request and

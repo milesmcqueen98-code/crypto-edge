@@ -68,8 +68,19 @@ class SynthMarket:
                                          index=idx)
         self.slow = 0.0
         self.Refused, self.Limited = BM.Refused, BM.Limited   # as LiveMarket: the real classes
+        self.lag = None          # set: answers carry cache facts, made `lag` (a Timedelta, or {coin: lag}) after end
+        self.copy = {}           # (coin, end) -> a frame served instead (an old copy)
+        self.starts = []
 
     def spot_candles(self, coin, start, end):
+        self.starts.append((coin, start))
+        if self.lag is not None:
+            lag = self.lag.get(coin, pd.Timedelta(seconds=30)) if isinstance(self.lag, dict) else self.lag
+            if not hasattr(self, "candle_meta"):
+                self.candle_meta = {}
+            self.candle_meta[coin] = {"gen": None if lag is None else end + lag, "start": start}
+        if (coin, end) in self.copy:
+            return self.copy[(coin, end)]
         d = self.final[coin]
         d = d[(d.index >= start) & (d.index < end)].copy()
         newest = end - pd.Timedelta(minutes=1)
@@ -166,10 +177,11 @@ def _part1():
     eng.market.spot_candles = lambda coin, s, e: (seen.append((coin, s)), orig(coin, s, e))[1]
     end2 = end + pd.Timedelta(minutes=1)
     eng.update_spot(end2)
-    check("next step: SOL re-fetch starts 2 minutes before its newest candle, not the trades-built row",
-          dict(seen)["SOL"] == m - pd.Timedelta(minutes=3), str(dict(seen)["SOL"]))
-    check("next step: ETH re-fetch window as in candles mode", dict(seen)["ETH"] == m - pd.Timedelta(minutes=2))
-    check("next step: ETH row for m is the venue's candle", eng.spot["ETH"].loc[m].equals(fin["ETH"].loc[m]))
+    check("next step: SOL re-fetch starts 5 minutes before its newest candle (6 minutes), not the trades-built row",
+          dict(seen)["SOL"] == m - pd.Timedelta(minutes=6), str(dict(seen)["SOL"]))
+    check("next step: ETH re-fetch covers 6 minutes in trades mode", dict(seen)["ETH"] == m - pd.Timedelta(minutes=5))
+    check("next step: ETH row for m stays the trades row (an answer of unknown age does not replace it)",
+          eng.spot["ETH"].loc[m].equals(fin["ETH"].loc[m]))
     eng.market.final["ETH"].loc[end, "close"] += 0.0       # unchanged final
     eng.counts = {}
     eng.trades_pass(end)
@@ -179,8 +191,144 @@ def _part1():
           eng.spot["SOL"].loc[end].equals(fin["SOL"].loc[end]) and eng.counts.get("tb_fb_unverified") == 1,
           str(eng.counts))
     eng.update_spot(end2 + pd.Timedelta(minutes=1))
-    check("step after: the re-fetch replaces the made-up row with the candle",
-          eng.spot["ETH"].loc[end].equals(fin["ETH"].loc[end]))
+    check("step after: an answer of unknown age does not replace the trades-built row", eng.spot["ETH"].loc[end, "close"]
+          == 9.0)
+    eng.market.lag = pd.Timedelta(seconds=30)               # answers now made 30 s after the step's minute starts
+    eng.update_spot(end2 + pd.Timedelta(minutes=2))
+    check("later: even a confirmed answer (made > 25 s after the minute closed) never replaces a trades-built row",
+          eng.spot["ETH"].loc[end, "close"] == 9.0)
+    shutil.rmtree(sd)
+
+    # provenance with answers that report their age (old copies)
+    def copy_of(coin, upto, delta=0.0):
+        d = SM.final[coin]
+        d = d[d.index < upto].copy()
+        d["close"] += delta
+        return d
+    eng, sd = synth_engine("trades")
+    SM = eng.market
+    SM.lag = pd.Timedelta(seconds=10)
+    eng.update_spot(end)
+    eng.trades_pass(m)                                      # m: trades-built for BTC, ETH, SOL
+    m1, end1 = end, end + pd.Timedelta(minutes=1)
+    # an old copy (made 10 s before m ended, so missing m and with other values) at the next step
+    SM.copy[("ETH", end1)] = copy_of("ETH", m, delta=5.0)
+    SM.lag = {"ETH": -pd.Timedelta(minutes=1, seconds=10)}
+    eng.update_spot(end1)
+    check("old copy: never replaces a trades-built row", eng.spot["ETH"].loc[m].equals(fin["ETH"].loc[m]))
+    mm = m - pd.Timedelta(minutes=1)                        # candle row from a fresher answer (made end + 10 s)
+    check("old copy: never replaces a candle row from a newer answer", eng.spot["ETH"].loc[mm, "close"]
+          == fin["ETH"].loc[mm, "close"])
+    SM.copy.pop(("ETH", end1))
+    SM.copy[("ETH", end1 + pd.Timedelta(minutes=1))] = copy_of("ETH", m, delta=7.0)
+    SM.lag = {"ETH": pd.Timedelta(seconds=1)}              # newer than the stored answer, but not confirmed for m
+    eng.update_spot(end1 + pd.Timedelta(minutes=1))
+    check("newer answer: replaces an older candle row", eng.spot["ETH"].loc[mm, "close"]
+          == fin["ETH"].loc[mm, "close"] + 7.0)
+    check("newer answer: still does not replace m's trades row",
+          eng.spot["ETH"].loc[m].equals(fin["ETH"].loc[m]))
+    shutil.rmtree(sd)
+    eng, sd = synth_engine("trades")
+    eng.market.lag = -pd.Timedelta(minutes=6)               # an old copy, made before any of those rows closed
+    eng.update_spot(end)
+    eng.counts = {}
+    eng.data_checks(m)
+    check("rows_open counts rows 3 to 6 minutes old that are not confirmed (4 minutes x 3 coins)",
+          eng.counts.get("rows_open") == 12, str(eng.counts))
+    shutil.rmtree(sd)
+
+    # the 6-minute window only in trades mode and only for listed coins
+    eng, sd = synth_engine("trades", trades_coins=["BTC", "ETH"])
+    eng.update_spot(end)
+    eng.trades_pass(m)
+    eng.market.starts = []
+    eng.update_spot(end + pd.Timedelta(minutes=1))
+    st = dict(eng.market.starts)
+    check("window: listed coins re-fetch 6 minutes, unlisted 3 as in candles mode",
+          st["ETH"] == m - pd.Timedelta(minutes=5) and st["SOL"] == m - pd.Timedelta(minutes=2), str(st))
+    shutil.rmtree(sd)
+    eng, sd = synth_engine("candles")
+    eng.update_spot(end)
+    eng.market.starts = []
+    eng.update_spot(end + pd.Timedelta(minutes=1))
+    check("window: candles mode re-fetches 3 minutes for every coin",
+          all(v == m - pd.Timedelta(minutes=2) for v in dict(eng.market.starts).values()), str(eng.market.starts))
+    shutil.rmtree(sd)
+
+    # a hole left by a failed trades pass is repaired at the next step, in one paging pass
+    class RepairMarket(SynthMarket):
+        def trades_bars(self, coin, m0, m1, deadline=None):
+            self.calls.append((coin, m0, m1))
+            v = self.tb.get((coin, m1))
+            if isinstance(v, Exception):
+                raise v
+            d = self.final[coin]
+            mins = list(pd.date_range(m0, m1, freq="min"))
+            return dict(bars={x: d.loc[x].to_dict() for x in mins}, verified=True, reason=None, pages=1)
+
+    eng, sd = synth_engine("trades")
+    eng.market = RM = RepairMarket(["BTC", "ETH", "SOL"], 40)
+    RM.lag = {"ETH": -pd.Timedelta(minutes=2)}              # ETH's answers are old copies made before m ended
+    RM.first[("ETH", m)] = None                             # and miss m
+    eng.update_spot(end)
+    eng._prov = {k: {x: v for x, v in P.items() if x != m} for k, P in eng._prov.items()}
+    RM.tb[("ETH", m)] = RuntimeError("timeout")             # the trades pass fails for ETH at m
+    eng.trades_pass(m)
+    check("repair setup: ETH has a hole at m", m not in eng.spot["ETH"].index)
+    RM.calls, eng.counts = [], {}
+    eng.update_spot(end + pd.Timedelta(minutes=1))
+    eng.trades_pass(end)
+    eth = [x for x in RM.calls if x[0] == "ETH"]
+    check("repair: the hole is rebuilt at the next step in one paging pass", m in eng.spot["ETH"].index
+          and eng.spot["ETH"].loc[m].equals(fin["ETH"].loc[m]) and len(eth) == 1 and eth[0][1] <= m and eth[0][2] == end
+          and eng.counts.get("tb_rebuilt", 0) >= 1, f"{eth} {eng.counts}")
+    shutil.rmtree(sd)
+
+    # guard: BTC stale unless trades-built or from an answer made after m closed; a coin with an old row is skipped
+    eng, sd = synth_engine("trades", stale_guard=True)
+    eng.tradable = list(eng.coins)
+    eng.market.lag = {"BTC": -pd.Timedelta(seconds=20), "ETH": -pd.Timedelta(seconds=20), "SOL": pd.Timedelta(seconds=5)}
+    eng.update_spot(end)
+    eng._prov = {}                                          # forget the start-up rows: only this answer counts
+    eng.update_spot(end)
+    eng.market.tb[("BTC", m)] = RuntimeError("timeout")
+    eng.market.tb[("ETH", m)] = RuntimeError("timeout")
+    eng.market.tb[("SOL", m)] = RuntimeError("timeout")
+    eng.trades_pass(m)
+    eng.counts = {}
+    st = eng.data_checks(m)
+    check("guard: BTC row from an answer made before m closed is stale", st == (True, 0), str(st))
+    check("guard: a coin whose row came from an old answer gets no new bid (skip_old); a fresh one does",
+          eng._skip_old == {"ETH"} and eng.counts.get("skip_old") == 1, f"{eng._skip_old} {eng.counts}")
+    eng.market.tb[("BTC", m)] = "final"
+    eng.trades_pass(m)
+    check("guard: BTC trades-built is not stale", eng.data_checks(m) == (False, 0))
+    eng.counts = {}
+    RU = eng.market.candle_meta
+    eng.market.candle_meta = {k: dict(v, gen=None) if k == "ETH" else v for k, v in RU.items()}
+    eng.data_checks(m)
+    check("guard: an answer of unknown age also gets no new bid", "ETH" in eng._skip_old, str(eng._skip_old))
+    eng.market.candle_meta = RU
+    shutil.rmtree(sd)
+    # quiet minute: a fresh answer with no row for m (no trades): the coin is decided as today, only newest_absent
+    eng, sd = synth_engine("candles", stale_guard=True)
+    eng.tradable = list(eng.coins)
+    eng.market.lag = {"BTC": pd.Timedelta(seconds=5), "ETH": -pd.Timedelta(seconds=20), "SOL": pd.Timedelta(seconds=5)}
+    eng.market.first[("SOL", m)] = None
+    eng.update_spot(end)
+    eng.counts = {}
+    st = eng.data_checks(m)
+    check("guard, quiet minute: fresh answer without a row is decided on; the old answer is skipped",
+          eng._skip_old == {"ETH"} and eng.counts.get("skip_old") == 1 and eng.counts.get("newest_absent") == 1
+          and st == (False, 0), f"{eng._skip_old} {eng.counts} {st}")
+    eng.market.first[("BTC", end)] = None                   # BTC: a fresh answer without its row is a fault
+    eng.update_spot(end + pd.Timedelta(minutes=1))
+    check("guard: BTC with a fresh answer but no row is stale", eng.data_checks(end)[0])
+    eng.cfg["stale_guard"] = False
+    eng.counts = {}
+    st = eng.data_checks(m)                                 # ETH's answer is still old
+    check("guard off: nothing changes (no skip, BTC not stale)", st == (False, 0) and not eng._skip_old
+          and "skip_old" not in eng.counts, f"{st} {eng.counts}")
     shutil.rmtree(sd)
 
     # errors and refusal
@@ -292,7 +440,7 @@ def make_market():
     class FirstSeen(ReplayMarket):
         """Stored candles; the first-seen copy of a minute can be altered (alter) or BTC's newest minute dropped
         (drop_btc); trades bars are the stored (final) candles."""
-        alter, drop_btc, tb_calls = {}, set(), [0]
+        alter, drop_btc, drop, tb_calls = {}, set(), set(), [0]
 
         def spot_candles(self, coin, start, end):
             d = super().spot_candles(coin, start, end)
@@ -300,9 +448,19 @@ def make_market():
             if (coin, newest) in self.alter and newest in d.index:
                 d = d.copy()
                 d.loc[newest, COLS] = self.alter[(coin, newest)]
-            if coin == "BTC" and newest in self.drop_btc:
+            if getattr(self, "old", None) is not None:   # answer facts: fresh, or old for the listed steps
+                e = pd.Timestamp(end)
+                self.candle_meta[coin] = {"gen": e + pd.Timedelta(seconds=(-30 if (coin, e) in self.old else 8)),
+                                          "start": pd.Timestamp(start)}
+            if (coin == "BTC" and newest in self.drop_btc) or (coin, newest) in self.drop:
                 d = d[d.index != newest]
             return d
+
+        def trades_bars(self, coin, m0, m1, deadline=None):
+            self.tb_calls[0] += 1
+            d = self.D[coin]
+            return dict(bars={x: (d.loc[x].to_dict() if x in d.index and d.loc[x, "volume"] > 0 else None)
+                              for x in pd.date_range(m0, m1, freq="min")}, verified=True, reason=None, pages=1)
 
         def trades_bar(self, coin, m, deadline=None):
             self.tb_calls[0] += 1
@@ -313,8 +471,13 @@ def make_market():
     return FirstSeen(START, END)
 
 
-def run(mkt, cfg_extra, tag, alter=None, drop_btc=(), patch=None):
-    mkt.alter, mkt.drop_btc = dict(alter or {}), set(drop_btc)
+def run(mkt, cfg_extra, tag, alter=None, drop_btc=(), patch=None, drop=(), old=None):
+    mkt.alter, mkt.drop_btc, mkt.drop = dict(alter or {}), set(drop_btc), set(drop)
+    mkt.old = old                                       # {(coin, step)}: answers that report being old copies
+    if old is not None:
+        mkt.candle_meta = {}
+    elif "candle_meta" in vars(mkt):
+        del mkt.candle_meta
     clock = {"t": START}
     sd = tempfile.mkdtemp(prefix=f"nb_{tag}_")
     cfg = dict(CFG, **cfg_extra)
@@ -364,8 +527,8 @@ def part2():
     evD, hbD, _ = run(mkt, {"newest_bar": "trades"}, "trades_match")
     check("trades matching the candles: identical decisions and log lines (heartbeats aside)",
           decisions(evD) == decisions(evA), f"{len(decisions(evD))} vs {len(decisions(evA))}")
-    check("trades mode asked for trades every minute", mkt.tb_calls[0] == 18 * len(pd.date_range(START, END, freq="min",
-                                                                                                  inclusive="left")))
+    check("trades mode asked for trades every minute (and once at start-up)", mkt.tb_calls[0] == 18 * (1 + len(
+        pd.date_range(START, END, freq="min", inclusive="left"))), str(mkt.tb_calls[0]))
 
     # late trade missing from the first-seen candle
     evB, _, _ = run(mkt, {}, "candles_late", alter={(c, m): alt})
@@ -410,6 +573,15 @@ def part2():
           f"{[h['counts'].get('btc_stale') for h in hbH]} + {engH.counts.get('btc_stale')}")
     print(f"  (guard on: {reprice} re-prices in the whole run; guard off kept bidding: "
           f"{len([e for e in evH if e['kind'] == 'arm' and pd.Timestamp(e['ts']) in steps])} arms in the stale steps)")
+
+    # guard, one coin: its newest row missing at the step where the clean run arms it: no arm for it, no stale_input
+    arms = [e for e in evA if e["kind"] == "arm" and e["coin"] != c and pd.Timestamp(e["ts"]) > START + pd.Timedelta(minutes=5)]
+    x, sx = arms[0]["coin"], pd.Timestamp(arms[0]["ts"])
+    evS, _, _ = run(mkt, {"stale_guard": True}, "guard_one_coin", old={(x, sx)})
+    armS = [e for e in evS if e["kind"] == "arm" and e["coin"] == x and pd.Timestamp(e["ts"]) == sx]
+    hbS = sum(h["counts"].get("skip_old", 0) for h in evS if h["kind"] == "heartbeat")
+    check(f"guard, one coin ({x} at {sx}, its candle answer made before the minute ended): no new bid for it then",
+          not armS and not [e for e in evS if e["kind"] in ("stale_input", "error")] and hbS > 0, f"skip_old {hbS}")
 
     # monitoring that raises: _mark (step timing) and data_checks fail in every stale minute
     def broken(eng):
