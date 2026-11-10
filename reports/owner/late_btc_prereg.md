@@ -1,4 +1,4 @@
-# What a late BTC input costs: replay plan (Nov 10 2026, 14:00 ET)
+# What a late BTC input costs: replay plan (Nov 10 2026, 13:57 ET)
 
 Written by the orchestrator before any result of this replay exists. Branch owner/charter; the replay runs from branch
 owner/late-btc.
