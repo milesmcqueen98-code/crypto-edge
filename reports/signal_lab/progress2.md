@@ -115,3 +115,8 @@ print fetcher).
   in a holdout era" holds in the primary configuration (both are +0.24 at $1M in 2022-23); the 0 s table is not
   consistently better (better for RF6, worse for RF6H); the audit ran beside the selection readings. The audit's two
   reports are now saved in test2/AUDIT.md. A chart of the result is in the report doc.
+- 20:54 Wrap-up: report doc corrected and complete (verdict with a chart, method, data and timing, selection, both holdout
+  readings, gates, scorecard, sensitivity, why, limits, next test); the findings doc, this lab's README and this log
+  mirrored to the Project (claude/crypto-edge-findings.md, claude/signal-lab-findings.md,
+  claude/signal-lab2-progress.md). The Project's findings doc was compared with the repo copy before the write and
+  was identical, so nothing from another session was overwritten. Final state: branch signal-lab.
