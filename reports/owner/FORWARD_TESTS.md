@@ -15,10 +15,15 @@ them.
 | Idle cash as USDC (ladder v5, C4) | Whether Coinbase pays rewards on this account's USDC, and on cash held by resting bids | One weekly or monthly payout after switching | Rewards at least half of expectation B (free cash only); stop on any rejected -USDC order, a program change, or USDC below 0.997 for 15 minutes | Needs the account's eligibility and `usdc-check` | reports/ladder_v5_prereg.md, bot/spot/run.py |
 
 **Two notes on the paper books (Nov 10 2026).**
-- **They ran in real time about 72% of the time** from their first run to Nov 10 18:30 UTC (66.4 of 92.0 hours), and
-  about 54% since Nov 8 12:25 UTC. GitHub drops scheduled runs. In a gap the bot places no new bids; when it
-  restarts it only settles what was already open. Fills per calendar day therefore understate the rate while the bot
-  is running. Release 2 adds a hand-over so each run starts the next.
+- **They ran in real time about two thirds of the time.** GitHub's run history shows runs for 66.4 of the 92.0 hours
+  from the first run to Nov 10 18:30 UTC (72%), and for about 54% since Nov 8 12:25 UTC. The main book's own log
+  holds less: 60.5 of the 87.0 hours to its last event (69.5%), because one run on Nov 7 never saved its log.
+  GitHub drops scheduled runs. In a gap the bot places no new bids; when it restarts it only settles what was
+  already open. Fills per calendar day therefore understate the rate while the bot is running (PAPER_STATUS.md
+  shows both). Release 2 adds a hand-over so each run starts the next.
+- **Rung fills are above rule A's band when counted per running day:** 21 rungs in 60.5 live hours is 8.3 a day,
+  against 1 to 6 (5.8 per calendar day). Two readings are open: an active stretch of market, or extra fills from the
+  late BTC input. The late-BTC replay and the third paper book will say which. Net per dollar so far is 81 bp.
 - **Their BTC input is known to be late.** In a two-hour probe the bot's own BTC candle request returned an old
   cached copy every minute (reports/owner/candle_probe/README.md). The main book and W2 keep that behaviour until
   the "verified inputs" test below is read, so their results so far and until then carry that fault.

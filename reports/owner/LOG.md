@@ -190,3 +190,13 @@ FORWARD_TESTS.md.
 - **Known and not fixed in release 2: the perp paper bots.** They fetch each spot minute once and never look again
   (bot/engine.py), so their inputs are first-seen candles, BTC included. Their forward test is lower priority; the
   spot bot's data handling can be carried over later.
+- **14:08. Correction to the 13:35 entry, from the paper logs themselves.** The status report now derives running time
+  from each book's own log. The main spot book was live 60.5 of the 87.0 hours to its last event (69.5%), not the
+  66.4 hours of the GitHub run history: the run of Nov 7 06:33 to 12:22 UTC finished but its log never reached
+  `main`, so its events are missing.
+  - The fee pace follows the log. At a full-time pace it is about $2,800 to $3,200 a month at $250K, and the Premium
+    tier about +$400 to +$490 a month net (the 13:35 entry said $2,500 to $2,900 and +$340 to +$420).
+  - **Rung fills per running day are above rule A's band:** 21 rungs in 60.5 live hours is 8.3 a day against 1 to 6.
+    Either the market was active or the late BTC input added fills. The replay and the third paper book will tell.
+- **14:08. Paper status report extended** (main 7c76d7a): running time per book, every rate per calendar day and per
+  running day, the new data counters, and the third book's progress on its three-day rule.
