@@ -249,12 +249,104 @@ so fills are the same. It is off (`"quote": "USD"`) because the backtest assumes
 - Taxes: every rung is a short-term trade, so there are thousands of lots a year. Coinbase reports sales on Form 1099-DA.
   Use its tax export or crypto tax software, and ask a CPA how the wash-sale rule treats crypto for you.
 
+## Newest minute from trades (optional; off by default)
+**The gap.** Each minute, 6 s after it closes, the bot reads 1-minute candles and decides its bids. The research used
+final candles. Live, the candles it reads are often not final:
+- Coinbase serves candles through a public cache keyed by the request address. A copy lives up to 300 s. Anyone's
+  earlier request for the same address hands the bot that old copy, with no error.
+- The bot's own steady-state BTC address came back as a copy in every minute of a 125-minute probe. The minute just
+  closed was always missing, and the newest row was 1 to 2 minutes behind.
+- The bot re-fetches each minute for 3 minutes. If every answer in that time is an old copy, the row stays partial or
+  missing for good, and the bot carries the last close forward. So older rows can be wrong too, not only the newest.
+- Every coin's bid level moves with BTC's newest close, so a wrong BTC row moves every bid.
+- An answer that is not a copy is final by about 25 s after its minute closes.
+
+**The switches** (in the config file; the defaults keep today's behaviour exactly):
+- `"newest_bar"`: `"candles"` (default) as today, or `"trades"`.
+- `"trades_coins"`: the coins rebuilt from trades (default: BTC and every coin). Coins not listed are never asked for trades;
+  their rows come from candles, under the cache rules below. An unknown name stops the bot at start-up. The trades book lists
+  BTC, ETH, SOL, XRP, LTC and ZEC.
+  - **Why a list.** For the other twelve coins Coinbase cuts the candle late after quiet minutes (8% to 41% of
+    minute boundaries): the 17:32 candle holds trades stamped in the first seconds of 17:33. A bar built from the
+    trade stamps then differs from the final candle the research used, and no fixed offset fixes it. For the six
+    listed coins the bar cut at the minute matches the final candle (0 to 0.6% material errors out of sample).
+- With `"trades"`, for each coin on the list, each minute:
+  - The minute that just closed is rebuilt from Coinbase's public trades list (`bot/market.py`,
+    `minute_trades_bars`). So is any of the 4 minutes before it that is still open (repair). An open minute has no
+    trades-built row and no candle row from an answer made at least `"confirm_s"` seconds (default 25) after the
+    minute closed; such a candle row is "confirmed". Start-up repairs the last minutes of the backfill the same way.
+  - All of those minutes come from one paging pass. It is used only if it is proven complete: paging reached a trade
+    older than the oldest minute (or the list ended), and the first page was made after the newest minute ended
+    (Date header minus Age header, or the page holds a later trade). Anything else keeps the candle rows.
+  - The pass stops after `"trades_budget_s"` seconds (default 8). A refusal or a rate limit (HTTP 429) stops it at
+    once for that minute, with no retry. The coins not done keep their candle.
+- With `"trades"`, for BTC and all 17 coins, listed or not (the coins on the candle path need this most):
+  - Candles are re-fetched for the last 6 minutes instead of 3, so every row is seen again until a copy can no longer
+    be older than its minute.
+  - **Which row wins.** The bot remembers, for the last 15 minutes, when the answer behind each row was made (Date
+    minus Age; unknown counts as older than any known time) and whether the row was built from trades.
+    - A candle row replaces a stored candle row only if its answer is not older.
+    - A candle row never replaces a trades-built row (or a verified empty minute). Coinbase's final candle sometimes
+      leaves out trades that are in the public list (about 5% of minutes; BTC 14:05 UTC: 3.4 in the candle, 13.4 in
+      the trades), so the trades row is the complete one.
+  - So for the listed coins the recent rows are trades-built and stay so. Only the start-up backfill and the rows the
+    trades pass could not build come from candles.
+- `"stale_guard"`: `false` (default). With `true`:
+  - BTC counts as stale unless its row for the minute that just closed is trades-built or comes from an answer made
+    after that minute closed (and, as before, unless that minute is BTC's newest traded one). A stale minute runs like
+    a market-data failure, for new bids only: exits and take-profits run, no new or re-priced bids, resting bids are
+    left to expire, one `stale_input` event (BTC's age in minutes), not an error.
+  - Any other coin gets no new or re-priced 4-sigma bid that minute (`skip_old`) when its newest candle answer was
+    made before that minute ended, or has no readable time, unless its row is trades-built. Its resting bid stays;
+    exits, take-profits and deeper rungs run as before. A fresh answer with no row (a quiet minute with no trades) is
+    decided on as today, with the close carried forward as in the research; `newest_absent` still counts it.
+  - BTC trades every minute, so for BTC an absent row is always a fault.
+  - In paper, bids do not expire by themselves, so a resting paper bid stays until the next normal minute.
+  - A test market that reports no answer times only needs the row.
+- Nothing else changes: same model, rules, orders and checks.
+- Monitoring cannot stop a step. If the timing or the data checks fail, it is counted (`obs_error`) and the step goes
+  on. With the guard on, a failed check counts as stale (no new bids that minute).
+
+**Heartbeat counters** (always on; per heartbeat, then reset):
+
+| Counter | What it counts |
+|---|---|
+| `tb_built` | bars built from trades and used |
+| `tb_insert` | of those, minutes where the candle had no row yet |
+| `tb_close_diff` | of those, the trades close differed from the candle close by more than one tick |
+| `tb_empty` | verified minutes with no trades (no row, as the candles) |
+| `tb_fb_unverified`, `tb_fb_error`, `tb_fb_budget` | fallbacks to the candle: not proven complete, an error, out of time |
+| `tb_fb_limited` | fallbacks because Coinbase answered 429 (rate limit) |
+| `btc_stale` | minutes where BTC's newest traded minute was not the one that just closed |
+| `newest_absent` | coin-minutes with no row for the minute that just closed (all coins) |
+| `candle_old` | coin-minutes whose newest candle answer was made before that minute ended, so it cannot be final for it (17 coins) |
+| `btc_candle_old` | the same for BTC |
+| `tb_rebuilt` | earlier open minutes repaired from trades (listed coins) |
+| `rows_open` | rows 3 to 6 minutes old, any coin, that are neither trades-built nor confirmed (trades mode; per step, summed) |
+| `skip_old` | coins with no new bid this minute because their newest candle answer was old or of unknown age (guard on) |
+| `obs_error` | timing or data checks that failed (the step went on) |
+
+`candle_old` and `btc_candle_old` only count; they read the answer's Date and Age headers and change no request and
+no decision. `step_s` gives the median and the maximum seconds after the minute at which the data step, the cancel
+pass and the place pass of the 4-sigma bids finished. `tb_err` is the last trades error, when there was one.
+
+**Paper.** `.github/workflows/paper-spot.yml` runs the trades book (`config.tb.json`, `paper_spot_tb/`) in its own
+job (`paper_tb`) on its own runner, so the two registered books keep their requests and rate unchanged.
+
 ## Paper run
-`.github/workflows/paper-spot.yml` runs two paper books every 6 hours on GitHub Actions: the incumbent (`paper_spot/`) and
-the wick v4 W2 challenger (rungs ¼, ¼, ½; `paper_spot_w2/`, config `config.w2.json`). Both use:
+`.github/workflows/paper-spot.yml` runs three paper books for about 5h45m per run on GitHub Actions: the incumbent
+(`paper_spot/`) and the wick v4 W2 challenger (rungs ¼, ¼, ½; `paper_spot_w2/`, config `config.w2.json`) in job
+`paper`, and the newest-minute-from-trades book (`paper_spot_tb/`, config `config.tb.json`, section above) in job
+`paper_tb`. All use:
 - $250K paper capital, θ = 0.5 capture, VIP-1 fees;
 - live public Coinbase data, no keys;
 - it commits `paper_spot/` back to the repo.
+
+- **Hand-over.** GitHub drops many scheduled runs: since Nov 8 the books ran in real time only about half the time, and
+  settled the rest later from final candles. So a last job, `next`, starts the next run on main as soon as this one
+  ends (`bot/spot/deploy/paper_next.sh`). It does so only if the run came from the schedule or a manual dispatch,
+  and only if it lasted at least 30 minutes, so a run that fails at start cannot loop. The 6-hourly schedule stays as
+  the backstop; a second run waits in the workflow's queue. Test: `bash bot/spot/deploy/paper_next_test.sh`.
 
 Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
 
@@ -288,6 +380,10 @@ Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
 - **Candle merge:** `python bot/spot/merge_test.py` checks the per-minute merge of re-fetched candles in `update_spot`. A re-fetch
   that skips a stored minute used to leave the index out of order and the window cut raised KeyError. The test shows the
   old lines raise and the engine does not, that re-fetched values win, and that a normal merge is unchanged. No network.
+- **Newest minute from trades:** `python bot/spot/trades_bar_test.py` (the trades bar and its proof of completeness,
+  against a fake trades endpoint) and `python bot/spot/newest_bar_test.py` (the two switches in the engine, on
+  synthetic tables and on the stored Oct 10 2025 crash). No network. `bot/spot/trades_bar_check.py` is the network
+  check for a GitHub runner (hunt2.yml).
 - **wickctl update:** `bash bot/spot/deploy/wickctl_test.sh` runs the real `update` branch against stub `sudo`, `systemctl`, `git` and
   `install`. It checks the order of calls for a bot that was active, activating, inactive or failed, and for a failed pull.
   Only a bot that was active or activating is started again. No network, no sudo.
