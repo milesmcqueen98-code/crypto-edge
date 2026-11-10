@@ -82,3 +82,12 @@ FORWARD_TESTS.md.
     on the VM still runs the old copy, so the release note gives two manual commands for a bot that is not running.
 - **Scorecard added to the charter:** 50 of 100 (39 before today). The largest open blocks are fills proven with real
   orders (17 points, the pilot) and the live bot matching the research (11 points, the candle probe and what follows).
+- **11:03. Forward collector in production** (main d221c59; first run 42850829239). Storage about 6.2 MB a day,
+  lossless. Each run collects for 5 h 45 min and starts its successor five minutes before it ends; an hourly schedule
+  restarts collection after a crash.
+- **11:04. Seen while setting up the probe: a runner was served stale BTC candles.** The same request that the collector
+  answered on time on another runner returned BTC's newest minute two to four or more minutes old, with identical
+  values a minute apart, while ETH was current. Not a refusal. The bot forward-fills a missing close for up to 30
+  minutes, so a stale BTC table would move every level without any error. The probe now records the age of the newest
+  row by source, delay and coin. A stale-input guard is on the list for the next engine release whatever the probe
+  shows.
