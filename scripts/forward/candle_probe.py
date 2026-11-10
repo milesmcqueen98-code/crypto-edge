@@ -331,6 +331,21 @@ class Probe:
         return df
 
 
+def derive(df, q=None):
+    """gen_s: when the venue made the answer, seconds after q (response time minus Age; Age is whole seconds).
+    A cache HIT without an Age header is a copy of unknown age: gen_s is NaN for it, and it is never 'fresh'."""
+    if q is None:
+        q = df.q.map(lambda x: x.timestamp())
+    hit = df.cache.astype("string").eq("HIT").fillna(False).to_numpy(bool)
+    known = df.age.notna().to_numpy(bool)
+    age0 = df.age.where(known, 0.0)
+    df["gen_s"] = (df.resp_s - age0).where(~hit | known)
+    date = pd.to_numeric(df["date"], errors="coerce") if "date" in df else np.nan
+    df["gen_date_s"] = (date - age0 - q).where(~hit | known)
+    df["fresh"] = ~hit | (known & (df.age.where(known, 99) <= 1).to_numpy(bool))
+    return df
+
+
 def to_frame(rows):
     df = pd.DataFrame(rows)
     for c in ("t_plan", "t_req", "t_resp", "pages", "n_trades"):
@@ -343,8 +358,7 @@ def to_frame(rows):
         df["cache"] = None
     q = df.q.map(lambda x: x.timestamp())
     df["plan_s"], df["req_s"], df["resp_s"] = df.t_plan - q, df.t_req - q, df.t_resp - q
-    df["gen_s"] = df.resp_s - df.age.fillna(0)          # when the venue made the answer (Age is whole seconds)
-    df["gen_date_s"] = (pd.to_numeric(df["date"], errors="coerce") if "date" in df else np.nan) - df.age.fillna(0) - q
+    derive(df, q)
     for c in ("t_plan", "t_req", "t_resp"):
         df[c] = pd.to_datetime(df[c], unit="s").astype("datetime64[ms]")
     return df.sort_values(["source", "coin", "minute", "delay"]).reset_index(drop=True)
@@ -378,7 +392,7 @@ def sigma(ref):
 def compare(obs, ref, sig):
     """One row per counted coin-minute for one source at one delay: missing, exact, material, errors in bp."""
     o = obs.drop_duplicates(["coin", "minute"]).set_index(["coin", "minute"])
-    j = ref.join(o[["status", "present", "open", "high", "low", "close", "volume", "req_s", "resp_s", "age"]],
+    j = ref.join(o[["status", "present", "open", "high", "low", "close", "volume", "req_s", "resp_s", "fresh"]],
                  rsuffix="_o", how="left")
     present = (j.status == "ok") & j.present.astype("boolean").fillna(False).astype(bool)
     s = j.index.get_level_values(0).map(sig).astype(float)
@@ -389,7 +403,8 @@ def compare(obs, ref, sig):
     material = ~present | (cerr > 0.5 * s * 1e4) | (lerr.abs() > 5)
     return pd.DataFrame(dict(missing=~present, failed=j.status.ne("ok") & j.status.notna(),
                              exact=exact, material=material, cerr=cerr.where(present), lerr=lerr.where(present),
-                             vshare=(j.volume_o / j.volume).where(present), age=j.age), index=j.index)
+                             vshare=(j.volume_o / j.volume).where(present),
+                             fresh=j.fresh.astype("boolean").fillna(False).astype(bool)), index=j.index)
 
 
 def measures(df, fresh_only=False):
@@ -401,7 +416,7 @@ def measures(df, fresh_only=False):
     for (src, d), g in df[df.source != "ref"].groupby(["source", "delay"]):
         m = compare(g, ref, sig)
         if fresh_only:
-            m = m[m.age.fillna(0) <= 1]
+            m = m[m.fresh]
         per[(src, d)] = m
         lag = (g.req_s - g.plan_s)
         rows.append(dict(source=src, delay=d, req_s_median=round(g.req_s.median(), 2),
@@ -456,7 +471,7 @@ def by_coin(per, keys):
     return pd.DataFrame(cols)
 
 
-def collector_check(root, coins):
+def collector_check(root, coins, start=None, end=None, skip=None):
     """Material-error share of the bot's 6 s candle in the forward collector's revision log, for the probe's coins.
     Reference: the candle's values at the collector's fetch 186 s after the minute closed (its last change). A minute counts
     if the collector made the decision fetch for it (minute m is fetched first at m + 1 min + 6 s); a first sighting
@@ -468,6 +483,14 @@ def collector_check(root, coins):
     cd = cd[cd.coin.astype(str).isin(coins)].copy()
     cd["coin"] = cd.coin.astype(str)
     cd["age"] = (cd.seen - cd.minute).dt.total_seconds() - 60      # seconds after the minute closed
+    keep = pd.Series(True, index=cd.index)
+    if start is not None:
+        keep &= cd.minute >= pd.Timestamp(start)
+    if end is not None:
+        keep &= cd.minute < pd.Timestamp(end)
+    if skip is not None:                               # e.g. the exclusion window in scripts/forward/README.md
+        keep &= ~((cd.minute >= pd.Timestamp(skip[0])) & (cd.minute < pd.Timestamp(skip[1])))
+    cd = cd[keep]
     cd = cd.sort_values("seen")
     first = cd.groupby(["coin", "minute"]).first()
     last = cd.groupby(["coin", "minute"]).last()
@@ -501,6 +524,8 @@ def cache_table(df, by_coin=False):
     g = d.groupby(keys)
     gd = d.get("gen_date_s", pd.Series(np.nan, index=d.index))
     return pd.DataFrame(dict(n=g.size(), hit_share=g.cache.apply(lambda x: round((x == "HIT").mean() * 100, 1)),
+                             hit_no_age=g.apply(lambda x: int(((x.cache == "HIT") & x.age.isna()).sum())),
+                             not_fresh_share=g.fresh.apply(lambda x: round((~x).mean() * 100, 1)),
                              age_gt1_share=g.age.apply(lambda x: round((x.fillna(0) > 1).mean() * 100, 1)),
                              age_gt10_share=g.age.apply(lambda x: round((x.fillna(0) > 10).mean() * 100, 1)),
                              age_med=g.age.median(), age_p95=g.age.quantile(.95), age_max=g.age.max(),
@@ -554,8 +579,7 @@ def analyze(path, collector_root=None, out=None):
     for c in ("age", "cache"):
         if c not in df:
             df[c] = np.nan if c == "age" else None
-    if "gen_s" not in df:
-        df["gen_s"] = df.resp_s - df.age.fillna(0)
+    derive(df)
     tab, per, ref, sig = measures(df)
     tt = trades_timing(df)
     verdict = decide(tab, tt)
