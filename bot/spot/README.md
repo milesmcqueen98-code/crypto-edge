@@ -250,36 +250,77 @@ so fills are the same. It is off (`"quote": "USD"`) because the backtest assumes
   Use its tax export or crypto tax software, and ask a CPA how the wash-sale rule treats crypto for you.
 
 ## Newest minute from trades (optional; off by default)
-The bot reads candles 6 s after each minute closes. The candle for the minute that just closed is often not final yet:
-in one hour of forward data 31.6% of them changed later and 6% were missing. Coinbase also serves candles through a
-cache that can be up to 5 minutes old. The research used final candles. Two switches in the config close this gap.
-Both default to today's behaviour.
-- `"newest_bar": "candles"` (default) uses the candles as today. `"trades"` rebuilds the minute that just closed for
-  BTC and every coin from Coinbase's public trades list (`bot/market.py`, `minute_trades_bar`). The bar is used only
-  if it is proven complete: paging reached a trade older than the minute, and the first page was made after the
-  minute ended (its Date header minus its Age header, or it holds a later trade). Anything else keeps the candle row
-  (the fallback). Older minutes still come from candles, and the next minute's candle re-fetch replaces the
-  trades-built row. The pass stops after `"trades_budget_s"` seconds (default 8); the coins not done keep their
-  candle. Nothing else changes: same model, rules, orders and checks.
-- `"stale_guard": false` (default). With `true`, if BTC's newest traded minute is not the one that just closed, the
-  minute is run like a market-data failure for new bids only: exits and take-profits run, no new or re-priced bids,
-  and resting bids are left to expire. It logs one `stale_input` event with BTC's age in minutes. It is not an
-  error. (In paper, bids do not expire by themselves, so a resting paper bid stays until the next normal minute.)
-- Heartbeat counters (always on): `tb_built` bars built from trades, `tb_insert` of those where the candle had no
-  row, `tb_close_diff` where the trades close and the candle close differ by more than one tick, `tb_empty` verified
-  empty minutes, fallbacks `tb_fb_unverified`, `tb_fb_error` and `tb_fb_budget`, `btc_stale` minutes,
-  `newest_absent` (coin-minutes with no row for the minute that just closed). `step_s` gives, since the last
-  heartbeat, the median and the maximum seconds after the minute at which the data step, the cancel pass and the
-  place pass of the 4-sigma bids finished. `tb_err` is the last trades error, when there was one.
-- The paper workflow runs a third book with both switches on (`config.tb.json`, `paper_spot_tb/`).
+**The gap.** Each minute, 6 s after it closes, the bot reads 1-minute candles and decides its bids. The research used
+final candles. Live, the newest candle is often not final yet:
+- In one hour of forward data, 31.6% of the newest candles changed later, and 6% were missing.
+- Coinbase serves candles through a public cache keyed by the request address (kept up to 300 s). Anyone's earlier
+  request for the same address can hand the bot an old copy, with no error.
+- Every coin's bid level moves with BTC's newest close, so an old BTC candle moves every bid.
+
+**The switches** (in the config file; the defaults keep today's behaviour):
+- `"newest_bar"`: `"candles"` (default) as today, or `"trades"`.
+  - With `"trades"`, the minute that just closed is rebuilt from Coinbase's public trades list (`bot/market.py`,
+    `minute_trades_bar`), for the coins in `"trades_coins"` only.
+  - The bar is used only if it is proven complete: paging reached a trade older than the minute, and the first page
+    was made after the minute ended (Date header minus Age header, or the page holds a later trade).
+  - Anything else keeps the candle row (the fallback). Older minutes still come from candles. The next minute's
+    candle re-fetch replaces the trades-built row.
+  - The pass stops after `"trades_budget_s"` seconds (default 8). A refusal or a rate limit (HTTP 429) stops it at
+    once for that minute, with no retry. The coins not done keep their candle.
+- `"trades_coins"`: the coins rebuilt from trades. Default: BTC and every coin. Coins not listed use candles exactly
+  as before and are never asked for trades. An unknown name stops the bot at start-up.
+  - **Why a list.** For some coins Coinbase cuts the candle a few seconds after the minute mark: the 17:32 candle
+    holds trades stamped in the first seconds of 17:33. For those coins a bar built from trade stamps cannot equal the
+    final candle the research used. In a 30-minute check, trades bars equalled the final candle every minute for BTC,
+    ETH, SOL, XRP, LTC and ZEC, and in 30 to 90% of minutes for the others. A separate study measures the cut per
+    coin; the list follows it. The trades book lists BTC, ETH, SOL and XRP for now.
+- `"stale_guard"`: `false` (default). With `true`, if BTC's newest traded minute is not the one that just closed, the
+  minute runs like a market-data failure, for new bids only:
+  - exits and take-profits run;
+  - no new or re-priced bids; resting bids are left to expire;
+  - one `stale_input` event with BTC's age in minutes; not an error.
+  - In paper, bids do not expire by themselves, so a resting paper bid stays until the next normal minute.
+- Nothing else changes: same model, rules, orders and checks.
+- Monitoring cannot stop a step. If the timing or the data checks fail, it is counted (`obs_error`) and the step goes
+  on. With the guard on, a failed check counts as stale (no new bids that minute).
+
+**Heartbeat counters** (always on; per heartbeat, then reset):
+
+| Counter | What it counts |
+|---|---|
+| `tb_built` | bars built from trades and used |
+| `tb_insert` | of those, minutes where the candle had no row yet |
+| `tb_close_diff` | of those, the trades close differed from the candle close by more than one tick |
+| `tb_empty` | verified minutes with no trades (no row, as the candles) |
+| `tb_fb_unverified`, `tb_fb_error`, `tb_fb_budget` | fallbacks to the candle: not proven complete, an error, out of time |
+| `tb_fb_limited` | fallbacks because Coinbase answered 429 (rate limit) |
+| `btc_stale` | minutes where BTC's newest traded minute was not the one that just closed |
+| `newest_absent` | coin-minutes with no row for the minute that just closed (all coins) |
+| `candle_old` | coin-minutes whose newest candle answer was made before that minute ended, so it cannot be final for it (17 coins) |
+| `btc_candle_old` | the same for BTC |
+| `obs_error` | timing or data checks that failed (the step went on) |
+
+`candle_old` and `btc_candle_old` only count; they read the answer's Date and Age headers and change no request and
+no decision. `step_s` gives the median and the maximum seconds after the minute at which the data step, the cancel
+pass and the place pass of the 4-sigma bids finished. `tb_err` is the last trades error, when there was one.
+
+**Paper.** `.github/workflows/paper-spot.yml` runs the trades book (`config.tb.json`, `paper_spot_tb/`) in its own
+job (`paper_tb`) on its own runner, so the two registered books keep their requests and rate unchanged.
 
 ## Paper run
-`.github/workflows/paper-spot.yml` runs three paper books every 6 hours on GitHub Actions: the incumbent (`paper_spot/`),
-the wick v4 W2 challenger (rungs ¼, ¼, ½; `paper_spot_w2/`, config `config.w2.json`) and the newest-minute-from-trades
-book (`paper_spot_tb/`, config `config.tb.json`, section above). All use:
+`.github/workflows/paper-spot.yml` runs three paper books for about 5h45m per run on GitHub Actions: the incumbent
+(`paper_spot/`) and the wick v4 W2 challenger (rungs ¼, ¼, ½; `paper_spot_w2/`, config `config.w2.json`) in job
+`paper`, and the newest-minute-from-trades book (`paper_spot_tb/`, config `config.tb.json`, section above) in job
+`paper_tb`. All use:
 - $250K paper capital, θ = 0.5 capture, VIP-1 fees;
 - live public Coinbase data, no keys;
 - it commits `paper_spot/` back to the repo.
+
+- **Hand-over.** GitHub drops many scheduled runs: since Nov 8 the books ran in real time only about half the time, and
+  settled the rest later from final candles. So a last job, `next`, starts the next run on main as soon as this one
+  ends (`bot/spot/deploy/paper_next.sh`). It does so only if the run came from the schedule or a manual dispatch,
+  and only if it lasted at least 30 minutes, so a run that fails at start cannot loop. The 6-hourly schedule stays as
+  the backstop; a second run waits in the workflow's queue. Test: `bash bot/spot/deploy/paper_next_test.sh`.
 
 Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
 

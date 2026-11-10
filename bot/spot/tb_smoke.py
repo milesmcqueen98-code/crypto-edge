@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Paper smoke run of the trades book on live public data, for the generic runner (hunt2.yml takes a script, not a
+"""Paper smoke run of a paper book (default: the trades book) on live public data, for the generic runner (hunt2.yml takes a script, not a
 command). Waits until the run will cover a heartbeat minute (:00 or :30), then runs
-  python bot/spot/run.py paper --minutes <minutes> --config bot/spot/config.tb.json --state-dir <state_dir>
+  python bot/spot/run.py paper --minutes <minutes> --config <config> --state-dir <state_dir>
 and prints the tail of its event log and every heartbeat. No keys, no orders.
 
-Usage: python bot/spot/tb_smoke.py [--minutes 10] [--state-dir /tmp/tb_smoke]
+Usage: python bot/spot/tb_smoke.py [--minutes 10] [--state-dir /tmp/tb_smoke] [--config bot/spot/config.tb.json]
 """
 import argparse
 import json
@@ -19,13 +19,14 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 p = argparse.ArgumentParser()
 p.add_argument("--minutes", type=float, default=10)
 p.add_argument("--state-dir", default="/tmp/tb_smoke")
+p.add_argument("--config", default=os.path.join(HERE, "config.tb.json"), help="repo-relative or absolute")
 a = p.parse_args()
 
 # start at minute 20 or 50 of the hour: the backfill takes a few minutes and the steps then cross :30 or :00
 while int(time.time() // 60) % 30 != 20:
     time.sleep(5)
 cmd = [sys.executable, os.path.join(HERE, "run.py"), "paper", "--minutes", str(a.minutes), "--config",
-       os.path.join(HERE, "config.tb.json"), "--state-dir", a.state_dir]
+       os.path.join(ROOT, a.config), "--state-dir", a.state_dir]
 print("running:", " ".join(cmd), flush=True)
 rc = subprocess.run(cmd, cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
 print("exit code", rc.returncode)
