@@ -415,15 +415,18 @@ class RateLimiter:
         self.interval, self.next, self.lock = interval, 0.0, threading.Lock()
 
     def acquire(self, deadline=None, clock=time.time):
-        with self.lock:
-            slot = max(clock(), self.next)
-            if deadline is not None and slot > deadline:
-                return False
-            self.next = slot + self.interval
-        d = slot - clock()
-        if d > 0:
-            time.sleep(d)
-        return True
+        """Wait for a slot at least `interval` after the previous grant (measured when granted, so a late wake-up
+        never squeezes two requests together). False if no slot is free before `deadline`."""
+        while True:
+            with self.lock:
+                now = clock()
+                if deadline is not None and max(now, self.next) > deadline:
+                    return False
+                if now >= self.next:
+                    self.next = now + self.interval
+                    return True
+                wait = self.next - now
+            time.sleep(wait)
 
 
 class Http:
@@ -444,7 +447,7 @@ class Http:
 
 class Collector:
     def __init__(self, out, run, coins, git=None, until=None, http=None, log=None, book_source="exchange",
-                 hl_all=True, cfm_all=True):
+                 hl_all=False, cfm_all=True):
         self.out, self.run, self.coins, self.git, self.until = out, run, coins, git, until
         self.http = http or Http()
         self.cb = RateLimiter(CB_INTERVAL)
@@ -799,7 +802,8 @@ def main(argv=None):
     ap.add_argument("--branch", default="forward-data")
     ap.add_argument("--run-id", default=os.environ.get("GITHUB_RUN_ID") or "local")
     ap.add_argument("--book-source", choices=["exchange", "advanced"], default="exchange")
-    ap.add_argument("--hl-universe-only", action="store_true", help="hl: only the universe coins, not every perp")
+    ap.add_argument("--hl-all", action="store_true",
+                    help="hl: every listed perp (~179; ~15 MB a day) instead of the universe coins (~2 MB a day)")
     ap.add_argument("--cfm-universe-only", action="store_true", help="cfm: only the universe coins, not every perp")
     ap.add_argument("--meta", default=None, help="model_meta.json with the coin list (default bot/v2/model_meta.json)")
     a = ap.parse_args(argv)
@@ -809,7 +813,7 @@ def main(argv=None):
         git = GitPublisher(a.out, a.branch)
     os.makedirs(a.out, exist_ok=True)
     c = Collector(a.out, a.run_id, universe(a.meta), git=git, until=a.until, book_source=a.book_source,
-                  hl_all=not a.hl_universe_only, cfm_all=not a.cfm_universe_only)
+                  hl_all=a.hl_all, cfm_all=not a.cfm_universe_only)
 
     def stop(signum, _frame):
         c.log(f"signal {signum}: stopping after this minute's files are written")

@@ -12,7 +12,7 @@ Universe: BTC plus the coins in bot/v2/model_meta.json (18 today). All times are
 | stream | source | when in the minute | one row per |
 |---|---|---|---|
 | `book` | Coinbase Exchange `GET /products/<coin>-USD/book?level=2` (the full aggregated book) | 18 requests, paced 5 a second, timed to finish by second 5 | coin, minute |
-| `hl` | Hyperliquid `POST /info {"type":"metaAndAssetCtxs"}` (one request) | second 5 | perp, minute (every listed perp) |
+| `hl` | Hyperliquid `POST /info {"type":"metaAndAssetCtxs"}` (one request) | second 5 | coin, minute (the universe coins; `--hl-all` for every perp) |
 | `candles` | Coinbase Exchange 1-minute candles, the request bot/market.py `spot_candles` makes, last 5 minutes | from second 6, paced 5 a second | revision (see below) |
 | `cfm` | Coinbase Advanced public `GET /products?product_type=FUTURE` (one request), perp-style products only | second 12 | US perp product, minute (all 29) |
 
@@ -85,8 +85,9 @@ python scripts/forward/collector.py --out /srv/forward --no-git --minutes 0
 ```
 
 Run it under systemd or a supervisor that restarts it. `--run-id` names the files (default `local`). It stops
-cleanly on SIGTERM or Ctrl-C, writing the partial hour first. Options: `--hl-universe-only` and
-`--cfm-universe-only` keep only the universe coins; `--book-source advanced` uses the bot's endpoint instead
+cleanly on SIGTERM or Ctrl-C, writing the partial hour first. Options: `--hl-all` logs every
+Hyperliquid perp (about 179; roughly 15 MB a day instead of 2), `--cfm-universe-only` keeps only the universe
+coins' US perps; `--book-source advanced` uses the bot's endpoint instead
 (shallower, see above).
 
 ## Reading it
