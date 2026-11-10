@@ -29,7 +29,8 @@ is reports/crypto-edge-findings.md; every forward test is in FORWARD_TESTS.md be
 
 | Lever | Size | What it needs |
 |---|---|---|
-| Yield on idle cash (USDC rewards) | At the 3.50% on Coinbase's own page: about +1.5 points a year if only free cash earns, about +3.4 if cash held by resting bids earns too. Roughly +0.2 to +0.45 Sharpe at $250K. | Account eligibility (Miles), then the bot's USDC mode |
+| Yield on idle cash (USDC rewards) | At the 3.50% on Coinbase's own page: about +1.5 points a year if only free cash earns, about +3.4 if cash held by resting bids earns too. Roughly +0.2 to +0.45 Sharpe at $250K, measured as the repo measures Sharpe (against zero). Against Treasury bills it removes a drag instead of adding an edge. The program may change on Jan 18 2027 (OCC rule). | Account eligibility (Miles), then the bot's USDC mode |
+| Coinbase One fee rebate | Preferred ($29.99 a month) returns 25% of Advanced spot fees up to 100 USDC a month: about +$70 a month net, +0.3 points a year. Premium ($299.99) has no cap: at the paper book's pace so far (about $2,200 a month in fees at $250K) about +$250 a month net, +1.2 points a year. Premium beats Preferred only above about $1,480 a month in fees. | Confirm on the account that API orders in the bot's portfolio earn the rebate (one month on Preferred shows it) |
 | Capture share on live fills | 0.19 to 0.26 Sharpe between a share of 0.5 and 0.25 | The $10K pilot, then the $250K step |
 | Live order timing | Unknown until measured (timing study, Nov 10) | Trade prints now; the pilot later |
 | New information: open interest, funding, book depth | Unknown; none exists historically | The forward collector, then about a year of data |
