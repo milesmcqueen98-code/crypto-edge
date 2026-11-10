@@ -168,6 +168,62 @@ def boundary_section(add, out):
     add("")
 
 
+def leak_section(add, out):
+    """Per-candidate leak flags under deviations 2 and 3 (qa_leak.json from prints_leak.py)."""
+    p = os.path.join(out, "qa_leak.json")
+    if not os.path.exists(p):
+        return
+    J = json.load(open(p))
+    add("## Leak flags under deviations 2 and 3 (prints_leak.py, leak_flags.parquet)")
+    add("")
+    add("Per candidate, from prints and candles only (rule of reports/signal_lab/prospective_prereg.md deviations 2 "
+        "and 3, branch signal-lab, commit 8a0990f). \"Exceeds\" means by more than 1e-5 relative.")
+    add("- **leak_0:** trades stamped before q sit in the candle of q or later: (i) a leak-direction move with d > 0 "
+        "reconciles the pair (q-1, q) (single-move test; one-sided where minute q was not fetched); (ii) no measured "
+        "move explains the pair (kind none or edge) and both signs fit a move into q (prints of q-1 exceed its "
+        "candle, the candle of q exceeds its prints); (iii) the candle row of q-1 is missing (or has zero volume) "
+        "while minute q-1 has prints.")
+    add("- **leak_5:** the same with d > 5 s in (i). **leak_60:** the candle rows of q-1 and q-2 are both missing "
+        "while minute q-2 has prints. A clock lag above 60 s cannot be measured by this diagnostic.")
+    add("- **Upper bound:** adds candidates the rule cannot decide: minute q's prints were never fetched (the last "
+        "candidate of each merged window; whether candle q exceeds its prints is unknown) with the prints of q-1 "
+        "above its candle and no (i); and pairs explained by moves at the neighbouring boundaries where both signs "
+        "still fit (a stricter reading of (ii)).")
+    add("- The flags choose one margin for every row. They are never used to mask or drop rows.")
+    add(f"- Self-test: `{J.get('self_test')}`")
+    add("")
+    add("| Read era | Candidates | leak_0 | (i) / (ii) / (iii) | leak_5 | leak_60 | (iii): merged into q / not merged "
+        "/ minute q not fetched | Upper bound leak_0 / leak_5 |")
+    add("|---|---|---|---|---|---|---|---|")
+    names = {"selection": "selection (Jan 2025 - Mar 2026)", "check": "check (Apr - Nov 5 2026)",
+             "early_holdout": "early holdout (2022-23)", "2021": "2021 (training only)", "2024": "2024 (training only)"}
+    for k in ("selection", "check", "early_holdout", "2021", "2024"):
+        v = J["eras"][k]
+        ic = v["iii_cases"]
+
+        def sh(c, s):
+            return f"{c:,} ({100 * s:.2f}%)"
+        add(f"| {names[k]} | {v['n']:,} | {sh(v['leak_0'], v['leak_0_share'])} | {v['c_i']} / {v['c_ii']} / "
+            f"{v['c_iii']} | {sh(v['leak_5'], v['leak_5_share'])} | {sh(v['leak_60'], v['leak_60_share'])} | "
+            f"{ic.get('merged_into_q', 0)} / {ic.get('not_merged', 0)} / {ic.get('unknown', 0)} | "
+            f"{100 * v['leak_0_upper_share']:.2f}% / {100 * v['leak_5_upper_share']:.2f}% |")
+    add("")
+    add("The (i) / (ii) / (iii) counts overlap; leak_0 by combination: " + "; ".join(
+        f"{names[k].split(' (')[0]} {J['eras'][k]['leak_0_components']}"
+        for k in ("selection", "check", "early_holdout", "2021", "2024")) + ". i+iii is a whole-minute shift: candle "
+        "q-1 missing and candle q holding that minute's prints.")
+    add("")
+    reads = ("selection", "check", "early_holdout")
+    lines = []
+    for m, k in ((0, "leak_0"), (5, "leak_5"), (60, "leak_60")):
+        ok = [J["eras"][e][k + "_share"] < 0.005 for e in reads]
+        ub = [J["eras"][e].get(k + "_upper_share", J["eras"][e][k + "_share"]) < 0.005 for e in reads]
+        lines.append(f"{m} s: {'under' if all(ok) else 'not under'} 0.5% in every read era by the rule"
+                     + ("" if m == 60 else f" ({'under' if all(ub) else 'not under'} at the upper bound)"))
+    add("- **Against the 0.5% bar of deviation 2 (each read era):** " + "; ".join(lines) + ".")
+    add("")
+
+
 def margin_section(add, out):
     p = os.path.join(out, "qa_margin.json")
     if not os.path.exists(p):
@@ -460,6 +516,7 @@ def main(out=PR):
         "threshold; the five F6 features when the window has no print (its USD sums are then 0).")
     add("")
     boundary_section(add, out)
+    leak_section(add, out)
     margin_section(add, out)
     with open(os.path.join(out, "QA.md"), "w") as fh:
         fh.write("\n".join(L) + "\n")

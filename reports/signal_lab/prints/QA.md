@@ -166,6 +166,27 @@ Chain check at the boundary before each candidate (B_unverified: x < 0 at a wind
 
 - **Reading:** the candles mostly lead the prints (B: prints stamped in the first seconds of a minute sit in the previous candle), which cannot leak. Direction A at the boundary before a candidate, by either test: main 31 of 17,527 candidates (0.18%), 6 with d <= 5 s, 31 with d <= 60 s; chain result unexplained at 112, B at 549; early 24 of 14,563 candidates (0.16%), 4 with d <= 5 s, 24 with d <= 60 s; chain result unexplained at 83, B at 764. Most A cases there are whole-minute shifts (the candle row for q-1 is missing and candle q holds that minute's prints). Every A offset found is under 60 s, so the 60 s margin tables exclude all of them; the 5 s margin excludes few. Unexplained boundaries are undetermined, not shown to be A.
 
+## Leak flags under deviations 2 and 3 (prints_leak.py, leak_flags.parquet)
+
+Per candidate, from prints and candles only (rule of reports/signal_lab/prospective_prereg.md deviations 2 and 3, branch signal-lab, commit 8a0990f). "Exceeds" means by more than 1e-5 relative.
+- **leak_0:** trades stamped before q sit in the candle of q or later: (i) a leak-direction move with d > 0 reconciles the pair (q-1, q) (single-move test; one-sided where minute q was not fetched); (ii) no measured move explains the pair (kind none or edge) and both signs fit a move into q (prints of q-1 exceed its candle, the candle of q exceeds its prints); (iii) the candle row of q-1 is missing (or has zero volume) while minute q-1 has prints.
+- **leak_5:** the same with d > 5 s in (i). **leak_60:** the candle rows of q-1 and q-2 are both missing while minute q-2 has prints. A clock lag above 60 s cannot be measured by this diagnostic.
+- **Upper bound:** adds candidates the rule cannot decide: minute q's prints were never fetched (the last candidate of each merged window; whether candle q exceeds its prints is unknown) with the prints of q-1 above its candle and no (i); and pairs explained by moves at the neighbouring boundaries where both signs still fit (a stricter reading of (ii)).
+- The flags choose one margin for every row. They are never used to mask or drop rows.
+- Self-test: `prints_leak self-test passed (13 cases)`
+
+| Read era | Candidates | leak_0 | (i) / (ii) / (iii) | leak_5 | leak_60 | (iii): merged into q / not merged / minute q not fetched | Upper bound leak_0 / leak_5 |
+|---|---|---|---|---|---|---|---|
+| selection (Jan 2025 - Mar 2026) | 7,788 | 35 (0.45%) | 12 / 14 / 20 | 34 (0.44%) | 0 (0.00%) | 1 / 4 / 15 | 1.84% / 1.82% |
+| check (Apr - Nov 5 2026) | 4,095 | 70 (1.71%) | 8 / 41 / 35 | 69 (1.68%) | 2 (0.05%) | 10 / 7 / 18 | 5.30% / 5.27% |
+| early holdout (2022-23) | 10,603 | 154 (1.45%) | 21 / 67 / 98 | 154 (1.45%) | 15 (0.14%) | 21 / 20 / 57 | 5.11% / 5.11% |
+| 2021 (training only) | 3,960 | 7 (0.18%) | 0 / 3 / 4 | 7 (0.18%) | 0 (0.00%) | 0 / 0 / 4 | 1.41% / 1.41% |
+| 2024 (training only) | 5,644 | 19 (0.34%) | 5 / 1 / 18 | 19 (0.34%) | 4 (0.07%) | 0 / 10 / 8 | 0.66% / 0.66% |
+
+The (i) / (ii) / (iii) counts overlap; leak_0 by combination: selection {'ii': 14, 'i+iii': 11, 'iii': 9, 'i': 1}; check {'ii': 32, 'iii': 21, 'ii+iii': 9, 'i+iii': 5, 'i': 3}; early holdout {'iii': 66, 'ii': 56, 'i+iii': 21, 'ii+iii': 11}; 2021 {'iii': 4, 'ii': 3}; 2024 {'iii': 13, 'i+iii': 5, 'ii': 1}. i+iii is a whole-minute shift: candle q-1 missing and candle q holding that minute's prints.
+
+- **Against the 0.5% bar of deviation 2 (each read era):** 0 s: not under 0.5% in every read era by the rule (not under at the upper bound); 5 s: not under 0.5% in every read era by the rule (not under at the upper bound); 60 s: under 0.5% in every read era by the rule.
+
 ## Margin tables (follow-up)
 
 f6_main_m5.parquet, f6_early_m5.parquet (margin 5 s) and f6_main_m60.parquet, f6_early_m60.parquet (margin 60 s): the same schema, keys and row order as f6_main / f6_early, with both windows ending at q - margin, [q - 30 min, q - margin) and [q - 5 min, q - margin); the big-print threshold pool is unchanged (prints before q - 30 min), so big_thr_usd equals the margin-0 column. scripts/signal_lab/prints_features.py <art_dir> <out_dir> 0,5,60; the synthetic test checks that a print at q - margin is excluded and one 1 us earlier is included.
