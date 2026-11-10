@@ -123,3 +123,31 @@ For each minute q, with c = seconds after q when the stale bid is cancelled and 
     and how many of the added and lost parents are such moves.
 - **Question 1 (the pilot).** The expectation for the pilot is taken from the match rates above, which do not depend
   on the valuation.
+
+## Deviation 3 (Nov 10 2026, implementer; logged before S2 is computed, after S1 and the moves were specified)
+- **The committed derived data cannot support S2 exactly.** It keeps the record lows from the six start times only.
+  A deeper rung rests from one second after the parent's fill. When a print already trades through the rung inside
+  that second (5 to 21 rung cases per era and policy), whether a later print fills it is not determined.
+- **No new fetch.** The prints of the first fetch are still in the eight shard artifacts of the runner jobs (kept 21
+  days). One runner job downloads them and keeps, for each studied minute, every print in [q, q + 70 s) at or below
+  max(L6(q-1), L6(q)) + one tick (L6 = L x exp(-2 sigma), the 6-sigma level of that minute). These are the same
+  prints that gave the parent fill times, so the rungs and the parents cannot disagree. Raw prints stay on the
+  runners; only the cut prints are committed (branch owner/timing-data). This replaces "re-run the same windows with
+  the same fetcher": the prints are identical and no request is made.
+- **S2 as implemented:**
+  - deeper rungs at L x exp(-2 sigma) and L x exp(-4 sigma) of the parent's own level (L(q-1) and sigma(q-1) for a
+    stale-bid fill);
+  - they fill on a print at or below the rung minus one tick in [fill + 1 s, q + 70 s) (fill minute q, or q + 1 from
+    60 s), then on candle lows (low <= rung x (1 - tick / rung)) from minute q + 1 up to the minute before the
+    parent's take-profit minute (else q + 59), as the research's precompute;
+  - capacity (USD volume below the rung), take-profit capacity, take-profit minute and the 60-minute close: the
+    research's precompute rules on candles, from each rung's own fill minute;
+  - sizes, sellers shared within a parent, take-profit capacity and costs: the research's evaluator
+    (scripts/ladder_v5/fsim.py evaluate) at S* (today's volumes, costs x2, theta 0.5, $250K), the cash cap off, the
+    fee tier fixed to the research book's; remainder exits priced from prints as the research book
+    (lsim.rem_daily's costs);
+  - one timing, the print timing (rungs from 1 s after the fill), in place of the research's blend of its two latency
+    bounds.
+- **S2 validation, before any policy difference is read:** P0 under S2 against the research ladder on the shared
+  parents, per era. The same evaluator on the research's own candle rows (cash off, blended bounds) splits the gap
+  into the cash rule and bounds against the print timing.
