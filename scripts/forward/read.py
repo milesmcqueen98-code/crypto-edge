@@ -21,7 +21,7 @@ import sys
 import pandas as pd
 
 KEYS = {"book": ["coin", "minute"], "hl": ["coin", "minute"], "cfm": ["product_id", "minute"],
-        "candles": ["coin", "minute"]}
+        "candles": ["coin", "minute"], "candle_fetch": ["coin", "minute"]}
 VALUES = ["open", "high", "low", "close", "volume"]
 
 
@@ -36,6 +36,9 @@ def files(stream, start, end, root="."):
 def dedupe(stream, df):
     if df.empty:
         return df
+    if stream == "candle_fetch":                        # one row per answer; two overlapping runs keep both
+        return df.drop_duplicates(["coin", "minute", "seen"]).sort_values(["coin", "minute", "seen"],
+                                                                           kind="stable").reset_index(drop=True)
     if stream == "candles":
         df = df.drop_duplicates(["coin", "minute", "seen"] + VALUES)
         df = df.sort_values(["coin", "minute", "seen"], kind="stable")
@@ -62,7 +65,7 @@ def load(stream, start, end=None, root=".", raw=False):
         d["file"] = os.path.basename(f)
         parts.append(d)
     df = pd.concat(parts, ignore_index=True)
-    for c in ("coin", "name", "product_id", "file"):
+    for c in ("coin", "name", "product_id", "file", "cache"):
         if c in df:
             df[c] = df[c].astype("category")
     df = df[(df.minute >= start) & (df.minute < end)]
@@ -73,7 +76,7 @@ def coverage(stream, df):
     """Per UTC day: minutes with data, gaps (runs of missing minutes between first and last), failed rows."""
     if df.empty:
         return []
-    if stream == "candles":
+    if stream in ("candles", "candle_fetch"):
         m = df.seen.dt.floor("min")                     # the minute each fetch happened
         okm = m
         failed = 0
@@ -89,7 +92,7 @@ def coverage(stream, df):
         out.append(dict(stream=stream, day=f"{day:%Y-%m-%d}", minutes=len(mins), first=f"{mins[0]:%H:%M}",
                         last=f"{mins[-1]:%H:%M}", gaps=len(gaps), gap_minutes=int(gaps.sum()),
                         longest_gap=int(gaps.max()) if len(gaps) else 0,
-                        failed_rows=0 if stream == "candles" else int((~sub.ok).sum()),
+                        failed_rows=0 if "ok" not in sub else int((~sub.ok).sum()),
                         keys=int(sub[KEYS[stream][0]].nunique())))
     return out
 
