@@ -284,7 +284,12 @@ class Streams(unittest.TestCase):
         def candles(url, kw):                          # two candles inside whatever window was asked for
             e = int(pd.Timestamp(kw["params"]["end"].rstrip("Z")).timestamp())
             return [[e, 99, 101, 100, 100.5, 7.0], [e - 60, 98, 100, 99, 99.5, 3.0]]
-        return {"/book": EXCHANGE_BOOK, "/candles": candles, "hyperliquid": hl, "/products": CFM}
+        def trades(url, kw):                           # two trades in the minute just closed, one before it
+            now = pd.Timestamp(time.time(), unit="s").floor("min")
+            ts = [now - pd.Timedelta(seconds=s) for s in (5, 30, 70)]
+            return [dict(time=t.isoformat() + "Z", trade_id=10 - i, price=str(100 + i), size="1")
+                    for i, t in enumerate(ts)]
+        return {"/book": EXCHANGE_BOOK, "/candles": candles, "/trades": trades, "hyperliquid": hl, "/products": CFM}
 
     def run_minute(self, c, T0):
         ths = c.launch_minute(T0)
@@ -295,12 +300,12 @@ class Streams(unittest.TestCase):
     def offsets(self, wide=True):
         # compress the minute so the test runs in a few seconds
         C.BOOK_DONE, C.BOOK_LATENCY, C.BOOK_LAST_START = 1.5, 0.1, 1.9
-        C.HL_AT, C.CANDLE_AT, C.CFM_AT = 1.5, 1.6, 2.0
-        C.RETRY_UNTIL.update(hl=3.0, candles=4.0, cfm=4.0)
+        C.HL_AT, C.CANDLE_AT, C.CFM_AT, C.TBAR_AT = 1.5, 1.6, 2.0, 2.2
+        C.RETRY_UNTIL.update(hl=3.0, candles=4.0, cfm=4.0, tbar=4.0)
 
     def test_failing_stream_does_not_stop_others(self):
         saved = (C.BOOK_DONE, C.BOOK_LATENCY, C.BOOK_LAST_START, C.HL_AT, C.CANDLE_AT, C.CFM_AT, dict(C.RETRY_UNTIL),
-                 C.CB_INTERVAL)
+                 C.CB_INTERVAL, C.TBAR_AT)
         try:
             self.offsets()
             C.CB_INTERVAL = 0.02
@@ -315,6 +320,10 @@ class Streams(unittest.TestCase):
             buf = {k[0]: v for k, v in c.buf.items()}
             self.assertEqual(sum(r["ok"] for r in buf["book"]), 2)
             self.assertEqual(len(buf["candles"]), 4)                   # 2 coins x 2 candles, first sightings
+            tb = buf["tbar"]                                           # one trades bar per coin, after the candles
+            self.assertEqual([r["coin"] for r in tb], coins)
+            self.assertTrue(all(r["pages"] == 1 and r["t"] is not pd.NaT for r in tb))
+            self.assertGreaterEqual(min(t - T0 for t, u, _ in http.calls if "/trades" in u), C.TBAR_AT)
             cf = buf["candle_fetch"]                                   # one row per candle answer
             self.assertEqual([r["coin"] for r in cf], coins)
             self.assertTrue(all(r["cache"] == "MISS" and r["age"] == 0 and r["newest"] is not pd.NaT for r in cf))
@@ -342,7 +351,8 @@ class Streams(unittest.TestCase):
             self.assertTrue(os.path.exists(os.path.join(self.d, "forward", "status.json")))
             self.assertIn(m.floor("h"), {k[1] for k in c.buf} | {m.floor("h")})
         finally:
-            (C.BOOK_DONE, C.BOOK_LATENCY, C.BOOK_LAST_START, C.HL_AT, C.CANDLE_AT, C.CFM_AT, ru, C.CB_INTERVAL) = saved
+            (C.BOOK_DONE, C.BOOK_LATENCY, C.BOOK_LAST_START, C.HL_AT, C.CANDLE_AT, C.CFM_AT, ru, C.CB_INTERVAL,
+             C.TBAR_AT) = saved
             C.RETRY_UNTIL.clear()
             C.RETRY_UNTIL.update(ru)
 
@@ -510,6 +520,143 @@ class CandleProbe(unittest.TestCase):
         self.assertEqual(P.decide(late, tt)[0], "C")
         self.assertEqual(P.reduce_trades(venue.trades["AAA"], qs[0] - pd.Timedelta(minutes=1))[:5],
                          venue.bars[("AAA", qs[0] - pd.Timedelta(minutes=1))])
+
+
+def fake_trades(trades, page=3, date=None, age=0, start_after=None):
+    """get(url, params) over a newest-first list of (time, trade_id, price, size), `page` rows a page, with Date,
+    Age and CB-AFTER headers like the venue's."""
+    def get(url, params):
+        after = params.get("after")
+        rows = [t for t in trades if after is None or t[1] < after][:page]
+        hd = {"Date": date, "Age": str(age)} if date else {}
+        if rows:
+            hd["CB-AFTER"] = str(min(r[1] for r in rows))
+        return [dict(time=t.isoformat() + "Z", trade_id=i, price=str(p), size=str(z)) for t, i, p, z in rows], hd
+    return get
+
+
+class TradesBar(unittest.TestCase):
+    M = pd.Timestamp("2026-11-10 12:00")
+    E = M + pd.Timedelta(minutes=1)
+    HTTP_DATE = "Tue, 10 Nov 2026 12:01:07 GMT"            # made 7 s after the minute closed
+
+    def trades(self):
+        s = lambda x: self.M + pd.Timedelta(seconds=x)
+        return [(s(61), 9, 105.0, 1.0), (s(50), 8, 103.0, 2.0), (s(40), 7, 99.0, 0.5), (s(20), 6, 101.0, 1.0),
+                (s(10), 5, 100.0, 1.5), (s(-5), 4, 98.0, 1.0), (s(-30), 3, 97.0, 1.0)]
+
+    def cases(self):
+        T = self.trades()
+        inside = [t for t in T if self.M <= t[0] < self.E]
+        return {
+            "verified, two pages": (fake_trades(T, 3, self.HTTP_DATE), 5),
+            "list ended": (fake_trades(inside, 3, self.HTTP_DATE), 5),
+            "page cap": (fake_trades(T, 1, self.HTTP_DATE), 3),
+            "stale first page": (fake_trades(inside + T[5:], 3, "Tue, 10 Nov 2026 12:00:59 GMT"), 5),
+            "late trade proves freshness": (fake_trades(T, 3, "Tue, 10 Nov 2026 12:00:59 GMT"), 5),
+            "no date": (fake_trades(inside + T[5:], 10), 5),
+            "no trades in the minute": (fake_trades([T[0]] + T[5:], 3, self.HTTP_DATE), 5),
+            "empty list": (fake_trades([], 3, self.HTTP_DATE), 5),
+        }
+
+    def test_cases(self):
+        r = {k: C.trades_bar(g, "BTC", self.M, max_pages=p) for k, (g, p) in self.cases().items()}
+        v = r["verified, two pages"]
+        self.assertTrue(v["verified"])
+        self.assertEqual((v["open"], v["high"], v["low"], v["close"], v["volume"], v["n"], v["pages"]),
+                         (100.0, 103.0, 99.0, 103.0, 5.0, 4, 2))
+        self.assertAlmostEqual(v["gen_s"], 7.0)
+        self.assertTrue(r["list ended"]["verified"])
+        self.assertEqual((r["page cap"]["verified"], r["page cap"]["reason"]), (False, "page_cap"))
+        self.assertEqual(r["stale first page"]["reason"], "stale_first_page")
+        self.assertTrue(r["late trade proves freshness"]["verified"])
+        self.assertEqual(r["no date"]["reason"], "stale_first_page")
+        self.assertTrue(math.isnan(r["no date"]["gen_s"]))
+        z = r["no trades in the minute"]
+        self.assertTrue(z["verified"] and z["n"] == 0 and math.isnan(z["close"]) and z["volume"] == 0)
+        self.assertTrue(r["empty list"]["verified"] and r["empty list"]["n"] == 0)
+
+    def test_same_as_bot(self):
+        """The same fake pages through bot/market.py minute_trades_bar and the collector's trades_bar give the same
+        bar, verified flag, reason and page count. BOT_MARKET (a path to a market.py) overrides bot.market."""
+        import importlib
+        import importlib.util
+        path = os.environ.get("BOT_MARKET")
+        try:
+            if path:
+                spec = importlib.util.spec_from_file_location("bot_market_under_test", path)
+                bm = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(bm)
+            else:
+                sys.path.insert(0, C.REPO)
+                bm = importlib.import_module("bot.market")
+        except Exception as err:                        # noqa: BLE001
+            self.skipTest(f"bot.market not importable: {err!r}")
+        if not hasattr(bm, "minute_trades_bar"):
+            self.skipTest("bot.market has no minute_trades_bar")
+        for name, (g, p) in self.cases().items():
+            b = bm.minute_trades_bar("BTC", self.M, max_pages=p, get=g)
+            c = C.trades_bar(g, "BTC", self.M, max_pages=p)
+            bar = b["bar"] or {}
+            with self.subTest(name):
+                self.assertEqual((b["verified"], b["reason"] or "", b["pages"], b["n"]),
+                                 (c["verified"], c["reason"], c["pages"], c["n"]))
+                for k in ("open", "high", "low", "close"):
+                    self.assertTrue(bar.get(k) == c[k] or (k not in bar and math.isnan(c[k])), (k, bar, c))
+                self.assertEqual(bar.get("volume", 0.0), c["volume"])
+
+
+class InputChecks(unittest.TestCase):
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.d)
+
+    def test_daily_table(self):
+        import input_checks as I
+        m0 = pd.Timestamp("2026-11-10 12:00")
+        ms = [m0 + pd.Timedelta(minutes=i) for i in range(10)]
+        bar = lambda i: (100 + i, 101 + i, 99 + i, 100.5 + i, 10.0 + i)
+        cand, fetch, tb = [], [], []
+        for i, m in enumerate(ms):
+            o, h, l, c, v = bar(i)
+            first = (o, h, l + 0.5, c, v / 2) if i == 3 else (o, h, l, c, v)       # minute 3 fills in late
+            cand.append(dict(coin="AAA", minute=m, seen=m + pd.Timedelta(seconds=66), open=first[0], high=first[1],
+                             low=first[2], close=first[3], volume=first[4], rev=0))
+            if i == 3:
+                cand.append(dict(coin="AAA", minute=m, seen=m + pd.Timedelta(seconds=126), open=o, high=h, low=l,
+                                 close=c, volume=v, rev=1))
+            ver = i != 7                                                           # minute 7 not verified
+            tv = v * 1.2 if i == 5 else v                                          # minute 5: the candle is short
+            tb.append(dict(coin="AAA", minute=m, open=o, high=h, low=l, close=c, volume=tv, n=3 + 30 * (i % 2),
+                           pages=1, verified=ver, reason="" if ver else "page_cap", gen_s=6.0, cache="HIT", age=1.0,
+                           t=m + pd.Timedelta(seconds=70)))
+        for k in range(1, 16):                                                     # the 6 s fetch of every minute
+            F = m0 + pd.Timedelta(minutes=k)
+            stale = k == 2                                                         # one old cached copy
+            fetch.append(dict(coin="AAA", minute=F, seen=F + pd.Timedelta(seconds=6), cache="HIT" if stale else "MISS",
+                              age=90.0 if stale else np.nan, newest=F - pd.Timedelta(minutes=3 if stale else 1)))
+        for stream, rows in (("candles", cand), ("candle_fetch", fetch), ("tbar", tb)):
+            C.write_hour(self.d, stream, m0, "t", rows)
+        d, sp, g = I.daily(self.d, "2026-11-10", "2026-11-11")
+        r = d.iloc[0]
+        # a qualifying late answer with no candle for a minute = a minute without trades (here before and after the data)
+        self.assertEqual((r.coin, r.final_minutes, r.final_with_trades, r.tbar_minutes), ("AAA", 16, 10, 10))
+        self.assertEqual(r.tbar_verified, 90.0)
+        self.assertEqual(r.tbar_compared, 9)                                       # verified minutes only
+        self.assertAlmostEqual(r.tbar_exact, 8 / 9 * 100, places=1)                # minute 5's volume differs
+        self.assertEqual(r.tbar_material, 0.0)                                     # volume alone is not material
+        self.assertEqual(r.first_compared, 10)
+        self.assertEqual(r.first_exact, 90.0)                                      # minute 3 was partial at 6 s
+        self.assertEqual(r.first_material, 10.0)                                   # its low was 50 bp off
+        self.assertEqual(r.answers, 15)
+        self.assertAlmostEqual(r.made_before_close, 100 / 15, places=1)            # the stale copy
+        self.assertAlmostEqual(r.newest_behind, 100 / 15, places=1)
+        self.assertEqual(r.gaps, 1)
+        self.assertEqual((g.iloc[0].minute, g.iloc[0].trades), (ms[5], 33))
+        t = sp[(sp.input == "tbar")].set_index("trades").minutes.to_dict()
+        self.assertEqual(t, {"0-5": 5, "21-50": 4})                                # n = 3 or 33
 
 
 if __name__ == "__main__":

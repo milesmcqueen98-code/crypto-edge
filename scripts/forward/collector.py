@@ -27,6 +27,7 @@ import subprocess
 import sys
 import threading
 import time
+from email.utils import parsedate_to_datetime
 
 import numpy as np
 import pandas as pd
@@ -40,14 +41,17 @@ ADV = "https://api.coinbase.com/api/v3/brokerage/market"
 HL_URL = "https://api.hyperliquid.xyz/info"
 BID_BPS = (5, 10, 25, 50, 100, 150, 200, 300, 400, 600, 800)
 ASK_BPS = (5, 10, 25, 50, 100)
-STREAMS = ("book", "hl", "candles", "cfm")
+STREAMS = ("book", "hl", "candles", "cfm", "tbar")
 DATA = STREAMS + ("candle_fetch",)   # candle_fetch: one row per candle answer (cache status, Age, newest minute)
 CB_INTERVAL = 0.2            # seconds between Coinbase request starts: 5 a second, under the 6/s budget
 BOOK_DONE = 5.0              # the book burst should be complete by this second of the minute
 BOOK_LATENCY = 0.6           # expected response time of the slowest book request (from the runner probe)
 BOOK_LAST_START = 4.7        # no book request (or retry) starts after this second
 CANDLE_AT, HL_AT, CFM_AT = 6.0, 5.0, 12.0
-RETRY_UNTIL = {"book": BOOK_LAST_START, "hl": 40.0, "candles": 40.0, "cfm": 50.0}
+TBAR_AT = 10.0               # after the candle burst (18 coins at 5 a second from second 6); a trades answer made at
+                             # or after second 6 cannot predate the minute's close (the list is cached for 5 s)
+TBAR_PAGES = 5               # page cap per coin-minute; a capped coin-minute is stored as not verified
+RETRY_UNTIL = {"book": BOOK_LAST_START, "hl": 40.0, "candles": 40.0, "cfm": 50.0, "tbar": 45.0}
 CANDLE_MINUTES = 5           # the last 5 one-minute candles per request
 EPS = 1e-10                  # bucket boundaries are inclusive despite float rounding (100 * 1.005 = 100.49999...)
 GIT_NAME, GIT_EMAIL = "crypto-edge-bot", "crypto-edge-bot"
@@ -292,6 +296,111 @@ def parse_cfm(js, coins=None, minute=None, t=None):
     return rows
 
 
+def _http_time(s):
+    try:
+        t = pd.Timestamp(parsedate_to_datetime(s))
+        return t.tz_convert(None) if t.tzinfo is not None else t
+    except (TypeError, ValueError, IndexError):
+        return None
+
+
+def generated_at(headers):
+    """When the venue (or its cache) made an answer: Date minus Age (Age absent = 0). None without a readable Date.
+    The same rule as bot/market.py generated_at."""
+    h = headers or {}
+    d = _http_time(h.get("Date") or h.get("date"))
+    if d is None:
+        return None
+    try:
+        age = float(h.get("Age") or h.get("age") or 0)
+    except ValueError:
+        return None
+    return d - pd.Timedelta(seconds=age)
+
+
+def _trade_rows(js):
+    """(time, trade_id, price, size) per readable row of a trades page, and the count of unreadable rows."""
+    out, bad = [], 0
+    for r in js:
+        try:
+            t = pd.Timestamp(r["time"])
+            t = t.tz_convert(None) if t.tzinfo is not None else t
+            tid, px, sz = int(r["trade_id"]), float(r["price"]), float(r["size"])
+            if not (np.isfinite(px) and np.isfinite(sz) and px > 0 and sz >= 0):
+                raise ValueError
+            out.append((t, tid, px, sz))
+        except (KeyError, TypeError, ValueError):
+            bad += 1
+    return out, bad
+
+
+def trades_bar(get, coin, m, max_pages=TBAR_PAGES):
+    """Bar of the minute [m, m + 60 s) from Coinbase Exchange's public trades list (newest first, paged back with
+    CB-AFTER), with the bot's proof of completeness (bot/market.py minute_trades_bar on owner/release-2; kept
+    standalone here, and a test compares the two). get(url, params) -> (json, headers).
+
+    verified only if (i) paging reached a trade stamped before m, or the list ended (an empty page), and (ii) the
+    first page was made at or after m + 60 s (Date minus Age) or holds a trade stamped at or after m + 60 s. Also
+    unverified: the page cap, or a row that could not be read. Raw trades are not kept."""
+    m = pd.Timestamp(m)
+    e = m + pd.Timedelta(minutes=1)
+    rows, pages, bad, gen, reason, hd1 = [], 0, 0, None, None, {}
+    reached = ended = first_late = False
+    params, cur = {"limit": 1000}, None
+    while True:
+        if pages >= max_pages:
+            reason = "page_cap"
+            break
+        js, hd = get(f"{EXCHANGE}/products/{coin}-USD/trades", params)
+        hd = hd or {}
+        pages += 1
+        if pages == 1:
+            gen, hd1 = generated_at(hd), hd
+        if not js:
+            ended = True
+            break
+        if not isinstance(js, list):
+            raise ValueError(f"trades page is not a list: {str(js)[:200]}")
+        pg, b = _trade_rows(js)
+        bad += b
+        if not pg:
+            reason = "malformed"
+            break
+        if cur is not None and max(x[1] for x in pg) >= cur:
+            raise ValueError(f"trades page after {cur} holds ids at or above the cursor")
+        rows += pg
+        if pages == 1:
+            first_late = max(x[0] for x in pg) >= e
+        if min(x[0] for x in pg) < m:
+            reached = True
+            break
+        nxt = hd.get("CB-AFTER") or hd.get("cb-after")
+        try:
+            cur = int(nxt) if nxt not in (None, "") else min(x[1] for x in pg)
+        except ValueError:
+            cur = min(x[1] for x in pg)
+        params = {"limit": 1000, "after": cur}
+    fresh = (gen is not None and gen >= e) or first_late
+    if reason is None and bad:
+        reason = "malformed"
+    if reason is None and not (reached or ended):
+        reason = "incomplete"
+    if reason is None and not fresh:
+        reason = "stale_first_page"
+    seen, sel = set(), []
+    for t, tid, px, sz in rows:
+        if m <= t < e and tid not in seen:
+            seen.add(tid)
+            sel.append((t, tid, px, sz))
+    sel.sort(key=lambda x: (x[0], x[1]))
+    px = [x[2] for x in sel]
+    bar = dict(open=px[0], high=max(px), low=min(px), close=px[-1], volume=float(sum(x[3] for x in sel))) if sel \
+        else dict(open=math.nan, high=math.nan, low=math.nan, close=math.nan, volume=0.0)
+    return dict(coin=coin, minute=m, **bar, n=len(sel), pages=pages, verified=reason is None, reason=reason or "",
+                gen_s=(gen - e).total_seconds() if gen is not None else math.nan,
+                cache=(hd1.get("cf-cache-status") if hd1 else None), age=fnum((hd1 or {}).get("Age") or (hd1 or {}).get("age")))
+
+
 # ------------------------------------------------------------------------------------------------ storage
 F32, F64, MS = "float32", "float64", "datetime64[ms]"
 SCHEMA = {
@@ -300,6 +409,8 @@ SCHEMA = {
                  **{f"bid_usd_{b}": F32 for b in BID_BPS}, **{f"ask_usd_{b}": F32 for b in ASK_BPS}),
     "candles": dict(coin="category", minute=MS, seen=MS, open=F64, high=F64, low=F64, close=F64,
                     volume=F64, rev="int16"),
+    "tbar": dict(coin="category", minute=MS, open=F64, high=F64, low=F64, close=F64, volume=F64, n="int32",
+                 pages="int16", verified="bool", reason="category", gen_s=F32, cache="category", age=F32, t=MS),
     "candle_fetch": dict(coin="category", minute=MS, seen=MS, cache="category", age=F32, newest=MS),
     "hl": dict(coin="category", minute=MS, t=MS, ok="bool", name="category", px_mult="int16", open_interest=F64,
                mark=F64, oracle=F64, mid=F64, funding=F64, premium=F32, impact_bid=F64, impact_ask=F64,
@@ -311,7 +422,7 @@ SCHEMA = {
                 trading_disabled="bool"),
 }
 KEYS = {"book": ["coin", "minute"], "hl": ["coin", "minute"], "cfm": ["product_id", "minute"],
-        "candles": ["coin", "minute", "seen"], "candle_fetch": ["coin", "minute"]}
+        "candles": ["coin", "minute", "seen"], "candle_fetch": ["coin", "minute"], "tbar": ["coin", "minute"]}
 
 
 def frame(stream, rows):
@@ -467,6 +578,7 @@ class Http:
         if meta is not None:
             meta["cache"] = r.headers.get("cf-cache-status")
             meta["age"] = fnum(r.headers.get("age"))
+            meta["headers"] = r.headers
         body = r.text[:400].lower() if r.status_code != 200 else ""
         if r.status_code in (403, 451) or "captcha" in body or "just a moment" in body or "cf-chl" in body:
             raise Refused(f"{r.status_code} {url.split('?')[0]} {r.text[:120]!r}")
@@ -698,6 +810,35 @@ class Collector:
         self.emit("cfm", minute, rows)
         self.minute_info[minute]["cfm"] = (sum(r["ok"] for r in rows), round(t_req - T0, 2) if t_req else None)
 
+    def s_tbar(self, T0, minute):
+        """The minute that just closed, per coin, from the public trades list (see trades_bar), after the candles."""
+        self._sleep_until(T0 + TBAR_AT)
+        m = minute - pd.Timedelta(minutes=1)
+        rows, nver = [], 0
+
+        def get(url, params):                          # every page waits for the shared Coinbase pace
+            if not self.cb.acquire(deadline=T0 + RETRY_UNTIL["tbar"]):
+                raise requests.Timeout("tbar: no Coinbase slot before the deadline")
+            meta = {}
+            js = self.http.request("GET", url, timeout=(2, 4), params=params, meta=meta)
+            return js, meta.get("headers") or {"cf-cache-status": meta.get("cache"), "Age": meta.get("age")}
+
+        for coin in self.coins:
+            try:
+                r, t_req = self.call("tbar", T0, lambda: trades_bar(get, coin, m), False, RETRY_UNTIL["tbar"])
+            except Refused:
+                return
+            if r is None:
+                self.count("tbar", "missing")
+                r = dict(coin=coin, minute=m, n=0, pages=0, verified=False, reason="failed", volume=math.nan)
+                t_req = None
+            r["t"] = pd.Timestamp(t_req, unit="s") if t_req else pd.NaT
+            r["ok"] = r["verified"]
+            nver += r["verified"]
+            rows.append(r)
+        self.emit("tbar", m, rows)                     # filed under the minute the bars are for
+        self.minute_info[minute]["tbar"] = (nver, len(rows))
+
     def _sleep_until(self, t):
         d = t - time.time()
         if d > 0:
@@ -713,9 +854,9 @@ class Collector:
             self.log(f"{stream} crashed at {minute}: {err!r}"[:300])
 
     def launch_minute(self, T0):
-        """Start the four streams for the minute that began at epoch second T0; each runs in its own thread."""
+        """Start the five streams for the minute that began at epoch second T0; each runs in its own thread."""
         minute = pd.Timestamp(T0, unit="s")
-        fns = {"book": self.s_book, "hl": self.s_hl, "candles": self.s_candles, "cfm": self.s_cfm}
+        fns = {"book": self.s_book, "hl": self.s_hl, "candles": self.s_candles, "cfm": self.s_cfm, "tbar": self.s_tbar}
         started = []
         for s in STREAMS:
             if s in self.refused:

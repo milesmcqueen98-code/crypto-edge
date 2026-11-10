@@ -15,6 +15,7 @@ Universe: BTC plus the coins in bot/v2/model_meta.json (18 today). All times are
 | `hl` | Hyperliquid `POST /info {"type":"metaAndAssetCtxs"}` (one request) | second 5 | coin, minute (the universe coins; `--hl-all` for every perp) |
 | `candles` | Coinbase Exchange 1-minute candles, the 5-minute window ending at the minute just closed (`spot_candles(coin, T-5 min, T)`) | from second 6, paced 5 a second | revision (see below) |
 | `candle_fetch` | the same answers as `candles` | with `candles` | coin, minute: one row per answer |
+| `tbar` | Coinbase Exchange `GET /products/<coin>-USD/trades` (the public trades list), paged back | from second 10, after the candles, on the shared Coinbase pace | coin, minute (the minute that just closed) |
 | `cfm` | Coinbase Advanced public `GET /products?product_type=FUTURE` (one request), perp-style products only | second 12 | US perp product, minute (all 29) |
 
 **book**: `t` (when the response arrived), `cache` and `age` (see "The venue's cache" below), best bid and ask (price, size), `mid`,
@@ -37,6 +38,58 @@ missing. The values of a minute do not depend on the window's start, but the cac
 **candle_fetch**: one row per candle answer: `coin`, `minute` (the minute of the fetch), `seen`, `cache`, `age`
 and `newest` (the newest candle minute in the answer). It splits "missing at 6 s" into "not yet written at the
 venue" (a fresh answer whose newest minute is older) and "an old cached copy" (a HIT with a large Age).
+
+**tbar**: the newest bar built from the public trades list, the input release 2's trades mode uses. Every minute,
+for each coin, the minute that just closed: `open`, `high`, `low`, `close`, `volume`, `n` (trades in the minute),
+`pages`, `verified`, `reason` (empty when verified), `gen_s` (when the first page was made, seconds after the minute
+closed: Date minus Age, Age absent = 0; NaN without a Date), `cache`, `age`, `t` (when the request went out).
+- **Timing.** The request goes no earlier than second 10. A trades answer is cached for up to 5 s, so it cannot
+  have been made before the minute closed. The probe showed that 1 s and 3 s answers can be.
+- **Paging.** It pages back with the CB-AFTER cursor until a trade is stamped before the minute, at most 5 pages
+  a coin.
+- **`verified`.** It uses the same two conditions as bot/market.py `minute_trades_bar` (owner/release-2):
+  - (i) paging reached a trade stamped before the minute, or the list ended;
+  - (ii) the first page was made at or after the minute closed, or it holds a trade stamped at or after that.
+
+  The page cap, an unreadable row, or a failed request makes a row not verified (`reason`: page_cap, malformed,
+  incomplete, stale_first_page, failed).
+- **The code is standalone.** A test feeds the same fake pages to both functions and compares them; it is
+  skipped when bot.market has no such function. `BOT_MARKET=<path to a market.py>` points it at another branch's
+  file.
+- **A minute with no trades** is a row with `n` = 0, volume 0 and no prices. Raw trades are never stored.
+
+### The daily input check
+
+`python scripts/forward/input_checks.py --root fwd --start 2026-11-11 [--end 2026-11-12] [--out dir]` prints, and
+with `--out` writes, three tables per coin and UTC day:
+- **`input_checks_daily.csv`:**
+  - final candles (`final_minutes`, and `final_with_trades`);
+  - the trades bar: minutes, verified %, and against the final candle, exact % and material-error %. These are
+    the candle probe's measures 2 and 3, on verified bars. The one-minute sigma comes from that day's final
+    closes;
+  - the first-seen candle (the 6 s sighting): missing %, exact %, material %;
+  - candle answers: `made_before_close` % (made before the minute they end on had closed), `age_unknown` % (a
+    cache copy with no Age), `newest_behind` %;
+  - `gaps`.
+- **`input_checks_by_trades.csv`:** the same exact and material shares, split by trades in the minute (0-5, 6-20,
+  21-50, 51-100, >100).
+- **`input_checks_gaps.csv`:** each minute where the final candle's volume is below the verified trades bar's by
+  more than 0.5%, or the final answer holds no candle while the trades list has trades. These are the venue-wide
+  gaps.
+
+The **final candle** is the last revision in `candles`. It counts only if the collector fetched that coin again
+at least 180 s after the minute closed (the fetch in minute m + 4 or m + 5), and that answer was made at least
+180 s after the close (seen minus Age; a cache copy with no Age does not qualify). If such an answer has no candle
+for the minute, the minute had no trades. For data from before `candle_fetch` existed, the fetch at m + 4 only has
+to exist.
+
+Read the gaps with care. "Final" means the value 186 to 306 s after the close, the last time the collector sees
+the candle. For coins whose candles run late after quiet minutes (twelve of the eighteen, by the candle clock
+study), a candle can still be filling in then. So a listed gap is a venue-wide gap only if it persists. A later
+re-fetch of the candle would be needed to tell the two apart.
+
+Pacing: tbar shares the 5-a-second Coinbase pace. In the test run it sent its requests at 10.0 to 14.3 s, and
+cfm moved from second 12.0 to 12.4 to 13.2. The candle burst did not move (second 6.0 to about 9.9).
 
 ### The venue's cache
 
@@ -85,8 +138,8 @@ forward/<stream>/<YYYY-MM-DD>/<HH>-<run id>.parquet    one per stream, hour and 
 forward/status.json                                    the latest heartbeat
 ```
 
-Storage is lossless and compact, about 6 MB a day for all streams (book 2.6, hl 1.3, cfm 1.1, candles
-1.2; candle_fetch adds about 0.3): zstd level 19, float columns byte-stream-split, no column statistics and no pandas metadata in the
+Storage is lossless and compact, about 7.5 MB a day for all streams (book 2.6, hl 1.3, cfm 1.1, candles
+1.3, tbar 1.1, candle_fetch 0.25; tbar's prices need float64, and no encoding saves more than 0.05 MB): zstd level 19, float columns byte-stream-split, no column statistics and no pandas metadata in the
 footer. Prices, open interest, funding, candle values and timestamps are float64 / ms; depths, sizes, reach and
 the 24h volumes are float32. Request send times (`t_req`) are not stored. Files before this change still carry
 `t_req`; the reader reads both.
