@@ -3,8 +3,11 @@
     "match": "Cannot get left slice bound for non-monotonic index",
     "from": "2026-11-07T21:00:00Z",
     "to": "2026-11-07T22:00:00Z",
-    "books": ["spot", "w2"],
+    "books": [
+      "spot",
+      "w2"
+    ],
     "explained": "The spot engine re-fetches the last three minutes of candles each minute, and when a re-fetch left out a minute that an earlier fetch had returned, the table was left out of order and the next time slice failed, so that one minute placed no new bids and the next minute's fetch repaired it.",
-    "fix": "A one-line sort of the index in update_spot (bot/spot/engine.py) is queued for the next release."
+    "fix": "Fixed in release 1 (Nov 10 2026): the candle table is sorted after the merge in update_spot (bot/spot/engine.py)."
   }
 ]
