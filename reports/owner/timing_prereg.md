@@ -87,7 +87,7 @@ For each minute q, with c = seconds after q when the stale bid is cancelled and 
   last print before q inside a merged window. Where it is unknown, P0's skip test falls back to no skip and the row is
   flagged. Nothing else about the window changes.
 
-## First reading (Nov 10 2026, 10:28 ET, orchestrator)
+## First reading (Nov 10 2026, 10:26 ET, orchestrator)
 - **By the plan's rule, read once:**
   - P1 against P0 is -11.3% (check) and -16.6% (2022-23) of P&L, and +4.8% in selection. That is material in two eras
     with the same sign.
@@ -99,7 +99,7 @@ For each minute q, with c = seconds after q when the stale bid is cancelled and 
   - 14% / 18% / 20% of P0's fills come in the first 10 s of the minute.
   - The prints confirm 96.5% / 95.9% / 93.0% of the candle research's parents.
 
-## Deviation 2 (Nov 10 2026, 10:28 ET, orchestrator; logged before the work it covers)
+## Deviation 2 (Nov 10 2026, 10:26 ET, orchestrator; logged before the work it covers)
 - **What was found.** Most of every P&L difference comes from the plan's valuation and not from fill prices. A P0
   parent that a policy misses loses its whole research ladder; a parent only the policy finds adds back its 4-sigma
   rung alone. A parent that merely moves by a minute is booked as the loss of its deeper rungs.
