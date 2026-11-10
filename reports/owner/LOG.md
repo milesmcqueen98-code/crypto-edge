@@ -204,3 +204,7 @@ FORWARD_TESTS.md.
   owner/reconcile). For every minute the main paper book was live, the bid level and score it would have computed
   from final candles are set against the bids and fills in its log. It shows how far the late inputs moved the
   bot's decisions on real forward data, and whether they explain the extra fills.
+- **14:31. Collector: trades-bar stream and daily input check on `main`** (e81a9b1). Every minute, for all 18 coins,
+  the bar of the minute that just closed is built from the public trades list with the bot's proof of completeness.
+  A 25-minute test run gave 450 rows, all verified. The production collector picks it up at its next hand-over
+  (about 21:44 UTC). Storage rises to about 7.5 MB a day for all streams.
