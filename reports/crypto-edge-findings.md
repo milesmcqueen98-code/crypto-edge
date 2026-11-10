@@ -16,7 +16,7 @@ Repo: github.com/milesmcqueen98-code/crypto-edge (data, research code, nightly s
   - Release 2 builds the newest bar of six coins from the trades list and checks the age of every answer. It is off
     by default; a third paper book runs it, and a three-day rule fixed in advance decides when it becomes the default.
   - Live order timing was measured on 14.1M trade prints and stays as built. The paper books ran in real time only
-    about two thirds of the time; a hand-over now starts each run after the last. Scorecard: 47 of 100 (39 before).
+    about 70% of the time; a hand-over now starts each run after the last. Scorecard: 47 of 100 (39 before).
 - **Signal lab 2 (Nov 9): trade-print features for R2-08's model; no change (section below).**
   - Five forced-selling features from 79.1M Coinbase prints, added to R2-08's model with and without the 2021–23
     history. Opus agents built and ran it under one orchestrator; an independent audit passed before the one holdout
@@ -214,9 +214,10 @@ bot's inputs. The fix is built and not yet the default.
   newest close, less four sigma, and several model features read BTC. The bot fills a missing close forward. Its last
   look at a minute is 126 s after the minute closes, so a row can also stay wrong for good. The research always used
   BTC's true close.
-- **Who makes the copies.** Other clients asking for the same window earlier. Some copies hold a minute still in
-  progress, which none of the repo's code requests. Who they are is not known. One runner location was measured.
-- **A source that works.** The public trades list is cached for five seconds at most. A bar built from it had no
+- **Who makes the copies.** Most likely other clients asking for the same window earlier (the probe's best account,
+  not proven). Some copies hold a minute still in progress, which none of the repo's code requests. Who they are is
+  not known. One runner location was measured.
+- **A source that works.** The public trades list is cached for five seconds at most. At 6 s a bar built from it had no
   material error for BTC, ETH, SOL, XRP and ZEC in the probe.
 - **The probe's own rule** (pre-registered): no source reached a material-error share of 1% at 25 s or less on the
   nine coins together (trades 6.0% at 6 s; best candle 5.2%). Its remedy for that case, a live trade feed, was
@@ -260,12 +261,13 @@ bot's inputs. The fix is built and not yet the default.
 
 ### Where Coinbase cuts its candles (pre-registered study, six hours, 18 coins)
 - **No coin has a steady offset** between its candles and the trade timestamps.
-- **Six coins are cut at the minute:** BTC, ETH, SOL, XRP, LTC, ZEC. A bar built from trades matched the final candle
-  with a material-error share of 0 to 0.6% out of sample.
+- **Six coins are cut at the minute or nearly so:** BTC, ETH, SOL, XRP, and LTC and ZEC with a late boundary in about
+  5% of minutes. A bar built from trades matched the final candle with a material-error share of 0 to 0.6% out of
+  sample.
 - **Twelve coins run late in 8% to 41% of minute boundaries:** the candle of a minute takes trades stamped in the
   first seconds of the next (median 7 to 11 s). It follows quiet trading: about 54% of boundaries after a minute with
-  5 trades or fewer, about 2% after a minute with more than 50. No offset fixes it. Signal lab 2 had seen the same in
-  history.
+  5 trades or fewer, about 2% to 3% after a minute with more than 50. No offset fixes it. Signal lab 2 had seen the
+  same in history.
 - **In about 5% of minutes, the same ones for nearly every coin, the final candle leaves out trades** that are in
   the public trades list (BTC 14:05 UTC: about 3.4 in the candle, 13.4 in the trades). The trades list has no gaps.
 - **Consequence for the bot:** the six take their newest bar from trades; the twelve stay on the candle answer, read
@@ -324,15 +326,15 @@ bot's inputs. The fix is built and not yet the default.
   next. Defaults are unchanged. The mode becomes the default by a rule fixed before the third book's first run: three
   clean days, six conditions, no P&L test (FORWARD_TESTS.md).
 - **Paper status** (reports/owner/PAPER_STATUS.md): refreshed after every paper run; live time per book, rates per
-  calendar and per running day, the data counters, the third book's progress on its rule. The perp books' one fill
-  each in 3.3 and 3.7 days is not unusual against the research's 0.8 and 1.05 fills a day on perp prices.
+  calendar and per running day, the data counters, the third book's progress on its rule. The perp books have two fills
+  each in about four days, a little below the research's 0.8 and 1.05 fills a day on perp prices and not unusually so.
 - **Forward collector** (scripts/forward/, data on branch forward-data): every minute, order-book depth for 18
   coins, the candles as the bot first sees them and as they end up, the age of each candle answer, a bar built from
   trades for every coin, Hyperliquid open interest and funding, and all 29 Coinbase US perps with their published
   funding. About 7.5 MB a day.
-- **Levers that need the account** (charter): USDC rewards on idle cash (about +1.5 to +3.4 points a year at $250K if
+- **Levers that need the account** (charter): USDC rewards on idle cash (about +1.6 to +3.4 points a year at $250K if
   this account is eligible), and the Coinbase One fee rebate (about +0.3 points a year on Preferred; on Premium about
-  +0.9 to +1.2 at the paper books' pace per calendar day and about +1.9 to +2.4 at a full-time pace, if API orders
+  +0.8 to +1.2 at the paper books' pace per calendar day and about +1.9 to +2.4 at a full-time pace, if API orders
   count).
 - **Known and open:** the twelve coins that stay on candles; the perp paper bots, which fetch each spot minute once
   and never look again; the pilot, which should wait until the new input mode is the default.
