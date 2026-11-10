@@ -38,3 +38,8 @@ covers.)
      seeds' daily returns; each seed's own interval is in the CSV.
    - Primary pricing is the best estimate's: engine-faithful cash rule plus print-measured exit costs, S*, theta 0.5,
      $250K. The model-priced exits are kept in the CSVs as information.
+5. **Nov 10 2026, 14:20 ET. Trade-list parity to rounding.** A shakedown run (2022-23, S0 only) reproduced R2-08's
+   744 trades, prices, every-minute panel (0 of 13.7 million armed states differ) and best estimate (1.913, 11.14% a
+   year; largest daily difference from R2-08's cell 2e-15). The script's own trade check had asked for predictions
+   equal to the last bit and saw 9e-14 bp (LightGBM summing the same trees over a different batch of rows), so it
+   stopped. The check now allows 1e-9 bp. No scenario other than S0 had been computed.
