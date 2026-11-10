@@ -29,6 +29,7 @@ jobs:
             reports/owner
             paper_spot
             paper_spot_w2
+            paper_spot_tb
             paper
             paper_v2
       - uses: actions/setup-python@v5
