@@ -1,0 +1,182 @@
+{
+ "self_test": "prints_leak self-test passed (13 cases)",
+ "rule": "prospective_prereg.md deviations 2 and 3 (signal-lab 8a0990f)",
+ "eras": {
+  "selection": {
+   "n": 7788,
+   "leak_0": 35,
+   "leak_0_share": 0.004494093477144324,
+   "leak_5": 34,
+   "leak_5_share": 0.004365690806368772,
+   "leak_60": 0,
+   "leak_60_share": 0.0,
+   "c_i": 12,
+   "c_ii": 14,
+   "c_iii": 20,
+   "leak_0_components": {
+    "ii": 14,
+    "i+iii": 11,
+    "iii": 9,
+    "i": 1
+   },
+   "c_i_with_d_gt_5": 10,
+   "iii_cases": {
+    "unknown": 15,
+    "not_merged": 4,
+    "merged_into_q": 1
+   },
+   "ii_unknown_not_flagged": 100,
+   "ii_neighbour_not_flagged": 8,
+   "leak_0_upper": 143,
+   "leak_5_upper": 142,
+   "leak_0_upper_share": 0.018361581920903956,
+   "leak_5_upper_share": 0.018233179250128403
+  },
+  "check": {
+   "n": 4095,
+   "leak_0": 70,
+   "leak_0_share": 0.017094017094017096,
+   "leak_5": 69,
+   "leak_5_share": 0.01684981684981685,
+   "leak_60": 2,
+   "leak_60_share": 0.0004884004884004884,
+   "c_i": 8,
+   "c_ii": 41,
+   "c_iii": 35,
+   "leak_0_components": {
+    "ii": 32,
+    "iii": 21,
+    "ii+iii": 9,
+    "i+iii": 5,
+    "i": 3
+   },
+   "c_i_with_d_gt_5": 7,
+   "iii_cases": {
+    "unknown": 18,
+    "merged_into_q": 10,
+    "not_merged": 7
+   },
+   "ii_unknown_not_flagged": 131,
+   "ii_neighbour_not_flagged": 16,
+   "leak_0_upper": 217,
+   "leak_5_upper": 216,
+   "leak_0_upper_share": 0.05299145299145299,
+   "leak_5_upper_share": 0.05274725274725275
+  },
+  "early_holdout": {
+   "n": 10603,
+   "leak_0": 154,
+   "leak_0_share": 0.014524191266622653,
+   "leak_5": 154,
+   "leak_5_share": 0.014524191266622653,
+   "leak_60": 15,
+   "leak_60_share": 0.0014146939545411675,
+   "c_i": 21,
+   "c_ii": 67,
+   "c_iii": 98,
+   "leak_0_components": {
+    "iii": 66,
+    "ii": 56,
+    "i+iii": 21,
+    "ii+iii": 11
+   },
+   "c_i_with_d_gt_5": 17,
+   "iii_cases": {
+    "unknown": 57,
+    "merged_into_q": 21,
+    "not_merged": 20
+   },
+   "ii_unknown_not_flagged": 351,
+   "ii_neighbour_not_flagged": 37,
+   "leak_0_upper": 542,
+   "leak_5_upper": 542,
+   "leak_0_upper_share": 0.05111760822408752,
+   "leak_5_upper_share": 0.05111760822408752
+  },
+  "2021": {
+   "n": 3960,
+   "leak_0": 7,
+   "leak_0_share": 0.0017676767676767678,
+   "leak_5": 7,
+   "leak_5_share": 0.0017676767676767678,
+   "leak_60": 0,
+   "leak_60_share": 0.0,
+   "c_i": 0,
+   "c_ii": 3,
+   "c_iii": 4,
+   "leak_0_components": {
+    "iii": 4,
+    "ii": 3
+   },
+   "c_i_with_d_gt_5": 0,
+   "iii_cases": {
+    "unknown": 4
+   },
+   "ii_unknown_not_flagged": 44,
+   "ii_neighbour_not_flagged": 5,
+   "leak_0_upper": 56,
+   "leak_5_upper": 56,
+   "leak_0_upper_share": 0.014141414141414142,
+   "leak_5_upper_share": 0.014141414141414142
+  },
+  "2024": {
+   "n": 5644,
+   "leak_0": 19,
+   "leak_0_share": 0.0033664068036853294,
+   "leak_5": 19,
+   "leak_5_share": 0.0033664068036853294,
+   "leak_60": 4,
+   "leak_60_share": 0.0007087172218284905,
+   "c_i": 5,
+   "c_ii": 1,
+   "c_iii": 18,
+   "leak_0_components": {
+    "iii": 13,
+    "i+iii": 5,
+    "ii": 1
+   },
+   "c_i_with_d_gt_5": 3,
+   "iii_cases": {
+    "not_merged": 10,
+    "unknown": 8
+   },
+   "ii_unknown_not_flagged": 15,
+   "ii_neighbour_not_flagged": 3,
+   "leak_0_upper": 37,
+   "leak_5_upper": 37,
+   "leak_0_upper_share": 0.006555634301913536,
+   "leak_5_upper_share": 0.006555634301913536
+  }
+ },
+ "all": {
+  "n": 32090,
+  "leak_0": 285,
+  "leak_0_share": 0.008881271424119663,
+  "leak_5": 283,
+  "leak_5_share": 0.008818946712371455,
+  "leak_60": 21,
+  "leak_60_share": 0.0006544094733561857,
+  "c_i": 46,
+  "c_ii": 126,
+  "c_iii": 175,
+  "leak_0_components": {
+   "iii": 113,
+   "ii": 106,
+   "i+iii": 42,
+   "ii+iii": 20,
+   "i": 4
+  },
+  "c_i_with_d_gt_5": 37,
+  "iii_cases": {
+   "unknown": 102,
+   "not_merged": 41,
+   "merged_into_q": 32
+  },
+  "ii_unknown_not_flagged": 641,
+  "ii_neighbour_not_flagged": 69,
+  "leak_0_upper": 995,
+  "leak_5_upper": 993,
+  "leak_0_upper_share": 0.031006544094733562,
+  "leak_5_upper_share": 0.030944219382985354
+ }
+}
