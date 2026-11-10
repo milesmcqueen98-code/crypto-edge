@@ -382,7 +382,9 @@ def gate(S0res):
     m = tr.merge(ref[["ts", "coin", "pred", "px", "sig"]], on=["ts", "coin"], how="outer", suffixes=("", "_ref"),
                  indicator=True)
     g["trades"], g["trades_ref"] = len(tr), len(ref)
-    g["trades_identical"] = bool((m._merge == "both").all()) and float(np.abs(m.pred - m.pred_ref).max()) == 0.0 \
+    # same trades at the same prices; predictions equal to floating-point rounding (LightGBM sums the same trees over
+    # a different batch of rows: about 1e-13 bp)
+    g["trades_identical"] = bool((m._merge == "both").all()) and float(np.abs(m.pred - m.pred_ref).max()) < 1e-9 \
         and float(np.abs(m.px - m.px_ref).max()) == 0.0
     g["trades_max_pred_diff"] = float(np.abs(m.pred - m.pred_ref).max())
     worst, mism, n = 0.0, 0, 0
