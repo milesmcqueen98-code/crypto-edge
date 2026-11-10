@@ -1,11 +1,11 @@
 # Paper trading status
 
-Report made 2026-11-10 14:11 UTC.
+Report made 2026-11-10 14:15 UTC.
 
 | Book | Newest event | Age | Flag |
 |---|---|---|---|
-| Spot (main) | 2026-11-10 13:30 UTC | 0.7 h ago | ok |
-| Spot W2 | 2026-11-10 13:30 UTC | 0.7 h ago | ok |
+| Spot (main) | 2026-11-10 13:30 UTC | 0.8 h ago | ok |
+| Spot W2 | 2026-11-10 13:30 UTC | 0.8 h ago | ok |
 | Perp v1 (control) | 2026-11-10 06:55 UTC | 7.3 h ago | ok |
 | Perp R2-08 | 2026-11-10 06:55 UTC | 7.3 h ago | ok |
 
