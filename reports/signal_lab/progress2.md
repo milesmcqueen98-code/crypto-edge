@@ -68,3 +68,11 @@ print fetcher).
   rows carry exactly the 60 s features. One sanity check of mine was too strict (sums 1-2 float units above the 0 s
   table, a rounding artifact); a 1e-12 tolerance was approved. The lock is created once the selection reading on the
   60 s table has finished and is logged.
+- 19:19 Selection reading on the 60 s table, the primary (run agent; test2_m60/selection.txt; frozen simulator, five
+  seed triples, walk-forward stopped at 2026Q1). ΔSharpe against R2-08 with the same seeds, mean (SD), triples
+  positive: RF6 -0.01 (0.05), 2 of 5; RF6H +0.50 (0.15), 5 of 5; at R2-08's selectivity RF6M -0.05, 3 of 5; RF6HM
+  +0.42, 5 of 5.
+  - What the prints add: to R2-08, -0.01 (0 s table: +0.06); to the history model (RF6H against the first lab's
+    RF0H), +0.13 (SD 0.05, 5 of 5; 0 s table: +0.06). History alone is +0.37.
+  - So in sample the last minute before the fill adds nothing measurable, and the prints help only beside the
+    history. The holdout decides.
