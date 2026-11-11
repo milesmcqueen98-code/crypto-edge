@@ -1,13 +1,13 @@
 # Paper trading status
 
-Report made 2026-11-10 20:00 UTC.
+Report made 2026-11-11 01:47 UTC.
 
 | Book | Newest event | Age | Flag |
 |---|---|---|---|
-| Spot (main) | 2026-11-10 13:30 UTC | 6.5 h ago | ok |
-| Spot W2 | 2026-11-10 13:30 UTC | 6.5 h ago | ok |
-| Perp v1 (control) | 2026-11-10 20:00 UTC | 0.0 h ago | ok |
-| Perp R2-08 | 2026-11-10 20:00 UTC | 0.0 h ago | ok |
+| Spot (main) | 2026-11-11 01:30 UTC | 0.3 h ago | ok |
+| Spot W2 | 2026-11-11 01:30 UTC | 0.3 h ago | ok |
+| Perp v1 (control) | 2026-11-10 20:00 UTC | 5.8 h ago | ok |
+| Perp R2-08 | 2026-11-10 20:00 UTC | 5.8 h ago | ok |
 
 A book is flagged STALE when its newest event is more than 8 hours old.
 
@@ -17,8 +17,8 @@ GitHub drops scheduled runs. While a book is not running it places no new bids; 
 
 | Book | First event | Last event | Calendar hours | Hours in real time | Share |
 |---|---|---|---|---|---|
-| Spot (main) | 2026-11-06 22:30 UTC | 2026-11-10 13:30 UTC | 87.0 | 60.5 | 69.5% |
-| Spot W2 | 2026-11-07 00:44 UTC | 2026-11-10 13:30 UTC | 84.8 | 58.3 | 68.8% |
+| Spot (main) | 2026-11-06 22:30 UTC | 2026-11-11 01:30 UTC | 99.0 | 66.0 | 66.7% |
+| Spot W2 | 2026-11-07 00:44 UTC | 2026-11-11 01:30 UTC | 96.8 | 63.8 | 66.0% |
 | Perp v1 (control) | 2026-11-06 14:34 UTC | 2026-11-10 20:00 UTC | 101.4 | 63.4 | 62.5% |
 | Perp R2-08 | 2026-11-06 22:45 UTC | 2026-11-10 20:00 UTC | 93.3 | 57.6 | 61.8% |
 
@@ -27,15 +27,15 @@ The five longest gaps of each book (a gap is the time the book was not running b
 | Book | Gap start | Hours |
 |---|---|---|
 | Spot (main) | 2026-11-09 12:55 UTC | 9.7 |
+| Spot (main) | 2026-11-10 13:30 UTC | 6.5 |
 | Spot (main) | 2026-11-07 06:33 UTC | 6.0 |
 | Spot (main) | 2026-11-08 12:25 UTC | 5.6 |
 | Spot (main) | 2026-11-10 04:29 UTC | 3.2 |
-| Spot (main) | 2026-11-09 05:42 UTC | 1.4 |
 | Spot W2 | 2026-11-09 12:55 UTC | 9.7 |
+| Spot W2 | 2026-11-10 13:30 UTC | 6.5 |
 | Spot W2 | 2026-11-07 06:33 UTC | 6.0 |
 | Spot W2 | 2026-11-08 12:25 UTC | 5.6 |
 | Spot W2 | 2026-11-10 04:29 UTC | 3.2 |
-| Spot W2 | 2026-11-09 05:42 UTC | 1.4 |
 | Perp v1 (control) | 2026-11-07 04:30 UTC | 7.9 |
 | Perp v1 (control) | 2026-11-10 06:55 UTC | 7.3 |
 | Perp v1 (control) | 2026-11-09 10:03 UTC | 5.0 |
@@ -47,14 +47,14 @@ The five longest gaps of each book (a gap is the time the book was not running b
 | Perp R2-08 | 2026-11-09 20:47 UTC | 4.4 |
 | Perp R2-08 | 2026-11-07 18:08 UTC | 3.3 |
 
-Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 6.5 h; Spot W2 6.5 h; Perp v1 (control) 0.0 h; Perp R2-08 0.0 h.
+Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 0.3 h; Spot W2 0.3 h; Perp v1 (control) 5.8 h; Perp R2-08 5.8 h.
 
 ## Summary
 
 | Book | Days | Equity | Change | Rung fills | Dollars bought | Net per dollar | Exit events TP / time | Ladders closed | Errors |
 |---|---|---|---|---|---|---|---|---|---|
-| Spot (main) | 3.6 | $251,540 | +0.62% | 21 | $190,188 | 81.0 bp | 25 / 8 | 13 (12 made money) | 1 |
-| Spot W2 | 3.5 | $251,330 | +0.53% | 22 | $164,904 | 80.7 bp | 27 / 8 | 15 (14 made money) | 1 |
+| Spot (main) | 4.1 | $251,540 | +0.62% | 21 | $190,188 | 81.0 bp | 25 / 8 | 13 (12 made money) | 1 |
+| Spot W2 | 4.0 | $251,330 | +0.53% | 22 | $164,904 | 80.7 bp | 27 / 8 | 15 (14 made money) | 1 |
 | Perp v1 (control) | 4.2 | $10,011 | +0.11% | 2 | n/a (not logged) | n/a | 1 / 1 | - | 0 |
 | Perp R2-08 | 3.9 | $9,988 | -0.12% | 2 | n/a (not logged) | n/a | 1 / 1 | - | 0 |
 
@@ -66,10 +66,10 @@ Days are calendar days, from the first to the newest event (hours in real time a
 
 | Measure | So far |
 |---|---|
-| Days (calendar) | 3.6 of 21 |
-| Days in real time | 2.5 |
+| Days (calendar) | 4.1 of 21 |
+| Days in real time | 2.8 |
 | Rungs | 21 of 60 |
-| Rung fills a day (rule text: 1-6 rung fills a day) | 5.79 per calendar day; 8.33 per running day |
+| Rung fills a day (rule text: 1-6 rung fills a day) | 5.09 per calendar day; 7.63 per running day |
 | Mean net per dollar | 81.0 bp |
 | Errors (total) | 1 |
 | Explained | 1 |
@@ -103,11 +103,12 @@ P&L of exits by day, last 14 days:
 | 2026-11-07 | -$3.06 | 18.0 |
 | 2026-11-08 | $1,305 | 17.8 |
 | 2026-11-09 | $238.52 | 12.9 |
-| 2026-11-10 | $0.00 | 10.3 |
+| 2026-11-10 | $0.00 | 14.4 |
+| 2026-11-11 | $0.00 | 1.5 |
 
 Cash shortfalls: 11. Wanted $115,534 in total (average $10,503) against an average of $1,308 free.
 
-Share of capital held by resting bids (committed over equity, mean of 119 heartbeats): 54.50%.
+Share of capital held by resting bids (committed over equity, mean of 130 heartbeats): 54.61%.
 
 Largest single-day loss so far: -$3.06 on 2026-11-07.
 
@@ -115,13 +116,13 @@ Largest single-day loss so far: -$3.06 on 2026-11-07.
 
 | Measure | Spot (main) | W2 | W2 minus main |
 |---|---|---|---|
-| Days (calendar) | 3.6 | 3.5 | -0.1 |
-| Hours in real time | 60.5 | 58.3 |  |
+| Days (calendar) | 4.1 | 4.0 | -0.1 |
+| Hours in real time | 66.0 | 63.8 |  |
 | Equity | $251,540 | $251,330 | -$210.10 |
 | Change | +0.62% | +0.53% | -0.08 pp |
 | Rung fills | 21 | 22 | +1 |
-| Rung fills per calendar day | 5.79 | 6.23 |  |
-| Rung fills per running day | 8.33 | 9.06 |  |
+| Rung fills per calendar day | 5.09 | 5.46 |  |
+| Rung fills per running day | 7.63 | 8.27 |  |
 | Dollars bought | $190,188 | $164,904 | -$25,283 |
 | Net per dollar | 81.0 bp | 80.7 bp | -0.3 bp |
 | Exit events TP / time | 25 / 8 | 27 / 8 |  |
