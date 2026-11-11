@@ -468,3 +468,19 @@ FORWARD_TESTS.md.
   - **What this says about release 2's own rule:** a candle row never replaces a trades-built row. For matching the
     research that is the wrong way round for a coin whose candles run late. It costs little for BTC, ETH, SOL and
     XRP. The third book's test is read as registered; the new way is the candidate for the release after it.
+- **11:13. The engine option for the fourth book is built and proven on the real market; not on `main`.**
+  - **What it does** (branch owner/engine-c, commit 58eba8b, key `trades_rows: "candle_after"`): the decision for a
+    minute uses its trades bar. One step later the venue's candle replaces that row, or the row is dropped where the
+    venue has no bar. So the older rows are the venue's candles, as in the research.
+  - **Default untouched:** 36 lines in the engine. With the key absent the stored replay gives the same 530 events in
+    three modes, and every existing spot test passes on a runner (21, 37, 11, 73 and the replay and live-path tests),
+    plus 30 new checks. I read the diff and reran the tests that need no data.
+  - **Smoke on the real market (45 minutes, 18 coins):** every row the engine held was identical to a fresh fetch of
+    the venue's candles, for all 18 coins. All 666 trades bars verified. In 48 of 537 replacements the candle's close
+    differed from the trades bar's, which is the late cut showing in the newest minute only.
+  - **Step time is the cost:** data step median 13.3 to 13.5 s after the minute, against 10.2 s for the third book.
+    Eighteen trade requests in a row take about 3.5 s. Item 3's median bar for the fourth book is set at 15 s before
+    its first run, with the reason, in bar_source_prereg.md. A faster data step is a later, separate change.
+  - **The fourth book's workflow** (agent, branch owner/paper-t18) runs the code of that branch in a second checkout
+    and keeps the book's state and log on `main`. It gets one more change, pinning the engine commit, and is then
+    merged and started.

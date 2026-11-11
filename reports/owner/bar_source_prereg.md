@@ -117,3 +117,22 @@ changes no rule.
     4. **Part 1 gains** the score-miss share, per coin and way, and a pass with all 18 coins on way C, which is what
        the fourth book runs.
   - Nothing else changes: the windows, the data, the two emulation checks, and no P&L test.
+- **Nov 11 2026, 11:13 ET (orchestrator).** Made before the fourth book's first run, on the engine option's tests and
+  two smoke runs on the real market. No minute of either registered window has been read for this plan.
+  - **The option is built** (branch owner/engine-c, commit 58eba8b; key `trades_rows: "candle_after"`): the decision
+    for a minute uses its trades bar; a candle answer made at least 85 s after the minute began then replaces the row,
+    or drops it where the venue has no bar. With the key absent the engine is identical to `main` (the stored replay
+    gives the same 530 events in three modes; all existing tests pass).
+  - **Smoke run 43044140767** (45 minutes, all 18 coins): every row the engine held, the newest three minutes left
+    out, was identical to a fresh fetch of the venue's candles, for all 18 coins. 666 of 666 trades bars verified.
+    540 trades rows were built in the full half hour, 537 were replaced by the candle and 3 dropped; in 48 of the
+    replacements the candle's close differed from the trades bar's by more than a tick.
+  - **Step time:** the data step finished a median of 13.3 to 13.5 s after the minute (maximum 17.7 s); an earlier
+    eight-minute smoke of 18 coins had 11.6 s. Eighteen trade requests take about 3.5 s more than six.
+  - **Changes:**
+    1. **Item 3 for the fourth book** reads: data step median 15 s or less, and the 30-minute maximum 20 s or less in
+       95% of heartbeats. The 13 s bar was set for a book with six coins on trades. The timing study's slower bracket
+       placed bids 15 s after the minute and found no cost it could measure. A faster data step is a separate change
+       for later, with its own check.
+    2. **The engine commit is fixed for the test.** The fourth book runs commit 58eba8b, named in the workflow file
+       and written into paper_spot_t18/CODE at every run. A change of that commit starts its three days again.
