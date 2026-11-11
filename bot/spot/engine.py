@@ -465,6 +465,11 @@ class Engine:
         # its minute closed
         self._prov = {}
         self.confirm_s = float(self.cfg.get("confirm_s", 25.0))
+        # trades mode: "keep" (default) keeps a trades-built row (or verified empty mark) for good; "candle_after"
+        # lets a candle answer confirmed for the minute replace the row, or drop it when that answer has none there
+        self.trades_rows = self.cfg.get("trades_rows", "keep")
+        if self.trades_rows not in ("keep", "candle_after"):
+            raise ValueError(f"trades_rows must be keep or candle_after, not {self.trades_rows}")
         self._skip_old = set()                             # stale_guard: coins with no new bid this minute
         self._timer = time.monotonic
         self._tm = {"data": [], "cancel": [], "place": []}  # step timing, seconds after the minute
@@ -541,6 +546,8 @@ class Engine:
             elif len(new):
                 df = pd.concat([df, new])
                 df = df[~df.index.duplicated(keep="last")].sort_index()    # a re-fetch can skip a stored minute
+            if tb and getattr(self, "_tb_drop", {}).get(c):
+                df = df.drop(self._tb_drop.pop(c), errors="ignore")    # candle_after: the venue has no bar there
             if len(df):
                 df = df.loc[end - pd.Timedelta(minutes=WINDOW_MIN):]
             self.spot[c] = df
@@ -561,7 +568,12 @@ class Engine:
         """Trades mode, any coin: the rows of a candle answer that may replace or fill stored rows.
         A candle row replaces a stored candle row only if its answer is not older, and never replaces a trades-built
         row or a verified empty minute (the venue's final candle can leave out trades that are in the public list).
-        Rows older than the provenance window merge as in candles mode."""
+        Rows older than the provenance window merge as in candles mode.
+        trades_rows "candle_after": a trades-built row or verified empty mark is provisional. A row of an answer
+        confirmed for that minute replaces it; and a minute in [answer start, the answer's newest row) that holds a
+        trades-built row or mark, which a confirmed answer leaves out, loses its row (dropped in update_spot). Either
+        way the minute then counts as a confirmed candle row."""
+        after = getattr(self, "trades_rows", "keep") == "candle_after"
         meta = (getattr(self.market, "candle_meta", None) or {}).get(c) or {}
         g0, frm = meta.get("gen"), meta.get("start")
         P = self._prov.setdefault(c, {})
@@ -573,12 +585,31 @@ class Engine:
             if mm >= lo:
                 old = P.get(mm)
                 if old is not None and old[1]:
-                    ok = False                             # a trades-built row (or verified empty minute) stays
+                    ok = after and self._confirmed(mm, g)  # "keep": a trades-built row (or verified empty) stays
+                    if ok and df is not None and mm in df.index:
+                        self.count("tb_replaced")
+                        try:
+                            tick = self.spec(c).tick
+                        except Exception:
+                            tick = 0.0
+                        if abs(float(df.loc[mm, "close"]) - float(new.loc[mm, "close"])) > tick * (1 + 1e-9):
+                            self.count("tb_replaced_diff")
                 elif old is not None and df is not None and mm in df.index:
                     ok = not self._older(g, old[0])
                 if ok:
                     P[mm] = (g, False)
             keep.append(ok)
+        if after and frm is not None and len(new) and g0 is not None:
+            top = new.index.max()                          # the newest minute of the answer
+            drop = []
+            for mm in [x for x, v in P.items() if v[1] and max(frm, lo) <= x < top and x not in new.index]:
+                if self._confirmed(mm, g0):
+                    if df is not None and mm in df.index:
+                        drop.append(mm)
+                        self.count("tb_dropped")
+                    P[mm] = (g0, False)
+            if drop:
+                self._tb_drop = dict(getattr(self, "_tb_drop", {}), **{c: drop})
         for mm in [x for x in P if x < lo]:
             P.pop(mm)
         return new[np.array(keep, dtype=bool)] if len(new) else new
@@ -684,6 +715,9 @@ class Engine:
                 for mm in pd.date_range(m - pd.Timedelta(minutes=5), m - pd.Timedelta(minutes=2), freq="min"):
                     if mm in df.index and self._open(c, mm):
                         self.count("rows_open")
+                    if getattr(self, "trades_rows", "keep") == "candle_after" and mm in df.index \
+                            and self._prov.get(c, {}).get(mm, (None, False))[1]:
+                        self.count("tb_pending")           # still trades-built 3 to 6 minutes on
         guard = self.cfg.get("stale_guard", False)
         self._skip_old = set()
         if guard:                                          # coins whose newest row is missing or from an old answer
