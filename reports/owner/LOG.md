@@ -287,3 +287,18 @@ FORWARD_TESTS.md.
   in 16 minutes, all verified, one page each) and the age of candle answers from 21:45. In those first 15 minutes
   BTC's candle answer was a cached copy in 87% of minutes (median age about a minute) and lacked the minute just
   closed in 60%. One scheduled run did fire at 21:50 and stood down correctly because a collector was running.
+- **21:15. The 21:10 check: the third paper book is running.** The paper run that started at 01:47 UTC (Nov 11) has
+  both jobs in progress, the two registered books in one and the third book in its own; no step failed at start-up.
+  Its log is committed when the run ends (about 07:35 UTC), so its counters are read in the morning check.
+  - **Collector, second run:** healthy (one timeout on a book request, nothing refused). The trades-bar stream has
+    every minute since 21:44 UTC, 18 rows each, all verified.
+  - **First daily table from the collector** (about five quiet evening hours; trades bar against final candle,
+    material-error share): BTC 0% to 0.9%, ETH 0%, SOL 0%, XRP 0% to 0.9%, LTC about 1.5%, ZEC 1.7% to 5.2%. Their
+    first-seen candles: BTC about 70%, ETH, SOL and XRP 16% to 29%, LTC and ZEC 18% to 24%. For each of the twelve
+    coins on the candle path the trades bar was also lower than the first-seen candle (4% to 42% against 19% to
+    47%).
+  - **Item 6 of the third book's rule amended** (FORWARD_TESTS.md, note below the table): BTC keeps the 1% bar; every
+    other listed coin must beat its own first-seen candle on every day. As first written it would have sent LTC and
+    ZEC back to a worse source. Logged as a change made after five hours of the collector's record were seen.
+  - **Two things registered for later:** a rule for moving any of the twelve onto the trades list after the three-day
+    read, and a planned replay of what the candle's late cut gives the research on thin coins.
