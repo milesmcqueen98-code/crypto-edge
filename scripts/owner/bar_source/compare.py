@@ -1,4 +1,4 @@
-"""The plan's Part 1 measures and decision helpers (reports/owner/bar_source_prereg.md) from build.py's table.
+"""The plan's Part 1 measures and its single-coin clause (reports/owner/bar_source_prereg.md) from build.py's table.
 Offline, no network.
 
   python scripts/owner/bar_source/compare.py --dir reports/owner/bar_source_dev [--out DIR] \
@@ -8,12 +8,14 @@ Inputs: --dir/minutes.parquet and --dir/run.json (build.py), bot/v2/model_meta.j
 "specs": each coin's tick, as the engine's spec(c).tick returned it). --log is read only when given.
 
 Rows: for coin c and way w the rows of build.canonical_pass(c, w) (the twelve: pass w; LTC and ZEC: LA, A (the
-third book) and LC), limited to rows whose own inputs exist (inputs_ok). The research is pass R in the same rows.
+third book) and LC; way C18, all 17 traded coins: pass C18, every coin on way C, the fourth paper book), limited to
+rows whose own inputs exist (inputs_ok). The research is pass R in the same rows.
 
 Days: each 24-hour block of the period counted from its first decision minute (block 1 = start .. start + 24 h - 1
 min, ...), not UTC days. For the registered window (Nov 11 02:00 to Nov 14 01:59 UTC) these are three full days.
 
-Measures, per coin and way, per day and over the whole period, and for the twelve together (pooled counts):
+Measures, per coin and way, per day and over the whole period, for the twelve together and, on C18, for the five
+listed traded coins together (ETH SOL XRP LTC ZEC; pooled counts):
   1. Arming disagreement (primary). Armed = valid and score > threshold (the engine's test). Among the minutes where
      the way or the research is armed (den), the share where exactly one is (num). Split: way only, research only.
   2. Score error: median and 90th percentile (numpy linear interpolation) of |score - research score| over the
@@ -21,12 +23,13 @@ Measures, per coin and way, per day and over the whole period, and for the twelv
   3. Level error: over the minutes where both are valid, each level is floored to the coin's tick (the engine's
      floor_to, as _arm_plan prices a bid); a difference within one tick (the reconciliation's same_px, 1e-9 relative
      slack) is 0 bp, otherwise err = 1e4 x (way price / research price - 1). The share with |err| > 5 bp.
-Decision helpers, exactly on counts (cross-multiplication; a day with a zero denominator makes a helper undefined,
-reported as such, and then it is not true):
-  - per coin, "worse on trades on each day": on every day, B's disagreement share is strictly higher than A's,
-    b_num x a_den > a_num x b_den;
-  - the twelve together, "C a fifth better than both": on every day, 5 x c_num x a_den <= 4 x a_num x c_den and the
-    same against B (C's share at most four fifths of each; exactly four fifths counts).
+  4. Score-miss share: among the minutes where both are valid, the share with |score - research score| strictly
+     greater than 1.0 point (exactly 1.0 is not a miss), with the counts.
+The single-coin clause (deviation log of the plan, Nov 11), for each of the twelve: "stays on candles" is true when
+its score-miss share under C is strictly higher than under A over the whole period and strictly higher on at least
+two of the day blocks, compared exactly on counts (c_miss x a_n > a_miss x c_n); a period or day with a zero
+denominator on either side does not count as higher. It is reported as "not applied" (no value) unless the
+emulation check on B passes, which needs --log.
 Checks against the third book's own log (--log): its `arm` events (its new bids; `pred` is the score it logged,
 rounded to 0.1) inside the period, against pass A (the third book's emulation): way B on ETH, SOL, XRP, LTC, ZEC
 (they are on trades there) and way A on the twelve. Within = |pred - emulated score| <= 0.5. A bid without a valid
@@ -69,14 +72,18 @@ rc = _reconcile_compare()
 
 TWELVE = ["DOGE", "LINK", "BCH", "SUI", "XLM", "HBAR", "NEAR", "AAVE", "HYPE", "ENA", "PEPE", "ONDO"]
 REPORTED = ["LTC", "ZEC"]
-WAYS = ("A", "B", "C")
+WAYS = ("A", "B", "C", "C18")
 CHECK_B = ["ETH", "SOL", "XRP", "LTC", "ZEC"]
+LISTED = ["ETH", "SOL", "XRP"]                  # on trades in every pass but C18 (their way C18 only is reported)
+MISS = 1.0
 DAY = pd.Timedelta(hours=24)
 TOL = 0.5
 
 
 def canonical_pass(coin, way):
     """Same as build.canonical_pass (kept here so compare.py needs no engine import)."""
+    if way == "C18":
+        return "C18"
     if coin in TWELVE:
         return way
     if coin in REPORTED:
@@ -112,7 +119,7 @@ def errors(g, ticks):
     lv = lv[np.isfinite(lv)]
     return dict(score_n=int(len(d)), score_med=float(np.median(d)) if len(d) else None,
                 score_p90=float(np.percentile(d, 90)) if len(d) else None,
-                level_n=int(len(lv)), level_gt5=int((np.abs(lv) > 5).sum()))
+                level_n=int(len(lv)), level_gt5=int((np.abs(lv) > 5).sum()), miss=int((d > MISS).sum()))
 
 
 def share(n, d):
@@ -126,32 +133,25 @@ def rows_for(T, coins, way):
 
 
 def strictly_higher(b, a):
-    """b's share > a's share, on counts; None when a denominator is 0."""
+    """b's share > a's share, on counts ({"num", "den"}); None when a denominator is 0 (then not higher)."""
     if not a["den"] or not b["den"]:
         return None
     return b["num"] * a["den"] > a["num"] * b["den"]
 
 
-def at_most_four_fifths(c, x):
-    """c's share <= 4/5 of x's share, on counts; None when a denominator is 0."""
-    if not c["den"] or not x["den"]:
-        return None
-    return 5 * c["num"] * x["den"] <= 4 * x["num"] * c["den"]
-
-
-def every_day(vals):
-    """(true on every day, undefined days). An undefined day makes it not true."""
-    und = [d for d, v in vals.items() if v is None]
-    return (bool(vals) and not und and all(vals.values())), und
+def groups():
+    """(group name, coins, ways) for the measures."""
+    out = [(c, [c], WAYS) for c in TWELVE + REPORTED] + [(c, [c], ("C18",)) for c in LISTED]
+    return out + [("twelve", TWELVE, WAYS), ("listed5", CHECK_B, ("C18",))]
 
 
 def compute(T, thr, ticks, start):
     T = T.copy()
     T["day"] = day_block(T.ts, start)
     days = sorted(T.day.unique().tolist())
-    per, counts = [], {"per_coin": {}, "twelve": {}}
-    for group, coins in [(c, [c]) for c in TWELVE + REPORTED] + [("twelve", TWELVE)]:
-        for w in WAYS:
+    per, counts = [], {}
+    for group, coins, ways in groups():
+        for w in ways:
             g = rows_for(T, coins, w)
             for d in ["all"] + days:
                 gd = g if d == "all" else g[g.day == d]
@@ -161,33 +161,39 @@ def compute(T, thr, ticks, start):
                          if "answer_old" in gd else 0)
                 r["share"] = share(r["num"], r["den"])
                 r["level_share_gt5"] = share(r["level_gt5"], r["level_n"])
+                r["miss_share"] = share(r["miss"], r["score_n"])
                 per.append(r)
     P = pd.DataFrame(per)
-
-    def cnt(coin, w, d):
-        r = P[(P.coin == coin) & (P.way == w) & (P.day == d)].iloc[0]
-        return dict(num=int(r.num), den=int(r.den))
-
-    helpers = {"days": {int(d): int((T[T["pass"] == "A"].drop_duplicates("ts").day == d).sum()) for d in days},
-               "worse_on_trades_each_day": {}, "c_fifth_better_than_both": None}
-    for c in TWELVE + REPORTED:
-        vals = {int(d): strictly_higher(cnt(c, "B", d), cnt(c, "A", d)) for d in days}
-        ok, und = every_day(vals)
-        helpers["worse_on_trades_each_day"][c] = dict(value=ok, by_day=vals, undefined_days=und)
-    vals = {}
-    for d in days:
-        ca, cb, cc = cnt("twelve", "A", d), cnt("twelve", "B", d), cnt("twelve", "C", d)
-        x, y = at_most_four_fifths(cc, ca), at_most_four_fifths(cc, cb)
-        vals[int(d)] = None if x is None or y is None else (x and y)
-    ok, und = every_day(vals)
-    helpers["c_fifth_better_than_both"] = dict(value=ok, by_day=vals, undefined_days=und)
     for r in per:
-        key = "twelve" if r["coin"] == "twelve" else "per_coin"
-        counts[key].setdefault(r["coin"], {}).setdefault(r["way"], {})[str(r["day"])] = \
+        counts.setdefault(r["coin"], {}).setdefault(r["way"], {})[str(r["day"])] = \
             {k: r[k] for k in ("minutes", "den", "num", "way_only", "res_only", "way_armed", "res_armed",
-                               "score_n", "level_n", "level_gt5", "newest_fallback", "newest_old_answer")}
-    counts["twelve"] = counts["twelve"].get("twelve", {})
-    return P, helpers, counts
+                               "score_n", "miss", "level_n", "level_gt5", "newest_fallback", "newest_old_answer")}
+    days_n = {int(d): int((T[T["pass"] == "A"].drop_duplicates("ts").day == d).sum()) for d in days}
+    return P, days_n, counts
+
+
+def stays_on_candles(P, check_b):
+    """The single-coin clause for each of the twelve. check_b: the B emulation check's result (dict with
+    at_least_90pct) or None. Returns {"applied": bool, "why": str, "coins": {coin: {...}}}."""
+    if check_b is None:
+        status = (False, "not applied: the emulation check on B was not run (no --log)")
+    elif check_b.get("at_least_90pct") is not True:
+        status = (False, "not applied: the emulation check on B did not pass (under 90%, or no bids)")
+    else:
+        status = (True, "applied: the emulation check on B passed")
+    out = {}
+    days = sorted(d for d in P.day.unique() if d != "all")
+    for c in TWELVE:
+        def cnt(w, d):
+            r = P[(P.coin == c) & (P.way == w) & (P.day == d)].iloc[0]
+            return dict(num=int(r.miss), den=int(r.score_n))
+        per = strictly_higher(cnt("C", "all"), cnt("A", "all"))
+        by_day = {int(d): strictly_higher(cnt("C", d), cnt("A", d)) for d in days}
+        higher_days = sum(1 for v in by_day.values() if v is True)
+        value = bool(per is True and higher_days >= 2)
+        out[c] = dict(value=value if status[0] else None, period_higher=per, days_higher=higher_days, by_day=by_day,
+                      C={"all": cnt("C", "all")}, A={"all": cnt("A", "all")})
+    return dict(applied=status[0], why=status[1], coins=out)
 
 
 def log_check(events, T, coins, start, end, pass_="A"):
@@ -219,28 +225,32 @@ def fmt(x, p=3):
     return "n/a" if x is None or (isinstance(x, float) and not np.isfinite(x)) else (f"{x:.{p}f}" if isinstance(x, float) else str(x))
 
 
-def summary_md(P, helpers, checks, run, thr):
+def summary_md(P, days_n, clause, checks, run, thr):
     L = [f"# Newest-bar source, Part 1: {run.get('period_start')} to {run.get('period_end')} UTC", "",
          f"Threshold {thr:.6f}. Days are 24-hour blocks counted from the period's start "
-         f"(decision minutes per block: {helpers['days']}). Rows: each coin's own inputs exist (inputs_ok).",
+         f"(decision minutes per block: {days_n}). Rows: each coin's own inputs exist (inputs_ok).",
          "Share = arming disagreement (num / den); way only and research only split num. Score error: |way - research|,"
-         " both valid. Level: share of minutes (both valid) more than 5 bp from the research price (tick-floored,"
-         " within one tick = 0).", ""]
-    for title, sel in (("The twelve together", P.coin == "twelve"), ("Per coin, whole period", (P.coin != "twelve") & (P.day == "all"))):
-        L += [f"## {title}", "", "| coin | way | day | den | num | way only | research only | share | score med | score p90 | level > 5 bp |",
-              "|---|---|---|---|---|---|---|---|---|---|---|"]
-        for _, r in P[sel].iterrows():
-            L.append(f"| {r.coin} | {r.way} | {r.day} | {r.den} | {r.num} | {r.way_only} | {r.res_only} | {fmt(r.share)} | "
-                     f"{fmt(r.score_med, 2)} | {fmt(r.score_p90, 2)} | {fmt(r.level_share_gt5)} ({r.level_gt5}/{r.level_n}) |")
-        L.append("")
-    L += ["## Decision helpers (exact on counts)", ""]
-    w = helpers["worse_on_trades_each_day"]
-    L.append("Worse on trades on each day (B's share strictly higher than A's on every day): "
-             + ", ".join(f"{c} {v['value']}" + (f" (undefined days {v['undefined_days']})" if v["undefined_days"] else "")
-                         for c, v in w.items()))
-    c = helpers["c_fifth_better_than_both"]
-    L += ["", f"C a fifth better than both, the twelve together, on every day: {c['value']} (by day {c['by_day']}"
-          + (f"; undefined days {c['undefined_days']}" if c["undefined_days"] else "") + ")", ""]
+         " both valid. Miss: share of minutes (both valid) with |score - research| > 1.0. Level: share of minutes"
+         " (both valid) more than 5 bp from the research price (tick-floored, within one tick = 0).", ""]
+    head = ["| coin | way | day | den | num | way only | research only | share | score med | score p90 | miss | level > 5 bp |",
+            "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+
+    def line(r):
+        return (f"| {r.coin} | {r.way} | {r.day} | {r.den} | {r.num} | {r.way_only} | {r.res_only} | {fmt(r.share)} | "
+                f"{fmt(r.score_med, 2)} | {fmt(r.score_p90, 2)} | {fmt(r.miss_share)} ({r.miss}/{r.score_n}) | "
+                f"{fmt(r.level_share_gt5)} ({r.level_gt5}/{r.level_n}) |")
+    for title, sel in (("The twelve together", P.coin == "twelve"),
+                       ("C18 (all 18 coins on way C, the fourth book): the five listed traded coins together",
+                        P.coin == "listed5"),
+                       ("Per coin, whole period", ~P.coin.isin(["twelve", "listed5"]) & (P.day == "all"))):
+        L += [f"## {title}", ""] + head + [line(r) for _, r in P[sel].iterrows()] + [""]
+    L += ["## Single-coin clause: stays on candles (score-miss share under C strictly higher than under A, over the "
+          "period and on at least two day blocks; exact on counts)", "", clause["why"], ""]
+    for c, v in clause["coins"].items():
+        L.append(f"- {c}: {'not applied' if v['value'] is None else v['value']} (period higher: {v['period_higher']}; "
+                 f"days higher: {v['days_higher']} of {len(v['by_day'])}; by day {v['by_day']}; "
+                 f"C {v['C']['all']['num']}/{v['C']['all']['den']}, A {v['A']['all']['num']}/{v['A']['all']['den']})")
+    L.append("")
     if checks:
         L += ["## Checks against the third book's log", ""]
         for k, v in checks.items():
@@ -269,7 +279,7 @@ def main(argv=None):
         raise SystemExit(f"threshold differs from the build's: {thr} vs {run['threshold']}")
     ticks = {c: float(v["tick"]) for c, v in json.load(open(a.state))["specs"].items()}
     start, end = pd.Timestamp(run["period_start"]), pd.Timestamp(run["period_end"])
-    P, helpers, counts = compute(T, thr, ticks, start)
+    P, days_n, counts = compute(T, thr, ticks, start)
     checks = {}
     if a.log:
         ev = common.load_events(a.log)
@@ -277,11 +287,12 @@ def main(argv=None):
             res, rows = log_check(ev, T, coins, start, end)
             checks[name] = res
             rows.to_csv(os.path.join(out, "check_" + name.split()[0] + ".csv"), index=False)
+    clause = stays_on_candles(P, checks.get("B on ETH SOL XRP LTC ZEC"))
     P.to_csv(os.path.join(out, "per_coin.csv"), index=False, float_format="%.6g")
-    json.dump(dict(period_start=str(start), period_end=str(end), threshold=thr, day_blocks=helpers["days"],
-                   helpers=helpers, checks=checks, counts=counts), open(os.path.join(out, "counts.json"), "w"),
+    json.dump(dict(period_start=str(start), period_end=str(end), threshold=thr, day_blocks=days_n,
+                   stays_on_candles=clause, checks=checks, counts=counts), open(os.path.join(out, "counts.json"), "w"),
               indent=1, default=str)
-    md = summary_md(P, helpers, checks, run, thr)
+    md = summary_md(P, days_n, clause, checks, run, thr)
     open(os.path.join(out, "summary.md"), "w").write(md + "\n")
     print(md)
 
