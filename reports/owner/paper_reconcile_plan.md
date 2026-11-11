@@ -66,5 +66,28 @@ Written before either book's log for these days has been read.
   prove it works and to catch a fault early. An interim look can stop the test for a fault to be fixed (the three
   days then start again). It cannot pass the test, and it changes no rule.
 
+### How the repeat is run (added Nov 10 2026, 22:02 ET; tools on `main` in scripts/owner/reconcile)
+1. **A branch for the look,** made from `main` once both books' logs are on it (for example owner/read-tb-i1 for the
+   first interim look, owner/read-tb for the read). The runner writes its tables to that branch; they go onto `main`
+   after review.
+2. **Research for both books, on a runner** (about 15 minutes). START is the third book's first event minute, END
+   the last minute wanted, both UTC and written like 2026-11-11T01:50. The script refuses to fetch until END is an
+   hour old.
+   `gh workflow run hunt2.yml -R milesmcqueen98-code/crypto-edge --ref BRANCH
+   -f script=scripts/owner/reconcile/fetch_and_compute.py
+   -f args="--books paper_spot,paper_spot_tb --start START --end END --out reports/owner/reconcile_tb/NAME/research"
+   -f tag=reconcile-tb-NAME
+   -f sparse="bot edge scripts/owner reports/owner reports/cfm_products.csv paper_spot paper_spot_tb"
+   -f commit="reports/owner/reconcile_tb/NAME/research"`
+3. **The two-book comparison and item 7, offline:**
+   `python scripts/owner/reconcile/two_books.py --research reports/owner/reconcile_tb/NAME/research --start START
+   --end END --out reports/owner/reconcile_tb/NAME`
+   It writes each book's tables, side_by_side.csv and item7.md. Item 7 alone:
+   `python scripts/owner/reconcile/item7.py --dir reports/owner/reconcile_tb/NAME`.
+4. **Edges, as built:** the measures are computed on each book's own minutes and then limited to the minutes both
+   were live. Research bids at a minute where the third book logged a stale BTC are listed apart and leave the
+   share's denominator, as bids blocked for cash do. Item 7 uses only each bid's level and score, so the
+   one-minute edge effects at the period's ends do not touch it.
+
 ## Deviation log
 (none yet)

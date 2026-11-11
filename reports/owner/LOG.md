@@ -343,3 +343,21 @@ FORWARD_TESTS.md.
   - **Interim looks** (written into the plan before any look): the pipeline may be run on part of the test period, to
     prove it works and to catch a fault early. A look can stop the test for a fault. It cannot pass the test and it
     changes no rule.
+- **22:02. The reconciliation works for any book and period, and item 7 is code.**
+  - **Built by an agent, reviewed, merged at 22:01** (scripts/owner/reconcile). With default arguments it reproduces
+    all 14 files of the first reconciliation byte for byte; that is now a test. Item 7 run on the first
+    reconciliation's bids returns its published figures: 316 of 787 beyond 5 bp, 153 of 787 on the other side of the
+    threshold. The research fetch now refuses to run until its newest minute is an hour old, as the plan asks.
+  - **Runner job A (42947679530): the research side for Nov 6 to 10, fetched and computed again** about seven hours
+    after the first time. All 61,710 rows are identical. Whatever the venue's final candles left out on those days,
+    they did not change in seven hours.
+  - **Runner job B (42949193615), a development run on minutes before the test:** the main book from Nov 10 19:58 to
+    Nov 11 01:40 UTC, 338 decision minutes, 54 new bids, no fills.
+    - Beyond 5 bp from the research level: 18.5% (40% on Nov 6 to 10). Score on the other side: 11.1% (19%). Bids in
+      common: 80% of the bot's, 98% of the research's.
+    - It was a quiet evening, so a late BTC moved the level less. The relation is still there (correlation 0.70).
+    - 19 of the 54 prices match none of final, one-minute-late or two-minute-late BTC (35%; it was 19%). The errors
+      are small. Their cause is not tested.
+  - **Bids come at about 10 to 13 an hour,** so item 7's 200 bids in each book need about a day of both books.
+  - **How a look or the read is run** is now in paper_reconcile_plan.md. The first interim look is due after the
+    third book's first log is on `main` (its first run ends at about 07:35 UTC).
