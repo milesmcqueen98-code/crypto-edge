@@ -524,13 +524,14 @@ def mentions_refusal(events):
     return n
 
 
-def tb_rule_rows(dq, st, events, coins, rt, median_bar=TB_MEDIAN_BAR):
+def tb_rule_rows(dq, st, events, coins, rt, median_bar=TB_MEDIAN_BAR, rule_coins=TB_DEFAULT_COINS):
     """Items 1 to 5 of the FORWARD_TESTS row. Returns (minutes_in_real_time, rows) with rows [item, value, verdict].
 
     Item 1 is computed from the engine's counters: every attempted listed coin-minute is counted in exactly one of
     tb_built, tb_empty (both verified), tb_fb_unverified, tb_fb_error, tb_fb_budget, tb_fb_limited. Share = verified
     over attempted; it meets at 99% or more, compared on exact counts. Items 2 to 5 still use minutes run where noted.
-    Item 3's median bar is median_bar seconds (13 for the third book, 15 for the fourth).
+    Item 3's median bar is median_bar seconds (13 for the third book, 15 for the fourth). The note that the listed coins
+    differ from the rule's six is added only when they differ from rule_coins (the fourth book passes its own 18).
     """
     bar = f"{median_bar:g}"
     item3 = f"Data step median {bar} s or less; 30-minute maximum 20 s or less in 95% or more of heartbeats"
@@ -560,7 +561,7 @@ def tb_rule_rows(dq, st, events, coins, rt, median_bar=TB_MEDIAN_BAR):
         v1 = (f"{share:.2f}% ({verified:,.0f} verified of {attempted:,.0f} attempted coin-minutes: built {built:,.0f}, "
               f"verified empty {empty:,.0f}; fallbacks: unverified {fb[0]:,.0f}, error {fb[1]:,.0f}, budget {fb[2]:,.0f}, "
               f"rate limit {fb[3]:,.0f}; listed coins: {', '.join(coins)})")
-        if sorted(coins) != sorted(TB_DEFAULT_COINS):
+        if sorted(coins) != sorted(rule_coins):
             v1 += "; the configured list differs from the rule's six coins"
     rows.append(["1. Verified trades bar share of listed coin-minutes (99% or more)", v1, "meets" if ok1 else no])
     # item 2
@@ -716,7 +717,7 @@ def t18_rule_section(st, loaded, rts, dqs, root):
     if t["status"] != "ok":
         L += [f"No fourth-book log to judge ({t['status']}).", ""]
         return L
-    run_min, rows = tb_rule_rows(dqs.get("t18"), t, loaded["t18"]["events"], T18_COINS, rts["t18"], T18_MEDIAN_BAR)
+    run_min, rows = tb_rule_rows(dqs.get("t18"), t, loaded["t18"]["events"], T18_COINS, rts["t18"], T18_MEDIAN_BAR, T18_COINS)
     L += ["Real-time minutes run so far: " + (f"{run_min:,.0f}." if run_min is not None else NOT_DERIVABLE + "."), "",
           f"Listed coins for item 1: {', '.join(T18_COINS)} (fixed list for this book).", "",
           table(["Item", "Current value", "Verdict"], rows), ""]

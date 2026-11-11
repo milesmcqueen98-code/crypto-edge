@@ -403,6 +403,64 @@ def third_book_tests():
 
 
 
+def t18_tests():
+    full = "0123456789abcdef0123456789abcdef01234567"
+    counts = {"tb_built": 538, "tb_empty": 2, "rows_open": 5, "tb_pending": 54, "tb_replaced": 3, "tb_replaced_diff": 1,
+              "tb_dropped": 2}
+    step = {"data": [14.0, 15.0]}
+    n = 10
+    with tempfile.TemporaryDirectory() as tmp:
+        tb_books(tmp, GOOD_COUNTS, step, n=n)                      # third book: median 14.0 s, six coins
+        t18 = [{"ts": iso(T(0)), "kind": "backfill"}] + [hb(T(0, 30 * k), dict(counts), dict(step)) for k in range(1, n + 1)]
+        fills = [entry(iso(T(1)), 4, 1000), entry(iso(T(1, 1)), 4, 1000)]
+        t18 += fills
+        write(tmp, "paper_spot_t18", sorted(t18, key=lambda e: e["ts"]))
+        with open(os.path.join(tmp, "paper_spot_t18", "CODE"), "w") as f:
+            f.write(f"code_ref: refs/heads/x\ncode_commit: {full}\nutc: 2026-11-11T13:00\ncode_branch_hint: owner/t18\n")
+        # one first-bid fill in the third book, one minute from the fourth book's
+        with open(os.path.join(tmp, "paper_spot_tb", "events.jsonl"), "a") as f:
+            f.write(json.dumps(entry(iso(T(1, 1)), 4, 1000)) + "\n")
+        text = ps.build_report(tmp, NOW)
+        check("t18: in the top table", "| Spot T18 (all coins on trades) |" in text.split("## Running time")[0])
+        run = text.split("## Running time")[1].split("##")[0]
+        check("t18: in running time", "| Spot T18 (all coins on trades) |" in run)
+        check("t18: in the summary", text.count("Spot T18 (all coins on trades)") >= 5, text.count("Spot T18 (all coins on trades)"))
+        dqsec = text.split("## Data quality")[1].split("## Fourth book")[0]
+        check("t18: own data quality subsection with the new counters", "### Spot T18 (all coins on trades)" in dqsec
+              and "tb_pending 540" in dqsec and "tb_replaced 30" in dqsec and "tb_dropped 20" in dqsec, dqsec[-800:])
+        check("t18: comparison section ends with the registered sentence", "## Fourth book against the third book" in text
+              and "This comparison is for the record. The registered read is in reports/owner/bar_source_prereg.md." in text)
+        cmp_ = text.split("## Fourth book against the third book")[1].split("## Rule progress")[0]
+        check("t18: comparison table and overlap", "| Measure | Spot TB | Spot T18 | T18 minus TB |" in cmp_
+              and "| First-bid fills in both books | 1 |" in cmp_ and "| Only in the fourth book | 1 |" in cmp_, cmp_)
+        sec = text.split("## Rule progress for the fourth book")[1].split("## Perp books")[0]
+        check("t18: CODE line", f"Engine commit: 0123456 (full hash {full}), recorded 2026-11-11T13:00 UTC." in sec, sec[:300])
+        check("t18: minutes run and no items 6 or 7", "Real-time minutes run so far: 300." in sec and "| 6. " not in sec and "| 7. " not in sec, sec)
+        check("t18: item 1 names 18 coins", "listed coins: BTC, ETH, SOL, XRP, DOGE, LTC, LINK, BCH, SUI, XLM, HBAR, NEAR, AAVE, HYPE, ENA, PEPE, ONDO, ZEC)" in sec
+              and "5,400 verified of 5,400 attempted" in sec and "differs from the rule" not in sec, sec)
+        check("t18: item 3 bar is 15 s and 14.0 s meets", "3. Data step median 15 s or less" in sec
+              and "| median 14.0 s of 10 heartbeats; maximum 20 s or less in 100.0% (largest 15.0 s) | meets |" in sec, sec)
+        tbsec = text.split("## Three-day rule progress for the third book")[1].split("## Fourth book")[0]
+        check("t18: the same heartbeats do not meet the third book's 13 s bar",
+              "3. Data step median 13 s or less" in tbsec and "| median 14.0 s of 10 heartbeats; maximum 20 s or less in 100.0% (largest 15.0 s) | does not meet yet |" in tbsec, tbsec)
+        check("t18: pending line", "Rows still built from trades 3 to 6 minutes on (tb_pending): 540 of 5,400 coin-minutes" in sec, sec)
+        check("t18: replaced and dropped line", "Totals: tb_replaced 30, tb_replaced_diff 10, tb_dropped 20." in sec, sec)
+        check("t18: item 5 uses the same denominator", "| 5. Unconfirmed rows (rows_open) 1% or less of coin-minutes | 0.926% (50 of 5,400 coin-minutes, 18 coins)" in sec, sec)
+    # the third book's own item 3 and item 1 text did not change
+    with tempfile.TemporaryDirectory() as tmp:
+        tb_books(tmp, GOOD_COUNTS, GOOD_STEP, n=n)
+        text = ps.build_report(tmp, NOW)
+        check("t18 absent: no fourth-book heading, label or counter text", "Fourth book" not in text and "T18" not in text
+              and "t18" not in text and "tb_pending" not in text and "bar_source_prereg" not in text)
+    # CODE file missing, fourth book without a third book
+    with tempfile.TemporaryDirectory() as tmp:
+        write(tmp, "paper_spot", [{"ts": iso(T(0)), "kind": "backfill"}])
+        write(tmp, "paper_spot_t18", [{"ts": iso(T(0)), "kind": "backfill"}, hb(T(0, 30), {"tb_built": 540}, {"data": [1.0, 2.0]})])
+        text = ps.build_report(tmp, NOW)
+        check("t18 alone: report still made, no CODE noted", "Engine commit: not recorded" in text
+              and "Both logs are needed for this comparison" in text.split("## Fourth book")[1], text[-1500:])
+
+
 def main():
     with tempfile.TemporaryDirectory() as tmp:
         build_root(tmp)
@@ -556,6 +614,7 @@ def main():
     running_time_tests()
     data_quality_tests()
     third_book_tests()
+    t18_tests()
 
     print("\n" + ("all passed" if not FAILS else f"{len(FAILS)} failed: {FAILS}"))
     sys.exit(1 if FAILS else 0)
