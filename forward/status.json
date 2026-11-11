@@ -1,21 +1,21 @@
 {
  "run": "42992240626",
- "heartbeat": "2026-11-11T10:00:56Z",
+ "heartbeat": "2026-11-11T10:30:56Z",
  "started": "2026-11-11T09:05:50Z",
  "planned_end": "2026-11-11T14:50:49Z",
  "rows_last_hour": {
-  "book": 990,
-  "hl": 990,
-  "candles": 1330,
-  "cfm": 1595,
-  "tbar": 990
+  "book": 1080,
+  "hl": 1080,
+  "candles": 1387,
+  "cfm": 1740,
+  "tbar": 1062
  },
  "bursts_last_hour": {
-  "book": 55,
-  "hl": 55,
-  "candles": 55,
-  "cfm": 55,
-  "tbar": 55
+  "book": 60,
+  "hl": 60,
+  "candles": 60,
+  "cfm": 60,
+  "tbar": 59
  },
  "errors": {},
  "refused": {},
