@@ -62,6 +62,9 @@ Written before either book's log for these days has been read.
   For the twelve coins, the third book's score error is the first measure of what their own newest candle costs once
   BTC is right. It decides whether the comparison of bar sources for them is worth running.
 - **Limits:** three days of one market. Fills will be few and are not judged.
+- **Interim looks** (added Nov 10 2026, 21:34 ET, before any look): the pipeline may be run on part of the period, to
+  prove it works and to catch a fault early. An interim look can stop the test for a fault to be fixed (the three
+  days then start again). It cannot pass the test, and it changes no rule.
 
 ## Deviation log
 (none yet)

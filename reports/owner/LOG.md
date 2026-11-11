@@ -334,3 +334,12 @@ FORWARD_TESTS.md.
     applies item 6 to the collector's daily table exactly as written, with integer arithmetic for BTC's 1%. 50 checks
     pass, and five of my own cases gave the expected verdicts. On tonight's table every coin is "wait", as it should
     be with two hours a day. It goes onto `main` together with the status report's lines for items 6 and 7.
+- **21:34. Item 6 script and status lines on `main`; the two-book reconciliation is being built.**
+  - **Merged at 21:31:** scripts/owner/tb_rule6.py with its 50 checks, and the status report's lines for items 6 and
+    7 (107 checks). No trading code is touched.
+  - **An agent is generalising the reconciliation** to any book and period, with the two-book read and item 7 as
+    code (branch owner/reconcile-2). Its gate: with default arguments the comparison must reproduce the first
+    reconciliation's files byte for byte. Its two runner jobs use only minutes before the test period.
+  - **Interim looks** (written into the plan before any look): the pipeline may be run on part of the test period, to
+    prove it works and to catch a fault early. A look can stop the test for a fault. It cannot pass the test and it
+    changes no rule.
