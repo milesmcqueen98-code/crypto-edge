@@ -1,12 +1,12 @@
 {
  "run": "42992240626",
- "heartbeat": "2026-11-11T13:30:56Z",
+ "heartbeat": "2026-11-11T14:00:56Z",
  "started": "2026-11-11T09:05:50Z",
  "planned_end": "2026-11-11T14:50:49Z",
  "rows_last_hour": {
   "book": 1080,
   "hl": 1080,
-  "candles": 1350,
+  "candles": 1343,
   "cfm": 1740,
   "tbar": 1062
  },
@@ -17,7 +17,9 @@
   "cfm": 60,
   "tbar": 59
  },
- "errors": {},
+ "errors": {
+  "candles:timeout": 1
+ },
  "refused": {},
  "coins": [
   "BTC",
