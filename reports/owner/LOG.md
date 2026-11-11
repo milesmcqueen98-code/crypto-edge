@@ -416,3 +416,15 @@ FORWARD_TESTS.md.
       bids in each book.
     - No fault found, so the test runs on. Item 7(b) may come out close on quiet days, because the remaining score
       error sits in coins both books read the same way. The rule is not changed.
+- **08:50. Plan for the twelve candle-path coins fixed (bar_source_prereg.md).**
+  - **Why now:** the interim look shows what is left after the BTC fix. It is the score of the twelve coins read from
+    candles (8 of 87 bids on the wrong side), and input shares cannot say which source would do better.
+  - **Three ways compared:** candles as today; a trades bar that is kept; a trades bar replaced by the final candle
+    afterwards (the engine cannot do the third yet).
+  - **Part 1, offline:** the bot's own score and level under each way at every minute of Nov 11 02:00 to Nov 14 02:00
+    UTC, against the research, from the collector's record. The tool is built on earlier minutes only.
+  - **Part 2, forward:** a fourth paper book with all 18 coins on trades, in its own workflow, read against the third
+    book after three full days and 300 bids on the twelve in each.
+  - **Rule:** in FORWARD_TESTS.md. Nothing at decision level had been computed with a trades bar for the twelve when
+    it was written.
+  - Two agents get the work: one the offline tool, one the fourth book's configuration and workflow.
