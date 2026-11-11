@@ -673,8 +673,8 @@ def tb_sections(st, loaded, rts, dqs, labels, root):
           + (f"{run_min:,.0f} of {TB_MIN_MINUTES:,} ({100.0 * run_min / TB_MIN_MINUTES:.0f}%)." if run_min is not None
              else NOT_DERIVABLE + f" (needs {TB_MIN_MINUTES:,})."), "",
           f"Listed coins for item 1: {', '.join(coins)} ({src}).", ""]
-    rows.append(["6. Each listed coin's trades bar has a material-error share of 1% or less against the final candle",
-                 "from the forward collector; not computed here", "not computed here"])
+    rows.append(["6. On the collector's record: BTC's trades bar is materially off in 1% of minutes or less; every other listed coin's trades bar is materially off less often and exactly equal more often than its own first-seen candle, on every day",
+                 "from the forward collector; computed at the read by scripts/owner/tb_rule6.py", "not computed here"])
     L += [table(["Item", "Current value", "Verdict"], rows), ""]
     return L
 

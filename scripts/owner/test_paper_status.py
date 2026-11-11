@@ -262,7 +262,7 @@ def third_book_tests():
         text = ps.build_report(tmp, NOW)
         check("third book present: sections exist", "## Third book against the main book" in text
               and "## Three-day rule progress for the third book" in text and "Spot TB" in text)
-        check("rule section: item 6 text and minutes against 4,000", "from the forward collector; not computed here" in text
+        check("rule section: item 6 text and minutes against 4,000", "from the forward collector; computed at the read by scripts/owner/tb_rule6.py" in text
               and "of 4,000" in text, text[text.index("## Three-day"):][:700])
         check("comparison says it is not the pass rule", "for the record" in text and "not the pass rule" in text)
         check("the whole report still has no at-sign", chr(64) not in text)
