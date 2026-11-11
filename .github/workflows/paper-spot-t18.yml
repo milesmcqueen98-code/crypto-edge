@@ -1,10 +1,13 @@
 name: paper-spot-t18
 
-# Fourth paper book (reports/owner/bar_source_prereg.md, "Part 2"): identical to the trades book of paper-spot.yml
-# (bot/spot/config.tb.json) except that its trades list holds all 18 coins (bot/spot/config.t18.json). Its own
-# workflow, runner and folder (paper_spot_t18), so the three books of paper-spot.yml keep their runs, requests and
-# rate as before. Each job runs ~5h45m; the hand-over job starts the next run, the schedule is the backstop. State
-# carries over through paper_spot_t18/state.json.
+# Fourth paper book (reports/owner/bar_source_prereg.md, "Part 2" and its deviation log of Nov 11): all 18 coins take
+# the newest minute from the venue's trades and the venue's candle afterwards (engine option
+# trades_rows: "candle_after", configuration bot/spot/config.t18.json). That option lives on branch owner/engine-c
+# until it is merged, so this job runs the CODE of that branch (checked out into code/; the workflow_dispatch input
+# code_ref selects it, default owner/engine-c, and the schedule uses the same default) while its STATE and log stay on
+# main in paper_spot_t18 (paper_spot_t18/CODE names the engine commit of each run). Its own workflow, runner and
+# folder, so the three books of paper-spot.yml keep their runs, requests and rate as before. Each job runs ~5h45m; the
+# hand-over job starts the next run, the schedule is the backstop. State carries over through paper_spot_t18/state.json.
 on:
   schedule:
     - cron: "48 */6 * * *"
@@ -12,6 +15,9 @@ on:
     inputs:
       minutes:
         default: "345"
+      code_ref:
+        description: "branch, tag or commit whose bot/, edge/ and reports/ the book runs"
+        default: "owner/engine-c"
 
 concurrency:
   group: paper-spot-t18
@@ -25,24 +31,45 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 358
     steps:
+      # state, log and the commit script from main, in the workspace root (this checkout first: it cleans the workspace)
       - uses: actions/checkout@v4
         with:
           ref: main
           sparse-checkout: |
+            bot/spot/deploy
+            paper_spot_t18
+      # the engine code from code_ref, in code/ (a separate repository inside the workspace, never committed)
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.code_ref || 'owner/engine-c' }}
+          path: code
+          sparse-checkout: |
             bot
             edge
             reports
-            paper_spot_t18
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install pandas numpy lightgbm requests pyarrow
+      - name: Record the engine commit
+        env:
+          CODE_REF: ${{ inputs.code_ref || 'owner/engine-c' }}
+        run: |
+          echo "code/" >> .git/info/exclude
+          mkdir -p paper_spot_t18
+          {
+            echo "code_ref: $CODE_REF"
+            echo "code_commit: $(git -C code rev-parse HEAD)"
+            echo "utc: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } > paper_spot_t18/CODE
+          cat paper_spot_t18/CODE
       - name: Paper trade the t18 book
         run: |
           M=${{ inputs.minutes || '345' }}
-          python bot/spot/run.py paper --minutes $M --config bot/spot/config.t18.json --state-dir paper_spot_t18 > t18.out 2>&1 || echo "paper run exited with code $?"
+          SD="$GITHUB_WORKSPACE/paper_spot_t18"
+          python code/bot/spot/run.py paper --minutes $M --config "$GITHUB_WORKSPACE/code/bot/spot/config.t18.json" --state-dir "$SD" > t18.out 2>&1 || echo "paper run exited with code $?"
           grep -E '"kind": "(fill_entry|fill_exit|halt|error|warning|catch_up|heartbeat)"' t18.out | tail -n 30 || true
-          python bot/spot/run.py report --state-dir paper_spot_t18 | tail -n 30
+          python code/bot/spot/run.py report --state-dir "$SD" | tail -n 30
       - name: Commit paper log
         if: always()
         run: |
