@@ -274,11 +274,38 @@ def third_book_tests():
         tb_books(tmp, {"tb_built": 179, "tb_empty": 1}, GOOD_STEP)
         check("rule item 1 meets at 100%", verdicts(tmp)[1][0] == "meets")
     with tempfile.TemporaryDirectory() as tmp:
-        tb_books(tmp, {"tb_built": 150, "tb_empty": 28}, GOOD_STEP)       # 178 of 180 = 98.9%
+        tb_books(tmp, {"tb_built": 150, "tb_empty": 28, "tb_fb_unverified": 2}, GOOD_STEP)       # 178 of 180 attempted = 98.9%
         check("rule item 1 fails just below 99%", verdicts(tmp)[1][0] == "does not meet yet")
     with tempfile.TemporaryDirectory() as tmp:
-        tb_books(tmp, {"tb_built": 150, "tb_empty": 29}, GOOD_STEP)       # 179 of 180 = 99.4%
+        tb_books(tmp, {"tb_built": 150, "tb_empty": 29, "tb_fb_error": 1}, GOOD_STEP)       # 179 of 180 attempted = 99.4%
         check("rule item 1 meets just above 99%", verdicts(tmp)[1][0] == "meets")
+    # item 1 from the counters: the denominator is the attempted coin-minutes, not minutes run
+    def item1(counts, minutes=673.0, coins=None):
+        from collections import Counter
+        dq = {"total": {"counts": Counter(counts), "minutes": minutes, "data_n": 0, "data_median": None,
+                        "data_max": None, "data_le20": 0}}
+        r = ps.tb_rule_rows(dq, {"errors": 0}, [], coins or list(ps.TB_DEFAULT_COINS), None)[1][0]
+        return r[1], r[2]
+    v, ver = item1({"tb_built": 3960})
+    check("item 1 overcount case: 3,960 built with 673 minutes reads 100.00% and meets",
+          v.startswith("100.00% (3,960 verified of 3,960 attempted coin-minutes: built 3,960, verified empty 0; "
+                       "fallbacks: unverified 0, error 0, budget 0, rate limit 0; listed coins: BTC, ETH, SOL, XRP, LTC, ZEC)")
+          and ver == "meets" and "against the rule" not in v and "differs" not in v, (v, ver))
+    v, ver = item1({"tb_built": 990, "tb_fb_unverified": 6, "tb_fb_budget": 4})
+    check("item 1 fallbacks count: 990 of 1,000 is 99.00% and meets", v.startswith("99.00% (990 verified of 1,000 attempted")
+          and "unverified 6, error 0, budget 4, rate limit 0" in v and ver == "meets", (v, ver))
+    v, ver = item1({"tb_built": 990, "tb_fb_unverified": 6, "tb_fb_budget": 4, "tb_fb_error": 1})
+    check("item 1 one more fallback is below 99% and does not meet", ver == "does not meet yet" and v.startswith("98.90%"), (v, ver))
+    v, ver = item1({"tb_built": 5000, "tb_fb_limited": 51})
+    check("item 1 boundary is exact", ver == "does not meet yet", (v, ver))
+    v, ver = item1({"tb_built": 500, "tb_empty": 490, "tb_fb_error": 10})
+    check("item 1 counts tb_empty as verified", v.startswith("99.00% (990 verified of 1,000") and "verified empty 490" in v
+          and ver == "meets", (v, ver))
+    v, ver = item1({"rows_open": 3})
+    check("item 1 with nothing attempted", v == "no trades pass counted yet" and ver == "does not meet yet", (v, ver))
+    v, ver = item1({"tb_built": 3960}, coins=["BTC", "ETH"])
+    check("item 1 differing list appends the note", v.endswith("listed coins: BTC, ETH); the configured list differs from the rule's six coins")
+          and ver == "meets", (v, ver))
     # item 2: rate limit counter, refusal text
     with tempfile.TemporaryDirectory() as tmp:
         tb_books(tmp, dict(GOOD_COUNTS, tb_fb_limited=1), GOOD_STEP)
