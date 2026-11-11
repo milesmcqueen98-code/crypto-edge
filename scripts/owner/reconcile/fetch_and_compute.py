@@ -216,6 +216,18 @@ def work(job):
     return compute_at(t, btc_lag=kind, only=only)
 
 
+# ------------------------------------------------------------------------------------------------ freshness
+def utc_now():
+    """The current time in UTC, as a naive Timestamp (the log's minutes are naive UTC)."""
+    return pd.Timestamp(dt.datetime.now(dt.timezone.utc)).tz_convert("UTC").tz_localize(None)
+
+
+def old_enough(now, newest, min_age_min):
+    """The plan's rule: final candles are fetched at least min_age_min minutes after the newest live minute.
+    now, newest: naive UTC. True when now - newest >= min_age_min minutes (exactly the margin passes)."""
+    return pd.Timestamp(now) - pd.Timestamp(newest) >= pd.Timedelta(minutes=min_age_min)
+
+
 # ------------------------------------------------------------------------------------------------ books, period
 def live_set(evs, start, end):
     """The minutes the research is computed on: the union over books ({name: events}) of the brief's live minutes in
@@ -261,6 +273,8 @@ def main():
     ap.add_argument("--books", default="paper_spot", help="comma list of paper book folders (repo-relative)")
     ap.add_argument("--start", default=None, help="first UTC minute (default: each book's first event)")
     ap.add_argument("--end", default=None, help=f"last UTC minute (default {common.END})")
+    ap.add_argument("--min-age-min", type=float, default=60.0,
+                    help="refuse to fetch unless the newest live minute is at least this many minutes before now (UTC)")
     a = ap.parse_args()
     t_start = time.time()
     os.makedirs(a.out, exist_ok=True)
@@ -279,6 +293,11 @@ def main():
         return
     if a.max_minutes:
         live = live[:a.max_minutes]
+    now = utc_now()
+    if not old_enough(now, live[-1], a.min_age_min):
+        print(f"NOT FETCHING: newest live minute {live[-1]} UTC is less than {a.min_age_min:g} minutes before now "
+              f"{now} UTC (candles may not be final); rerun later or lower --min-age-min explicitly", flush=True)
+        sys.exit(2)
     first = live[0] - pd.Timedelta(minutes=WINDOW_MIN) - pd.Timedelta(minutes=5)
     last = live[-1]
     print(f"live minutes {len(live)} ({len(live) / 60:.2f} h), {live[0]} .. {live[-1]}; fetch {first} .. {last}",
@@ -310,7 +329,7 @@ def main():
                refused=refused, dropped=[x for x in log if x.startswith("DROPPED")],
                errors=[x for x in log if x.startswith("ERROR")], answers=len(answers),
                books=books, period_start=str(start) if start is not None else "each book's first event",
-               period_end=str(end), live_minutes=len(live), fetch_from=str(first), fetch_to=str(last),
+               period_end=str(end), min_age_min=a.min_age_min, checked_at_utc=str(now), live_minutes=len(live), fetch_from=str(first), fetch_to=str(last),
                cache_counts=pd.Series([x["cache"] for x in answers]).value_counts(dropna=False).to_dict(),
                newest_window={c: {k: v for k, v in [x for x in answers if x["coin"] == c][-1].items()
                                   if k in ("cache", "age", "date", "generated", "end")}

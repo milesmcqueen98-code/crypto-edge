@@ -227,6 +227,20 @@ def test_fetch_helpers():
     check("late rows split per book", sp.book.tolist() == ["paper_spot_tb"] and list(sp.columns)[0] == "book")
 
 
+def test_freshness():
+    f, t = fetch_and_compute.old_enough, pd.Timestamp("2026-11-11 01:40")
+    check("freshness: exactly 60 minutes after the newest minute passes", f(t + pd.Timedelta(minutes=60), t, 60))
+    check("freshness: 59 min 59 s does not", not f(t + pd.Timedelta(minutes=59, seconds=59), t, 60))
+    check("freshness: earlier than the minute does not", not f(t - pd.Timedelta(minutes=5), t, 60))
+    check("freshness: a lowered margin is honoured", f(t + pd.Timedelta(minutes=5), t, 5)
+          and not f(t + pd.Timedelta(minutes=4, seconds=59), t, 5))
+    now = fetch_and_compute.utc_now()
+    import datetime as dt
+    ref = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
+    check("freshness: utc_now is naive UTC (not local time)", now.tzinfo is None
+          and abs((pd.Timestamp(ref) - now).total_seconds()) < 5, (now, ref))
+
+
 def rows(k, n, kind):
     """n per-bid rows of which k count for measure (a) (kind 'a') or (b) (kind 'b')."""
     if kind == "a":
@@ -277,6 +291,7 @@ def main():
     test_period()
     test_two_books()
     test_fetch_helpers()
+    test_freshness()
     test_item7()
     if FAILS:
         print(f"{len(FAILS)} FAILED: {FAILS}")
