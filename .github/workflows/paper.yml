@@ -24,6 +24,11 @@ jobs:
     timeout-minutes: 358
     steps:
       - uses: actions/checkout@v4
+        with:
+          # the branch tip, not the trigger commit: a run queued behind the previous one must start from the state that
+          # run committed (on Nov 11 a queued run started from its stale trigger commit, ran six hours and could not push
+          # its log)
+          ref: main
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
