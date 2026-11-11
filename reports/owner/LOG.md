@@ -361,3 +361,58 @@ FORWARD_TESTS.md.
   - **Bids come at about 10 to 13 an hour,** so item 7's 200 bids in each book need about a day of both books.
   - **How a look or the read is run** is now in paper_reconcile_plan.md. The first interim look is due after the
     third book's first log is on `main` (its first run ends at about 07:35 UTC).
+
+## Nov 11 2026 (times ET; UTC is five hours later)
+
+- **08:45. Morning check after the first night of release 2.**
+  - **Hand-over: works.** The run that began at 01:47 UTC ended at 07:37 and its hand-over job started the next one
+    at once; that one ended at 13:28 and started the third. The collector's chain also held (three runs, no gap).
+  - **Fault: the main book and W2 lost their log for 01:47 to 07:37 UTC.**
+    - Cause, from the run's log: the two paper jobs ended two seconds apart and pushed to `main` in the same second.
+      The main job's push was rejected. The retry line then ran `git rebase --abort` with no rebase in progress,
+      which fails, and under `bash -e` that ended the step on the first try. The runner was discarded with the log.
+    - Effect: both books went on at 07:37 from the 01:47 state (a 350-minute gap). The third book's log is whole.
+    - Fix (agent, reviewed, on `main` at 13:42 UTC): bot/spot/deploy/paper_commit.sh replaces the inline loop in
+      paper-spot.yml (both jobs), owner-status.yml and paper.yml. Six attempts, every failure retried, and a rescue
+      branch if all fail. Its test reproduces last night's git error and shows the old line failing on it (24
+      checks). No trading code is touched.
+    - The run in progress (began 13:28 UTC, ends about 19:18) still has the old step. When both jobs end in the
+      same minute the same loss can happen once more. I tried to cancel it and start a fresh run on the fixed step;
+      the session's permission check refused the cancel, so it runs on. Reported to Miles.
+    - An agent's audit of the other workflows: the daily data jobs have no retry but fail visibly and can be
+      fetched again; several research jobs pass silently if every push fails. None is changed today.
+  - **What the books' new counters say (PAPER_STATUS.md):**
+    - Main book, 07:43 to 13:00 UTC: no BTC row for the minute just closed in 279 of about 320 minutes, nearly
+      nine in ten. The late BTC input is the normal state on the paper runners, as the probe found on its own
+      runner.
+    - Third book, 01:52 to 13:00 UTC: BTC never stale; 3,960 trades bars built in 660 steps, six every step, no
+      fallback of any kind; 19 coin-minutes skipped for an old candle answer; no error event; data step median
+      10.2 s, one half hour with a maximum above 20 s (23.9 s).
+  - **The status report understated item 1 (98.07%).** It divided verified bars by minutes run times six, and
+    minutes run counts about 13 minutes around the two start-ups that had no step. The engine counts every attempted
+    coin-minute in exactly one of six counters, so the share is now verified over attempted: 3,960 of 3,960. This
+    corrects the measurement, not the rule, and it was made after the 98.07% was seen; the evidence is that every
+    full half hour shows 180 bars for 30 steps. Fixed by an agent, reviewed, on `main` at 13:42 UTC (114 checks).
+  - **A subagent's first command was refused by the session's permission check** (it tried to create a branch that
+    already existed). It stopped and asked me to do it or approve it. I did neither; the step was not needed, and it
+    went on with edits only.
+  - **Collector's table for Nov 11, 00:00 to 13:00 UTC** (trades bar against final candle; materially off / exactly
+    equal; first-seen candle in brackets):
+    - BTC 0.0% / 99.4% (62% / 26%); ETH 0.4% / 98.7% (13% / 67%); SOL 0.7% / 96.9% (28% / 66%); XRP 1.5% / 92.9%
+      (11% / 80%); ZEC 1.8% / 94.4% (12% / 82%).
+    - LTC 5.5% / 78.9% (9.7% / 81.3%): its trades bar is exactly equal less often than its candle, so on this
+      partial day it fails item 6(b) on that measure. If the full days say the same, LTC leaves the list at
+      release 3, as the rule provides.
+    - The twelve: the trades bar is materially off more often than the candle for AAVE, BCH, ENA and PEPE, level
+      for HBAR, and less often for the other seven. The candle is exactly equal more often for all twelve. Last
+      night's 4.3 hours had the trades bar ahead on the first measure for all twelve; the rule written on that and
+      withdrawn would have moved them wrongly.
+  - **Interim look 1 at the reconciliation** (01:47 to 12:30 UTC; reports/owner/reconcile_tb/i1/README.md):
+    - Third book, 102 new bids: every one within a tick of the research level. Main book, 36 bids: 5 more than
+      5 bp off, following BTC's last-minute move.
+    - Third book's research score on the other side of the threshold: 8 of 102, all on candle-path coins, 7 of
+      them between 02:06 and 07:18 UTC. None on the five traded coins of the trades list.
+    - Item 7 on the 288 common minutes: (a) 5 of 36 against 0 of 17; (b) 1 of 36 against 1 of 17. It waits for 200
+      bids in each book.
+    - No fault found, so the test runs on. Item 7(b) may come out close on quiet days, because the remaining score
+      error sits in coins both books read the same way. The rule is not changed.

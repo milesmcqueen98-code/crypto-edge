@@ -1,0 +1,76 @@
+{
+ "period": {
+  "start": "2026-11-11 01:47:00",
+  "end": "2026-11-11 12:30:00"
+ },
+ "books": {
+  "main": "paper_spot",
+  "tb": "paper_spot_tb"
+ },
+ "minutes": {
+  "main": 289,
+  "tb": 634,
+  "common": 288
+ },
+ "brief_minutes": {
+  "main": 294,
+  "tb": 644
+ },
+ "stale": {
+  "main": {
+   "stale_input_minutes": 0,
+   "heartbeats": 10,
+   "skip_old_total": 0,
+   "note": "skip_old: coins given no new bid because their newest row was old, summed over the heartbeats inside the period (each covers the 30 minutes to its ts); not logged per coin, so not matched to research bids"
+  },
+  "tb": {
+   "stale_input_minutes": 0,
+   "heartbeats": 22,
+   "skip_old_total": 19,
+   "note": "skip_old: coins given no new bid because their newest row was old, summed over the heartbeats inside the period (each covers the 30 minutes to its ts); not logged per coin, so not matched to research bids"
+  }
+ },
+ "research_new_at_stale_minutes_common": 0,
+ "groups": {
+  "all": [
+   "AAVE",
+   "BCH",
+   "DOGE",
+   "ENA",
+   "ETH",
+   "HBAR",
+   "HYPE",
+   "LINK",
+   "LTC",
+   "NEAR",
+   "ONDO",
+   "PEPE",
+   "SOL",
+   "SUI",
+   "XLM",
+   "XRP",
+   "ZEC"
+  ],
+  "trades list": [
+   "ETH",
+   "LTC",
+   "SOL",
+   "XRP",
+   "ZEC"
+  ],
+  "candle path": [
+   "AAVE",
+   "BCH",
+   "DOGE",
+   "ENA",
+   "HBAR",
+   "HYPE",
+   "LINK",
+   "NEAR",
+   "ONDO",
+   "PEPE",
+   "SUI",
+   "XLM"
+  ]
+ }
+}

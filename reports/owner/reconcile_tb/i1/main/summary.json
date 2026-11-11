@@ -1,0 +1,77 @@
+{
+ "live": {
+  "brief_minutes": 294,
+  "brief_hours": 4.9,
+  "decision_minutes": 289,
+  "decision_hours": 4.816666666666666,
+  "startups": [
+   [
+    "2026-11-11 07:37:00",
+    "2026-11-11 07:43:00",
+    "arm"
+   ]
+  ],
+  "error_minutes": [],
+  "gaps": [
+   [
+    "2026-11-11 01:47:00",
+    "2026-11-11 07:37:00"
+   ]
+  ]
+ },
+ "m1": {
+  "n": 36,
+  "median": 0.0,
+  "p5": -5.646378259453188,
+  "p95": 2.596299233065813,
+  "median_abs": 0.0,
+  "share_abs_gt5": 0.1388888888888889,
+  "share_abs_gt20": 0.0,
+  "raw_median": -1.4028103898156008,
+  "raw_p5": -7.933479355148599,
+  "raw_p95": 2.431329686011785,
+  "raw_median_abs": 2.2798771855103706,
+  "raw_share_abs_gt5": 0.3055555555555556,
+  "raw_share_abs_gt20": 0.0
+ },
+ "m2": {
+  "n": 36,
+  "median_abs_diff": 0.02943688999999594,
+  "median_diff": -0.003633900000000523,
+  "p90_abs_diff": 0.28634170500000167,
+  "share_other_side": 0.027777777777777776,
+  "n_other_side": 1,
+  "median_abs_diff_vs_btc1late": 0.027195404999996953,
+  "median_abs_diff_vs_btc2late": 0.058408220000000455
+ },
+ "m3": {
+  "bot_new_bids": 36,
+  "bot_matched": 28,
+  "share_bot_in_research": 0.7777777777777778,
+  "bot_research_armed_at_t": 0.9722222222222222,
+  "bot_after_cash_short": 0,
+  "research_new_bids": 30,
+  "research_cash_blocked": 0,
+  "research_new_bids_ex_cash": 30,
+  "research_matched": 28,
+  "share_research_in_bot": 0.9333333333333333,
+  "bot_arms_outside_decision_minutes": 0,
+  "research_stale_blocked": 0,
+  "research_near_stale_pm1": 0,
+  "research_new_bids_ex_blocked": 30,
+  "stale_input_minutes": 0
+ },
+ "research_fill_episodes": 0,
+ "research_fill_matched": 0,
+ "stale": {
+  "stale_input_minutes": 0,
+  "heartbeats": 10,
+  "skip_old_total": 0,
+  "note": "skip_old: coins given no new bid because their newest row was old, summed over the heartbeats inside the period (each covers the 30 minutes to its ts); not logged per coin, so not matched to research bids"
+ },
+ "period": {
+  "book": "paper_spot",
+  "start": "2026-11-11 01:47:00",
+  "end": "2026-11-11 12:30:00"
+ }
+}
