@@ -447,3 +447,24 @@ FORWARD_TESTS.md.
     fetched again.
   - **The perp books' running time (about 62%) is partly this fault,** not only dropped schedules: every scheduled
     run that waited behind another lost its log. They also have no hand-over yet.
+- **09:17. The offline tool is built; its development run changes the plan for the twelve.**
+  - **Tool** (agent, reviewed; scripts/owner/bar_source): it drives the bot's own code under each way of filling a
+    coin's rows. 46 checks pass, and its research pass is identical to the reconciliation's on 3,927 shared rows.
+    Runner job 43034926403 covered 250 minutes before the registered window.
+  - **Finding 1: keeping trades rows puts the bid level off.** For the twelve, 9.4% of coin-minutes were more than
+    5 bp from the research level (4 of 3,000 under the other two ways). The level rests on the close an hour back;
+    a trades bar's close is not the final candle's wherever the candle ran late. ZEC, kept on trades in the third
+    book, shows 5.2%.
+  - **Finding 2: a coin's score reads the other coins.** Two model inputs are built across all coins, so every way
+    has to be computed as a whole book.
+  - **Finding 3: the emulation of today's candle path shows almost no score error** (90th percentile 0.1 point),
+    while the third book showed large ones at its bids. The registered check against the book's own log will say
+    which is right.
+  - **Plan amended** (bar_source_prereg.md, deviation log), before any registered minute was read: the fourth book
+    will run "trades for the newest minute, the venue's candle afterwards" for all 18 coins, from a branch that
+    carries the engine option. Keeping trades rows is dropped as a candidate. The one-fifth margin for building the
+    option is dropped, since it is built now for the forward test. The single-coin clause moves to a measure with
+    enough events.
+  - **What this says about release 2's own rule:** a candle row never replaces a trades-built row. For matching the
+    research that is the wrong way round for a coin whose candles run late. It costs little for BTC, ETH, SOL and
+    XRP. The third book's test is read as registered; the new way is the candidate for the release after it.

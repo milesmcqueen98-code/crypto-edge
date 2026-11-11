@@ -84,4 +84,36 @@ The tools may be run on part of a window to prove they work and to catch a fault
 changes no rule.
 
 ## Deviation log
-(none yet)
+- **Nov 11 2026, 09:17 ET (orchestrator).** Made after the tool's development run and before any minute of either
+  registered window was read for this plan.
+  - **What the development window showed** (Nov 10 21:50 to Nov 11 01:59 UTC, 250 minutes; outputs on branch
+    owner/bar-source, reports/owner/bar_source_dev):
+    - A coin's score reads two inputs built from all the other coins. Each way is therefore computed as a whole book
+      that could exist (six passes). This changes no rule.
+    - **Way B puts the bid level off.** With trades rows kept, the level of the twelve was more than 5 bp from the
+      research in 282 of 3,000 coin-minutes (9.4%; 1.6% to 22% by coin), against 4 under A and under C. The level
+      rests on the coin's close an hour back, and a trades bar's close differs from the final candle's wherever the
+      candle ran late. ZEC, which the third book keeps on trades, shows 5.2% in the same minutes.
+    - Disagreements on arming are few: 5 to 9 in about 2,700 coin-minutes, because the research was armed in about
+      90% of them. A rule that asks a margin on each day would turn on a handful of minutes.
+    - A's score error is small in this emulation (90th percentile 0.1 point), far below what the third book showed at
+      its bids. The check against the book's log decides whether the emulation can be trusted.
+  - **Changes:**
+    1. **Part 2 tests way C, not B.** The fourth book takes the newest minute of all 18 coins from trades and
+       replaces each such row by the venue's candle once a late enough answer holds it. That needs an engine option.
+       It is built on a branch, and the fourth book runs the code of that branch, so the engine on `main` is not
+       touched while the third book's test runs.
+    2. **B is no longer a candidate** for the twelve. It stays in Part 1 as a reported column.
+    3. **The decision rule, restated:**
+       - Way C for the twelve, with the six listed coins on the same way, is proposed for the next release if, in
+         Part 2, the fourth book's wrong-side share on the twelve is strictly lower than the third book's, its
+         matched share is not lower, its level share is below 5%, and items 1 to 5 hold for it.
+       - The clause that C is built only on a one-fifth margin in Part 1 is dropped. The option is built now, for the
+         forward test. A release still needs Part 2.
+       - The single-coin clause compares C with A on a measure with enough events, the score-miss share: the share
+         of minutes whose score is more than 1.0 point from the research. A coin stays on candles if Part 1 has its
+         score-miss share under C strictly higher than under A over the three days and on at least two of the three
+         days. The clause applies only if the emulation check on B passes.
+    4. **Part 1 gains** the score-miss share, per coin and way, and a pass with all 18 coins on way C, which is what
+       the fourth book runs.
+  - Nothing else changes: the windows, the data, the two emulation checks, and no P&L test.
