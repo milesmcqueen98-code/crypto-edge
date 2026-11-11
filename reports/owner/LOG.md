@@ -428,3 +428,22 @@ FORWARD_TESTS.md.
   - **Rule:** in FORWARD_TESTS.md. Nothing at decision level had been computed with a trades bar for the twelve when
     it was written.
   - Two agents get the work: one the offline tool, one the fourth book's configuration and workflow.
+- **08:56. The perp paper books lost a log too, by a different fault; fixed.**
+  - **What happened:** the perp run of 04:35 to 10:23 UTC (Nov 11) never reached `main`, and its step reported
+    success. It was a scheduled run that had waited behind the previous one. Its checkout took the commit of its
+    trigger time, older than the log the previous run committed at 04:34, so it ran six hours from stale state. At
+    the end the rebase hit conflicts on its own four files, the old loop left them in place, every retry failed, and
+    the step passed. The status report showed both perp books stale for 9 hours.
+  - **Why it mattered today:** the commit script merged at 13:42 resolves such a conflict in favour of the run that
+    is pushing. For a stale run that would have replaced the previous run's events and state on `main`.
+  - **Fix (agent, reviewed, on `main` at 13:56 UTC):** paper.yml checks out the tip of `main`, as paper-spot.yml
+    has since Nov 7. It was merged before that workflow's next scheduled start (nominally 18:03 UTC), because a
+    queued run uses the workflow file of its trigger time.
+  - **The new commit step ran on a real runner** for the first time (status refresh, 13:53 UTC): pushed on the first
+    attempt.
+  - **Left open:** the commit script can still drop another commit's lines if something else writes a book's folder
+    during a run (a hand edit, or a rescue branch merged meanwhile). An agent suggests sending such a case to the
+    rescue branch instead. Not built. data.yml also waits in a group without taking the tip; its data can be
+    fetched again.
+  - **The perp books' running time (about 62%) is partly this fault,** not only dropped schedules: every scheduled
+    run that waited behind another lost its log. They also have no hand-over yet.
