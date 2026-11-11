@@ -105,6 +105,13 @@ def ols(y, x):
     return dict(n=int(len(d)), corr=c, slope=float(b), intercept=float(a), r2=c * c)
 
 
+def empty_arms():
+    """The per-bid table of a book with no bid in the period, with typed columns."""
+    bools = {"in_decision", "res_other_side", "research_new_pm1", "research_armed_t", "cash_short_prev"}
+    return pd.DataFrame({c: pd.Series(dtype="datetime64[ns]" if c == "ts" else object if c in ("coin", "ladder")
+                                      else bool if c in bools else float) for c in ARM_COLS})
+
+
 def m1_stats(A):
     """Measure 1 on a per-bid table (compute's out["arms"] or a filtered copy): bids in decision minutes with a
     research level."""
@@ -280,7 +287,7 @@ def compute(ev, R, late, ticks, thr, end=common.END, start=None, stale=None):
         d["research_armed_t"] = bool(t in arm.index and c in arm.columns and arm.at[t, c])
         d["cash_short_prev"] = any((t - k * MIN, c) in cash_keys for k in (1, 2, 3))
         rows.append(d)
-    A = pd.DataFrame(rows, columns=None if rows else ARM_COLS)
+    A = pd.DataFrame(rows) if rows else empty_arms()
     out["arms"] = A
     Ad = A[A.in_decision & A.err_bp.notna()]
     out["m1"] = m1_stats(A)
@@ -326,6 +333,16 @@ def compute(ev, R, late, ticks, thr, end=common.END, start=None, stale=None):
                             note="skip_old: coins given no new bid because their newest row was old, summed over "
                                  "the heartbeats inside the period (each covers the 30 minutes to its ts); not "
                                  "logged per coin, so not matched to research bids")
+        sm = []
+        for e in ev:
+            if e["kind"] == "stale_input" and inp(e):
+                t = e["t"].floor("min")
+                ins = t in arm.index
+                sm.append(dict(ts=t, age_min=e.get("age_min"), decision_minute=t in decset,
+                               research_armed=int(arm.loc[t].sum()) if ins else None,
+                               research_new=int(sum(1 for x, _ in rnew if x == t))))
+        out["stale_minutes"] = pd.DataFrame(sm, columns=["ts", "age_min", "decision_minute", "research_armed",
+                                                         "research_new"])
     # cash_short cases, apart
     cs = []
     for e in cash:
@@ -464,6 +481,8 @@ def write_outputs(o, out_dir, period=None):
     pd.DataFrame([o["m3"]]).to_csv(os.path.join(out_dir, "m3_bids.csv"), index=False, float_format="%.4g")
     o["research_new"].to_csv(os.path.join(out_dir, "m3_research_new_bids.csv"), index=False, float_format="%.6g")
     o["cash_short"].to_csv(os.path.join(out_dir, "m3_cash_short.csv"), index=False, float_format="%.6g")
+    if "stale_minutes" in o:                            # only for a book with stale_input events (or stale=True)
+        o["stale_minutes"].to_csv(os.path.join(out_dir, "m3_stale_input.csv"), index=False)
     o["fills"].to_csv(os.path.join(out_dir, "m4_fills.csv"), index=False, float_format="%.8g")
     o["m4"].to_csv(os.path.join(out_dir, "m4_summary.csv"), index=False, float_format="%.2f")
     o["unsettled_research_dips"].to_csv(os.path.join(out_dir, "m4_unsettled_minutes.csv"), index=False,
