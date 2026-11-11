@@ -484,3 +484,13 @@ FORWARD_TESTS.md.
   - **The fourth book's workflow** (agent, branch owner/paper-t18) runs the code of that branch in a second checkout
     and keeps the book's state and log on `main`. It gets one more change, pinning the engine commit, and is then
     merged and started.
+- **11:18. The fourth paper book is running.**
+  - Its workflow (paper-spot-t18.yml; agent, reviewed) is on `main` since 16:14 UTC. It checks out engine commit
+    58eba8b into a second folder, keeps the book's state and log on `main` in paper_spot_t18, and writes the engine
+    commit into paper_spot_t18/CODE at every run. The engine on `main` is unchanged.
+  - First run 43056376442 began at 16:15 UTC; both checkouts and the start succeeded, and the paper step is running.
+    Its log reaches `main` when the run ends, at about 22:05 UTC.
+  - Its read (bar_source_prereg.md, Part 2) is not before Nov 14, 16:20 UTC: three full days beside the third book
+    and 300 new bids on the twelve in each.
+  - Still to do before the Nov 14 reads: the offline tool's seventh pass and score-miss measure (with an agent), and
+    the fourth book in the status report.
