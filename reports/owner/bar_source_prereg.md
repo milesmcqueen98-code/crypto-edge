@@ -83,6 +83,22 @@ Branch owner/charter.
 The tools may be run on part of a window to prove they work and to catch a fault. A look cannot pass either part and
 changes no rule.
 
+## How the reads are run (added Nov 11 2026, 11:24 ET; tools on `main`)
+- **Part 1,** not before 02:59 UTC on Nov 14 (the fetch refuses a newest minute under an hour old). On a branch
+  made from `main` for the read, so the runner's tables are reviewed before they reach `main`:
+  `gh workflow run hunt2.yml -R milesmcqueen98-code/crypto-edge --ref BRANCH
+  -f script=scripts/owner/bar_source/build.py
+  -f args="--start 2026-11-11T02:00 --end 2026-11-14T01:59 --out reports/owner/bar_source"
+  -f commit="reports/owner/bar_source" -f tag=bar-source -f sparse="bot edge scripts/owner scripts/forward"`
+  About an hour on the runner (seven whole-book passes, about 30,000 engine steps). Then, with the third book's log
+  current through 01:59 UTC on Nov 14:
+  `python scripts/owner/bar_source/compare.py --dir reports/owner/bar_source --log paper_spot_tb/events.jsonl`
+  Without `--log` the emulation checks do not run and the single-coin clause is reported as not applied.
+- **Part 2,** not before Nov 14, 16:20 UTC, and only with 300 new bids on the twelve in each book: the two-book
+  reconciliation of scripts/owner/reconcile with the third book as the first book and the fourth as the second
+  (paper_spot_tb and paper_spot_t18), over the minutes both were live, read for the twelve coins together. The
+  fourth book's items 1 to 5 are in PAPER_STATUS.md.
+
 ## Deviation log
 - **Nov 11 2026, 09:17 ET (orchestrator).** Made after the tool's development run and before any minute of either
   registered window was read for this plan.

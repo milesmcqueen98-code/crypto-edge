@@ -494,3 +494,14 @@ FORWARD_TESTS.md.
     and 300 new bids on the twelve in each.
   - Still to do before the Nov 14 reads: the offline tool's seventh pass and score-miss measure (with an agent), and
     the fourth book in the status report.
+- **11:24. Tools for the Nov 14 reads are complete on `main`.**
+  - **Offline tool, follow-up** (agent, reviewed): a seventh pass with all 18 coins on the new way, which is what
+    the fourth book runs; the score-miss share; the restated single-coin clause, applied only if the emulation check
+    passes. The earlier passes are identical row for row. 53 checks pass.
+  - **Development window again (decides nothing):** score more than 1.0 point from the research in 51 of 3,000
+    coin-minutes for the twelve on candles and 36 on the new way. With all 18 coins on the new way the five listed
+    traded coins sit on the research (0 misses in 1,250), and the level is off in 2 of 3,000 for the twelve.
+  - **Status report** (agent, reviewed): the fourth book appears once its folder is on `main`, with its comparison
+    with the third book and its items 1 to 5 (18 coins, 15 s median bar). Without the folder the report is
+    byte-identical. 130 checks pass.
+  - **How both reads are run** is written into bar_source_prereg.md.
