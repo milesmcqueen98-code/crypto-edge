@@ -1,0 +1,67 @@
+{
+ "live": {
+  "brief_minutes": 343,
+  "brief_hours": 5.716666666666667,
+  "decision_minutes": 338,
+  "decision_hours": 5.633333333333334,
+  "startups": [
+   [
+    "2026-11-10 19:57:00",
+    "2026-11-10 20:03:00",
+    "arm"
+   ]
+  ],
+  "error_minutes": [],
+  "gaps": [
+   [
+    "2026-11-10 13:30:00",
+    "2026-11-10 19:57:00"
+   ]
+  ]
+ },
+ "m1": {
+  "n": 54,
+  "median": 0.0,
+  "p5": -11.056336418693801,
+  "p95": 5.606884001842504,
+  "median_abs": 2.866218805943621,
+  "share_abs_gt5": 0.18518518518518517,
+  "share_abs_gt20": 0.018518518518518517,
+  "raw_median": -0.20156563752482537,
+  "raw_p5": -12.167291657682489,
+  "raw_p95": 5.142473354595496,
+  "raw_median_abs": 3.038702527048409,
+  "raw_share_abs_gt5": 0.2222222222222222,
+  "raw_share_abs_gt20": 0.018518518518518517
+ },
+ "m2": {
+  "n": 54,
+  "median_abs_diff": 0.09950918499999872,
+  "median_diff": -0.01644044500000419,
+  "p90_abs_diff": 3.0284265250000013,
+  "share_other_side": 0.1111111111111111,
+  "n_other_side": 6,
+  "median_abs_diff_vs_btc1late": 0.08899592500000253,
+  "median_abs_diff_vs_btc2late": 0.14050390000000057
+ },
+ "m3": {
+  "bot_new_bids": 54,
+  "bot_matched": 43,
+  "share_bot_in_research": 0.7962962962962963,
+  "bot_research_armed_at_t": 0.8888888888888888,
+  "bot_after_cash_short": 0,
+  "research_new_bids": 44,
+  "research_cash_blocked": 0,
+  "research_new_bids_ex_cash": 44,
+  "research_matched": 43,
+  "share_research_in_bot": 0.9772727272727273,
+  "bot_arms_outside_decision_minutes": 0
+ },
+ "research_fill_episodes": 0,
+ "research_fill_matched": 0,
+ "period": {
+  "book": "paper_spot",
+  "start": "2026-11-10 13:31:00",
+  "end": "2026-11-11 01:40:00"
+ }
+}
