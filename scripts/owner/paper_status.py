@@ -662,7 +662,7 @@ def tb_sections(st, loaded, rts, dqs, labels, root):
     coins, src = load_tb_coins(root)
     L += ["## Three-day rule progress for the third book", "",
           "> Verified inputs (release 2): after the first three full days of real-time running (at least 4,000 minutes), "
-          "items 1 to 6 below must all hold. The rule is in reports/owner/FORWARD_TESTS.md. Items 1 to 5 are computed here "
+          "items 1 to 7 below must all hold. The rule is in reports/owner/FORWARD_TESTS.md. Items 1 to 5 are computed here "
           "from the heartbeats; the values are provisional until the minutes are reached.", ""]
     if tb["status"] != "ok":
         L += [f"No third-book log to judge ({tb['status']}).", ""]
@@ -675,6 +675,8 @@ def tb_sections(st, loaded, rts, dqs, labels, root):
           f"Listed coins for item 1: {', '.join(coins)} ({src}).", ""]
     rows.append(["6. On the collector's record: BTC's trades bar is materially off in 1% of minutes or less; every other listed coin's trades bar is materially off less often and exactly equal more often than its own first-seen candle, on every day",
                  "from the forward collector; computed at the read by scripts/owner/tb_rule6.py", "not computed here"])
+    rows.append(["7. On the reconciliation of both books over the minutes both were live: the share of new bids more than 5 bp from the research level, and the share whose research score is on the other side of the threshold, are each lower in the third book than in the main book, or below 5% in both",
+                 "from the reconciliation (scripts/owner/reconcile); not computed here", "not computed here"])
     L += [table(["Item", "Current value", "Verdict"], rows), ""]
     return L
 

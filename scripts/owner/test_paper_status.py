@@ -264,6 +264,8 @@ def third_book_tests():
               and "## Three-day rule progress for the third book" in text and "Spot TB" in text)
         check("rule section: item 6 text and minutes against 4,000", "from the forward collector; computed at the read by scripts/owner/tb_rule6.py" in text
               and "of 4,000" in text, text[text.index("## Three-day"):][:700])
+        check("rule section: item 7 row and intro", "items 1 to 7" in text
+              and "from the reconciliation (scripts/owner/reconcile); not computed here" in text)
         check("comparison says it is not the pass rule", "for the record" in text and "not the pass rule" in text)
         check("the whole report still has no at-sign", chr(64) not in text)
         check("minutes so far", abs(run_min - 3000.0) < 1e-6, run_min)
