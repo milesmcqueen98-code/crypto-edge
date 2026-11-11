@@ -320,3 +320,17 @@ FORWARD_TESTS.md.
     the bot's own decisions under each source says otherwise, under a plan written before the record is read for it.
   - The status report's line for item 6 still shows the first wording. The fix goes to an agent, with a small
     script that applies item 6 to the collector's daily table exactly as written.
+- **21:29. The third book's rule gets a seventh item, and item 6 is now code.**
+  - **Item 7 (added; FORWARD_TESTS.md, second note):** on the reconciliation of both books over the same minutes, the
+    third book's new bids must be closer to the research than the main book's on level error (share beyond 5 bp) and
+    on score (share on the other side of the threshold), or both books below 5%. The rule had tested inputs only;
+    this tests decisions. Added about 40 minutes into the run, before either book's log for these days was read. It
+    can only make the rule harder to pass.
+  - **The repeat of the reconciliation is planned** (paper_reconcile_plan.md): both books, the minutes both were
+    live, the same four measures, split into the five traded coins on the trades list and the twelve on candles,
+    with what a working fix should show written down first. The scripts still read only the main book and the first
+    period; generalising them is the next agent job, due before the read.
+  - **Item 6 as a script** (scripts/owner/tb_rule6.py, built by an agent on branch owner/rule6, reviewed here): it
+    applies item 6 to the collector's daily table exactly as written, with integer arithmetic for BTC's 1%. 50 checks
+    pass, and five of my own cases gave the expected verdicts. On tonight's table every coin is "wait", as it should
+    be with two hours a day. It goes onto `main` together with the status report's lines for items 6 and 7.

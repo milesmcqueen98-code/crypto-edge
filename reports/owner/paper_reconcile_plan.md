@@ -41,5 +41,27 @@ branch owner/reconcile.
 - About 60 live hours of one book. W2 has the same inputs and is not repeated.
 - Final candles themselves leave out trades in some minutes (candle clock study).
 
+## Repeat for the third book's test (plan fixed Nov 10 2026, 21:29 ET)
+Written before either book's log for these days has been read.
+- **Period:** from the third paper book's first step (Nov 11 2026, about 01:50 UTC) to the end of its three-day
+  test. Side-by-side numbers use the minutes in which both books were live. Each book's own live minutes are reported
+  as well.
+- **Research side:** unchanged, and one record serves both books: final candles fetched at least an hour after the
+  last minute, the deployed model, the bot's own table and feature code.
+- **Bot side:** the same events, from each book's own log (paper_spot and paper_spot_tb). The third book's bids
+  skipped for a stale input are counted apart, as bids blocked for cash are.
+- **Measures:** the same four, for each book. Each is also split into two groups of coins: ETH, SOL, XRP, LTC and
+  ZEC, whose newest bar comes from trades in the third book, and the twelve on the candle path.
+- **What a working fix should show** (written now, so the read cannot be bent to the result):
+  - third book: bids more than 5 bp from the research level in a few percent of cases (main book, Nov 6 to 10: 40%),
+    and no relation left between the level error and BTC's last-minute move (main book: correlation 0.94);
+  - third book: fewer scores on the other side of the threshold (main book: 19%) and more bids in common (main book:
+    67% and 77%);
+  - main book: about what it showed on Nov 6 to 10, since its inputs are unchanged.
+- **Use:** item 7 of the third book's rule reads the first two measures (FORWARD_TESTS.md). The rest is description.
+  For the twelve coins, the third book's score error is the first measure of what their own newest candle costs once
+  BTC is right. It decides whether the comparison of bar sources for them is worth running.
+- **Limits:** three days of one market. Fills will be few and are not judged.
+
 ## Deviation log
 (none yet)
