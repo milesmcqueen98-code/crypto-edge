@@ -524,3 +524,10 @@ FORWARD_TESTS.md.
   - **Item 7 gets its minutes later than planned:** the two books have only 07:43 to 13:26 UTC in common so far,
     about 47 bids in the main book. At about 8 bids an hour the 200 bids need another day, well before the read.
   - **Fourth book:** running since 16:15 UTC on engine commit 58eba8b; its first log is due at about 22:05 UTC.
+- **14:40. The perp paper workflow hands over too.**
+  - An agent added the same hand-over job the spot workflows have (reviewed, on `main` at 19:39 UTC). The schedule
+    stays as the backstop.
+  - No perp run was under way, so I started one (43089287826, 19:39 UTC) rather than wait for the schedule. It is
+    the first perp run that starts from the tip of `main`, commits through the new step and starts its successor.
+  - With that, all four paper workflows chain their runs and none can lose a log to a rejected push or to an old
+    starting point without failing visibly.
