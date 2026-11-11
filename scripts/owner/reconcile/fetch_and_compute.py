@@ -1,8 +1,15 @@
 """Research side of the paper reconciliation (reports/owner/paper_reconcile_plan.md). Runs on a GitHub runner.
 
+Books and period (defaults reproduce the first reconciliation): --books, a comma list of paper book folders (default
+paper_spot); --start and --end, UTC minutes, both included (default: each book's first event to common.END,
+Nov 10 2026 13:30). The live set is the union over the books of the brief's live minutes inside the period
+(common.live_minutes_brief), plus, per book, its decision minute just before the period when the period's first
+decision minute keeps the bot's armed bids (common.prev_decision_minute: compare.py needs the research state there
+to tell whether a research bid at the period's first minute is new). One research_minutes.csv.gz serves every book.
+
 1. Fetch final one-minute candles of BTC and the 17 coins from the public Coinbase Exchange endpoint, far enough back
-   that the engine's 11-day table (WINDOW_MIN = 15,840 minutes) is full at the book's first event, through
-   Nov 10 2026 13:30 UTC. At most 300 candles a request, at most 5 requests a second.
+   that the engine's 11-day table (WINDOW_MIN = 15,840 minutes) is full at the first live minute, through the last
+   live minute. At most 300 candles a request, at most 5 requests a second.
    - Every answer's cf-cache-status, Age and Date are recorded. An answer generated (Date minus Age) before its
      newest minute closed plus 180 s is dropped and reported; it is not asked again with an altered address.
    - Refusal policy: HTTP 401, 403, 429, 451 or a non-JSON body stops all fetching at once (no retry); the job
@@ -11,10 +18,13 @@
    minutes) drive the engine's own code minute by minute: the engine's table holds the final candles of
    [t - WINDOW_MIN, t) (what update_spot keeps), then Engine.arrays(t), edge.wick.panel(...) with the engine's own
    arguments, and the engine's scoring (mean of the five bot/v2 models on the panel's last row). No vectorisation.
-3. Supplementary (not one of the plan's measures): at every minute with a bot `arm` event, the same computation with
-   BTC's newest one or two minutes missing from the table (what a late BTC answer gives the bot), for the armed coin.
+3. Supplementary (not one of the plan's measures): at every minute with a bot `arm` event inside the period, the same
+   computation with BTC's newest one or two minutes missing from the table (what a late BTC answer gives the bot), for
+   the armed coin. One engine computation per minute and lag serves every book armed then; with more than one book
+   the file has a `book` column (the book folder's name) and one row per book, coin, minute and lag; with one book it
+   has the first reconciliation's shape.
 
-Writes derived tables only (no candles) to reports/owner/reconcile/:
+Writes derived tables only (no candles) to --out (default reports/owner/reconcile/):
   research_minutes.csv.gz  per live coin-minute: level, score, sigma, valid, final open/high/low of minute t,
                            BTC's one- and two-minute log returns to t-1 (bp), beta behind the level
   late_btc_at_arms.csv     supplementary late-BTC levels and scores at the bot's arm minutes
@@ -206,6 +216,41 @@ def work(job):
     return compute_at(t, btc_lag=kind, only=only)
 
 
+# ------------------------------------------------------------------------------------------------ books, period
+def live_set(evs, start, end):
+    """The minutes the research is computed on: the union over books ({name: events}) of the brief's live minutes in
+    the period, plus each book's decision minute just before the period when compare.py needs it."""
+    live = pd.DatetimeIndex([])
+    for name, ev in evs.items():
+        lb = common.live_minutes_brief(ev, end, start)
+        pm = common.prev_decision_minute(ev, end, start)
+        print(f"book {name}: {len(lb)} live minutes in the period"
+              + (f" {lb[0]} .. {lb[-1]}" if len(lb) else "") + (f"; previous decision minute {pm}" if pm else ""),
+              flush=True)
+        live = live.union(lb)
+        if pm is not None:
+            live = live.union(pd.DatetimeIndex([pm]))
+    return live.sort_values()
+
+
+def arms_in_period(evs, have, start, end):
+    """{(minute, coin): set of books} for the `arm` events inside the period (coins with candles only)."""
+    out = {}
+    for name, ev in evs.items():
+        p0 = common.period_start(ev, start)
+        for e in ev:
+            if e["kind"] == "arm" and e["coin"] in have and e["t"] <= end and e["t"].floor("min") >= p0:
+                out.setdefault((e["t"].floor("min"), e["coin"]), set()).add(name)
+    return out
+
+
+def split_late(late, arm_book, names):
+    """Late-BTC rows for several books: one row per book armed at that coin and minute, with a `book` column."""
+    parts = [late[[n in arm_book.get((t, c), ()) for t, c in zip(late.ts, late.coin)]].assign(book=n) for n in names]
+    out = pd.concat(parts, ignore_index=True)
+    return out[["book", "ts", "coin", "btc_lag", "level", "score", "valid"]]
+
+
 # ------------------------------------------------------------------------------------------------ main
 def main():
     ap = argparse.ArgumentParser()
@@ -213,6 +258,9 @@ def main():
     ap.add_argument("--max-minutes", type=int, default=0, help="smoke: only the first N live minutes")
     ap.add_argument("--workers", type=int, default=0)
     ap.add_argument("--out", default=OUT)
+    ap.add_argument("--books", default="paper_spot", help="comma list of paper book folders (repo-relative)")
+    ap.add_argument("--start", default=None, help="first UTC minute (default: each book's first event)")
+    ap.add_argument("--end", default=None, help=f"last UTC minute (default {common.END})")
     a = ap.parse_args()
     t_start = time.time()
     os.makedirs(a.out, exist_ok=True)
@@ -220,8 +268,15 @@ def main():
     coins = [c for c in a.coins.split(",") if c] or list(meta["coins"])
     from bot.spot.engine import WINDOW_MIN
 
-    ev = common.load_events(os.path.join(ROOT, "paper_spot", "events.jsonl"))
-    live = common.live_minutes_brief(ev)
+    books = [b for b in a.books.split(",") if b]
+    start = pd.Timestamp(a.start) if a.start else None
+    end = pd.Timestamp(a.end) if a.end else common.END
+    evs = {os.path.basename(os.path.normpath(b)): common.load_events(os.path.join(ROOT, b, "events.jsonl"))
+           for b in books}
+    live = live_set(evs, start, end)
+    if not len(live):
+        print("no live minute in the period", flush=True)
+        return
     if a.max_minutes:
         live = live[:a.max_minutes]
     first = live[0] - pd.Timedelta(minutes=WINDOW_MIN) - pd.Timedelta(minutes=5)
@@ -254,7 +309,8 @@ def main():
     run = dict(utc_finished=None, coins=coins, coins_fetched=["BTC"] + have if "BTC" in candles else have,
                refused=refused, dropped=[x for x in log if x.startswith("DROPPED")],
                errors=[x for x in log if x.startswith("ERROR")], answers=len(answers),
-               live_minutes=len(live), fetch_from=str(first), fetch_to=str(last),
+               books=books, period_start=str(start) if start is not None else "each book's first event",
+               period_end=str(end), live_minutes=len(live), fetch_from=str(first), fetch_to=str(last),
                cache_counts=pd.Series([x["cache"] for x in answers]).value_counts(dropna=False).to_dict(),
                newest_window={c: {k: v for k, v in [x for x in answers if x["coin"] == c][-1].items()
                                   if k in ("cache", "age", "date", "generated", "end")}
@@ -274,10 +330,10 @@ def main():
     import tempfile
     tmp = tempfile.mkdtemp(prefix="reconcile_")
     jobs = [("main", t, None) for t in live]
-    arms = [e for e in ev if e["kind"] == "arm" and e["coin"] in have]
+    arm_book = arms_in_period(evs, have, start, end)
     arm_at = {}
-    for e in arms:
-        arm_at.setdefault(e["t"].floor("min"), set()).add(e["coin"])
+    for t, c in arm_book:
+        arm_at.setdefault(t, set()).add(c)
     if a.max_minutes:
         arm_at = {t: v for t, v in arm_at.items() if live[0] <= t <= live[-1]}
     for t, cs in sorted(arm_at.items()):
@@ -300,6 +356,8 @@ def main():
     main_df = main_df.sort_values(["ts", "coin"])
     main_df.to_csv(os.path.join(a.out, "research_minutes.csv.gz"), index=False, float_format="%.10g")
     late = df[df.btc_lag > 0][["ts", "coin", "btc_lag", "level", "score", "valid"]].sort_values(["ts", "coin", "btc_lag"])
+    if len(books) > 1:
+        late = split_late(late, arm_book, list(evs))
     late.to_csv(os.path.join(a.out, "late_btc_at_arms.csv"), index=False, float_format="%.10g")
     run.update(utc_finished=dt.datetime.now(dt.timezone.utc).isoformat(), fetch_s=round(t_fetch),
                compute_s=round(time.time() - t0), rows=len(main_df), late_rows=len(late),

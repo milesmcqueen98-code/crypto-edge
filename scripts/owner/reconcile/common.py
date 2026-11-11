@@ -1,6 +1,11 @@
 """Shared helpers for the paper-against-research reconciliation (reports/owner/paper_reconcile_plan.md).
 
-Reads the paper log (paper_spot/events.jsonl) and turns it into minute sets and per-coin intervals. No network.
+Reads a paper log (default paper_spot/events.jsonl) and turns it into minute sets and per-coin intervals. No network.
+
+Period: `start` and `end` are UTC minutes, both included. `start=None` means the book's first event (the first
+reconciliation's period); `end` defaults to END. Start-ups, logged gaps, the armed-bid reset and busy intervals always
+come from the whole log; only the minutes returned are limited to the period. So a book that started before the
+period carries its open ladders and its start-up / gap history into the period.
 """
 import json
 
@@ -23,16 +28,26 @@ def logged_gaps(ev):
     return [(e["t"].floor("min") - e["gap_minutes"] * MIN, e["t"].floor("min")) for e in ev if e["kind"] == "catch_up"]
 
 
-def live_minutes_brief(ev, end=END):
+def period_start(ev, start=None):
+    """The period's first minute: `start`, or the book's first event when `start` is None."""
+    first = ev[0]["t"].floor("min")
+    return first if start is None else pd.Timestamp(start)
+
+
+def live_minutes_brief(ev, end=END, start=None):
     """Live minutes as the brief defines them: every minute from the book's first event to `end` (both included),
-    leaving out each logged gap (a, b] (a catch_up event at ts b with gap_minutes g leaves out b-g+1 .. b: g minutes).
-    This is the superset the research side is computed on."""
+    leaving out each logged gap (a, b] (a catch_up event at ts b with gap_minutes g leaves out b-g+1 .. b: g minutes),
+    then limited to minutes at or after `start` (None: no limit). This is the superset the research side is computed
+    on."""
     first = ev[0]["t"].floor("min")
     allm = pd.date_range(first, end, freq="min")
     out = pd.Series(True, index=allm)
     for a, b in logged_gaps(ev):
         out[(out.index > a) & (out.index <= b)] = False
-    return pd.DatetimeIndex(out.index[out.values])
+    out = pd.DatetimeIndex(out.index[out.values])
+    if start is not None:
+        out = out[out >= pd.Timestamp(start)]
+    return out
 
 
 def startups(ev):
@@ -64,11 +79,37 @@ def error_minutes(ev):
     return sorted({e["t"].floor("min") for e in ev if e["kind"] == "error" and "consecutive" in e})
 
 
-def live_minutes(ev, end=END):
+def live_minutes(ev, end=END, start=None):
     """Decision minutes used for the comparison (deviation D1 and D2 in the README): the brief's live minutes, less
     each job's start-up minutes [b, s) (the bot was fetching its backfill and made no decision), less the minutes
     whose step failed. Returns (DatetimeIndex, reset) where reset[t] is True when the bot's armed bids were cancelled
-    between the previous decision minute and t (a logged catch_up gap: catch_up cancels every armed bid)."""
+    between the previous decision minute and t (a logged catch_up gap: catch_up cancels every armed bid).
+    The sequence and `reset` are built on the whole log from its first event to `end`, then limited to minutes at or
+    after `start`; so reset at the period's first minute looks back to the book's previous decision minute, which may
+    lie before the period (see prev_decision_minute)."""
+    dec, reset = _live_minutes_all(ev, end)
+    if start is None:
+        return dec, reset
+    dec = dec[dec >= pd.Timestamp(start)]
+    return dec, {t: reset[t] for t in dec}
+
+
+def prev_decision_minute(ev, end=END, start=None):
+    """The book's decision minute just before the period's first decision minute, when the research state there is
+    needed: the first decision minute of the period is not a reset (no logged gap in between, so the bot kept its
+    armed bids). None otherwise (start None, no decision minute before, or a reset)."""
+    if start is None:
+        return None
+    dec, reset = _live_minutes_all(ev, end)
+    inside = dec[dec >= pd.Timestamp(start)]
+    before = dec[dec < pd.Timestamp(start)]
+    if not len(inside) or not len(before) or reset[inside[0]]:
+        return None
+    return before[-1]
+
+
+def _live_minutes_all(ev, end):
+    """live_minutes on the whole log, from the book's first event to `end`."""
     live = live_minutes_brief(ev, end)
     keep = pd.Series(True, index=live)
     for b, s, _ in startups(ev):
@@ -86,14 +127,14 @@ def live_minutes(ev, end=END):
     return dec, reset
 
 
-def busy_intervals(ev):
+def busy_intervals(ev, end=END):
     """Per coin, the minutes in which the bot could not place a new first bid because the coin's 4-sigma rung was open
     (engine: `"4" in lad["tranches"] or "e4" in lad["orders"]` for a ladder that is no longer armed).
     A rung-4 fill logged at minute f makes the coin busy from the step at f+1. It stops being busy after the last
     rung-4 exit of that ladder: a take-profit fill logged at minute x (booked in the step of x+1, before the AI runs)
     frees the coin from x+1; a time exit logged at t (made in step t before the AI) frees it from t. Both cases: busy
-    for decision minutes in (f, x] for a take-profit and (f, t) for a time exit. A ladder still open at the end is
-    busy to the end. Returns {coin: [(start_exclusive, end_exclusive)]} so busy(t) = start < t < end."""
+    for decision minutes in (f, x] for a take-profit and (f, t) for a time exit. A ladder still open at the end of the
+    log is busy to `end` + 10 minutes. Built from the whole log, so fills before a period's start carry into it. Returns {coin: [(start_exclusive, end_exclusive)]} so busy(t) = start < t < end."""
     first, last = {}, {}
     coin = {}
     for e in ev:
@@ -105,8 +146,7 @@ def busy_intervals(ev):
             last[e["ladder"]] = x + (MIN if e.get("exit") == "tp" else pd.Timedelta(0))
     out = {}
     for lad, f in first.items():
-        end = last.get(lad, END + 10 * MIN)
-        out.setdefault(coin[lad], []).append((f, end))
+        out.setdefault(coin[lad], []).append((f, last.get(lad, end + 10 * MIN)))
     return out
 
 
