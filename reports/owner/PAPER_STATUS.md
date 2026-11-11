@@ -1,14 +1,14 @@
 # Paper trading status
 
-Report made 2026-11-11 13:34 UTC.
+Report made 2026-11-11 13:53 UTC.
 
 | Book | Newest event | Age | Flag |
 |---|---|---|---|
-| Spot (main) | 2026-11-11 13:15 UTC | 0.3 h ago | ok |
-| Spot W2 | 2026-11-11 13:15 UTC | 0.3 h ago | ok |
-| Spot TB (trades input) | 2026-11-11 13:15 UTC | 0.3 h ago | ok |
-| Perp v1 (control) | 2026-11-11 04:34 UTC | 9.0 h ago | STALE |
-| Perp R2-08 | 2026-11-11 04:34 UTC | 9.0 h ago | STALE |
+| Spot (main) | 2026-11-11 13:15 UTC | 0.6 h ago | ok |
+| Spot W2 | 2026-11-11 13:15 UTC | 0.6 h ago | ok |
+| Spot TB (trades input) | 2026-11-11 13:15 UTC | 0.6 h ago | ok |
+| Perp v1 (control) | 2026-11-11 04:34 UTC | 9.3 h ago | STALE |
+| Perp R2-08 | 2026-11-11 04:34 UTC | 9.3 h ago | STALE |
 
 A book is flagged STALE when its newest event is more than 8 hours old.
 
@@ -49,7 +49,7 @@ The five longest gaps of each book (a gap is the time the book was not running b
 | Perp R2-08 | 2026-11-09 20:47 UTC | 4.4 |
 | Perp R2-08 | 2026-11-07 18:08 UTC | 3.3 |
 
-Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 0.3 h; Spot W2 0.3 h; Spot TB (trades input) 0.3 h; Perp v1 (control) 9.0 h; Perp R2-08 9.0 h.
+Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 0.6 h; Spot W2 0.6 h; Spot TB (trades input) 0.6 h; Perp v1 (control) 9.3 h; Perp R2-08 9.3 h.
 
 ## Summary
 
@@ -140,7 +140,7 @@ A few days and a few dozen fills cannot separate the two weightings; a gap this 
 
 ## Data quality
 
-From the heartbeats of each spot book (one every 30 minutes while it runs). Counters are summed per UTC day; a counter that is not listed was 0 or is not reported. Minutes run are the 30 minutes before each heartbeat, less any gap. Data step is the seconds after the minute at which the data step finished: the median of the heartbeat medians, and the largest heartbeat maximum.
+From the heartbeats of each spot book (one every 30 minutes while it runs). Counters are summed per UTC day; a counter that is not listed was 0 or is not reported. Minutes run are the 30 minutes before each heartbeat, less any gap. After a start-up the first heartbeat covers fewer stepped minutes than that, so minutes run can overstate the steps by a few minutes per run; item 1 of the third book's rule is therefore computed from the counters themselves. Data step is the seconds after the minute at which the data step finished: the median of the heartbeat medians, and the largest heartbeat maximum.
 
 ### Spot (main)
 
@@ -198,11 +198,11 @@ This comparison is for the record. It is not the pass rule; the rule is below.
 
 Real-time minutes run so far: 688 of 4,000 (17%).
 
-Listed coins for item 1: BTC, ETH, SOL, XRP, LTC, ZEC (the six coins the rule names; no readable list in bot/spot/config.tb.json).
+Listed coins for item 1: BTC, ETH, SOL, XRP, LTC, ZEC (read from bot/spot/config.tb.json).
 
 | Item | Current value | Verdict |
 |---|---|---|
-| 1. Verified trades bar share of listed coin-minutes (99% or more) | 98.07% (3,960 verified of 4,038 coin-minutes, 6 coins: BTC, ETH, SOL, XRP, LTC, ZEC) | does not meet yet |
+| 1. Verified trades bar share of listed coin-minutes (99% or more) | 100.00% (3,960 verified of 3,960 attempted coin-minutes: built 3,960, verified empty 0; fallbacks: unverified 0, error 0, budget 0, rate limit 0; listed coins: BTC, ETH, SOL, XRP, LTC, ZEC) | meets |
 | 2. No rate-limit fallback (tb_fb_limited 0) and no refusal in any event | tb_fb_limited 0; events mentioning a refusal or rate limit 0 | meets |
 | 3. Data step median 13 s or less; 30-minute maximum 20 s or less in 95% or more of heartbeats | median 10.2 s of 23 heartbeats; maximum 20 s or less in 95.7% (largest 23.9 s) | meets |
 | 4. No error events and obs_error 0 | error events 0; obs_error 0 | meets |
