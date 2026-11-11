@@ -1,0 +1,195 @@
+{
+ "utc_finished": "2026-11-11T02:59:46.923297+00:00",
+ "coins": [
+  "ETH",
+  "SOL",
+  "XRP",
+  "DOGE",
+  "LTC",
+  "LINK",
+  "BCH",
+  "SUI",
+  "XLM",
+  "HBAR",
+  "NEAR",
+  "AAVE",
+  "HYPE",
+  "ENA",
+  "PEPE",
+  "ONDO",
+  "ZEC"
+ ],
+ "coins_fetched": [
+  "BTC",
+  "ETH",
+  "SOL",
+  "XRP",
+  "DOGE",
+  "LTC",
+  "LINK",
+  "BCH",
+  "SUI",
+  "XLM",
+  "HBAR",
+  "NEAR",
+  "AAVE",
+  "HYPE",
+  "ENA",
+  "PEPE",
+  "ONDO",
+  "ZEC"
+ ],
+ "refused": null,
+ "dropped": [],
+ "errors": [],
+ "answers": 972,
+ "books": [
+  "paper_spot"
+ ],
+ "period_start": "2026-11-10 13:31:00",
+ "period_end": "2026-11-11 01:40:00",
+ "live_minutes": 343,
+ "fetch_from": "2026-10-30 19:53:00",
+ "fetch_to": "2026-11-11 01:40:00",
+ "cache_counts": {
+  "MISS": 922,
+  "REVALIDATED": 41,
+  "EXPIRED": 8,
+  "HIT": 1
+ },
+ "newest_window": {
+  "BTC": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:55:25 GMT",
+   "generated": "2026-11-11 02:55:25"
+  },
+  "ETH": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:55:37 GMT",
+   "generated": "2026-11-11 02:55:37"
+  },
+  "SOL": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:55:49 GMT",
+   "generated": "2026-11-11 02:55:49"
+  },
+  "XRP": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:56:01 GMT",
+   "generated": "2026-11-11 02:56:01"
+  },
+  "DOGE": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:56:13 GMT",
+   "generated": "2026-11-11 02:56:13"
+  },
+  "LTC": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:56:25 GMT",
+   "generated": "2026-11-11 02:56:25"
+  },
+  "LINK": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:56:37 GMT",
+   "generated": "2026-11-11 02:56:37"
+  },
+  "BCH": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:56:49 GMT",
+   "generated": "2026-11-11 02:56:49"
+  },
+  "SUI": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:57:00 GMT",
+   "generated": "2026-11-11 02:57:00"
+  },
+  "XLM": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:57:12 GMT",
+   "generated": "2026-11-11 02:57:12"
+  },
+  "HBAR": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:57:23 GMT",
+   "generated": "2026-11-11 02:57:23"
+  },
+  "NEAR": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:57:35 GMT",
+   "generated": "2026-11-11 02:57:35"
+  },
+  "AAVE": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:57:47 GMT",
+   "generated": "2026-11-11 02:57:47"
+  },
+  "HYPE": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:57:59 GMT",
+   "generated": "2026-11-11 02:57:59"
+  },
+  "ENA": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:58:11 GMT",
+   "generated": "2026-11-11 02:58:11"
+  },
+  "PEPE": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:58:22 GMT",
+   "generated": "2026-11-11 02:58:22"
+  },
+  "ONDO": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:58:34 GMT",
+   "generated": "2026-11-11 02:58:34"
+  },
+  "ZEC": {
+   "end": "2026-11-11 01:40:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Wed, 11 Nov 2026 02:58:46 GMT",
+   "generated": "2026-11-11 02:58:46"
+  }
+ },
+ "fetch_s": 214,
+ "compute_s": 60,
+ "rows": 5831,
+ "late_rows": 108,
+ "valid_share": 1.0,
+ "workers": 4,
+ "above_thr": 4569
+}
