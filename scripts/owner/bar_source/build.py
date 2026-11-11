@@ -35,7 +35,7 @@ Runs on a GitHub runner (hunt2.yml): it fetches the venue's final candles. The c
                LTC and ZEC both on rule A (LA) or rule C (LC). Their rule B is pass A (the third book).
    A coin's score depends on the other traded coins' rows (edge/wick.py: alts_mean_z60 and alts_below_2sd are the
    mean and the count below -2 of every other coin's z_res60), so every pass is a book that could exist and LTC and
-   ZEC get passes of their own. See README.md.
+   ZEC get passes of their own.
 4. Writes to --out:
      minutes.parquet     one row per pass other than R, coin and decision minute: ts, coin, pass, way (the coin's
                          rule in that pass), score, level, sig, valid, src (where row t-1 came from), inputs_ok,

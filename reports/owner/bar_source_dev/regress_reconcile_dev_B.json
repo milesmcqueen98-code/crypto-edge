@@ -1,0 +1,20 @@
+{
+ "shared_rows": 3927,
+ "shared_minutes": 231,
+ "first": "2026-11-10 21:50:00",
+ "last": "2026-11-11 01:40:00",
+ "valid_disagree": 0,
+ "score": {
+  "identical_at_10g": 3927,
+  "differ": 0,
+  "max_abs_diff": 4.999250791115628e-09,
+  "max_rel_diff": 4.168036680614507e-10
+ },
+ "level": {
+  "identical_at_10g": 3927,
+  "differ": 0,
+  "max_abs_diff": 4.992466529074591e-07,
+  "max_rel_diff": 4.920668783404364e-10
+ },
+ "identical": true
+}
