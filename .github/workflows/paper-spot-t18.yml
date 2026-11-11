@@ -1,0 +1,75 @@
+name: paper-spot-t18
+
+# Fourth paper book (reports/owner/bar_source_prereg.md, "Part 2"): identical to the trades book of paper-spot.yml
+# (bot/spot/config.tb.json) except that its trades list holds all 18 coins (bot/spot/config.t18.json). Its own
+# workflow, runner and folder (paper_spot_t18), so the three books of paper-spot.yml keep their runs, requests and
+# rate as before. Each job runs ~5h45m; the hand-over job starts the next run, the schedule is the backstop. State
+# carries over through paper_spot_t18/state.json.
+on:
+  schedule:
+    - cron: "48 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      minutes:
+        default: "345"
+
+concurrency:
+  group: paper-spot-t18
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  paper_t18:
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: |
+            bot
+            edge
+            reports
+            paper_spot_t18
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas numpy lightgbm requests pyarrow
+      - name: Paper trade the t18 book
+        run: |
+          M=${{ inputs.minutes || '345' }}
+          python bot/spot/run.py paper --minutes $M --config bot/spot/config.t18.json --state-dir paper_spot_t18 > t18.out 2>&1 || echo "paper run exited with code $?"
+          grep -E '"kind": "(fill_entry|fill_exit|halt|error|warning|catch_up|heartbeat)"' t18.out | tail -n 30 || true
+          python bot/spot/run.py report --state-dir paper_spot_t18 | tail -n 30
+      - name: Commit paper log
+        if: always()
+        run: |
+          git config user.name "crypto-edge-bot"
+          git config user.email "crypto-edge-bot.users.noreply.github.com"
+          bash bot/spot/deploy/paper_commit.sh "Spot paper log (t18 book) $(date -u +%Y-%m-%dT%H:%MZ)" paper_spot_t18
+
+  # hand-over: start the next run of this workflow on main when this one ran at least 30 minutes
+  # (bot/spot/deploy/paper_next.sh with WORKFLOW naming this file). The cron line above stays as the backstop.
+  next:
+    needs: [paper_t18]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: bot/spot/deploy
+      - name: Start the next run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          RUN_ID: ${{ github.run_id }}
+          REPO: ${{ github.repository }}
+          WORKFLOW: paper-spot-t18.yml
+        run: bash bot/spot/deploy/paper_next.sh
