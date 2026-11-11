@@ -291,6 +291,18 @@ final candles. Live, the candles it reads are often not final:
       the trades), so the trades row is the complete one.
   - So for the listed coins the recent rows are trades-built and stay so. Only the start-up backfill and the rows the
     trades pass could not build come from candles.
+  - `"trades_rows"`: `"keep"` (default) is the rule above. With `"candle_after"` (the fourth paper book,
+    `config.t18.json`), a trades-built row and a verified empty minute only stand until a candle answer confirmed for
+    that minute (made at least 60 + `confirm_s` seconds after the minute began) covers it. A row in that answer
+    replaces the stored one. If the answer has no row for the minute, although the minute lies between the answer's
+    first requested minute and its newest row (that newest row excluded), the trades-built row is dropped, as the
+    venue has no bar there. An answer not confirmed for the minute changes nothing, as with `"keep"`. From then on
+    the minute is a confirmed candle row under the rules above. So the decision for a minute uses its trades bar, and
+    the older rows end up as the venue's candles, as in the research. The minute that just closed is never confirmed
+    at the step, so the trades pass and the stale guard work on it as with `"keep"`. Counters, only in this mode:
+    `tb_replaced` (trades-built rows replaced by a confirmed candle row), `tb_replaced_diff` (of those, the close
+    differed by more than one tick), `tb_dropped` (trades-built rows dropped because the confirmed answer had none),
+    `tb_pending` (rows 3 to 6 minutes old that are still trades-built; per step, summed, like `rows_open`).
 - `"stale_guard"`: `false` (default). With `true`:
   - BTC counts as stale unless its row for the minute that just closed is trades-built or comes from an answer made
     after that minute closed (and, as before, unless that minute is BTC's newest traded one). A stale minute runs like
