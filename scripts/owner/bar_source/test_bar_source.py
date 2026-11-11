@@ -107,6 +107,9 @@ def test_row_assembly():
           list(tab("C", m(3)).open) == [98, 99, 100, 101, 302])
     check("pass C at t=m5: final through m3, row m4 the trades bar (older trades bars not kept)",
           list(tab("C", m(5)).open) == [98, 99, 100, 101, 102, 103, 204])
+    build._W["ways"]["C18"] = {c: w for c, w in build.passes()["C18"].items() if c == "DOGE"}
+    check("pass C18 (DOGE on way C): the same rows as pass C at every decision",
+          all(tab("C18", m(k)).equals(tab("C", m(k))) for k in range(1, 6)))
     src = build.sources_table(dec, ["DOGE"], build._W["frames"], {"A": {"DOGE": "A"}, "B": {"DOGE": "B"}}, answers)
     a = src[src["pass"] == "A"].set_index("ts")
     check("inputs_ok False only where the first-seen answer is missing (t = m4)",
@@ -195,37 +198,60 @@ def test_arming():
           r["way_only"] == 1 and r["res_only"] == 3, r)
 
 
-def test_helpers():
-    sh, ff = bc.strictly_higher, bc.at_most_four_fifths
+def clause_table():
+    """Three day blocks; per coin and way the (misses, minutes both valid) of each day. A miss is |diff| = 2.0, a
+    non-miss exactly 1.0 (the boundary: not a miss)."""
+    start = pd.Timestamp("2026-11-11 02:00")
+    plan = {"DOGE": {"C": [(2, 10), (2, 10), (0, 10)], "A": [(1, 10), (1, 10), (1, 10)]},   # period and 2 days
+            "LINK": {"C": [(2, 10), (1, 10), (1, 10)], "A": [(1, 10), (1, 10), (1, 10)]},   # period, only 1 day
+            "BCH": {"C": [(2, 20), (2, 20), (2, 20)], "A": [(1, 10), (1, 10), (1, 10)]},    # equal shares
+            "SUI": {"C": [(2, 10), (2, 10), (2, 10)], "A": [(1, 10), (1, 10), (0, 0)]},     # day 3: A has none
+            "XLM": {"C": [(2, 10), (2, 10), (2, 10)], "A": [(0, 0), (0, 0), (0, 0)]}}       # A has no minute
+    rows = []
+    for c, ways in plan.items():
+        for w, per_day in ways.items():
+            for d, (miss, n) in enumerate(per_day):
+                base = start + d * pd.Timedelta(hours=24)
+                for i in range(n):
+                    rows.append(dict(ts=base + i * MIN, coin=c, **{"pass": w}, way=w,
+                                     score=40.0 + (2.0 if i < miss else 1.0), res_score=40.0))
+    return table(rows), start
+
+
+def test_clause():
+    sh = bc.strictly_higher
     check("equal shares are not strictly higher (2/10 vs 1/5)", sh(dict(num=2, den=10), dict(num=1, den=5)) is False)
     check("strictly higher on counts (3/10 vs 1/5)", sh(dict(num=3, den=10), dict(num=1, den=5)) is True)
-    check("a zero denominator is undefined", sh(dict(num=0, den=0), dict(num=1, den=5)) is None)
-    check("exactly four fifths counts as a fifth better (4/50 vs 1/10)", ff(dict(num=4, den=50), dict(num=1, den=10)) is True)
-    check("just above four fifths is not (41/500 vs 1/10)", ff(dict(num=41, den=500), dict(num=1, den=10)) is False)
-    check("one day failing breaks each day", bc.every_day({1: True, 2: False, 3: True})[0] is False)
-    check("an undefined day breaks each day", bc.every_day({1: True, 2: None, 3: True}) == (False, [2]))
-    check("every day true", bc.every_day({1: True, 2: True, 3: True})[0] is True)
-    # the full helper on a made-up three-day table for DOGE and the twelve
-    start = pd.Timestamp("2026-11-11 02:00")
-    rows = []
-    # per day d, way w: minutes with (way armed, research armed); disagreement counts chosen per day
-    plan = {"A": [(1, 10), (1, 10), (1, 10)], "B": [(2, 10), (2, 10), (1, 10)], "C": [(4, 50), (4, 50), (4, 50)]}
-    for w, per_day in plan.items():
-        for d, (num, den) in enumerate(per_day):
-            base = start + d * pd.Timedelta(hours=24)
-            for i in range(den):
-                dis = i < num
-                rows.append(dict(ts=base + i * MIN, coin="DOGE", **{"pass": w}, way=w,
-                                 score=40.0 if not dis else 10.0, res_score=40.0))
-    T = table(rows)
-    P, H, counts = bc.compute(T, 30.0, {"DOGE": 1e-5}, start)
-    w = H["worse_on_trades_each_day"]["DOGE"]
-    check("DOGE: B worse than A on days 1 and 2 only -> not worse on each day",
-          w["value"] is False and w["by_day"] == {1: True, 2: True, 3: False}, w)
-    c = H["c_fifth_better_than_both"]
-    check("the twelve (only DOGE has rows): C 4/50 vs A 1/10 is exactly four fifths on each day -> true",
-          c["value"] is True and c["by_day"] == {1: True, 2: True, 3: True}, c)
-    check("day blocks counted from the start: three blocks of the period", sorted(H["days"]) == [1, 2, 3], H["days"])
+    check("a zero denominator is not higher (None)", sh(dict(num=1, den=5), dict(num=0, den=0)) is None)
+    T, start = clause_table()
+    P, days_n, counts = bc.compute(T, 30.0, {}, start)
+    r = P[(P.coin == "DOGE") & (P.way == "C") & (P.day == 3)].iloc[0]
+    check("score-miss: exactly 1.0 is not a miss (DOGE C day 3: 0 of 10)", r.miss == 0 and r.score_n == 10, r.to_dict())
+    r = P[(P.coin == "DOGE") & (P.way == "C") & (P.day == "all")].iloc[0]
+    check("score-miss share over the period: DOGE C 4 of 30", r.miss == 4 and r.score_n == 30 and
+          abs(r.miss_share - 4 / 30) < 1e-15, r.to_dict())
+    tw = P[(P.coin == "twelve") & (P.way == "C") & (P.day == "all")].iloc[0]
+    check("score-miss for the twelve together: pooled counts", tw.miss == 4 + 4 + 6 + 6 + 6 and tw.score_n == 30 + 30 + 60 + 30 + 30,
+          tw.to_dict())
+    cl = bc.stays_on_candles(P, {"at_least_90pct": True})
+    v = {c: cl["coins"][c]["value"] for c in ["DOGE", "LINK", "BCH", "SUI", "XLM", "PEPE"]}
+    check("clause applied when the B check passes", cl["applied"] is True)
+    check("clause: higher over the period and on two days -> true (DOGE)", v["DOGE"] is True, cl["coins"]["DOGE"])
+    check("clause: higher over the period but on one day only -> false (LINK)", v["LINK"] is False
+          and cl["coins"]["LINK"]["period_higher"] is True and cl["coins"]["LINK"]["days_higher"] == 1)
+    check("clause: equal shares are not higher -> false (BCH)", v["BCH"] is False
+          and cl["coins"]["BCH"]["period_higher"] is False)
+    check("clause: a day with A's denominator 0 does not count, two other days do -> true (SUI)", v["SUI"] is True
+          and cl["coins"]["SUI"]["by_day"][3] is None and cl["coins"]["SUI"]["days_higher"] == 2)
+    check("clause: a period with a zero denominator is not higher -> false (XLM; PEPE has no rows)",
+          v["XLM"] is False and cl["coins"]["XLM"]["period_higher"] is None and v["PEPE"] is False)
+    for chk, name in ((None, "no --log"), ({"at_least_90pct": False}, "the B check under 90%"),
+                      ({"at_least_90pct": None}, "the B check with no bids")):
+        cl = bc.stays_on_candles(P, chk)
+        check(f"clause not applied with {name}: no value for any coin, reason given",
+              cl["applied"] is False and all(x["value"] is None for x in cl["coins"].values())
+              and cl["why"].startswith("not applied"), cl["why"])
+    check("day blocks counted from the start: three blocks of the period", sorted(days_n) == [1, 2, 3], days_n)
 
 
 def test_days():
@@ -280,6 +306,11 @@ def test_passes():
     check("LA / LC: the twelve as the third book (A), LTC and ZEC on A / C",
           all(P["LA"][c] == "A" and P["LC"][c] == "A" for c in build.TWELVE)
           and P["LA"]["LTC"] == "A" and P["LC"]["ZEC"] == "C" and P["LC"]["ETH"] == "B")
+    check("C18: all 18 coins on way C (the fourth book), canonical for every traded coin",
+          set(P["C18"]) == set(["BTC"] + build.TWELVE + build.REPORTED + ["ETH", "SOL", "XRP"])
+          and all(v == "C" for v in P["C18"].values())
+          and all(build.canonical_pass(c, "C18") == "C18" == bc.canonical_pass(c, "C18")
+                  for c in build.TWELVE + build.REPORTED + ["ETH", "SOL", "XRP"]))
     check("canonical passes: DOGE B -> B; LTC A -> LA, B -> A, C -> LC",
           build.canonical_pass("DOGE", "B") == "B" and [build.canonical_pass("LTC", w) for w in "ABC"] == ["LA", "A", "LC"]
           and all(bc.canonical_pass(c, w) == build.canonical_pass(c, w) for c in build.TWELVE + build.REPORTED for w in "ABC"))
@@ -289,7 +320,7 @@ def main():
     test_passes()
     test_row_assembly()
     test_arming()
-    test_helpers()
+    test_clause()
     test_days()
     test_errors()
     test_log_check()

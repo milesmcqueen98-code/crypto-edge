@@ -33,6 +33,8 @@ Runs on a GitHub runner (hunt2.yml): it fetches the venue's final candles. The c
                Pass A is the third book itself.
      LA, LC    for LTC and ZEC, reported only: the twelve as the third book has them (rule A), BTC ETH SOL XRP rule B,
                LTC and ZEC both on rule A (LA) or rule C (LC). Their rule B is pass A (the third book).
+     C18       all 18 coins (BTC and the 17 traded coins) on rule C: the fourth paper book (engine option
+               trades_rows "candle_after"). Reported for all 17 traded coins as way C18.
    A coin's score depends on the other traded coins' rows (edge/wick.py: alts_mean_z60 and alts_below_2sd are the
    mean and the count below -2 of every other coin's z_res60), so every pass is a book that could exist and LTC and
    ZEC get passes of their own.
@@ -90,11 +92,15 @@ def passes():
         out[w] = {**tb, **{c: w for c in TWELVE}}
     out["LA"] = {**tb, **{c: "A" for c in TWELVE}, **{c: "A" for c in REPORTED}}
     out["LC"] = {**tb, **{c: "A" for c in TWELVE}, **{c: "C" for c in REPORTED}}
+    out["C18"] = {c: "C" for c in BOOK_TRADES + REPORTED + TWELVE}  # the fourth paper book: every coin on way C
     return out
 
 
 def canonical_pass(coin, way):
-    """The pass whose rows give coin `coin` under way `way` (A, B, C) in a book that could exist."""
+    """The pass whose rows give coin `coin` under way `way` (A, B, C, or C18 for any traded coin) in a book that
+    could exist."""
+    if way == "C18":
+        return "C18"
     if coin in TWELVE:
         return way
     if coin in REPORTED:
