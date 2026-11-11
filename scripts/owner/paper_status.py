@@ -518,12 +518,16 @@ def mentions_refusal(events):
 
 
 def tb_rule_rows(dq, st, events, coins, rt):
-    """Items 1 to 5 of the FORWARD_TESTS row. Returns (minutes_in_real_time, rows) with rows [item, value, verdict]."""
+    """Items 1 to 5 of the FORWARD_TESTS row. Returns (minutes_in_real_time, rows) with rows [item, value, verdict].
+
+    Item 1 is computed from the engine's counters: every attempted listed coin-minute is counted in exactly one of
+    tb_built, tb_empty (both verified), tb_fb_unverified, tb_fb_error, tb_fb_budget, tb_fb_limited. Share = verified
+    over attempted; it meets at 99% or more, compared on exact counts. Items 2 to 5 still use minutes run where noted.
+    """
     t = dq["total"] if dq else None
     run_min = (rt["run_h"] * 60.0) if rt and rt["ok"] else None
     no = "does not meet yet"
     rows = []
-    n = len(coins)
     if t is None or t["minutes"] <= 0:
         for i, txt in enumerate(["Verified trades bar share of listed coin-minutes (needs 99% or more)",
                                  "No rate-limit fallback (tb_fb_limited 0) and no refusal in any event",
@@ -533,13 +537,22 @@ def tb_rule_rows(dq, st, events, coins, rt):
             rows.append([f"{i}. {txt}", "no heartbeat reports the new fields yet", no])
         return run_min, rows
     c, mins = t["counts"], t["minutes"]
-    # item 1
-    verified = c.get("tb_built", 0) + c.get("tb_empty", 0)
-    share = 100.0 * verified / (n * mins)
-    v1 = f"{share:.2f}% ({verified:,.0f} verified of {n * mins:,.0f} coin-minutes, {n} coins: {', '.join(coins)})"
-    if sorted(coins) != sorted(TB_DEFAULT_COINS):
-        v1 += f"; against the rule's six coins: {100.0 * verified / (len(TB_DEFAULT_COINS) * mins):.2f}%"
-    rows.append(["1. Verified trades bar share of listed coin-minutes (99% or more)", v1, "meets" if share >= 99.0 else no])
+    # item 1: from the engine's own counters, not from minutes run
+    built, empty = c.get("tb_built", 0), c.get("tb_empty", 0)
+    fb = [c.get(k, 0) for k in ("tb_fb_unverified", "tb_fb_error", "tb_fb_budget", "tb_fb_limited")]
+    verified = built + empty
+    attempted = verified + sum(fb)
+    if attempted <= 0:
+        v1, ok1 = "no trades pass counted yet", False
+    else:
+        share = 100.0 * verified / attempted
+        ok1 = verified * 100 >= 99 * attempted
+        v1 = (f"{share:.2f}% ({verified:,.0f} verified of {attempted:,.0f} attempted coin-minutes: built {built:,.0f}, "
+              f"verified empty {empty:,.0f}; fallbacks: unverified {fb[0]:,.0f}, error {fb[1]:,.0f}, budget {fb[2]:,.0f}, "
+              f"rate limit {fb[3]:,.0f}; listed coins: {', '.join(coins)})")
+        if sorted(coins) != sorted(TB_DEFAULT_COINS):
+            v1 += "; the configured list differs from the rule's six coins"
+    rows.append(["1. Verified trades bar share of listed coin-minutes (99% or more)", v1, "meets" if ok1 else no])
     # item 2
     lim = c.get("tb_fb_limited", 0)
     ref = mentions_refusal(events)
@@ -870,7 +883,9 @@ def build_report(root, now):
     L += ["## Data quality", "",
           "From the heartbeats of each spot book (one every 30 minutes while it runs). Counters are summed per UTC day; a "
           "counter that is not listed was 0 or is not reported. Minutes run are the 30 minutes before each heartbeat, "
-          "less any gap. Data step is the seconds after the minute at which the data step finished: the median of the "
+          "less any gap. After a start-up the first heartbeat covers fewer stepped minutes than that, so minutes run can "
+          "overstate the steps by a few minutes per run; item 1 of the third book's rule is therefore computed from the "
+          "counters themselves. Data step is the seconds after the minute at which the data step finished: the median of the "
           "heartbeat medians, and the largest heartbeat maximum.", ""]
     for key, _, label, _, spot_style in books:
         if spot_style:
