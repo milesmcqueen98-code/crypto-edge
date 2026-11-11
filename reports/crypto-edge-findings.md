@@ -324,7 +324,9 @@ bot's inputs. The fix is built and not yet the default.
   replaces a newer row; with the guard on it places no new bid on an input it knows to be old. Every book's heartbeat
   now counts old candle answers and a stale BTC. A third paper book runs the new mode, and each paper run starts the
   next. Defaults are unchanged. The mode becomes the default by a rule fixed before the third book's first run: three
-  clean days, six conditions, no P&L test (FORWARD_TESTS.md).
+  clean days, six conditions, no P&L test (FORWARD_TESTS.md). The sixth condition was amended about half an hour
+  into that run, on the collector's first hours and before any of the book's data was read; the change and its
+  reason are logged there.
 - **Paper status** (reports/owner/PAPER_STATUS.md): refreshed after every paper run; live time per book, rates per
   calendar and per running day, the data counters, the third book's progress on its rule. The perp books have two fills
   each in about four days, a little below the research's 0.8 and 1.05 fills a day on perp prices and not unusually so.

@@ -287,18 +287,36 @@ FORWARD_TESTS.md.
   in 16 minutes, all verified, one page each) and the age of candle answers from 21:45. In those first 15 minutes
   BTC's candle answer was a cached copy in 87% of minutes (median age about a minute) and lacked the minute just
   closed in 60%. One scheduled run did fire at 21:50 and stood down correctly because a collector was running.
-- **21:15. The 21:10 check: the third paper book is running.** The paper run that started at 01:47 UTC (Nov 11) has
+- **21:14. The 21:10 check: the third paper book is running.** The paper run that started at 01:47 UTC (Nov 11) has
   both jobs in progress, the two registered books in one and the third book in its own; no step failed at start-up.
   Its log is committed when the run ends (about 07:35 UTC), so its counters are read in the morning check.
   - **Collector, second run:** healthy (one timeout on a book request, nothing refused). The trades-bar stream has
     every minute since 21:44 UTC, 18 rows each, all verified.
-  - **First daily table from the collector** (about five quiet evening hours; trades bar against final candle,
-    material-error share): BTC 0% to 0.9%, ETH 0%, SOL 0%, XRP 0% to 0.9%, LTC about 1.5%, ZEC 1.7% to 5.2%. Their
-    first-seen candles: BTC about 70%, ETH, SOL and XRP 16% to 29%, LTC and ZEC 18% to 24%. For each of the twelve
-    coins on the candle path the trades bar was also lower than the first-seen candle (4% to 42% against 19% to
-    47%).
+  - **First daily table from the collector** (4.3 quiet evening hours, 21:44 to 02:00 UTC; trades bar against final
+    candle, material-error share): BTC 0% to 0.9%, ETH 0%, SOL 0%, XRP 0% to 0.9%, LTC 1.5% to 1.7%, ZEC 1.7% to
+    5.2%. Their first-seen candles: BTC about 70%, ETH, SOL and XRP 16% to 29%, LTC and ZEC 18% to 24%. For each of
+    the twelve coins on the candle path the trades bar was also lower than the first-seen candle (4% to 42% against
+    19% to 47%).
   - **Item 6 of the third book's rule amended** (FORWARD_TESTS.md, note below the table): BTC keeps the 1% bar; every
     other listed coin must beat its own first-seen candle on every day. As first written it would have sent LTC and
-    ZEC back to a worse source. Logged as a change made after five hours of the collector's record were seen.
+    ZEC back to a worse source. Logged as a change made after 4.3 hours of the collector's record were seen.
   - **Two things registered for later:** a rule for moving any of the twelve onto the trades list after the three-day
     read, and a planned replay of what the candle's late cut gives the research on thin coins.
+- **21:23. Corrections to the 21:14 entry, after re-reading the table and the candle clock plan.**
+  - The entry was written at 21:14, not 21:15. The record seen was 4.3 hours, of which about ten minutes fall inside
+    the third book's days. LTC's share is 1.5% to 1.7%.
+  - **Item 6, second part, now asks both of the probe's measures.** For every listed coin other than BTC the trades
+    bar must be materially off less often and exactly equal more often than the coin's own first-seen candle, on every
+    day. On the 4.3 hours seen all five meet both (exactly equal: 82% to 98% against 48% to 73%).
+  - **A day is now defined:** a UTC date with at least 12 hours inside the test period and at least 720 compared
+    minutes for the coin. At least two such days are needed.
+  - **Deviation entered in the candle clock plan.** That plan asks class B's 1% on the collector's daily record. LTC
+    and ZEC miss it on this record and stay on the trades list, because their candle answer is the worse source on
+    both measures.
+  - **The 21:14 rule for moving the twelve onto the trades list is withdrawn.** It decided on the material-error
+    share alone, against the candle clock plan's rule that class C coins stay on the candle answer. The same table
+    shows the two measures disagree for them: the trades bar is materially off less often for all twelve and exactly
+    equal to the final candle less often for nine. In its place: the twelve stay on candles unless a comparison of
+    the bot's own decisions under each source says otherwise, under a plan written before the record is read for it.
+  - The status report's line for item 6 still shows the first wording. The fix goes to an agent, with a small
+    script that applies item 6 to the collector's daily table exactly as written.

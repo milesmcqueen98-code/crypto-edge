@@ -100,3 +100,16 @@ owner/candle-clock.
   run was added for BTC, ETH, SOL and DOGE at the minutes left unexplained for nearly every coin. It changes no
   measure, class rule or class. The study's own readings of details the plan left open were written before any data
   and are listed in its README.
+- **Nov 10 2026, 21:23 ET (orchestrator).** The plan's first limit asks that a coin's class be confirmed on the
+  collector's daily record before it is relied on for live orders, and class B asks a material-error share of at most
+  1%.
+  - On the collector's first 4.3 hours (21:44 to 02:00 UTC, a quiet US evening) LTC's trades bar was materially off
+    in 1.5% to 1.7% of minutes and ZEC's in 1.7% to 5.2%. By the class rule alone the two would move to C and back to
+    the candle answer.
+  - They stay on the third paper book's trades list. In the same minutes their first-seen candle was materially off
+    in 18% to 24%, and it was exactly equal to the final candle less often (60% to 73%, against 82% to 94% for the
+    trades bar).
+  - The plan's consequence for class C assumed the candle answer was the better source for such a coin. This record
+    says it is not for these two. Item 6 of the third book's rule (FORWARD_TESTS.md) now tests that comparison on
+    every day for the five listed coins other than BTC.
+  - For the twelve class C coins the plan's rule stands.
