@@ -505,3 +505,22 @@ FORWARD_TESTS.md.
     with the third book and its items 1 to 5 (18 coins, 15 s median bar). Without the folder the report is
     byte-identical. 130 checks pass.
   - **How both reads are run** is written into bar_source_prereg.md.
+- **14:37. Afternoon check: the same race cost the main book and W2 a second log.**
+  - **What happened:** the paper run that began at 13:28 UTC still had the old commit step. Its two jobs ended one
+    second apart at 19:18 UTC, the main job's push was rejected ("cannot lock ref"), and the faulty line ended the
+    step. The main book and W2 lost 13:28 to 19:18 UTC. Together with the morning that is 11.7 of today's hours.
+    The third book's log is whole both times.
+  - **My estimate was wrong.** I gave Miles "roughly one in four" for this run. The two jobs start together and run
+    the same number of minutes, so they end in the same second nearly every time. It has now happened in two of three
+    runs. I could not cancel the run this morning (the session's permission check refused it).
+  - **From here on the fixed step is in place:** the run that began at 19:18 UTC (43085951611) has it. It has
+    already pushed on the first attempt three times on real runners (the status refreshes at 13:53, 19:17 and 19:37
+    UTC).
+  - **Perp books:** the run that ended at 19:17 UTC pushed its log. The next scheduled run will be the first on the
+    fixed workflow (it now starts from the tip of `main`).
+  - **Third book** (17.5 hours, 99.8% of the time, 1,049 of its 4,000 minutes): all five items the report computes
+    hold. 5,928 of 5,928 trades bars verified; no refusal; data step median 10.4 s, one half hour of 34 above 20 s;
+    no error; no unconfirmed rows. 62 coin-minutes skipped for an old candle answer.
+  - **Item 7 gets its minutes later than planned:** the two books have only 07:43 to 13:26 UTC in common so far,
+    about 47 bids in the main book. At about 8 bids an hour the 200 bids need another day, well before the read.
+  - **Fourth book:** running since 16:15 UTC on engine commit 58eba8b; its first log is due at about 22:05 UTC.

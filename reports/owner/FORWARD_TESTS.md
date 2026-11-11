@@ -22,11 +22,11 @@ them.
   already open. Fills per calendar day therefore understate the rate while the bot is running (PAPER_STATUS.md
   shows both). Release 2 adds a hand-over so each run starts the next. The hand-over worked on its first two real
   runs (Nov 11, 07:37 and 13:28 UTC).
-- **The main book and W2 lost their log for Nov 11, 01:47 to 07:37 UTC.** Their job and the third book's pushed to
-  `main` in the same second, and a faulty retry line ended the commit step on the first rejected push. Both books
-  went on at 07:37 from the 01:47 state, so those hours count as a gap. The third book's log is whole. The step is
-  fixed and tested (bot/spot/deploy/paper_commit.sh, on `main` since Nov 11 13:42 UTC). The run that began at 13:28
-  UTC still has the old step.
+- **The main book and W2 lost their log twice on Nov 11: 01:47 to 07:37 UTC and 13:28 to 19:18 UTC.** Their job
+  and the third book's end in the same second and push to `main` together, and a faulty retry line ended the commit
+  step on the first rejected push. Each time both books went on from the state of the run before, so those 11.7
+  hours count as gaps. The third book's log is whole. The step is fixed and tested (bot/spot/deploy/paper_commit.sh,
+  on `main` since Nov 11 13:42 UTC); the run that began at 19:18 UTC is the first paper run that has it.
 - **Rung fills are above rule A's band when counted per running day:** 21 rungs in 60.5 live hours is 8.3 a day,
   against 1 to 6 (5.8 per calendar day). The reconciliation (reports/owner/reconcile/README.md) shows it was the
   market, not the fault: on final candles the research would have had 16 first-bid fills in the same live minutes,
