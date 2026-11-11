@@ -6,7 +6,9 @@
 # The caller sets git user.name and user.email. Behaves the same under "bash -e" and plain bash: every command's
 # result is checked explicitly and errexit is switched off below.
 # Env: PAPER_COMMIT_BRANCH (default main), PAPER_COMMIT_WAIT (base wait in seconds, default 5; attempt n waits
-#      n times that), GITHUB_RUN_ID and GITHUB_JOB (name the rescue branch).
+#      n times that), GITHUB_RUN_ID, GITHUB_RUN_ATTEMPT and GITHUB_JOB (name the rescue branch,
+#      paper-log-rescue/<run id>-<run attempt>-<job>, defaults local, 1 and job; the attempt keeps a re-run of the
+#      same job from colliding with the branch an earlier attempt left).
 # Usage: bash bot/spot/deploy/paper_commit.sh "<commit message>" <path> [<path> ...]
 #        (test: bash bot/spot/deploy/paper_commit_test.sh)
 # The whole body is one { } block: bash parses it fully before running, so a pull that updates this file on disk
@@ -19,7 +21,7 @@ msg=$1; shift
 branch=${PAPER_COMMIT_BRANCH:-main}
 wait_base=${PAPER_COMMIT_WAIT:-5}
 attempts=6
-rescue="paper-log-rescue/${GITHUB_RUN_ID:-local}-${GITHUB_JOB:-job}"
+rescue="paper-log-rescue/${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}-${GITHUB_JOB:-job}"
 
 while [ $# -gt 0 ]; do
   if [ -e "$1" ]; then

@@ -10,7 +10,7 @@ T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 export GIT_CONFIG_GLOBAL=$T/gitconfig GIT_CONFIG_NOSYSTEM=1 PAPER_COMMIT_WAIT=0
 git config --file "$GIT_CONFIG_GLOBAL" init.defaultBranch main
 git config --file "$GIT_CONFIG_GLOBAL" advice.detachedHead false
-unset GITHUB_RUN_ID GITHUB_JOB PAPER_COMMIT_BRANCH
+unset GITHUB_RUN_ID GITHUB_RUN_ATTEMPT GITHUB_JOB PAPER_COMMIT_BRANCH
 
 # THE FAULTY LOOP (the old commit step of paper-spot.yml and owner-status.yml, kept here only to prove the test
 # catches its fault): after a clean pull and a rejected push, "git rebase --abort" exits 128 because no rebase is
@@ -124,20 +124,31 @@ for MODE in "bash" "bash -e"; do
   # 6. every push to main rejected: exit 1, ::error::, commit on the rescue branch
   new_world; hook_reject_main
   echo six >> "$W/b/paper_spot/log.jsonl"
-  out=$(cd "$W/b" && GITHUB_RUN_ID=77 GITHUB_JOB=paper $MODE "$SCRIPT" "log 6" paper_spot 2>&1); rc=$?
+  out=$(cd "$W/b" && GITHUB_RUN_ID=77 GITHUB_RUN_ATTEMPT=2 GITHUB_JOB=paper $MODE "$SCRIPT" "log 6" paper_spot 2>&1); rc=$?
   tries=$(printf '%s\n' "$out" | grep -c "git push failed")
-  if [ $rc = 1 ] && [ "$tries" = 6 ] && ! remote_has "log 6" && remote_has "log 6" paper-log-rescue/77-paper \
-     && printf '%s\n' "$out" | grep -q "^::error::.*paper-log-rescue/77-paper"
-  then pass "$tag 6 every push rejected: 6 attempts, exit 1, ::error::, commit on paper-log-rescue/77-paper"
+  if [ $rc = 1 ] && [ "$tries" = 6 ] && ! remote_has "log 6" && remote_has "log 6" paper-log-rescue/77-2-paper \
+     && printf '%s\n' "$out" | grep -q "^::error::.*paper-log-rescue/77-2-paper"
+  then pass "$tag 6 every push rejected: 6 attempts, exit 1, ::error::, commit on paper-log-rescue/77-2-paper"
   else bad "$tag 6 every push rejected: rc $rc, tries $tries, \"$out\""; fi
 
   # 6b. the rescue push fails too: exit 1 and the error line says so
   new_world; hook_reject_main all
   echo six >> "$W/b/paper_spot/log.jsonl"
   run "$W/b" "$MODE" "log 6b" paper_spot
-  if [ $rc = 1 ] && printf '%s\n' "$out" | grep -q "^::error::.*paper-log-rescue/local-job failed too"
+  if [ $rc = 1 ] && printf '%s\n' "$out" | grep -q "^::error::.*paper-log-rescue/local-1-job failed too"
   then pass "$tag 6b rescue push rejected too: exit 1, ::error:: says so"
   else bad "$tag 6b rescue rejected: rc $rc, \"$out\""; fi
+
+  # 6c. two attempts of the same run and job (a re-run) get different rescue branches, and both logs are kept
+  new_world; hook_reject_main
+  echo six-c1 >> "$W/b/paper_spot/log.jsonl"
+  out1=$(cd "$W/b" && GITHUB_RUN_ID=88 GITHUB_RUN_ATTEMPT=1 GITHUB_JOB=paper $MODE "$SCRIPT" "log 6c attempt 1" paper_spot 2>&1); rc1=$?
+  echo six-c2 >> "$W/a/paper_spot/log.jsonl"
+  out=$(cd "$W/a" && GITHUB_RUN_ID=88 GITHUB_RUN_ATTEMPT=2 GITHUB_JOB=paper $MODE "$SCRIPT" "log 6c attempt 2" paper_spot 2>&1); rc=$?
+  if [ $rc1 = 1 ] && [ $rc = 1 ] && remote_has "log 6c attempt 1" paper-log-rescue/88-1-paper \
+     && remote_has "log 6c attempt 2" paper-log-rescue/88-2-paper && [[ "$out" != *"failed too"* ]]
+  then pass "$tag 6c re-run of the same job: paper-log-rescue/88-1-paper and 88-2-paper, both logs kept"
+  else bad "$tag 6c re-run: rc $rc1 and $rc, \"$out1\", \"$out\""; fi
 
   # 7. nothing to commit: exit 0, remote unchanged
   new_world; before=$(remote_tip)
