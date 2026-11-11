@@ -2,12 +2,13 @@ name: paper-spot-t18
 
 # Fourth paper book (reports/owner/bar_source_prereg.md, "Part 2" and its deviation log of Nov 11): all 18 coins take
 # the newest minute from the venue's trades and the venue's candle afterwards (engine option
-# trades_rows: "candle_after", configuration bot/spot/config.t18.json). That option lives on branch owner/engine-c
-# until it is merged, so this job runs the CODE of that branch (checked out into code/; the workflow_dispatch input
-# code_ref selects it, default owner/engine-c, and the schedule uses the same default) while its STATE and log stay on
-# main in paper_spot_t18 (paper_spot_t18/CODE names the engine commit of each run). Its own workflow, runner and
-# folder, so the three books of paper-spot.yml keep their runs, requests and rate as before. Each job runs ~5h45m; the
-# hand-over job starts the next run, the schedule is the backstop. State carries over through paper_spot_t18/state.json.
+# trades_rows: "candle_after", configuration bot/spot/config.t18.json). The book runs engine commit 58eba8b of branch
+# owner/engine-c, checked out into code/ (workflow_dispatch input code_ref; the schedule uses the same default), while
+# its STATE and log stay on main in paper_spot_t18 (paper_spot_t18/CODE names the engine commit of each run). The
+# commit is pinned on purpose: changing it restarts the book's three-day test (reports/owner/bar_source_prereg.md).
+# Its own workflow, runner and folder, so the three books of paper-spot.yml keep their runs, requests and rate as
+# before. Each job runs ~5h45m; the hand-over job starts the next run, the schedule is the backstop. State carries
+# over through paper_spot_t18/state.json.
 on:
   schedule:
     - cron: "48 */6 * * *"
@@ -16,8 +17,8 @@ on:
       minutes:
         default: "345"
       code_ref:
-        description: "branch, tag or commit whose bot/, edge/ and reports/ the book runs"
-        default: "owner/engine-c"
+        description: "engine commit the book runs: 58eba8b of branch owner/engine-c (trades_rows candle_after), pinned on purpose; changing it restarts the three-day test (reports/owner/bar_source_prereg.md)"
+        default: "58eba8bde756e36cfdc51e2541c32b772496ff6f"
 
 concurrency:
   group: paper-spot-t18
@@ -41,7 +42,7 @@ jobs:
       # the engine code from code_ref, in code/ (a separate repository inside the workspace, never committed)
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.code_ref || 'owner/engine-c' }}
+          ref: ${{ inputs.code_ref || '58eba8bde756e36cfdc51e2541c32b772496ff6f' }}
           path: code
           sparse-checkout: |
             bot
@@ -53,7 +54,7 @@ jobs:
       - run: pip install pandas numpy lightgbm requests pyarrow
       - name: Record the engine commit
         env:
-          CODE_REF: ${{ inputs.code_ref || 'owner/engine-c' }}
+          CODE_REF: ${{ inputs.code_ref || '58eba8bde756e36cfdc51e2541c32b772496ff6f' }}
         run: |
           echo "code/" >> .git/info/exclude
           mkdir -p paper_spot_t18
@@ -61,6 +62,7 @@ jobs:
             echo "code_ref: $CODE_REF"
             echo "code_commit: $(git -C code rev-parse HEAD)"
             echo "utc: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "code_branch_hint: owner/engine-c"
           } > paper_spot_t18/CODE
           cat paper_spot_t18/CODE
       - name: Paper trade the t18 book
