@@ -2,7 +2,8 @@ name: paper-trade
 
 # Forward paper test of the AI-filtered resting-bid dip buyer on live Coinbase data (no keys, no money):
 # R2-08 (bot/v2/, the strategy of record, log paper_v2/) and v1 (bot/, the control, log paper/) side by side.
-# Each job runs ~5h45m; the schedule restarts it every 6 hours. State carries over through paper/state.json.
+# Each job runs ~5h45m; the hand-over job starts the next run, the schedule (every 6 hours) is the backstop. State
+# carries over through paper/state.json.
 on:
   schedule:
     - cron: "3 */6 * * *"
@@ -48,3 +49,27 @@ jobs:
           git config user.name "crypto-edge-bot"
           git config user.email "actions@users.noreply.github.com"
           bash bot/spot/deploy/paper_commit.sh "Paper trading log $(date -u +%Y-%m-%dT%H:%MZ)" paper paper_v2
+
+  # hand-over: start the next run of this workflow on main when this one ran at least 30 minutes
+  # (bot/spot/deploy/paper_next.sh with WORKFLOW naming this file). The cron line above stays as the backstop.
+  next:
+    needs: [paper]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: bot/spot/deploy
+      - name: Start the next run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          RUN_ID: ${{ github.run_id }}
+          REPO: ${{ github.repository }}
+          WORKFLOW: paper.yml
+        run: bash bot/spot/deploy/paper_next.sh
