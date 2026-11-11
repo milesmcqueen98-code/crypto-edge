@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Status report for the paper-trading logs (four books, five when paper_spot_tb exists).
+"""Status report for the paper-trading logs (four books, five when paper_spot_tb exists, six when paper_spot_t18 exists).
 
 Usage: python scripts/owner/paper_status.py [REPO_ROOT] [--now ISO_TIME]
 
-Reads paper_spot/, paper_spot_w2/, paper/, paper_v2/ and, when its folder exists, paper_spot_tb/ (events.jsonl and state.json) under REPO_ROOT (default: the
+Reads paper_spot/, paper_spot_w2/, paper/, paper_v2/ and, when their folders exist, paper_spot_tb/ and paper_spot_t18/ (events.jsonl and state.json; the latter also a small CODE text file) under REPO_ROOT (default: the
 repo this file lives in) and writes reports/owner/PAPER_STATUS.md. Reads reports/owner/explained_errors.json for errors the owner has explained (a missing or bad file means none are). Standard library only, no network. A missing
 folder, an empty log, a truncated last line or an event kind it has not seen never stops the report.
 """
@@ -34,6 +34,11 @@ BOOKS = [
 ]
 
 TB_BOOK = ("tb", "paper_spot_tb", "Spot TB (trades input)", 250000.0, True)
+T18_BOOK = ("t18", "paper_spot_t18", "Spot T18 (all coins on trades)", 250000.0, True)
+T18_COINS = ["BTC", "ETH", "SOL", "XRP", "DOGE", "LTC", "LINK", "BCH", "SUI", "XLM", "HBAR", "NEAR", "AAVE", "HYPE",
+             "ENA", "PEPE", "ONDO", "ZEC"]                     # its listed coins (no config file on main to read them from)
+T18_MEDIAN_BAR = 15.0                                          # item 3's median bar for the fourth book (the third book's is 13)
+TB_MEDIAN_BAR = 13.0
 TB_CONFIG = os.path.join("bot", "spot", "config.tb.json")
 TB_DEFAULT_COINS = ["BTC", "ETH", "SOL", "XRP", "LTC", "ZEC"]   # the coins the forward rule names
 TB_ALL_COINS = 18                                               # coins in the book (rule item 5)
@@ -47,7 +52,7 @@ MATCH_SECONDS = 120                                             # same coin with
 DQ_COUNTERS = (
     "newest_absent", "btc_stale", "candle_old", "btc_candle_old", "skip_old", "rows_open", "obs_error", "tb_built",
     "tb_empty", "tb_insert", "tb_rebuilt", "tb_close_diff", "tb_fb_unverified", "tb_fb_error", "tb_fb_budget",
-    "tb_fb_limited",
+    "tb_fb_limited", "tb_replaced", "tb_replaced_diff", "tb_dropped", "tb_pending",
 )
 NOT_REPORTED = "not reported by this book's code yet"
 NOT_DERIVABLE = "not derivable from this log"
@@ -316,10 +321,12 @@ def rule_a(s):
 
 # ---------------------------------------------------------------- running time
 def active_books(root):
-    """The four registered books, plus the third spot book when its folder exists."""
+    """The four registered books, plus the third and fourth spot books when their folders exist."""
     books = list(BOOKS)
     if os.path.isdir(os.path.join(root, TB_BOOK[1])):
         books.insert(2, TB_BOOK)
+    if os.path.isdir(os.path.join(root, T18_BOOK[1])):
+        books.insert(3 if os.path.isdir(os.path.join(root, TB_BOOK[1])) else 2, T18_BOOK)
     return books
 
 
@@ -517,13 +524,16 @@ def mentions_refusal(events):
     return n
 
 
-def tb_rule_rows(dq, st, events, coins, rt):
+def tb_rule_rows(dq, st, events, coins, rt, median_bar=TB_MEDIAN_BAR):
     """Items 1 to 5 of the FORWARD_TESTS row. Returns (minutes_in_real_time, rows) with rows [item, value, verdict].
 
     Item 1 is computed from the engine's counters: every attempted listed coin-minute is counted in exactly one of
     tb_built, tb_empty (both verified), tb_fb_unverified, tb_fb_error, tb_fb_budget, tb_fb_limited. Share = verified
     over attempted; it meets at 99% or more, compared on exact counts. Items 2 to 5 still use minutes run where noted.
+    Item 3's median bar is median_bar seconds (13 for the third book, 15 for the fourth).
     """
+    bar = f"{median_bar:g}"
+    item3 = f"Data step median {bar} s or less; 30-minute maximum 20 s or less in 95% or more of heartbeats"
     t = dq["total"] if dq else None
     run_min = (rt["run_h"] * 60.0) if rt and rt["ok"] else None
     no = "does not meet yet"
@@ -531,7 +541,7 @@ def tb_rule_rows(dq, st, events, coins, rt):
     if t is None or t["minutes"] <= 0:
         for i, txt in enumerate(["Verified trades bar share of listed coin-minutes (needs 99% or more)",
                                  "No rate-limit fallback (tb_fb_limited 0) and no refusal in any event",
-                                 "Data step median 13 s or less; 30-minute maximum 20 s or less in 95% or more of heartbeats",
+                                 item3,
                                  "No error events and obs_error 0",
                                  "Unconfirmed rows (rows_open) 1% or less of coin-minutes"], 1):
             rows.append([f"{i}. {txt}", "no heartbeat reports the new fields yet", no])
@@ -563,11 +573,11 @@ def tb_rule_rows(dq, st, events, coins, rt):
     if t["data_n"]:
         med = t["data_median"]
         sh = 100.0 * t["data_le20"] / t["data_n"]
-        ok3 = med <= 13.0 and sh >= 95.0
+        ok3 = med <= median_bar and sh >= 95.0
         v3 = f"median {med:.1f} s of {t['data_n']} heartbeats; maximum 20 s or less in {sh:.1f}% (largest {t['data_max']:.1f} s)"
     else:
         ok3, v3 = False, "no heartbeat has a data step time yet"
-    rows.append(["3. Data step median 13 s or less; 30-minute maximum 20 s or less in 95% or more of heartbeats", v3,
+    rows.append(["3. " + item3, v3,
                  "meets" if ok3 else no])
     # item 4
     errs, obs = st["errors"], c.get("obs_error", 0)
@@ -629,24 +639,24 @@ def summary_row(label, s, spot_style):
             exits, lad, str(s["errors"])]
 
 
-def tb_sections(st, loaded, rts, dqs, labels, root):
-    """The third spot book against the main book, and its progress on the three-day rule (items 1 to 5)."""
-    L = []
-    tb, sp = st["tb"], st["spot"]
-    L += ["## Third book against the main book", ""]
-    if tb["status"] != "ok" or sp["status"] != "ok":
+def compare_section(heading, ka, kb, cols, only, closing, st, loaded, rts):
+    """Book kb against book ka: the period both ran, the same measures, and the first-bid overlap table.
+    cols is the three column names (book a, book b, difference); only the two 'only in' row labels; closing the last sentence."""
+    L = [heading, ""]
+    sa, sb = st.get(ka), st.get(kb)
+    if sa is None or sb is None or sb["status"] != "ok" or sa["status"] != "ok":
         L += ["Both logs are needed for this comparison; one is missing or empty.", ""]
     else:
-        a, b = max(tb["first"], sp["first"]), min(tb["newest"], sp["newest"])
+        a, b = max(sb["first"], sa["first"]), min(sb["newest"], sa["newest"])
         if b <= a:
             L += ["The two books have no period in common yet.", ""]
         else:
-            ws, wt = window_stats(loaded["spot"]["events"], a, b), window_stats(loaded["tb"]["events"], a, b)
+            ws, wt = window_stats(loaded[ka]["events"], a, b), window_stats(loaded[kb]["events"], a, b)
             cal = (b - a).total_seconds() / 3600
-            hs, ht = up_hours(rts["spot"], a, b), up_hours(rts["tb"], a, b)
+            hs, ht = up_hours(rts[ka], a, b), up_hours(rts[kb], a, b)
             both_h = None
-            if rts["spot"]["ok"] and rts["tb"]["ok"]:
-                dn = merge_intervals(list(rts["spot"]["down"]) + list(rts["tb"]["down"]))
+            if rts[ka]["ok"] and rts[kb]["ok"]:
+                dn = merge_intervals(list(rts[ka]["down"]) + list(rts[kb]["down"]))
                 both_h = (b - a).total_seconds() / 3600 - sum(
                     max(0.0, (min(b, d1) - max(a, d0)).total_seconds()) for d0, d1 in dn) / 3600
             fb = match_first_bids(ws["first"], wt["first"])
@@ -655,7 +665,7 @@ def tb_sections(st, loaded, rts, dqs, labels, root):
             rows = [
                 ["Rung fills", str(ws["fills"]), str(wt["fills"]), f"{wt['fills'] - ws['fills']:+d}"],
                 ["Rung fills per calendar day", rate(ws["fills"], cal), rate(wt["fills"], cal), ""],
-                ["Rung fills per running day", rr(ws["fills"], hs, rts["spot"]["ok"]), rr(wt["fills"], ht, rts["tb"]["ok"]), ""],
+                ["Rung fills per running day", rr(ws["fills"], hs, rts[ka]["ok"]), rr(wt["fills"], ht, rts[kb]["ok"]), ""],
                 ["First-bid fills (rung 4)", str(len(ws["first"])), str(len(wt["first"])), f"{len(wt['first']) - len(ws['first']):+d}"],
                 ["Deeper rungs placed", str(ws["deeper_placed"]), str(wt["deeper_placed"]), ""],
                 ["Dollars bought", money(ws["bought"]), money(wt["bought"]), money(wt["bought"] - ws["bought"])],
@@ -665,13 +675,70 @@ def tb_sections(st, loaded, rts, dqs, labels, root):
             ]
             L += [f"Period both ran: {fmt_t(a)} to {fmt_t(b)} ({cal:.1f} calendar hours; "
                   + (f"{both_h:.1f} hours with both live)." if both_h is not None else "hours with both live: " + NOT_DERIVABLE + ")"),
-                  "", table(["Measure", "Spot (main)", "Spot TB", "TB minus main"], rows), ""]
+                  "", table(["Measure", cols[0], cols[1], cols[2]], rows), ""]
             L += ["How the first bids overlap (a first bid is a rung 4 fill; the same coin within two minutes either side "
                   "counts as the same fill, each fill used once):", "",
                   table(["Group", "Fills"], [["First-bid fills in both books", str(fb[0])],
-                                            ["Only in the main book", str(fb[1])],
-                                            ["Only in the third book", str(fb[2])]]), ""]
-            L += ["This comparison is for the record. It is not the pass rule; the rule is below.", ""]
+                                            [only[0], str(fb[1])],
+                                            [only[1], str(fb[2])]]), ""]
+            L += [closing, ""]
+    return L
+
+
+def code_lines(root, folder):
+    """The key: value lines of the CODE text file in a book's folder, or None when it cannot be read."""
+    try:
+        with open(os.path.join(root, folder, "CODE"), encoding="utf-8") as f:
+            out = {}
+            for line in f:
+                k, sep, v = line.partition(":")
+                if sep and k.strip():
+                    out[k.strip()] = v.strip()
+            return out
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
+def t18_rule_section(st, loaded, rts, dqs, root):
+    """The fourth book's progress on items 1 to 5 of the third book's rule, with 18 listed coins and a 15 s median bar."""
+    L = ["## Rule progress for the fourth book", ""]
+    t = st["t18"]
+    code = code_lines(root, T18_BOOK[1])
+    commit = (code or {}).get("code_commit", "")
+    if commit:
+        L += [f"Engine commit: {clean(commit[:7])} (full hash {clean(commit)})"
+              + (f", recorded {clean(code['utc'])} UTC." if code.get("utc") else "."), ""]
+    else:
+        L += ["Engine commit: not recorded (no readable CODE file with a code_commit line).", ""]
+    L += ["> Items 1 to 5 of the third book's rule are read for this book with 18 listed coins; item 3's median bar is "
+          f"{T18_MEDIAN_BAR:g} s (the 30-minute maximum stays 20 s or less in 95% or more of heartbeats). The values are "
+          "provisional. The registered plan is reports/owner/bar_source_prereg.md.", ""]
+    if t["status"] != "ok":
+        L += [f"No fourth-book log to judge ({t['status']}).", ""]
+        return L
+    run_min, rows = tb_rule_rows(dqs.get("t18"), t, loaded["t18"]["events"], T18_COINS, rts["t18"], T18_MEDIAN_BAR)
+    L += ["Real-time minutes run so far: " + (f"{run_min:,.0f}." if run_min is not None else NOT_DERIVABLE + "."), "",
+          f"Listed coins for item 1: {', '.join(T18_COINS)} (fixed list for this book).", "",
+          table(["Item", "Current value", "Verdict"], rows), ""]
+    d = dqs.get("t18")
+    tot = d["total"] if d else None
+    if tot is None or tot["minutes"] <= 0:
+        L += ["Rows still built from trades 3 to 6 minutes on (tb_pending): no heartbeat reports it yet.", ""]
+    else:
+        c = tot["counts"]
+        L += [f"Rows still built from trades 3 to 6 minutes on (tb_pending): {c.get('tb_pending', 0):,.0f} of "
+              f"{TB_ALL_COINS * tot['minutes']:,.0f} coin-minutes", "",
+              f"Totals: tb_replaced {c.get('tb_replaced', 0):,.0f}, tb_replaced_diff {c.get('tb_replaced_diff', 0):,.0f}, "
+              f"tb_dropped {c.get('tb_dropped', 0):,.0f}.", ""]
+    return L
+
+
+def tb_sections(st, loaded, rts, dqs, labels, root):
+    """The third spot book against the main book, and its progress on the three-day rule (items 1 to 5)."""
+    L = compare_section("## Third book against the main book", "spot", "tb",
+                        ("Spot (main)", "Spot TB", "TB minus main"), ("Only in the main book", "Only in the third book"),
+                        "This comparison is for the record. It is not the pass rule; the rule is below.", st, loaded, rts)
+    tb = st["tb"]
     coins, src = load_tb_coins(root)
     L += ["## Three-day rule progress for the third book", "",
           "> Verified inputs (release 2): after the first three full days of real-time running (at least 4,000 minutes), "
@@ -894,6 +961,14 @@ def build_report(root, now):
     # third book
     if "tb" in st:
         L += tb_sections(st, loaded, rts, dqs, labels, root)
+
+    # fourth book
+    if "t18" in st:
+        L += compare_section("## Fourth book against the third book", "tb", "t18",
+                             ("Spot TB", "Spot T18", "T18 minus TB"), ("Only in the third book", "Only in the fourth book"),
+                             "This comparison is for the record. The registered read is in reports/owner/bar_source_prereg.md.",
+                             st, loaded, rts)
+        L += t18_rule_section(st, loaded, rts, dqs, root)
 
     # perps
     L += ["## Perp books", ""]
