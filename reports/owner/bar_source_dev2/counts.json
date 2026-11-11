@@ -1,0 +1,2343 @@
+{
+ "period_start": "2026-11-10 21:50:00",
+ "period_end": "2026-11-11 01:59:00",
+ "threshold": 30.394930635804318,
+ "day_blocks": {
+  "1": 250
+ },
+ "stays_on_candles": {
+  "applied": false,
+  "why": "not applied: the emulation check on B was not run (no --log)",
+  "coins": {
+   "DOGE": {
+    "value": null,
+    "period_higher": false,
+    "days_higher": 0,
+    "by_day": {
+     "1": false
+    },
+    "C": {
+     "all": {
+      "num": 2,
+      "den": 250
+     }
+    },
+    "A": {
+     "all": {
+      "num": 3,
+      "den": 250
+     }
+    }
+   },
+   "LINK": {
+    "value": null,
+    "period_higher": false,
+    "days_higher": 0,
+    "by_day": {
+     "1": false
+    },
+    "C": {
+     "all": {
+      "num": 1,
+      "den": 250
+     }
+    },
+    "A": {
+     "all": {
+      "num": 4,
+      "den": 250
+     }
+    }
+   },
+   "BCH": {
+    "value": null,
+    "period_higher": false,
+    "days_higher": 0,
+    "by_day": {
+     "1": false
+    },
+    "C": {
+     "all": {
+      "num": 0,
+      "den": 250
+     }
+    },
+    "A": {
+     "all": {
+      "num": 0,
+      "den": 250
+     }
+    }
+   },
+   "SUI": {
+    "value": null,
+    "period_higher": false,
+    "days_higher": 0,
+    "by_day": {
+     "1": false
+    },
+    "C": {
+     "all": {
+      "num": 0,
+      "den": 250
+     }
+    },
+    "A": {
+     "all": {
+      "num": 0,
+      "den": 250
+     }
+    }
+   },
+   "XLM": {
+    "value": null,
+    "period_higher": false,
+    "days_higher": 0,
+    "by_day": {
+     "1": false
+    },
+    "C": {
+     "all": {
+      "num": 8,
+      "den": 250
+     }
+    },
+    "A": {
+     "all": {
+      "num": 10,
+      "den": 250
+     }
+    }
+   },
+   "HBAR": {
+    "value": null,
+    "period_higher": false,
+    "days_higher": 0,
+    "by_day": {
+     "1": false
+    },
+    "C": {
+     "all": {
+      "num": 4,
+      "den": 250
+     }
+    },
+    "A": {
+     "all": {
+      "num": 7,
+      "den": 250
+     }
+    }
+   },
+   "NEAR": {
+    "value": null,
+    "period_higher": false,
+    "days_higher": 0,
+    "by_day": {
+     "1": false
+    },
+    "C": {
+     "all": {
+      "num": 4,
+      "den": 250
+     }
+    },
+    "A": {
+     "all": {
+      "num": 10,
+      "den": 250
+     }
+    }
+   },
+   "AAVE": {
+    "value": null,
+    "period_higher": false,
+    "days_higher": 0,
+    "by_day": {
+     "1": false
+    },
+    "C": {
+     "all": {
+      "num": 3,
+      "den": 250
+     }
+    },
+    "A": {
+     "all": {
+      "num": 3,
+      "den": 250
+     }
+    }
+   },
+   "HYPE": {
+    "value": null,
+    "period_higher": false,
+    "days_higher": 0,
+    "by_day": {
+     "1": false
+    },
+    "C": {
+     "all": {
+      "num": 0,
+      "den": 250
+     }
+    },
+    "A": {
+     "all": {
+      "num": 0,
+      "den": 250
+     }
+    }
+   },
+   "ENA": {
+    "value": null,
+    "period_higher": true,
+    "days_higher": 1,
+    "by_day": {
+     "1": true
+    },
+    "C": {
+     "all": {
+      "num": 11,
+      "den": 250
+     }
+    },
+    "A": {
+     "all": {
+      "num": 9,
+      "den": 250
+     }
+    }
+   },
+   "PEPE": {
+    "value": null,
+    "period_higher": false,
+    "days_higher": 0,
+    "by_day": {
+     "1": false
+    },
+    "C": {
+     "all": {
+      "num": 2,
+      "den": 250
+     }
+    },
+    "A": {
+     "all": {
+      "num": 4,
+      "den": 250
+     }
+    }
+   },
+   "ONDO": {
+    "value": null,
+    "period_higher": false,
+    "days_higher": 0,
+    "by_day": {
+     "1": false
+    },
+    "C": {
+     "all": {
+      "num": 1,
+      "den": 250
+     }
+    },
+    "A": {
+     "all": {
+      "num": 1,
+      "den": 250
+     }
+    }
+   }
+  }
+ },
+ "checks": {},
+ "counts": {
+  "DOGE": {
+   "A": {
+    "all": {
+     "minutes": 250,
+     "den": 248,
+     "num": 3,
+     "way_only": 2,
+     "res_only": 1,
+     "way_armed": 247,
+     "res_armed": 246,
+     "score_n": 250,
+     "miss": 3,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 49
+    },
+    "1": {
+     "minutes": 250,
+     "den": 248,
+     "num": 3,
+     "way_only": 2,
+     "res_only": 1,
+     "way_armed": 247,
+     "res_armed": 246,
+     "score_n": 250,
+     "miss": 3,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 49
+    }
+   },
+   "B": {
+    "all": {
+     "minutes": 250,
+     "den": 247,
+     "num": 1,
+     "way_only": 1,
+     "res_only": 0,
+     "way_armed": 247,
+     "res_armed": 246,
+     "score_n": 250,
+     "miss": 3,
+     "level_n": 250,
+     "level_gt5": 15,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 247,
+     "num": 1,
+     "way_only": 1,
+     "res_only": 0,
+     "way_armed": 247,
+     "res_armed": 246,
+     "score_n": 250,
+     "miss": 3,
+     "level_n": 250,
+     "level_gt5": 15,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C": {
+    "all": {
+     "minutes": 250,
+     "den": 247,
+     "num": 1,
+     "way_only": 1,
+     "res_only": 0,
+     "way_armed": 247,
+     "res_armed": 246,
+     "score_n": 250,
+     "miss": 2,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 247,
+     "num": 1,
+     "way_only": 1,
+     "res_only": 0,
+     "way_armed": 247,
+     "res_armed": 246,
+     "score_n": 250,
+     "miss": 2,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 247,
+     "num": 1,
+     "way_only": 1,
+     "res_only": 0,
+     "way_armed": 247,
+     "res_armed": 246,
+     "score_n": 250,
+     "miss": 2,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 247,
+     "num": 1,
+     "way_only": 1,
+     "res_only": 0,
+     "way_armed": 247,
+     "res_armed": 246,
+     "score_n": 250,
+     "miss": 2,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "LINK": {
+   "A": {
+    "all": {
+     "minutes": 250,
+     "den": 23,
+     "num": 1,
+     "way_only": 1,
+     "res_only": 0,
+     "way_armed": 23,
+     "res_armed": 22,
+     "score_n": 250,
+     "miss": 4,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 53
+    },
+    "1": {
+     "minutes": 250,
+     "den": 23,
+     "num": 1,
+     "way_only": 1,
+     "res_only": 0,
+     "way_armed": 23,
+     "res_armed": 22,
+     "score_n": 250,
+     "miss": 4,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 53
+    }
+   },
+   "B": {
+    "all": {
+     "minutes": 250,
+     "den": 23,
+     "num": 2,
+     "way_only": 1,
+     "res_only": 1,
+     "way_armed": 22,
+     "res_armed": 22,
+     "score_n": 250,
+     "miss": 3,
+     "level_n": 250,
+     "level_gt5": 15,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 23,
+     "num": 2,
+     "way_only": 1,
+     "res_only": 1,
+     "way_armed": 22,
+     "res_armed": 22,
+     "score_n": 250,
+     "miss": 3,
+     "level_n": 250,
+     "level_gt5": 15,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C": {
+    "all": {
+     "minutes": 250,
+     "den": 23,
+     "num": 2,
+     "way_only": 1,
+     "res_only": 1,
+     "way_armed": 22,
+     "res_armed": 22,
+     "score_n": 250,
+     "miss": 1,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 23,
+     "num": 2,
+     "way_only": 1,
+     "res_only": 1,
+     "way_armed": 22,
+     "res_armed": 22,
+     "score_n": 250,
+     "miss": 1,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 23,
+     "num": 2,
+     "way_only": 1,
+     "res_only": 1,
+     "way_armed": 22,
+     "res_armed": 22,
+     "score_n": 250,
+     "miss": 1,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 23,
+     "num": 2,
+     "way_only": 1,
+     "res_only": 1,
+     "way_armed": 22,
+     "res_armed": 22,
+     "score_n": 250,
+     "miss": 1,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "BCH": {
+   "A": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 51
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 51
+    }
+   },
+   "B": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 37,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 37,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "SUI": {
+   "A": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 55
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 55
+    }
+   },
+   "B": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 12,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 12,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "XLM": {
+   "A": {
+    "all": {
+     "minutes": 250,
+     "den": 225,
+     "num": 3,
+     "way_only": 3,
+     "res_only": 0,
+     "way_armed": 225,
+     "res_armed": 222,
+     "score_n": 250,
+     "miss": 10,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 58
+    },
+    "1": {
+     "minutes": 250,
+     "den": 225,
+     "num": 3,
+     "way_only": 3,
+     "res_only": 0,
+     "way_armed": 225,
+     "res_armed": 222,
+     "score_n": 250,
+     "miss": 10,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 58
+    }
+   },
+   "B": {
+    "all": {
+     "minutes": 250,
+     "den": 226,
+     "num": 4,
+     "way_only": 4,
+     "res_only": 0,
+     "way_armed": 226,
+     "res_armed": 222,
+     "score_n": 250,
+     "miss": 14,
+     "level_n": 250,
+     "level_gt5": 22,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 226,
+     "num": 4,
+     "way_only": 4,
+     "res_only": 0,
+     "way_armed": 226,
+     "res_armed": 222,
+     "score_n": 250,
+     "miss": 14,
+     "level_n": 250,
+     "level_gt5": 22,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C": {
+    "all": {
+     "minutes": 250,
+     "den": 224,
+     "num": 2,
+     "way_only": 2,
+     "res_only": 0,
+     "way_armed": 224,
+     "res_armed": 222,
+     "score_n": 250,
+     "miss": 8,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 224,
+     "num": 2,
+     "way_only": 2,
+     "res_only": 0,
+     "way_armed": 224,
+     "res_armed": 222,
+     "score_n": 250,
+     "miss": 8,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 224,
+     "num": 2,
+     "way_only": 2,
+     "res_only": 0,
+     "way_armed": 224,
+     "res_armed": 222,
+     "score_n": 250,
+     "miss": 8,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 224,
+     "num": 2,
+     "way_only": 2,
+     "res_only": 0,
+     "way_armed": 224,
+     "res_armed": 222,
+     "score_n": 250,
+     "miss": 8,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "HBAR": {
+   "A": {
+    "all": {
+     "minutes": 250,
+     "den": 209,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 209,
+     "res_armed": 209,
+     "score_n": 250,
+     "miss": 7,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 58
+    },
+    "1": {
+     "minutes": 250,
+     "den": 209,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 209,
+     "res_armed": 209,
+     "score_n": 250,
+     "miss": 7,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 58
+    }
+   },
+   "B": {
+    "all": {
+     "minutes": 250,
+     "den": 211,
+     "num": 2,
+     "way_only": 2,
+     "res_only": 0,
+     "way_armed": 211,
+     "res_armed": 209,
+     "score_n": 250,
+     "miss": 15,
+     "level_n": 250,
+     "level_gt5": 22,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 211,
+     "num": 2,
+     "way_only": 2,
+     "res_only": 0,
+     "way_armed": 211,
+     "res_armed": 209,
+     "score_n": 250,
+     "miss": 15,
+     "level_n": 250,
+     "level_gt5": 22,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C": {
+    "all": {
+     "minutes": 250,
+     "den": 209,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 209,
+     "res_armed": 209,
+     "score_n": 250,
+     "miss": 4,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 209,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 209,
+     "res_armed": 209,
+     "score_n": 250,
+     "miss": 4,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 209,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 209,
+     "res_armed": 209,
+     "score_n": 250,
+     "miss": 4,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 209,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 209,
+     "res_armed": 209,
+     "score_n": 250,
+     "miss": 4,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "NEAR": {
+   "A": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 10,
+     "level_n": 250,
+     "level_gt5": 2,
+     "newest_fallback": 0,
+     "newest_old_answer": 63
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 10,
+     "level_n": 250,
+     "level_gt5": 2,
+     "newest_fallback": 0,
+     "newest_old_answer": 63
+    }
+   },
+   "B": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 5,
+     "level_n": 250,
+     "level_gt5": 19,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 5,
+     "level_n": 250,
+     "level_gt5": 19,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 4,
+     "level_n": 250,
+     "level_gt5": 2,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 4,
+     "level_n": 250,
+     "level_gt5": 2,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 4,
+     "level_n": 250,
+     "level_gt5": 1,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 4,
+     "level_n": 250,
+     "level_gt5": 1,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "AAVE": {
+   "A": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 3,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 40
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 3,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 40
+    }
+   },
+   "B": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 4,
+     "level_n": 250,
+     "level_gt5": 36,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 4,
+     "level_n": 250,
+     "level_gt5": 36,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 3,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 3,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 3,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 3,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "HYPE": {
+   "A": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 56
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 56
+    }
+   },
+   "B": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 11,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 11,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "ENA": {
+   "A": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 9,
+     "level_n": 250,
+     "level_gt5": 2,
+     "newest_fallback": 0,
+     "newest_old_answer": 47
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 9,
+     "level_n": 250,
+     "level_gt5": 2,
+     "newest_fallback": 0,
+     "newest_old_answer": 47
+    }
+   },
+   "B": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 12,
+     "level_n": 250,
+     "level_gt5": 55,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 12,
+     "level_n": 250,
+     "level_gt5": 55,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 11,
+     "level_n": 250,
+     "level_gt5": 2,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 11,
+     "level_n": 250,
+     "level_gt5": 2,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 11,
+     "level_n": 250,
+     "level_gt5": 1,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 11,
+     "level_n": 250,
+     "level_gt5": 1,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "PEPE": {
+   "A": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 4,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 32
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 4,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 32
+    }
+   },
+   "B": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 2,
+     "level_n": 250,
+     "level_gt5": 4,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 2,
+     "level_n": 250,
+     "level_gt5": 4,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 2,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 2,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 2,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 2,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "ONDO": {
+   "A": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 1,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 61
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 1,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 61
+    }
+   },
+   "B": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 1,
+     "level_n": 250,
+     "level_gt5": 34,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 1,
+     "level_n": 250,
+     "level_gt5": 34,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 1,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 1,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 1,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 1,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "LTC": {
+   "A": {
+    "all": {
+     "minutes": 250,
+     "den": 0,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 0,
+     "res_armed": 0,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 76
+    },
+    "1": {
+     "minutes": 250,
+     "den": 0,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 0,
+     "res_armed": 0,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 76
+    }
+   },
+   "B": {
+    "all": {
+     "minutes": 250,
+     "den": 0,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 0,
+     "res_armed": 0,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 1,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 0,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 0,
+     "res_armed": 0,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 1,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C": {
+    "all": {
+     "minutes": 250,
+     "den": 0,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 0,
+     "res_armed": 0,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 0,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 0,
+     "res_armed": 0,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 0,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 0,
+     "res_armed": 0,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 0,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 0,
+     "res_armed": 0,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "ZEC": {
+   "A": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 9,
+     "level_n": 250,
+     "level_gt5": 2,
+     "newest_fallback": 0,
+     "newest_old_answer": 64
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 9,
+     "level_n": 250,
+     "level_gt5": 2,
+     "newest_fallback": 0,
+     "newest_old_answer": 64
+    }
+   },
+   "B": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 2,
+     "level_n": 250,
+     "level_gt5": 13,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 2,
+     "level_n": 250,
+     "level_gt5": 13,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 2,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 2,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 1,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 1,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "ETH": {
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 0,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 0,
+     "res_armed": 0,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 0,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 0,
+     "res_armed": 0,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "SOL": {
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 250,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 250,
+     "res_armed": 250,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "XRP": {
+   "C18": {
+    "all": {
+     "minutes": 250,
+     "den": 243,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 243,
+     "res_armed": 243,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 250,
+     "den": 243,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 243,
+     "res_armed": 243,
+     "score_n": 250,
+     "miss": 0,
+     "level_n": 250,
+     "level_gt5": 0,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "twelve": {
+   "A": {
+    "all": {
+     "minutes": 3000,
+     "den": 2705,
+     "num": 7,
+     "way_only": 6,
+     "res_only": 1,
+     "way_armed": 2704,
+     "res_armed": 2699,
+     "score_n": 3000,
+     "miss": 51,
+     "level_n": 3000,
+     "level_gt5": 4,
+     "newest_fallback": 0,
+     "newest_old_answer": 623
+    },
+    "1": {
+     "minutes": 3000,
+     "den": 2705,
+     "num": 7,
+     "way_only": 6,
+     "res_only": 1,
+     "way_armed": 2704,
+     "res_armed": 2699,
+     "score_n": 3000,
+     "miss": 51,
+     "level_n": 3000,
+     "level_gt5": 4,
+     "newest_fallback": 0,
+     "newest_old_answer": 623
+    }
+   },
+   "B": {
+    "all": {
+     "minutes": 3000,
+     "den": 2707,
+     "num": 9,
+     "way_only": 8,
+     "res_only": 1,
+     "way_armed": 2706,
+     "res_armed": 2699,
+     "score_n": 3000,
+     "miss": 59,
+     "level_n": 3000,
+     "level_gt5": 282,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 3000,
+     "den": 2707,
+     "num": 9,
+     "way_only": 8,
+     "res_only": 1,
+     "way_armed": 2706,
+     "res_armed": 2699,
+     "score_n": 3000,
+     "miss": 59,
+     "level_n": 3000,
+     "level_gt5": 282,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C": {
+    "all": {
+     "minutes": 3000,
+     "den": 2703,
+     "num": 5,
+     "way_only": 4,
+     "res_only": 1,
+     "way_armed": 2702,
+     "res_armed": 2699,
+     "score_n": 3000,
+     "miss": 36,
+     "level_n": 3000,
+     "level_gt5": 4,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 3000,
+     "den": 2703,
+     "num": 5,
+     "way_only": 4,
+     "res_only": 1,
+     "way_armed": 2702,
+     "res_armed": 2699,
+     "score_n": 3000,
+     "miss": 36,
+     "level_n": 3000,
+     "level_gt5": 4,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   },
+   "C18": {
+    "all": {
+     "minutes": 3000,
+     "den": 2703,
+     "num": 5,
+     "way_only": 4,
+     "res_only": 1,
+     "way_armed": 2702,
+     "res_armed": 2699,
+     "score_n": 3000,
+     "miss": 36,
+     "level_n": 3000,
+     "level_gt5": 2,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 3000,
+     "den": 2703,
+     "num": 5,
+     "way_only": 4,
+     "res_only": 1,
+     "way_armed": 2702,
+     "res_armed": 2699,
+     "score_n": 3000,
+     "miss": 36,
+     "level_n": 3000,
+     "level_gt5": 2,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  },
+  "listed5": {
+   "C18": {
+    "all": {
+     "minutes": 1250,
+     "den": 743,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 743,
+     "res_armed": 743,
+     "score_n": 1250,
+     "miss": 0,
+     "level_n": 1250,
+     "level_gt5": 1,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    },
+    "1": {
+     "minutes": 1250,
+     "den": 743,
+     "num": 0,
+     "way_only": 0,
+     "res_only": 0,
+     "way_armed": 743,
+     "res_armed": 743,
+     "score_n": 1250,
+     "miss": 0,
+     "level_n": 1250,
+     "level_gt5": 1,
+     "newest_fallback": 0,
+     "newest_old_answer": 0
+    }
+   }
+  }
+ }
+}

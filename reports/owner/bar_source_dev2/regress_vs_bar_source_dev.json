@@ -1,0 +1,12 @@
+{
+ "R_rows": 4250,
+ "R_identical": true,
+ "R_max_abs_score_diff": 0.0,
+ "R_max_abs_level_diff": 0.0,
+ "pass_A_identical": true,
+ "pass_B_identical": true,
+ "pass_C_identical": true,
+ "pass_LA_identical": true,
+ "pass_LC_identical": true,
+ "C18_rows": 4250
+}
