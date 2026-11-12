@@ -1,11 +1,11 @@
 # Paper trading status
 
-Report made 2026-11-12 15:57 UTC.
+Report made 2026-11-12 16:00 UTC.
 
 | Book | Newest event | Age | Flag |
 |---|---|---|---|
-| Spot (main) | 2026-11-12 12:49 UTC | 3.1 h ago | ok |
-| Spot W2 | 2026-11-12 12:49 UTC | 3.1 h ago | ok |
+| Spot (main) | 2026-11-12 12:49 UTC | 3.2 h ago | ok |
+| Spot W2 | 2026-11-12 12:49 UTC | 3.2 h ago | ok |
 | Spot TB (trades input) | 2026-11-12 12:46 UTC | 3.2 h ago | ok |
 | Spot T18 (all coins on trades) | 2026-11-12 15:30 UTC | 0.5 h ago | ok |
 | Perp v1 (control) | 2026-11-12 13:11 UTC | 2.8 h ago | ok |
@@ -52,7 +52,7 @@ The five longest gaps of each book (a gap is the time the book was not running b
 | Perp R2-08 | 2026-11-09 10:03 UTC | 5.0 |
 | Perp R2-08 | 2026-11-09 20:47 UTC | 4.4 |
 
-Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 3.1 h; Spot W2 3.1 h; Spot TB (trades input) 3.2 h; Spot T18 (all coins on trades) 0.5 h; Perp v1 (control) 2.8 h; Perp R2-08 2.8 h.
+Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 3.2 h; Spot W2 3.2 h; Spot TB (trades input) 3.2 h; Spot T18 (all coins on trades) 0.5 h; Perp v1 (control) 2.8 h; Perp R2-08 2.8 h.
 
 ## Summary
 
