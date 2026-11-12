@@ -7,7 +7,8 @@ set -u
 HERE=$(cd "$(dirname "$0")" && pwd)
 SCRIPT=$HERE/paper_commit.sh
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
-export GIT_CONFIG_GLOBAL=$T/gitconfig GIT_CONFIG_NOSYSTEM=1 PAPER_COMMIT_WAIT=0
+# short schedules for the tests: 6 attempts, 3 rescue tries, no waiting
+export GIT_CONFIG_GLOBAL=$T/gitconfig GIT_CONFIG_NOSYSTEM=1 PAPER_COMMIT_WAITS="0 0 0 0 0" PAPER_COMMIT_RESCUE_WAITS="0 0"
 git config --file "$GIT_CONFIG_GLOBAL" init.defaultBranch main
 git config --file "$GIT_CONFIG_GLOBAL" advice.detachedHead false
 unset GITHUB_RUN_ID GITHUB_RUN_ATTEMPT GITHUB_JOB PAPER_COMMIT_BRANCH
@@ -18,6 +19,35 @@ unset GITHUB_RUN_ID GITHUB_RUN_ATTEMPT GITHUB_JOB PAPER_COMMIT_BRANCH
 OLD_LOOP='for i in 1 2 3 4 5; do git pull --rebase -X theirs origin main && git push && break; git rebase --abort 2>/dev/null; sleep $((i*5)); done'
 
 fail=0; n=0
+# a git on PATH for the failures a real remote cannot be made to show here. Calls whose arguments contain
+# FAKE_FAIL_MATCH fail FAKE_FAIL_N times the way the Nov 11 token problem did ("could not read Username"); calls whose
+# arguments contain FAKE_HANG_MATCH hang FAKE_HANG_N times (FAKE_HANG_HOW: sleep, just hang; rebase, start a real
+# rebase of this clone onto the remote branch and hang inside it; broken, leave a broken rebase state and hang),
+# touching FAKE_HANG_MARK once the hang has begun. Everything else passes through to the real git.
+export REALGIT; REALGIT=$(command -v git)
+mkdir "$T/bin"
+cat > "$T/bin/git" <<'S'
+#!/usr/bin/env bash
+cmd=""; all=""
+while [ $# -gt 0 ]; do cmd="$cmd $(printf %q "$1")"; all="$all $1"; shift; done
+tick() {  # tick COUNTFILE N: true for the first N calls
+  local k; k=$(cat "$1" 2>/dev/null || echo 0); [ "$k" -lt "$2" ] || return 1; echo $((k + 1)) > "$1"
+}
+if [ -n "${FAKE_FAIL_MATCH:-}" ] && [[ "$all" == *"$FAKE_FAIL_MATCH"* ]] && tick "$FAKE_FAIL_COUNT" "$FAKE_FAIL_N"; then
+  echo "fatal: could not read Username for 'https://github.com': No such device or address" >&2; exit 128
+fi
+if [ -n "${FAKE_HANG_MATCH:-}" ] && [[ "$all" == *"$FAKE_HANG_MATCH"* ]] && tick "$FAKE_HANG_COUNT" "$FAKE_HANG_N"; then
+  case "${FAKE_HANG_HOW:-sleep}" in
+    rebase) "$REALGIT" fetch -q origin main
+            "$REALGIT" rebase -q -x "touch '$FAKE_HANG_MARK'; sleep 30" FETCH_HEAD ;;
+    broken) mkdir -p "$("$REALGIT" rev-parse --git-path rebase-merge)"; touch "$FAKE_HANG_MARK"; sleep 30 ;;
+    *) touch "$FAKE_HANG_MARK"; sleep 30 ;;
+  esac
+  exit 1
+fi
+eval "exec \"\$REALGIT\" $cmd"
+S
+chmod +x "$T/bin/git"
 sig=""  # exit codes of the cases in order, compared between the two shell modes (case 10)
 pass() { echo "PASS  $1"; sig="$sig ${rc:-}"; }
 bad() { echo "FAIL  $1"; fail=1; sig="$sig ${rc:-}"; }
@@ -107,7 +137,8 @@ for MODE in "bash" "bash -e"; do
   new_world; hook_reject_once
   echo three >> "$W/b/paper_spot/log.jsonl"
   run "$W/b" "$MODE" "log 3" paper_spot
-  if [ $rc = 0 ] && remote_has "log 3" && [[ "$out" == *"attempt 1/6: git push failed"* ]] && [[ "$out" == *"attempt 2/6: pushed to main"* ]]
+  if [ $rc = 0 ] && remote_has "log 3" && [[ "$out" == *"attempt 1/6: git push failed: ! [remote rejected] HEAD -> main (pre-receive hook declined)"* ]] \
+     && [[ "$out" == *"attempt 2/6: pushed to main"* ]]
   then pass "$tag 3 push rejected once after a clean pull: retried, commit on main"
   else bad "$tag 3 push rejected once: rc $rc, \"$out\""; fi
 
@@ -135,7 +166,8 @@ for MODE in "bash" "bash -e"; do
   new_world; hook_reject_main all
   echo six >> "$W/b/paper_spot/log.jsonl"
   run "$W/b" "$MODE" "log 6b" paper_spot
-  if [ $rc = 1 ] && printf '%s\n' "$out" | grep -q "^::error::.*paper-log-rescue/local-1-job failed too"
+  if [ $rc = 1 ] && printf '%s\n' "$out" | grep -q "^::error::.*paper-log-rescue/local-1-job failed too (3 tries)" \
+     && [ "$(printf '%s\n' "$out" | grep -c "^paper_commit: rescue try")" = 3 ]
   then pass "$tag 6b rescue push rejected too: exit 1, ::error:: says so"
   else bad "$tag 6b rescue rejected: rc $rc, \"$out\""; fi
 
@@ -149,6 +181,40 @@ for MODE in "bash" "bash -e"; do
      && remote_has "log 6c attempt 2" paper-log-rescue/88-2-paper && [[ "$out" != *"failed too"* ]]
   then pass "$tag 6c re-run of the same job: paper-log-rescue/88-1-paper and 88-2-paper, both logs kept"
   else bad "$tag 6c re-run: rc $rc1 and $rc, \"$out1\", \"$out\""; fi
+
+  # 11. the push fails 8 times (token problem) and then works: delivered within the default number of attempts
+  #     (waits set to zeros of the default length); 12. checks the failure line carries git's error text
+  new_world
+  echo eleven >> "$W/b/paper_spot/log.jsonl"
+  out=$(cd "$W/b" && PATH=$T/bin:$PATH FAKE_FAIL_MATCH=HEAD:refs/heads/main FAKE_FAIL_N=8 FAKE_FAIL_COUNT=$W/fails \
+        PAPER_COMMIT_WAITS="0 0 0 0 0 0 0 0 0 0" $MODE "$SCRIPT" "log 11" paper_spot 2>&1); rc=$?
+  if [ $rc = 0 ] && remote_has "log 11" && [[ "$out" == *"attempt 9/11: pushed to main"* ]]
+  then pass "$tag 11 push fails 8 times, then works: delivered on attempt 9 of 11"
+  else bad "$tag 11 push fails 8 times: rc $rc, \"$out\""; fi
+  if [[ "$out" == *"attempt 1/11: git push failed: fatal: could not read Username for 'https://github.com': No such device or address"* ]] \
+     && [ "$(printf '%s\n' "$out" | grep -c "^paper_commit: attempt")" = 9 ]
+  then pass "$tag 12 failure line names git's error, one line per attempt"
+  else bad "$tag 12 failure line without git's error: \"$out\""; fi
+
+  # 13. the same with a schedule of only 5 waits (6 attempts): ends on the rescue branch
+  new_world
+  echo thirteen >> "$W/b/paper_spot/log.jsonl"
+  out=$(cd "$W/b" && PATH=$T/bin:$PATH FAKE_FAIL_MATCH=HEAD:refs/heads/main FAKE_FAIL_N=8 FAKE_FAIL_COUNT=$W/fails \
+        PAPER_COMMIT_WAITS="0 0 0 0 0" $MODE "$SCRIPT" "log 13" paper_spot 2>&1); rc=$?
+  if [ $rc = 1 ] && ! remote_has "log 13" && remote_has "log 13" paper-log-rescue/local-1-job \
+     && printf '%s\n' "$out" | grep -q "^::error::.*the commit is on branch paper-log-rescue/local-1-job"
+  then pass "$tag 13 push fails 8 times, only 6 attempts: exit 1, commit on the rescue branch"
+  else bad "$tag 13 short schedule: rc $rc, \"$out\""; fi
+
+  # 14. the rescue push fails once, then works: exit 1, the rescue branch holds the commit
+  new_world; hook_reject_main
+  echo fourteen >> "$W/b/paper_spot/log.jsonl"
+  out=$(cd "$W/b" && PATH=$T/bin:$PATH FAKE_FAIL_MATCH=refs/heads/paper-log-rescue/ FAKE_FAIL_N=1 FAKE_FAIL_COUNT=$W/fails \
+        $MODE "$SCRIPT" "log 14" paper_spot 2>&1); rc=$?
+  if [ $rc = 1 ] && remote_has "log 14" paper-log-rescue/local-1-job && [[ "$out" != *"failed too"* ]] \
+     && [[ "$out" == *"rescue try 1/3: push to paper-log-rescue/local-1-job failed: fatal: could not read Username"* ]]
+  then pass "$tag 14 rescue push fails once, then works: exit 1, commit on the rescue branch"
+  else bad "$tag 14 rescue retry: rc $rc, \"$out\""; fi
 
   # 7. nothing to commit: exit 0, remote unchanged
   new_world; before=$(remote_tip)
@@ -174,7 +240,7 @@ for MODE in "bash" "bash -e"; do
   if [ $rc = 0 ] && [ "$arc" = 0 ] && remote_has "job A log" && remote_has "job B log" \
      && [ "$(remote_file paper_spot_tb/log.jsonl)" = tb ] && [ "$(remote_file paper_spot/log.jsonl | tail -n 1)" = nine ] \
      && [[ "$out" == *"attempt 1/6: git push failed"* ]]
-  then pass "$tag 9 two jobs racing: both folders on main, both exit 0 ($(printf '%s\n' "$out" | grep -m1 -o "cannot lock ref[^:]*"))"
+  then pass "$tag 9 two jobs racing: both folders on main, both exit 0 (B's first push: $(printf '%s\n' "$out" | grep -m1 -o "git push failed: .*" | cut -c18-))"
   else bad "$tag 9 two jobs racing: B rc $rc, A rc $arc, \"$out\", A: \"$(cat "$W/a.out" 2>/dev/null)\""; fi
   if [ "$MODE" = bash ]; then sig_plain=$sig; else sig_e=$sig; fi
 done
@@ -199,6 +265,72 @@ out=$(cd "$W/b" && bash -e -c "$OLD_LOOP" 2>&1); rc=$?
 if [ $rc != 0 ] && ! remote_has "log 4b" && [[ "$out" == *"cannot lock ref"* ]]
 then pass "4b faulty loop, ref race, bash -e: exits $rc, commit not on main ($(printf '%s\n' "$out" | grep -m1 -o "cannot lock ref[^:]*"))"
 else bad "4b faulty loop was expected to fail on the ref race: rc $rc, \"$out\""; fi
+
+# Hanging remote calls. Run once, under bash -e (the shell of the workflows), to keep the real sleeping to a few
+# seconds; each case sleeps about one call limit of 1 s, case 18 about its 3 s deadline.
+hang() {  # hang DIR HOW N LIMIT DEADLINE MESSAGE PATH: runs the script with pulls hanging; sets out and rc
+  out=$(cd "$1" && PATH=$T/bin:$PATH FAKE_HANG_MATCH=" pull " FAKE_HANG_HOW=$2 FAKE_HANG_N=$3 FAKE_HANG_COUNT=$W/hangs \
+        FAKE_HANG_MARK=$W/hung PAPER_COMMIT_CALL_LIMIT=$4 PAPER_COMMIT_DEADLINE=$5 PAPER_COMMIT_WAITS="0 0 0 0 0 0 0 0 0 0" \
+        bash -e "$SCRIPT" "$6" "$7" 2>&1); rc=$?
+}
+in_rebase() { [ -d "$(git -C "$1" rev-parse --git-path rebase-merge)" ] || [ -d "$(git -C "$1" rev-parse --git-path rebase-apply)" ]; }
+
+# 16. a pull that hangs is cut off at the call limit, reported in plain words, and the next attempt succeeds
+new_world
+echo sixteen >> "$W/b/paper_spot/log.jsonl"
+hang "$W/b" sleep 1 1 300 "log 16" paper_spot
+if [ $rc = 0 ] && remote_has "log 16" && [ -f "$W/hung" ] && [[ "$out" == *"attempt 1/11: git pull --rebase failed: no answer within 1 s"* ]] \
+   && [[ "$out" == *"attempt 2/11: pushed to main"* ]]
+then pass "16 pull hangs once: cut off after 1 s (\"no answer within 1 s\"), attempt 2 pushed"
+else bad "16 pull hangs once: rc $rc, \"$out\""; fi
+
+# 17. a pull cut off in the middle of a real rebase leaves no rebase in progress: the next attempt pulls and pushes
+new_world
+mkdir -p "$W/a/paper_spot_tb"; echo tb > "$W/a/paper_spot_tb/log.jsonl"
+git -C "$W/a" add -A; git -C "$W/a" commit -q -m "other job"; git -C "$W/a" push -q origin HEAD:main
+echo seventeen >> "$W/b/paper_spot/log.jsonl"
+hang "$W/b" rebase 1 1 300 "log 17" paper_spot
+if [ $rc = 0 ] && [ -f "$W/hung" ] && remote_has "log 17" && remote_has "other job" && ! in_rebase "$W/b" \
+   && [[ "$out" == *"attempt 1/11: git pull --rebase failed: no answer within 1 s"* ]] && [[ "$out" == *"attempt 2/11: pushed to main"* ]] \
+   && [ -z "$(git -C "$W/b" status --porcelain --untracked-files=no)" ]
+then pass "17 pull cut off mid-rebase: rebase aborted, attempt 2 pushed, both commits on main"
+else bad "17 pull cut off mid-rebase: rc $rc, hung $([ -f "$W/hung" ] && echo yes || echo no), \"$out\""; fi
+
+# 17b. the same with a rebase state too broken for git rebase --abort: dropped, branch put back, next attempt pushes
+new_world
+echo seventeen-b >> "$W/b/paper_spot/log.jsonl"
+hang "$W/b" broken 1 1 300 "log 17b" paper_spot
+if [ $rc = 0 ] && [ -f "$W/hung" ] && remote_has "log 17b" && ! in_rebase "$W/b" && [[ "$out" == *"dropped the rebase"* ]] \
+   && [[ "$out" == *"attempt 2/11: pushed to main"* ]]
+then pass "17b broken rebase state after a cut-off pull: dropped, attempt 2 pushed"
+else bad "17b broken rebase state: rc $rc, \"$out\""; fi
+
+# 18. every pull hangs: the deadline (3 s) stops the main attempts early and the commit goes to the rescue branch
+new_world
+echo eighteen >> "$W/b/paper_spot/log.jsonl"
+s0=$SECONDS
+hang "$W/b" sleep 99 1 3 "log 18" paper_spot
+took=$((SECONDS - s0)); tries=$(printf '%s\n' "$out" | grep -c "^paper_commit: attempt")
+if [ $rc = 1 ] && [ "$tries" -lt 11 ] && [ "$took" -le 6 ] && ! remote_has "log 18" && remote_has "log 18" paper-log-rescue/local-1-job \
+   && printf '%s\n' "$out" | grep -q "^paper_commit: deadline of 3 s reached after $tries attempts" \
+   && printf '%s\n' "$out" | grep -q "^::error::.*after $tries attempts; the commit is on branch paper-log-rescue/local-1-job"
+then pass "18 every pull hangs: deadline of 3 s stopped the main attempts after $tries of 11 (${took} s), commit on the rescue branch, exit 1"
+else bad "18 every pull hangs: rc $rc, $tries attempts, $took s, \"$out\""; fi
+
+# 19. the defaults: call limit 45 s, deadline 240 s, rescue waits "10 20"
+dl=$(sed -n 's/^default_call_limit=\([0-9]*\)$/\1/p' "$SCRIPT"); dd=$(sed -n 's/^default_deadline=\([0-9]*\)$/\1/p' "$SCRIPT")
+dr=$(sed -n 's/^default_rescue_waits="\(.*\)"$/\1/p' "$SCRIPT")
+rc=0
+if [ "$dl" = 45 ] && [ "$dd" = 240 ] && [ "$dr" = "10 20" ]
+then pass "19 defaults: call limit $dl s, deadline $dd s, rescue waits \"$dr\" (worst case ~244 + ~11 + ~168 = ~425 s of ~510 s)"
+else bad "19 defaults: call limit ${dl:-none} s, deadline ${dd:-none} s, rescue waits \"$dr\", want 45, 240 and \"10 20\": about 244 s of main attempts, about 11 s for the last abort and about 168 s for the rescue push (3 tries of 46 s, 10 s and 20 s between) make about 425 s, against about 510 s between the end of the paper run (minute ~349.5) and the 358-minute job limit"; fi
+
+# 15. the default schedule waits 330 s in all
+dw=$(sed -n 's/^default_waits="\(.*\)"$/\1/p' "$SCRIPT"); tot=0; k=0
+for w in $dw; do tot=$((tot + w)); k=$((k + 1)); done
+rc=0
+if [ "$tot" = 330 ] && [ "$k" = 10 ]; then pass "15 default waits: $k waits, $tot s"
+else bad "15 default waits total $tot s over $k waits, want 330 s over 10: the paper jobs have about 8.5 minutes between the end of the paper run and their 358-minute limit, and the retries, the pushes and the rescue push must fit in it"; fi
 
 bash -n "$SCRIPT" && pass "bash -n paper_commit.sh" || bad "bash -n paper_commit.sh"
 [ $fail = 0 ] && echo "PAPER COMMIT TEST PASSED" || { echo "PAPER COMMIT TEST FAILED"; exit 1; }
