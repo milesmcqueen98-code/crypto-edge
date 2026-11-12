@@ -1,0 +1,289 @@
+measure,statistic,group,book,value
+m1_level_error,n,all,main,86
+m1_level_error,median,all,main,0
+m1_level_error,p5,all,main,0
+m1_level_error,p95,all,main,0
+m1_level_error,median_abs,all,main,0
+m1_level_error,share_abs_gt5,all,main,0
+m1_level_error,share_abs_gt20,all,main,0
+m1_level_error,raw_median,all,main,-0.191654
+m1_level_error,raw_p5,all,main,-0.893988
+m1_level_error,raw_p95,all,main,0.00408143
+m1_level_error,raw_median_abs,all,main,0.205408
+m1_level_error,raw_share_abs_gt5,all,main,0
+m1_level_error,raw_share_abs_gt20,all,main,0
+m1_vs_late_btc_1min,n,all,main,86
+m1_vs_late_btc_1min,corr,all,main,-0.0212657
+m1_vs_late_btc_1min,slope,all,main,-0.0014856
+m1_vs_late_btc_1min,r2,all,main,0.000452229
+m2_score_error,n,all,main,86
+m2_score_error,median_abs_diff,all,main,0.0276795
+m2_score_error,median_diff,all,main,0.00605184
+m2_score_error,p90_abs_diff,all,main,0.0493679
+m2_score_error,share_other_side,all,main,0
+m2_score_error,n_other_side,all,main,0
+m2_score_error,median_abs_diff_vs_btc1late,all,main,0.407426
+m2_score_error,median_abs_diff_vs_btc2late,all,main,0.64519
+m3_bids,bot_new_bids,all,main,86
+m3_bids,bot_matched,all,main,81
+m3_bids,share_bot_in_research,all,main,0.94186
+m3_bids,bot_research_armed_at_t,all,main,1
+m3_bids,bot_after_cash_short,all,main,0
+m3_bids,research_new_bids,all,main,85
+m3_bids,research_cash_blocked,all,main,0
+m3_bids,research_new_bids_ex_cash,all,main,85
+m3_bids,research_matched,all,main,81
+m3_bids,share_research_in_bot,all,main,0.952941
+m3_bids,bot_arms_outside_decision_minutes,all,main,0
+m3_bids,research_stale_blocked,all,main,0
+m3_bids,research_near_stale_pm1,all,main,0
+m3_bids,research_new_bids_ex_blocked,all,main,85
+m4_fills,both_n,all,main,1
+m4_fills,both_bot_rung4_pnl,all,main,0.86
+m4_fills,both_bot_ladder_pnl,all,main,0.86
+m4_fills,bot_only_n,all,main,0
+m4_fills,bot_only_bot_rung4_pnl,all,main,0
+m4_fills,bot_only_bot_ladder_pnl,all,main,0
+m4_fills,research_only_n,all,main,0
+m4_fills,research_only_bot_rung4_pnl,all,main,0
+m4_fills,research_only_bot_ladder_pnl,all,main,0
+m1_level_error,n,all,tb,99
+m1_level_error,median,all,tb,0
+m1_level_error,p5,all,tb,0
+m1_level_error,p95,all,tb,0
+m1_level_error,median_abs,all,tb,0
+m1_level_error,share_abs_gt5,all,tb,0
+m1_level_error,share_abs_gt20,all,tb,0
+m1_level_error,raw_median,all,tb,-0.206386
+m1_level_error,raw_p5,all,tb,-0.925389
+m1_level_error,raw_p95,all,tb,-0.0246464
+m1_level_error,raw_median_abs,all,tb,0.206386
+m1_level_error,raw_share_abs_gt5,all,tb,0.010101
+m1_level_error,raw_share_abs_gt20,all,tb,0
+m1_vs_late_btc_1min,n,all,tb,99
+m1_vs_late_btc_1min,corr,all,tb,-0.0808102
+m1_vs_late_btc_1min,slope,all,tb,-0.0139887
+m1_vs_late_btc_1min,r2,all,tb,0.00653029
+m2_score_error,n,all,tb,99
+m2_score_error,median_abs_diff,all,tb,0.0285951
+m2_score_error,median_diff,all,tb,0.00503404
+m2_score_error,p90_abs_diff,all,tb,0.0494286
+m2_score_error,share_other_side,all,tb,0
+m2_score_error,n_other_side,all,tb,0
+m2_score_error,median_abs_diff_vs_btc1late,all,tb,0.421026
+m2_score_error,median_abs_diff_vs_btc2late,all,tb,0.611448
+m3_bids,bot_new_bids,all,tb,99
+m3_bids,bot_matched,all,tb,95
+m3_bids,share_bot_in_research,all,tb,0.959596
+m3_bids,bot_research_armed_at_t,all,tb,1
+m3_bids,bot_after_cash_short,all,tb,0
+m3_bids,research_new_bids,all,tb,99
+m3_bids,research_cash_blocked,all,tb,0
+m3_bids,research_new_bids_ex_cash,all,tb,99
+m3_bids,research_matched,all,tb,95
+m3_bids,share_research_in_bot,all,tb,0.959596
+m3_bids,bot_arms_outside_decision_minutes,all,tb,0
+m3_bids,research_stale_blocked,all,tb,0
+m3_bids,research_near_stale_pm1,all,tb,0
+m3_bids,research_new_bids_ex_blocked,all,tb,99
+m4_fills,both_n,all,tb,1
+m4_fills,both_bot_rung4_pnl,all,tb,0.86
+m4_fills,both_bot_ladder_pnl,all,tb,0.86
+m4_fills,bot_only_n,all,tb,0
+m4_fills,bot_only_bot_rung4_pnl,all,tb,0
+m4_fills,bot_only_bot_ladder_pnl,all,tb,0
+m4_fills,research_only_n,all,tb,0
+m4_fills,research_only_bot_rung4_pnl,all,tb,0
+m4_fills,research_only_bot_ladder_pnl,all,tb,0
+m1_level_error,n,trades list,main,27
+m1_level_error,median,trades list,main,0
+m1_level_error,p5,trades list,main,0
+m1_level_error,p95,trades list,main,0
+m1_level_error,median_abs,trades list,main,0
+m1_level_error,share_abs_gt5,trades list,main,0
+m1_level_error,share_abs_gt20,trades list,main,0
+m1_level_error,raw_median,trades list,main,-0.119057
+m1_level_error,raw_p5,trades list,main,-0.913985
+m1_level_error,raw_p95,trades list,main,-0.0170294
+m1_level_error,raw_median_abs,trades list,main,0.146087
+m1_level_error,raw_share_abs_gt5,trades list,main,0
+m1_level_error,raw_share_abs_gt20,trades list,main,0
+m1_vs_late_btc_1min,n,trades list,main,27
+m1_vs_late_btc_1min,corr,trades list,main,0.0115939
+m1_vs_late_btc_1min,slope,trades list,main,0.0010443
+m1_vs_late_btc_1min,r2,trades list,main,0.000134419
+m2_score_error,n,trades list,main,27
+m2_score_error,median_abs_diff,trades list,main,0.0282845
+m2_score_error,median_diff,trades list,main,0.00053473
+m2_score_error,p90_abs_diff,trades list,main,0.0492204
+m2_score_error,share_other_side,trades list,main,0
+m2_score_error,n_other_side,trades list,main,0
+m2_score_error,median_abs_diff_vs_btc1late,trades list,main,0.260833
+m2_score_error,median_abs_diff_vs_btc2late,trades list,main,0.313175
+m3_bids,bot_new_bids,trades list,main,27
+m3_bids,bot_matched,trades list,main,26
+m3_bids,share_bot_in_research,trades list,main,0.962963
+m3_bids,bot_research_armed_at_t,trades list,main,1
+m3_bids,bot_after_cash_short,trades list,main,0
+m3_bids,research_new_bids,trades list,main,26
+m3_bids,research_cash_blocked,trades list,main,0
+m3_bids,research_new_bids_ex_cash,trades list,main,26
+m3_bids,research_matched,trades list,main,26
+m3_bids,share_research_in_bot,trades list,main,1
+m3_bids,bot_arms_outside_decision_minutes,trades list,main,0
+m3_bids,research_stale_blocked,trades list,main,0
+m3_bids,research_near_stale_pm1,trades list,main,0
+m3_bids,research_new_bids_ex_blocked,trades list,main,26
+m4_fills,both_n,trades list,main,0
+m4_fills,both_bot_rung4_pnl,trades list,main,0
+m4_fills,both_bot_ladder_pnl,trades list,main,0
+m4_fills,bot_only_n,trades list,main,0
+m4_fills,bot_only_bot_rung4_pnl,trades list,main,0
+m4_fills,bot_only_bot_ladder_pnl,trades list,main,0
+m4_fills,research_only_n,trades list,main,0
+m4_fills,research_only_bot_rung4_pnl,trades list,main,0
+m4_fills,research_only_bot_ladder_pnl,trades list,main,0
+m1_level_error,n,trades list,tb,29
+m1_level_error,median,trades list,tb,0
+m1_level_error,p5,trades list,tb,0
+m1_level_error,p95,trades list,tb,0
+m1_level_error,median_abs,trades list,tb,0
+m1_level_error,share_abs_gt5,trades list,tb,0
+m1_level_error,share_abs_gt20,trades list,tb,0
+m1_level_error,raw_median,trades list,tb,-0.119039
+m1_level_error,raw_p5,trades list,tb,-0.730422
+m1_level_error,raw_p95,trades list,tb,-0.0179248
+m1_level_error,raw_median_abs,trades list,tb,0.119039
+m1_level_error,raw_share_abs_gt5,trades list,tb,0
+m1_level_error,raw_share_abs_gt20,trades list,tb,0
+m1_vs_late_btc_1min,n,trades list,tb,29
+m1_vs_late_btc_1min,corr,trades list,tb,0.263002
+m1_vs_late_btc_1min,slope,trades list,tb,0.00790289
+m1_vs_late_btc_1min,r2,trades list,tb,0.0691703
+m2_score_error,n,trades list,tb,29
+m2_score_error,median_abs_diff,trades list,tb,0.0282845
+m2_score_error,median_diff,trades list,tb,0.00038568
+m2_score_error,p90_abs_diff,trades list,tb,0.0490931
+m2_score_error,share_other_side,trades list,tb,0
+m2_score_error,n_other_side,trades list,tb,0
+m2_score_error,median_abs_diff_vs_btc1late,trades list,tb,0.384487
+m2_score_error,median_abs_diff_vs_btc2late,trades list,tb,0.384487
+m3_bids,bot_new_bids,trades list,tb,29
+m3_bids,bot_matched,trades list,tb,29
+m3_bids,share_bot_in_research,trades list,tb,1
+m3_bids,bot_research_armed_at_t,trades list,tb,1
+m3_bids,bot_after_cash_short,trades list,tb,0
+m3_bids,research_new_bids,trades list,tb,29
+m3_bids,research_cash_blocked,trades list,tb,0
+m3_bids,research_new_bids_ex_cash,trades list,tb,29
+m3_bids,research_matched,trades list,tb,29
+m3_bids,share_research_in_bot,trades list,tb,1
+m3_bids,bot_arms_outside_decision_minutes,trades list,tb,0
+m3_bids,research_stale_blocked,trades list,tb,0
+m3_bids,research_near_stale_pm1,trades list,tb,0
+m3_bids,research_new_bids_ex_blocked,trades list,tb,29
+m4_fills,both_n,trades list,tb,0
+m4_fills,both_bot_rung4_pnl,trades list,tb,0
+m4_fills,both_bot_ladder_pnl,trades list,tb,0
+m4_fills,bot_only_n,trades list,tb,0
+m4_fills,bot_only_bot_rung4_pnl,trades list,tb,0
+m4_fills,bot_only_bot_ladder_pnl,trades list,tb,0
+m4_fills,research_only_n,trades list,tb,0
+m4_fills,research_only_bot_rung4_pnl,trades list,tb,0
+m4_fills,research_only_bot_ladder_pnl,trades list,tb,0
+m1_level_error,n,candle path,main,59
+m1_level_error,median,candle path,main,0
+m1_level_error,p5,candle path,main,0
+m1_level_error,p95,candle path,main,0
+m1_level_error,median_abs,candle path,main,0
+m1_level_error,share_abs_gt5,candle path,main,0
+m1_level_error,share_abs_gt20,candle path,main,0
+m1_level_error,raw_median,candle path,main,-0.333155
+m1_level_error,raw_p5,candle path,main,-0.842912
+m1_level_error,raw_p95,candle path,main,0.00590717
+m1_level_error,raw_median_abs,candle path,main,0.333155
+m1_level_error,raw_share_abs_gt5,candle path,main,0
+m1_level_error,raw_share_abs_gt20,candle path,main,0
+m1_vs_late_btc_1min,n,candle path,main,59
+m1_vs_late_btc_1min,corr,candle path,main,-0.100628
+m1_vs_late_btc_1min,slope,candle path,main,-0.00498627
+m1_vs_late_btc_1min,r2,candle path,main,0.010126
+m2_score_error,n,candle path,main,59
+m2_score_error,median_abs_diff,candle path,main,0.0270746
+m2_score_error,median_diff,candle path,main,0.00706965
+m2_score_error,p90_abs_diff,candle path,main,0.0494497
+m2_score_error,share_other_side,candle path,main,0
+m2_score_error,n_other_side,candle path,main,0
+m2_score_error,median_abs_diff_vs_btc1late,candle path,main,0.547574
+m2_score_error,median_abs_diff_vs_btc2late,candle path,main,1.2953
+m3_bids,bot_new_bids,candle path,main,59
+m3_bids,bot_matched,candle path,main,55
+m3_bids,share_bot_in_research,candle path,main,0.932203
+m3_bids,bot_research_armed_at_t,candle path,main,1
+m3_bids,bot_after_cash_short,candle path,main,0
+m3_bids,research_new_bids,candle path,main,59
+m3_bids,research_cash_blocked,candle path,main,0
+m3_bids,research_new_bids_ex_cash,candle path,main,59
+m3_bids,research_matched,candle path,main,55
+m3_bids,share_research_in_bot,candle path,main,0.932203
+m3_bids,bot_arms_outside_decision_minutes,candle path,main,0
+m3_bids,research_stale_blocked,candle path,main,0
+m3_bids,research_near_stale_pm1,candle path,main,0
+m3_bids,research_new_bids_ex_blocked,candle path,main,59
+m4_fills,both_n,candle path,main,1
+m4_fills,both_bot_rung4_pnl,candle path,main,0.86
+m4_fills,both_bot_ladder_pnl,candle path,main,0.86
+m4_fills,bot_only_n,candle path,main,0
+m4_fills,bot_only_bot_rung4_pnl,candle path,main,0
+m4_fills,bot_only_bot_ladder_pnl,candle path,main,0
+m4_fills,research_only_n,candle path,main,0
+m4_fills,research_only_bot_rung4_pnl,candle path,main,0
+m4_fills,research_only_bot_ladder_pnl,candle path,main,0
+m1_level_error,n,candle path,tb,70
+m1_level_error,median,candle path,tb,0
+m1_level_error,p5,candle path,tb,0
+m1_level_error,p95,candle path,tb,0
+m1_level_error,median_abs,candle path,tb,0
+m1_level_error,share_abs_gt5,candle path,tb,0
+m1_level_error,share_abs_gt20,candle path,tb,0
+m1_level_error,raw_median,candle path,tb,-0.334902
+m1_level_error,raw_p5,candle path,tb,-1.06822
+m1_level_error,raw_p95,candle path,tb,-0.0278102
+m1_level_error,raw_median_abs,candle path,tb,0.334902
+m1_level_error,raw_share_abs_gt5,candle path,tb,0.0142857
+m1_level_error,raw_share_abs_gt20,candle path,tb,0
+m1_vs_late_btc_1min,n,candle path,tb,70
+m1_vs_late_btc_1min,corr,candle path,tb,-0.146096
+m1_vs_late_btc_1min,slope,candle path,tb,-0.0315029
+m1_vs_late_btc_1min,r2,candle path,tb,0.0213441
+m2_score_error,n,candle path,tb,70
+m2_score_error,median_abs_diff,candle path,tb,0.0302169
+m2_score_error,median_diff,candle path,tb,0.00764261
+m2_score_error,p90_abs_diff,candle path,tb,0.054959
+m2_score_error,share_other_side,candle path,tb,0
+m2_score_error,n_other_side,candle path,tb,0
+m2_score_error,median_abs_diff_vs_btc1late,candle path,tb,0.520959
+m2_score_error,median_abs_diff_vs_btc2late,candle path,tb,1.06876
+m3_bids,bot_new_bids,candle path,tb,70
+m3_bids,bot_matched,candle path,tb,66
+m3_bids,share_bot_in_research,candle path,tb,0.942857
+m3_bids,bot_research_armed_at_t,candle path,tb,1
+m3_bids,bot_after_cash_short,candle path,tb,0
+m3_bids,research_new_bids,candle path,tb,70
+m3_bids,research_cash_blocked,candle path,tb,0
+m3_bids,research_new_bids_ex_cash,candle path,tb,70
+m3_bids,research_matched,candle path,tb,66
+m3_bids,share_research_in_bot,candle path,tb,0.942857
+m3_bids,bot_arms_outside_decision_minutes,candle path,tb,0
+m3_bids,research_stale_blocked,candle path,tb,0
+m3_bids,research_near_stale_pm1,candle path,tb,0
+m3_bids,research_new_bids_ex_blocked,candle path,tb,70
+m4_fills,both_n,candle path,tb,1
+m4_fills,both_bot_rung4_pnl,candle path,tb,0.86
+m4_fills,both_bot_ladder_pnl,candle path,tb,0.86
+m4_fills,bot_only_n,candle path,tb,0
+m4_fills,bot_only_bot_rung4_pnl,candle path,tb,0
+m4_fills,bot_only_bot_ladder_pnl,candle path,tb,0
+m4_fills,research_only_n,candle path,tb,0
+m4_fills,research_only_bot_rung4_pnl,candle path,tb,0
+m4_fills,research_only_bot_ladder_pnl,candle path,tb,0

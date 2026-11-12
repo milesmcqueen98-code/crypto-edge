@@ -94,7 +94,8 @@ changes no rule.
   current through 01:59 UTC on Nov 14:
   `python scripts/owner/bar_source/compare.py --dir reports/owner/bar_source --log paper_spot_tb/events.jsonl`
   Without `--log` the emulation checks do not run and the single-coin clause is reported as not applied.
-- **Part 2,** not before Nov 14, 16:20 UTC, and only with 300 new bids on the twelve in each book: the two-book
+- **Part 2,** not before both books' logs reach 22:24 UTC on Nov 14 (about 02:30 UTC on Nov 15; deviation log,
+  Nov 12), and only with 300 new bids on the twelve in each book: the two-book
   reconciliation of scripts/owner/reconcile with the third book as the first book and the fourth as the second
   (paper_spot_tb and paper_spot_t18), over the minutes both were live, read for the twelve coins together. The
   fourth book's items 1 to 5 are in PAPER_STATUS.md.
@@ -152,3 +153,14 @@ changes no rule.
        for later, with its own check.
     2. **The engine commit is fixed for the test.** The fourth book runs commit 58eba8b, named in the workflow file
        and written into paper_spot_t18/CODE at every run. A change of that commit starts its three days again.
+- **Nov 12 2026, 08:54 ET (orchestrator).** A date moves; no rule changes.
+  - **What happened:** the fourth book's first run (43056376442, 16:15 to 22:05 UTC on Nov 11) ended without saving
+    its log or its state, because every push failed on the runner's token. The book began again from nothing with
+    run 43110721127; its first step was at 22:25 UTC on Nov 11.
+  - **Part 2's three days run from 22:25 UTC on Nov 11 to 22:24 UTC on Nov 14.** The read waits until both books'
+    logs reach that minute (the fourth book's arrives with the run that ends at about 02:30 UTC on Nov 15) and for
+    300 new bids on the twelve in each book.
+  - **What had been read when this was written:** one interim look at both books' bids for 22:25 UTC on Nov 11 to
+    10:00 UTC on Nov 12 (reports/owner/reconcile_tb/i2/README.md): 59 and 70 new bids on the twelve, no wrong-side
+    bid and no level error in either. It changes no rule.
+  - Nothing else changes.

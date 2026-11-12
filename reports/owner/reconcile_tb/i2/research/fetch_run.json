@@ -1,0 +1,197 @@
+{
+ "utc_finished": "2026-11-12T13:44:32.875102+00:00",
+ "coins": [
+  "ETH",
+  "SOL",
+  "XRP",
+  "DOGE",
+  "LTC",
+  "LINK",
+  "BCH",
+  "SUI",
+  "XLM",
+  "HBAR",
+  "NEAR",
+  "AAVE",
+  "HYPE",
+  "ENA",
+  "PEPE",
+  "ONDO",
+  "ZEC"
+ ],
+ "coins_fetched": [
+  "BTC",
+  "ETH",
+  "SOL",
+  "XRP",
+  "DOGE",
+  "LTC",
+  "LINK",
+  "BCH",
+  "SUI",
+  "XLM",
+  "HBAR",
+  "NEAR",
+  "AAVE",
+  "HYPE",
+  "ENA",
+  "PEPE",
+  "ONDO",
+  "ZEC"
+ ],
+ "refused": null,
+ "dropped": [],
+ "errors": [],
+ "answers": 1080,
+ "books": [
+  "paper_spot",
+  "paper_spot_tb",
+  "paper_spot_t18"
+ ],
+ "period_start": "2026-11-11 01:47:00",
+ "period_end": "2026-11-12 12:30:00",
+ "min_age_min": 60.0,
+ "checked_at_utc": "2026-11-12 13:35:39.916213",
+ "live_minutes": 2085,
+ "fetch_from": "2026-10-31 01:41:00",
+ "fetch_to": "2026-11-12 12:30:00",
+ "cache_counts": {
+  "REVALIDATED": 716,
+  "MISS": 364
+ },
+ "newest_window": {
+  "BTC": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:35:53 GMT",
+   "generated": "2026-11-12 13:35:53"
+  },
+  "ETH": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:36:06 GMT",
+   "generated": "2026-11-12 13:36:06"
+  },
+  "SOL": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:36:19 GMT",
+   "generated": "2026-11-12 13:36:19"
+  },
+  "XRP": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:36:32 GMT",
+   "generated": "2026-11-12 13:36:32"
+  },
+  "DOGE": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:36:45 GMT",
+   "generated": "2026-11-12 13:36:45"
+  },
+  "LTC": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:36:58 GMT",
+   "generated": "2026-11-12 13:36:58"
+  },
+  "LINK": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:37:11 GMT",
+   "generated": "2026-11-12 13:37:11"
+  },
+  "BCH": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:37:23 GMT",
+   "generated": "2026-11-12 13:37:23"
+  },
+  "SUI": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:37:36 GMT",
+   "generated": "2026-11-12 13:37:36"
+  },
+  "XLM": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:37:50 GMT",
+   "generated": "2026-11-12 13:37:50"
+  },
+  "HBAR": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:38:03 GMT",
+   "generated": "2026-11-12 13:38:03"
+  },
+  "NEAR": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:38:16 GMT",
+   "generated": "2026-11-12 13:38:16"
+  },
+  "AAVE": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:38:30 GMT",
+   "generated": "2026-11-12 13:38:30"
+  },
+  "HYPE": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:38:43 GMT",
+   "generated": "2026-11-12 13:38:43"
+  },
+  "ENA": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:38:56 GMT",
+   "generated": "2026-11-12 13:38:56"
+  },
+  "PEPE": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:39:09 GMT",
+   "generated": "2026-11-12 13:39:09"
+  },
+  "ONDO": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:39:22 GMT",
+   "generated": "2026-11-12 13:39:22"
+  },
+  "ZEC": {
+   "end": "2026-11-12 12:30:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Thu, 12 Nov 2026 13:39:35 GMT",
+   "generated": "2026-11-12 13:39:35"
+  }
+ },
+ "fetch_s": 236,
+ "compute_s": 297,
+ "rows": 35445,
+ "late_rows": 1388,
+ "valid_share": 1.0,
+ "workers": 4,
+ "above_thr": 29686
+}

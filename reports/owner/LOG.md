@@ -531,3 +531,53 @@ FORWARD_TESTS.md.
     the first perp run that starts from the tip of `main`, commits through the new step and starts its successor.
   - With that, all four paper workflows chain their runs and none can lose a log to a rejected push or to an old
     starting point without failing visibly.
+
+## Nov 12 2026 (times ET; UTC is five hours later)
+
+- **08:54. Morning check.**
+  - **Overnight runs:** every paper run that began after yesterday's fixes pushed its log and started its successor:
+    spot at 01:07, 06:58 and 12:49 UTC, perp at 01:30, 07:21 and 13:11 UTC, the fourth book at 04:15 and 10:06 UTC.
+    The collector has a trades bar for all 1,440 minutes of Nov 11 for every coin.
+  - **The fourth book's first run lost its log, for a new reason.** Run 43056376442 (16:15 to 22:05 UTC on Nov 11)
+    ran to its end. Then every push failed with "could not read Username": the runner's token was not accepted for
+    more than 76 s, on all six attempts and on the rescue push. The cause is probably on GitHub's side; that is not
+    proven. The book began again from nothing with run 43110721127, first step at 22:25 UTC, so its record and its
+    three days beside the third book start there.
+  - **Commit step hardened** (agent, reviewed; on `main` since 13:44 UTC): retries spread over four minutes, a 45 s
+    limit on every remote call, a deadline that leaves time for the rescue branch, and no credential prompt. 38
+    checks pass. The runs under way started before it; the first runs with it begin at about 15:57 UTC (fourth
+    book), 18:40 UTC (spot) and 19:00 UTC (perp).
+  - **Third book at 12:49 UTC** (35.0 hours, 99.9% of the time, 2,097 of its 4,000 minutes): items 1 to 5 hold.
+    11,862 of 11,862 trades bars verified; no refusal; data step median 10.0 s, half-hour maximum at most 20 s in
+    98.5% of 68 half hours; no error; 9 of 36,414 rows unconfirmed. 234 coin-minutes skipped for an old candle answer.
+  - **Fourth book at 12:49 UTC** (695 minutes): 12,113 of 12,114 trades bars verified, one fell back on the request
+    budget; data step median 13.6 s, largest 19.4 s; no error. 11,254 trades rows were replaced by the venue's
+    candle (2,174 with a different close), 489 dropped where the venue has no bar, 19 of 12,510 still waiting.
+  - **Collector, first full day (item 6, provisional):** BTC's trades bar was materially off in 1 of 1,236 compared
+    minutes on Nov 11 (0.08%). ETH, SOL, XRP, LTC and ZEC each pass both measures on Nov 11 and on Nov 12 so far.
+    LTC is the closest: exactly equal in 84.4% of minutes against 80.8% for its first-seen candle, materially off in
+    3.3% against 9.9%. The rule's tool says wait: Nov 12 is not a counted day yet.
+  - **Interim look 2 at the two books** (reports/owner/reconcile_tb/i2/README.md; Nov 11 01:47 to Nov 12 12:30
+    UTC, 1,361 common minutes). It decides nothing.
+    - Bids more than 5 bp from the research level: main book 82 of 229 (35.8%), third book 0 of 159.
+    - Bids the research would not have placed: main book 39 of 229 (17.0%), third book 5 of 159 (3.1%).
+    - Item 7 waits: the third book has 159 of the 200 bids it needs on the common minutes.
+    - On its own minutes the third book has 19 wrong-side bids in 364 (5.2%): 18 of 275 on the twelve candle-path
+      coins, 1 of 89 on the five traded coins. Seven fall in one busy hour for which the main book has no log.
+  - **New finding: LTC's three level errors are kept trades rows.** The third book keeps a trades-built row for
+    good. Its three bids more than 2 bp from the research level are all LTC, and each lines up with the gap between
+    LTC's trades close and the venue's candle close 60 minutes earlier (-8.7, -3.7 and +5.0 bp against -8.8, -4.8
+    and +4.9 bp on the collector's record). One of them is the only wrong-side bid on a traded coin. This is the
+    weakness the development run showed for keeping trades rows, now seen in a live book. The fourth book's way
+    replaces the row with the candle. No rule changes: LTC's place on the list is item 6(b)'s to decide, and the
+    way of filling rows is the bar-source plan's.
+  - **One fill in all three books (Nov 11, 23:20 UTC).** The main book's ENA bid stood 14 bp above the research
+    level and filled about $6,000 (+$102); the third and fourth books bid at the research level and filled $51
+    (+$0.86 each). The main book also filled an XLM bid the research had not placed (+$4). One event; it shows how
+    far the late BTC row moves a bid and nothing about profit.
+  - **Fourth book against the third, first numbers** (Nov 11 22:25 to Nov 12 10:00 UTC, 675 common minutes): 59
+    and 70 new bids on the twelve; no wrong-side bid and no level error in either; bids in common with the research
+    55 of 59 and 66 of 70. Part 2 needs 300 bids on the twelve in each.
+  - **Part 2's date moves** (bar_source_prereg.md, deviation log): its three days end at 22:25 UTC on Nov 14, and
+    the fourth book's log reaches that minute at about 02:30 UTC on Nov 15. The read is set for the morning of
+    Nov 15. The rule is unchanged.
