@@ -88,6 +88,13 @@ Written before either book's log for these days has been read.
    were live. Research bids at a minute where the third book logged a stale BTC are listed apart and leave the
    share's denominator, as bids blocked for cash do. Item 7 uses only each bid's level and score, so the
    one-minute edge effects at the period's ends do not touch it.
+5. **The read's period** (fixed Nov 12 2026, 12:58 ET, about 32 hours before its last minute): START is
+   2026-11-11T01:47, the third book's first event. END is 2026-11-14T01:52. The registry gives 01:52 UTC on Nov 11
+   for the book's first step, and the first decisions in its log carry 01:53. Ending at 01:52 on Nov 14 gives three
+   full days of decisions on either count (4,320 minutes from 01:53). The research job is run with all three
+   spot books (`--books paper_spot,paper_spot_tb,paper_spot_t18`, and the three folders in the sparse list), as in
+   interim look 2, so one research table serves every comparison. Item 6 keeps its own dates
+   (scripts/owner/tb_rule6.py with --start 2026-11-11T01:52 --end 2026-11-14T01:52).
 
 ## Deviation log
 (none yet)

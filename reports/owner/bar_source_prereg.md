@@ -94,11 +94,26 @@ changes no rule.
   current through 01:59 UTC on Nov 14:
   `python scripts/owner/bar_source/compare.py --dir reports/owner/bar_source --log paper_spot_tb/events.jsonl`
   Without `--log` the emulation checks do not run and the single-coin clause is reported as not applied.
-- **Part 2,** not before both books' logs reach 22:24 UTC on Nov 14 (about 02:30 UTC on Nov 15; deviation log,
-  Nov 12), and only with 300 new bids on the twelve in each book: the two-book
-  reconciliation of scripts/owner/reconcile with the third book as the first book and the fourth as the second
-  (paper_spot_tb and paper_spot_t18), over the minutes both were live, read for the twelve coins together. The
-  fourth book's items 1 to 5 are in PAPER_STATUS.md.
+- **Part 2,** not before both books' logs reach 22:29 UTC on Nov 14 (about 02:30 UTC on Nov 15; deviation log,
+  Nov 12), and only with 300 new bids on the twelve in each book. The period is the fourth book's first three full
+  days of decisions: 2026-11-11T22:30 to 2026-11-14T22:29, both minutes included (4,320 minutes). Steps, fixed on
+  Nov 12 at 12:58 ET, before any of the read:
+  1. A branch made from `main` once both logs are on it (for example owner/read-part2). Research on a runner:
+     `gh workflow run hunt2.yml -R milesmcqueen98-code/crypto-edge --ref BRANCH
+     -f script=scripts/owner/reconcile/fetch_and_compute.py
+     -f args="--books paper_spot,paper_spot_tb,paper_spot_t18 --start 2026-11-11T22:25 --end 2026-11-14T22:29
+     --out reports/owner/reconcile_tb/part2/research" -f tag=reconcile-part2
+     -f sparse="bot edge scripts/owner reports/owner reports/cfm_products.csv paper_spot paper_spot_tb paper_spot_t18"
+     -f commit="reports/owner/reconcile_tb/part2/research"`
+  2. The two books, with the third as the first book and the fourth as the second:
+     `python scripts/owner/reconcile/two_books.py --research reports/owner/reconcile_tb/part2/research
+     --main paper_spot_tb --third paper_spot_t18 --start 2026-11-11T22:30 --end 2026-11-14T22:29
+     --out reports/owner/reconcile_tb/part2`
+  3. The fourth book's items 1 to 5 from PAPER_STATUS.md (a report made after the period's end), then the rule:
+     `python scripts/owner/bar_source/part2_rule.py --dir reports/owner/reconcile_tb/part2 --items-1-5 pass` (or
+     `fail`). It reads the twelve coins on the common minutes and writes part2_rule.md. The script is the rule above
+     as code (63 checks; on `main` since Nov 12, before any read). In that folder's tables the label "main" means
+     the third book and "tb" the fourth.
 
 ## Deviation log
 - **Nov 11 2026, 09:17 ET (orchestrator).** Made after the tool's development run and before any minute of either
@@ -164,3 +179,14 @@ changes no rule.
     10:00 UTC on Nov 12 (reports/owner/reconcile_tb/i2/README.md): 59 and 70 new bids on the twelve, no wrong-side
     bid and no level error in either. It changes no rule.
   - Nothing else changes.
+- **Nov 12 2026, 12:58 ET (orchestrator).** A five-minute correction and the read's steps; no rule changes.
+  - **Correction:** this morning's entry gave 22:25 UTC on Nov 11 as the fourth book's first step. 22:25 is its
+    first event, the start of its download. Its first decisions are at 22:30 UTC. Its first three full days of
+    decisions are therefore 22:30 UTC on Nov 11 to 22:29 UTC on Nov 14, and that is Part 2's period. None of the
+    five minutes concerned had happened when this was written.
+  - **The rule is now code** (scripts/owner/bar_source/part2_rule.py; agent, reviewed): the two conditions, the
+    three measures on the twelve and the fourth book's items 1 to 5 as an input. Two points the plan left open are
+    settled in it: a measure with no bids to count waits instead of failing, and "three full days" is checked as a
+    period of at least 4,320 minutes.
+  - **The exact commands** are in "How the reads are run". The only look at these books' bids so far is the interim
+    one of this morning (59 and 70 bids on the twelve, no wrong-side bid in either).

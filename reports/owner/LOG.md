@@ -581,3 +581,19 @@ FORWARD_TESTS.md.
   - **Part 2's date moves** (bar_source_prereg.md, deviation log): its three days end at 22:25 UTC on Nov 14, and
     the fourth book's log reaches that minute at about 02:30 UTC on Nov 15. The read is set for the morning of
     Nov 15. The rule is unchanged.
+- **12:58. Part 2's rule is code, the reads' periods are fixed, and a five-minute correction.**
+  - **Rule as code** (agent, reviewed; `main` 45813d8): scripts/owner/bar_source/part2_rule.py applies Part 2's
+    rule to the two-book tables of the third and fourth books. 63 checks pass. On this morning's interim tables it
+    says wait, as it must (59 and 70 bids on the twelve, 696 minutes).
+  - **Correction to this morning's entry:** the fourth book's first step was at 22:30 UTC on Nov 11, not 22:25,
+    which is the start of its download. Part 2's three days are 22:30 UTC on Nov 11 to 22:29 UTC on Nov 14. The
+    plan's deviation log has it.
+  - **Third book's read, period fixed now:** it ends with the decision minute 01:52 UTC on Nov 14, three full
+    days after the book's first decisions (paper_reconcile_plan.md, step 5). My scheduled note for that read names 01:51 as the last
+    minute; the plan file governs.
+  - **Status at 16:00 UTC:** the fourth book's run that began at 10:06 UTC pushed its log, and the next run is the
+    first with the hardened commit step. Fourth book: 1,025 minutes, 17,873 of 17,874 trades bars verified, data
+    step median 13.5 s, no half hour above 20 s, no unconfirmed row. The third book's next log is due at about
+    18:40 UTC.
+  - **Schedule:** third book's read Nov 14, 09:00 ET; Part 1 after it; Part 2 moved to Nov 15, 08:40 ET; a morning
+    check on Nov 13.
