@@ -1,0 +1,3 @@
+group,ts,coin,ladder,bot_px,res_px,final_low,research_armed,rung4_pnl,ladder_pnl,in_decision,settled,final_open,open_above_res_px,research_fill_ts
+both,2026-11-11 23:20:00,ENA,ENA-954,0.14334,0.14314,0.14304,True,102.49,102.48,True,True,0.14388,True,2026-11-11 23:20:00
+bot_only,2026-11-11 23:20:00,XLM,XLM-957,0.145543,0.145412,0.145371,False,4.26,4.26,True,True,0.146089,True,

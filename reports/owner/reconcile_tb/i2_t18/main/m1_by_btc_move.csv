@@ -1,0 +1,4 @@
+btc_move_tercile,abs_r1_bp_min,abs_r1_bp_max,n,median,p5,p95,median_abs,share_abs_gt5,share_abs_gt20
+low,0.0747,2.227,29,0,0,0,0,0,0
+mid,2.227,5.105,28,0,0,0,0,0,0
+high,5.136,17.65,29,0,0,0,0,0,0

@@ -1,0 +1,35 @@
+{
+ "period": {
+  "start": "2026-11-11 01:47:00",
+  "end": "2026-11-12 12:30:00"
+ },
+ "minutes": {
+  "main": 1364,
+  "tb": 2053,
+  "common": 1361
+ },
+ "measures": {
+  "a_level_gt5bp": {
+   "label": "new bids more than 5 bp from the research level",
+   "main_k": 82,
+   "main_n": 229,
+   "main_share": 0.35807860262008734,
+   "tb_k": 0,
+   "tb_n": 159,
+   "tb_share": 0.0,
+   "verdict": "WAIT"
+  },
+  "b_score_other_side": {
+   "label": "new bids whose research score is at or below the threshold",
+   "main_k": 39,
+   "main_n": 229,
+   "main_share": 0.1703056768558952,
+   "tb_k": 5,
+   "tb_n": 159,
+   "tb_share": 0.031446540880503145,
+   "verdict": "WAIT"
+  }
+ },
+ "min_bids": 200,
+ "overall": "WAIT"
+}
