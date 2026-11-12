@@ -11,9 +11,17 @@
 # that outlasted 76 seconds of retries. The paper jobs have about 8.5 minutes between the end of the paper run and
 # their time limit; keep the total within that (paper_commit_test.sh checks it is 330).
 # The rescue push has its own retries: one try more than the waits in PAPER_COMMIT_RESCUE_WAITS (default "15 30").
-# Every failure line ends with git's own error line, so the job log names the cause.
+# Every git call to the remote runs under a time limit of PAPER_COMMIT_CALL_LIMIT seconds (default 45; a call cut off
+# counts as a failed attempt, "no answer within N s"), and the main attempts stop at PAPER_COMMIT_DEADLINE seconds
+# after the script's start (default 300; no attempt or wait starts past it, and a call near it gets only the time
+# left), then the script goes to the rescue push. Every other failure line ends with git's own error line.
+# Worst case with the defaults: about 300 s of main attempts, then up to three rescue tries of at most 45 s with 15 s
+# and 30 s between them, about 480 s in all (plus up to 1 s of kill grace per cut-off call and up to 10 s for an
+# abort). The paper jobs reach that only if the script starts before about minute 349.8 of their 358; if it started
+# later, GitHub would kill the job at 358 minutes, the commit would never leave the runner and no ::error:: line
+# would be printed, so the log would be lost.
 # Env: PAPER_COMMIT_BRANCH (default main), PAPER_COMMIT_WAITS and PAPER_COMMIT_RESCUE_WAITS (space-separated
-#      seconds, see above), GITHUB_RUN_ID, GITHUB_RUN_ATTEMPT and GITHUB_JOB (name the rescue branch,
+#      seconds, see above), PAPER_COMMIT_CALL_LIMIT and PAPER_COMMIT_DEADLINE (seconds, see above), GITHUB_RUN_ID, GITHUB_RUN_ATTEMPT and GITHUB_JOB (name the rescue branch,
 #      paper-log-rescue/<run id>-<run attempt>-<job>, defaults local, 1 and job; the attempt keeps a re-run of the
 #      same job from colliding with the branch an earlier attempt left).
 # Usage: bash bot/spot/deploy/paper_commit.sh "<commit message>" <path> [<path> ...]
@@ -23,6 +31,8 @@
 {
 set +e
 set -u
+t0=$SECONDS
+export GIT_TERMINAL_PROMPT=0   # never wait for a password prompt
 if [ $# -lt 2 ]; then echo "::error::usage: paper_commit.sh \"<commit message>\" <path> [<path> ...]"; exit 2; fi
 msg=$1; shift
 branch=${PAPER_COMMIT_BRANCH:-main}
@@ -44,6 +54,12 @@ attempts=$((n + 1))
 n=$(count_waits "$rescue_waits")
 if [ -z "$n" ]; then echo "::warning::paper_commit: PAPER_COMMIT_RESCUE_WAITS \"$rescue_waits\" unreadable, using the default"; rescue_waits=$default_rescue_waits; n=$(count_waits "$rescue_waits"); fi
 rescue_tries=$((n + 1))
+default_call_limit=45
+default_deadline=300
+call_limit=${PAPER_COMMIT_CALL_LIMIT:-$default_call_limit}
+deadline=${PAPER_COMMIT_DEADLINE:-$default_deadline}
+case "$call_limit" in ''|*[!0-9]*|0) echo "::warning::paper_commit: PAPER_COMMIT_CALL_LIMIT \"$call_limit\" unreadable, using the default"; call_limit=$default_call_limit ;; esac
+case "$deadline" in ''|*[!0-9]*) echo "::warning::paper_commit: PAPER_COMMIT_DEADLINE \"$deadline\" unreadable, using the default"; deadline=$default_deadline ;; esac
 rescue="paper-log-rescue/${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}-${GITHUB_JOB:-job}"
 
 while [ $# -gt 0 ]; do
@@ -67,46 +83,90 @@ git_error() {  # git's own error line from the output in $1: a ref rejection, el
   echo "${l:-no output}"
 }
 
-abort_rebase() {  # only when a rebase is in progress; never fails
+left() { echo $((deadline - (SECONDS - t0))); }   # seconds until the deadline of the main attempts
+limit_now() {  # the call limit, cut to the time left before the deadline (at least 1 s)
+  local l; l=$(left)
+  if [ "$l" -lt "$call_limit" ]; then [ "$l" -lt 1 ] && l=1; echo "$l"; else echo "$call_limit"; fi
+}
+why() {  # why a remote call failed: rc $1, output $2, limit $3
+  if [ "$1" = 124 ] || [ "$1" = 137 ]; then echo "no answer within $3 s"; else git_error "$2"; fi
+}
+clear_locks() {  # after a call was cut off: remove the lock files a killed git can leave (no other git runs here)
+  local f r
+  r=$(git symbolic-ref -q HEAD)
+  for f in index.lock HEAD.lock ORIG_HEAD.lock packed-refs.lock ${r:+$r.lock}; do
+    rm -f "$(git rev-parse --git-path "$f" 2>/dev/null)"
+  done
+  return 0
+}
+in_rebase() {
   local m a
   m=$(git rev-parse --git-path rebase-merge 2>/dev/null)
   a=$(git rev-parse --git-path rebase-apply 2>/dev/null)
-  if { [ -n "$m" ] && [ -d "$m" ]; } || { [ -n "$a" ] && [ -d "$a" ]; }; then
-    git rebase --abort >/dev/null 2>&1 || echo "paper_commit: git rebase --abort failed"
+  { [ -n "$m" ] && [ -d "$m" ]; } || { [ -n "$a" ] && [ -d "$a" ]; }
+}
+mine=$(git rev-parse HEAD)            # this run's commit
+head_ref=$(git symbolic-ref -q HEAD)  # the branch it is on (empty when detached)
+abort_rebase() {  # only when a rebase is in progress; never fails. A rebase whose state a cut-off pull left broken
+  in_rebase || return 0                # is dropped and the branch put back on this run's commit.
+  timeout -k 1 10 git rebase --abort >/dev/null 2>&1
+  in_rebase || return 0
+  clear_locks
+  git rebase --quit >/dev/null 2>&1
+  [ -n "$head_ref" ] && git symbolic-ref HEAD "$head_ref"
+  if ! in_rebase && git reset -q --hard "$mine"; then
+    echo "paper_commit: git rebase --abort failed; dropped the rebase and put $head_ref back on this run's commit"
+  else
+    echo "paper_commit: git rebase --abort failed and the rebase could not be dropped"
   fi
   return 0
 }
 
-i=1; rest=$waits
+i=1; made=0; rest=$waits
 while [ "$i" -le "$attempts" ]; do
+  if [ "$(left)" -le 0 ]; then
+    echo "paper_commit: deadline of $deadline s reached after $made attempts; going to the rescue push"; break
+  fi
+  made=$i
   # -X theirs: on a conflict in the paper logs this run's (newer) version wins instead of the push failing
-  if out=$(git pull -q --rebase -X theirs origin "$branch" 2>&1); then
-    if out=$(git push -q origin "HEAD:refs/heads/$branch" 2>&1); then
+  lim=$(limit_now); out=$(timeout -k 1 "$lim" git pull -q --rebase -X theirs origin "$branch" 2>&1); rc=$?
+  if [ $rc = 0 ]; then
+    lim=$(limit_now); out=$(timeout -k 1 "$lim" git push -q origin "HEAD:refs/heads/$branch" 2>&1); rc=$?
+    if [ $rc = 0 ]; then
       echo "paper_commit: attempt $i/$attempts: pushed to $branch"
       exit 0
     fi
-    echo "paper_commit: attempt $i/$attempts: git push failed: $(git_error "$out")"
+    echo "paper_commit: attempt $i/$attempts: git push failed: $(why $rc "$out" "$lim")"
   else
-    echo "paper_commit: attempt $i/$attempts: git pull --rebase failed: $(git_error "$out")"
+    echo "paper_commit: attempt $i/$attempts: git pull --rebase failed: $(why $rc "$out" "$lim")"
   fi
+  if [ $rc = 124 ] || [ $rc = 137 ]; then clear_locks; fi
   abort_rebase
-  read -r w rest <<< "$rest"
-  if [ "$i" -lt "$attempts" ]; then sleep "${w:-0}"; fi
+  if [ "$i" -lt "$attempts" ]; then
+    read -r w rest <<< "$rest"; w=${w:-0}
+    if [ $(( $(left) - w )) -le 0 ]; then
+      echo "paper_commit: deadline of $deadline s reached after $made attempts (next wait $w s); going to the rescue push"
+      break
+    fi
+    sleep "$w"
+  fi
   i=$((i + 1))
 done
 
 abort_rebase
 i=1; rest=$rescue_waits
 while [ "$i" -le "$rescue_tries" ]; do
-  if out=$(git push -q origin "HEAD:refs/heads/$rescue" 2>&1); then
-    echo "::error::paper_commit: could not push to $branch after $attempts attempts; the commit is on branch $rescue"
+  out=$(timeout -k 1 "$call_limit" git push -q origin "HEAD:refs/heads/$rescue" 2>&1); rc=$?
+  if [ $rc = 0 ]; then
+    echo "::error::paper_commit: could not push to $branch after $made attempts; the commit is on branch $rescue"
     exit 1
   fi
-  echo "paper_commit: rescue try $i/$rescue_tries: push to $rescue failed: $(git_error "$out")"
+  echo "paper_commit: rescue try $i/$rescue_tries: push to $rescue failed: $(why $rc "$out" "$call_limit")"
+  if [ $rc = 124 ] || [ $rc = 137 ]; then clear_locks; fi
   read -r w rest <<< "$rest"
   if [ "$i" -lt "$rescue_tries" ]; then sleep "${w:-0}"; fi
   i=$((i + 1))
 done
-echo "::error::paper_commit: could not push to $branch after $attempts attempts, and the push to rescue branch $rescue failed too ($rescue_tries tries); the log is only on this runner"
+echo "::error::paper_commit: could not push to $branch after $made attempts, and the push to rescue branch $rescue failed too ($rescue_tries tries); the log is only on this runner"
 exit 1
 }
