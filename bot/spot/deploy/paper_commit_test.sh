@@ -7,7 +7,8 @@ set -u
 HERE=$(cd "$(dirname "$0")" && pwd)
 SCRIPT=$HERE/paper_commit.sh
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
-export GIT_CONFIG_GLOBAL=$T/gitconfig GIT_CONFIG_NOSYSTEM=1 PAPER_COMMIT_WAIT=0
+# short schedules for the tests: 6 attempts, 3 rescue tries, no waiting
+export GIT_CONFIG_GLOBAL=$T/gitconfig GIT_CONFIG_NOSYSTEM=1 PAPER_COMMIT_WAITS="0 0 0 0 0" PAPER_COMMIT_RESCUE_WAITS="0 0"
 git config --file "$GIT_CONFIG_GLOBAL" init.defaultBranch main
 git config --file "$GIT_CONFIG_GLOBAL" advice.detachedHead false
 unset GITHUB_RUN_ID GITHUB_RUN_ATTEMPT GITHUB_JOB PAPER_COMMIT_BRANCH
@@ -18,6 +19,24 @@ unset GITHUB_RUN_ID GITHUB_RUN_ATTEMPT GITHUB_JOB PAPER_COMMIT_BRANCH
 OLD_LOOP='for i in 1 2 3 4 5; do git pull --rebase -X theirs origin main && git push && break; git rebase --abort 2>/dev/null; sleep $((i*5)); done'
 
 fail=0; n=0
+# a git on PATH that fails the way the Nov 11 token problem did: the calls whose arguments contain FAKE_FAIL_MATCH
+# fail FAKE_FAIL_N times with "could not read Username", then pass through to the real git
+REALGIT=$(command -v git)
+mkdir "$T/bin"
+cat > "$T/bin/git" <<S
+#!/usr/bin/env bash
+cmd=""; all=""
+while [ \$# -gt 0 ]; do cmd="\$cmd \$(printf %q "\$1")"; all="\$all \$1"; shift; done
+if [ -n "\${FAKE_FAIL_MATCH:-}" ] && [[ "\$all" == *"\$FAKE_FAIL_MATCH"* ]]; then
+  k=\$(cat "\$FAKE_FAIL_COUNT" 2>/dev/null || echo 0)
+  if [ "\$k" -lt "\$FAKE_FAIL_N" ]; then
+    echo \$((k + 1)) > "\$FAKE_FAIL_COUNT"
+    echo "fatal: could not read Username for 'https://github.com': No such device or address" >&2; exit 128
+  fi
+fi
+eval "exec $REALGIT \$cmd"
+S
+chmod +x "$T/bin/git"
 sig=""  # exit codes of the cases in order, compared between the two shell modes (case 10)
 pass() { echo "PASS  $1"; sig="$sig ${rc:-}"; }
 bad() { echo "FAIL  $1"; fail=1; sig="$sig ${rc:-}"; }
@@ -107,7 +126,8 @@ for MODE in "bash" "bash -e"; do
   new_world; hook_reject_once
   echo three >> "$W/b/paper_spot/log.jsonl"
   run "$W/b" "$MODE" "log 3" paper_spot
-  if [ $rc = 0 ] && remote_has "log 3" && [[ "$out" == *"attempt 1/6: git push failed"* ]] && [[ "$out" == *"attempt 2/6: pushed to main"* ]]
+  if [ $rc = 0 ] && remote_has "log 3" && [[ "$out" == *"attempt 1/6: git push failed: ! [remote rejected] HEAD -> main (pre-receive hook declined)"* ]] \
+     && [[ "$out" == *"attempt 2/6: pushed to main"* ]]
   then pass "$tag 3 push rejected once after a clean pull: retried, commit on main"
   else bad "$tag 3 push rejected once: rc $rc, \"$out\""; fi
 
@@ -135,7 +155,8 @@ for MODE in "bash" "bash -e"; do
   new_world; hook_reject_main all
   echo six >> "$W/b/paper_spot/log.jsonl"
   run "$W/b" "$MODE" "log 6b" paper_spot
-  if [ $rc = 1 ] && printf '%s\n' "$out" | grep -q "^::error::.*paper-log-rescue/local-1-job failed too"
+  if [ $rc = 1 ] && printf '%s\n' "$out" | grep -q "^::error::.*paper-log-rescue/local-1-job failed too (3 tries)" \
+     && [ "$(printf '%s\n' "$out" | grep -c "^paper_commit: rescue try")" = 3 ]
   then pass "$tag 6b rescue push rejected too: exit 1, ::error:: says so"
   else bad "$tag 6b rescue rejected: rc $rc, \"$out\""; fi
 
@@ -149,6 +170,40 @@ for MODE in "bash" "bash -e"; do
      && remote_has "log 6c attempt 2" paper-log-rescue/88-2-paper && [[ "$out" != *"failed too"* ]]
   then pass "$tag 6c re-run of the same job: paper-log-rescue/88-1-paper and 88-2-paper, both logs kept"
   else bad "$tag 6c re-run: rc $rc1 and $rc, \"$out1\", \"$out\""; fi
+
+  # 11. the push fails 8 times (token problem) and then works: delivered within the default number of attempts
+  #     (waits set to zeros of the default length); 12. checks the failure line carries git's error text
+  new_world
+  echo eleven >> "$W/b/paper_spot/log.jsonl"
+  out=$(cd "$W/b" && PATH=$T/bin:$PATH FAKE_FAIL_MATCH=HEAD:refs/heads/main FAKE_FAIL_N=8 FAKE_FAIL_COUNT=$W/fails \
+        PAPER_COMMIT_WAITS="0 0 0 0 0 0 0 0 0 0" $MODE "$SCRIPT" "log 11" paper_spot 2>&1); rc=$?
+  if [ $rc = 0 ] && remote_has "log 11" && [[ "$out" == *"attempt 9/11: pushed to main"* ]]
+  then pass "$tag 11 push fails 8 times, then works: delivered on attempt 9 of 11"
+  else bad "$tag 11 push fails 8 times: rc $rc, \"$out\""; fi
+  if [[ "$out" == *"attempt 1/11: git push failed: fatal: could not read Username for 'https://github.com': No such device or address"* ]] \
+     && [ "$(printf '%s\n' "$out" | grep -c "^paper_commit: attempt")" = 9 ]
+  then pass "$tag 12 failure line names git's error, one line per attempt"
+  else bad "$tag 12 failure line without git's error: \"$out\""; fi
+
+  # 13. the same with a schedule of only 5 waits (6 attempts): ends on the rescue branch
+  new_world
+  echo thirteen >> "$W/b/paper_spot/log.jsonl"
+  out=$(cd "$W/b" && PATH=$T/bin:$PATH FAKE_FAIL_MATCH=HEAD:refs/heads/main FAKE_FAIL_N=8 FAKE_FAIL_COUNT=$W/fails \
+        PAPER_COMMIT_WAITS="0 0 0 0 0" $MODE "$SCRIPT" "log 13" paper_spot 2>&1); rc=$?
+  if [ $rc = 1 ] && ! remote_has "log 13" && remote_has "log 13" paper-log-rescue/local-1-job \
+     && printf '%s\n' "$out" | grep -q "^::error::.*the commit is on branch paper-log-rescue/local-1-job"
+  then pass "$tag 13 push fails 8 times, only 6 attempts: exit 1, commit on the rescue branch"
+  else bad "$tag 13 short schedule: rc $rc, \"$out\""; fi
+
+  # 14. the rescue push fails once, then works: exit 1, the rescue branch holds the commit
+  new_world; hook_reject_main
+  echo fourteen >> "$W/b/paper_spot/log.jsonl"
+  out=$(cd "$W/b" && PATH=$T/bin:$PATH FAKE_FAIL_MATCH=refs/heads/paper-log-rescue/ FAKE_FAIL_N=1 FAKE_FAIL_COUNT=$W/fails \
+        $MODE "$SCRIPT" "log 14" paper_spot 2>&1); rc=$?
+  if [ $rc = 1 ] && remote_has "log 14" paper-log-rescue/local-1-job && [[ "$out" != *"failed too"* ]] \
+     && [[ "$out" == *"rescue try 1/3: push to paper-log-rescue/local-1-job failed: fatal: could not read Username"* ]]
+  then pass "$tag 14 rescue push fails once, then works: exit 1, commit on the rescue branch"
+  else bad "$tag 14 rescue retry: rc $rc, \"$out\""; fi
 
   # 7. nothing to commit: exit 0, remote unchanged
   new_world; before=$(remote_tip)
@@ -174,7 +229,7 @@ for MODE in "bash" "bash -e"; do
   if [ $rc = 0 ] && [ "$arc" = 0 ] && remote_has "job A log" && remote_has "job B log" \
      && [ "$(remote_file paper_spot_tb/log.jsonl)" = tb ] && [ "$(remote_file paper_spot/log.jsonl | tail -n 1)" = nine ] \
      && [[ "$out" == *"attempt 1/6: git push failed"* ]]
-  then pass "$tag 9 two jobs racing: both folders on main, both exit 0 ($(printf '%s\n' "$out" | grep -m1 -o "cannot lock ref[^:]*"))"
+  then pass "$tag 9 two jobs racing: both folders on main, both exit 0 (B's first push: $(printf '%s\n' "$out" | grep -m1 -o "git push failed: .*" | cut -c18-))"
   else bad "$tag 9 two jobs racing: B rc $rc, A rc $arc, \"$out\", A: \"$(cat "$W/a.out" 2>/dev/null)\""; fi
   if [ "$MODE" = bash ]; then sig_plain=$sig; else sig_e=$sig; fi
 done
@@ -199,6 +254,13 @@ out=$(cd "$W/b" && bash -e -c "$OLD_LOOP" 2>&1); rc=$?
 if [ $rc != 0 ] && ! remote_has "log 4b" && [[ "$out" == *"cannot lock ref"* ]]
 then pass "4b faulty loop, ref race, bash -e: exits $rc, commit not on main ($(printf '%s\n' "$out" | grep -m1 -o "cannot lock ref[^:]*"))"
 else bad "4b faulty loop was expected to fail on the ref race: rc $rc, \"$out\""; fi
+
+# 15. the default schedule waits 330 s in all
+dw=$(sed -n 's/^default_waits="\(.*\)"$/\1/p' "$SCRIPT"); tot=0; k=0
+for w in $dw; do tot=$((tot + w)); k=$((k + 1)); done
+rc=0
+if [ "$tot" = 330 ] && [ "$k" = 10 ]; then pass "15 default waits: $k waits, $tot s"
+else bad "15 default waits total $tot s over $k waits, want 330 s over 10: the paper jobs have about 8.5 minutes between the end of the paper run and their 358-minute limit, and the retries, the pushes and the rescue push must fit in it"; fi
 
 bash -n "$SCRIPT" && pass "bash -n paper_commit.sh" || bad "bash -n paper_commit.sh"
 [ $fail = 0 ] && echo "PAPER COMMIT TEST PASSED" || { echo "PAPER COMMIT TEST FAILED"; exit 1; }
