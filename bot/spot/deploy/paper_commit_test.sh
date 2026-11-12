@@ -317,11 +317,13 @@ if [ $rc = 1 ] && [ "$tries" -lt 11 ] && [ "$took" -le 6 ] && ! remote_has "log 
 then pass "18 every pull hangs: deadline of 3 s stopped the main attempts after $tries of 11 (${took} s), commit on the rescue branch, exit 1"
 else bad "18 every pull hangs: rc $rc, $tries attempts, $took s, \"$out\""; fi
 
-# 19. the defaults: call limit 45 s, deadline 300 s
+# 19. the defaults: call limit 45 s, deadline 240 s, rescue waits "10 20"
 dl=$(sed -n 's/^default_call_limit=\([0-9]*\)$/\1/p' "$SCRIPT"); dd=$(sed -n 's/^default_deadline=\([0-9]*\)$/\1/p' "$SCRIPT")
+dr=$(sed -n 's/^default_rescue_waits="\(.*\)"$/\1/p' "$SCRIPT")
 rc=0
-if [ "$dl" = 45 ] && [ "$dd" = 300 ]; then pass "19 defaults: call limit $dl s, deadline $dd s"
-else bad "19 defaults: call limit ${dl:-none} s, deadline ${dd:-none} s, want 45 and 300: 300 s of main attempts plus three rescue tries of 45 s with 45 s of waits is about 480 s, just inside the ~510 s between the end of the paper run (minute ~349.5) and the 358-minute job limit"; fi
+if [ "$dl" = 45 ] && [ "$dd" = 240 ] && [ "$dr" = "10 20" ]
+then pass "19 defaults: call limit $dl s, deadline $dd s, rescue waits \"$dr\" (worst case ~244 + ~11 + ~168 = ~425 s of ~510 s)"
+else bad "19 defaults: call limit ${dl:-none} s, deadline ${dd:-none} s, rescue waits \"$dr\", want 45, 240 and \"10 20\": about 244 s of main attempts, about 11 s for the last abort and about 168 s for the rescue push (3 tries of 46 s, 10 s and 20 s between) make about 425 s, against about 510 s between the end of the paper run (minute ~349.5) and the 358-minute job limit"; fi
 
 # 15. the default schedule waits 330 s in all
 dw=$(sed -n 's/^default_waits="\(.*\)"$/\1/p' "$SCRIPT"); tot=0; k=0

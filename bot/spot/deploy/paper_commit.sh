@@ -10,15 +10,16 @@
 # 330 s of waiting. It is long because on Nov 11 a six-hour log was lost to a token problem ("could not read Username")
 # that outlasted 76 seconds of retries. The paper jobs have about 8.5 minutes between the end of the paper run and
 # their time limit; keep the total within that (paper_commit_test.sh checks it is 330).
-# The rescue push has its own retries: one try more than the waits in PAPER_COMMIT_RESCUE_WAITS (default "15 30").
+# The rescue push has its own retries: one try more than the waits in PAPER_COMMIT_RESCUE_WAITS (default "10 20").
 # Every git call to the remote runs under a time limit of PAPER_COMMIT_CALL_LIMIT seconds (default 45; a call cut off
 # counts as a failed attempt, "no answer within N s"), and the main attempts stop at PAPER_COMMIT_DEADLINE seconds
-# after the script's start (default 300; no attempt or wait starts past it, and a call near it gets only the time
+# after the script's start (default 240; no attempt or wait starts past it, and a call near it gets only the time
 # left), then the script goes to the rescue push. Every other failure line ends with git's own error line.
-# Worst case with the defaults: about 300 s of main attempts, then up to three rescue tries of at most 45 s with 15 s
-# and 30 s between them, about 480 s in all (plus up to 1 s of kill grace per cut-off call and up to 10 s for an
-# abort). The paper jobs reach that only if the script starts before about minute 349.8 of their 358; if it started
-# later, GitHub would kill the job at 358 minutes, the commit would never leave the runner and no ::error:: line
+# The deadline ends the main attempts before the schedule is used up: with quick failures, after about 9 of the 11.
+# Worst case with the defaults: about 244 s of main attempts (240 s and a capped last call), about 11 s for the last
+# abort, then up to three rescue tries of at most 46 s (45 s and 1 s of kill grace) with 10 s and 20 s between them,
+# about 168 s: about 425 s in all, against about 510 s between the end of the paper run (minute ~349.5) and the
+# 358-minute job limit. The paper jobs reach the limit only if the script starts after about minute 350.9; if it did, GitHub would kill the job at 358 minutes, the commit would never leave the runner and no ::error:: line
 # would be printed, so the log would be lost.
 # Env: PAPER_COMMIT_BRANCH (default main), PAPER_COMMIT_WAITS and PAPER_COMMIT_RESCUE_WAITS (space-separated
 #      seconds, see above), PAPER_COMMIT_CALL_LIMIT and PAPER_COMMIT_DEADLINE (seconds, see above), GITHUB_RUN_ID, GITHUB_RUN_ATTEMPT and GITHUB_JOB (name the rescue branch,
@@ -37,7 +38,7 @@ if [ $# -lt 2 ]; then echo "::error::usage: paper_commit.sh \"<commit message>\"
 msg=$1; shift
 branch=${PAPER_COMMIT_BRANCH:-main}
 default_waits="5 10 15 20 25 30 45 60 60 60"
-default_rescue_waits="15 30"
+default_rescue_waits="10 20"
 waits=${PAPER_COMMIT_WAITS:-$default_waits}
 rescue_waits=${PAPER_COMMIT_RESCUE_WAITS:-$default_rescue_waits}
 count_waits() {  # prints the number of waits in $1, or nothing when one of them is not a whole number of seconds
@@ -55,7 +56,7 @@ n=$(count_waits "$rescue_waits")
 if [ -z "$n" ]; then echo "::warning::paper_commit: PAPER_COMMIT_RESCUE_WAITS \"$rescue_waits\" unreadable, using the default"; rescue_waits=$default_rescue_waits; n=$(count_waits "$rescue_waits"); fi
 rescue_tries=$((n + 1))
 default_call_limit=45
-default_deadline=300
+default_deadline=240
 call_limit=${PAPER_COMMIT_CALL_LIMIT:-$default_call_limit}
 deadline=${PAPER_COMMIT_DEADLINE:-$default_deadline}
 case "$call_limit" in ''|*[!0-9]*|0) echo "::warning::paper_commit: PAPER_COMMIT_CALL_LIMIT \"$call_limit\" unreadable, using the default"; call_limit=$default_call_limit ;; esac
