@@ -693,3 +693,11 @@ FORWARD_TESTS.md.
     12.2 s at the latest, 17 new bids. Six coin-minutes on the candle path were skipped for an old answer.
   - **A four-coin variant is being tested as well** (branch owner/release-3-four: BTC, ETH, SOL, XRP), in case
     the read takes LTC and ZEC off the list. Suite run 43488258360, paper run 43488263182.
+- **14:44. The four-coin variant passed too.** Branch owner/release-3-four (commit e622b78: BTC, ETH, SOL, XRP).
+  - **Full offline suite** (run 43488258360): no file with a failure, the same replay and live-path numbers, 1,928
+    bars built from trades on the new inputs, 15 ladders kept across the switch. This run also covers the
+    watchdog's test on a runner (31 checks).
+  - **Paper run on live data** (run 43488263182, to 19:30 UTC): no error, 28 bars built from trades in seven
+    minutes (four coins a minute), no fallback, data ready at a median of 11.4 s and 16.5 s at the latest.
+  - **So both lists the read can plausibly give are tested:** six coins (owner/release-3, ec6f19a) and four. A
+    list of five lies between them on the same code. Nothing is merged.
