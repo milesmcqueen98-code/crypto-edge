@@ -24,6 +24,7 @@ LAST_LINE = ("Paper fills assume the research's capture share; they check the ma
 RULE_A_RATE = "1-6 rung fills a day"   # rule A's rate text, as written in reports/owner/FORWARD_TESTS.md
 ERR_CHARS = 160
 EXPLAINED_FILE = os.path.join("reports", "owner", "explained_errors.json")
+TEST_A_START_FILE = os.path.join("reports", "owner", "test_a_start.json")
 
 # key, folder, label, starting capital, spot-style book (rungs, ladders) or perp book
 BOOKS = [
@@ -319,6 +320,113 @@ def rule_a(s):
     if days >= 21 and rungs >= 60 and net is not None:
         return "ON TRACK"
     return "NOT YET (too early)"
+
+
+# ---------------------------------------------------------------- rule A counted again from a start time
+def load_test_a_start(root):
+    """Reads reports/owner/test_a_start.json. Returns (state, start, label): state is "absent" (no file), "bad" (the file
+    exists but cannot be used: unreadable, not JSON, not an object, or no start time that parse_ts accepts) or "ok"."""
+    path = os.path.join(root, TEST_A_START_FILE)
+    if not os.path.exists(path):
+        return "absent", None, None
+    try:
+        with open(path, encoding="utf-8") as f:
+            raw = json.load(f)
+    except (OSError, ValueError):
+        return "bad", None, None
+    start = parse_ts(raw.get("start")) if isinstance(raw, dict) else None
+    if start is None:
+        return "bad", None, None
+    label = raw.get("label")
+    label = clean(label) if isinstance(label, str) and clean(label) else None
+    return "ok", start, label
+
+
+def rung_key(e):
+    """(ladder id, rung number) as the log records them on both fill_entry and fill_exit, or None when either is missing."""
+    r = num(e.get("rung"))
+    lad = e.get("ladder")
+    if r is None or lad is None:
+        return None
+    return (str(lad), int(r))
+
+
+def split_book(events, start):
+    """Splits a spot book's record at start. A rung belongs to the period of its first entry fill (the earliest time among
+    the fill_entry events with its ladder id and rung number); its other fills and all its exits follow it. An exit that
+    matches no entry fill (or has no ladder id or rung) and an error belong to the period of their own time. A time that
+    is missing or before start is "before". Returns {"before": part, "after": part, "untied": n}, a part being fills,
+    bought (None when fills carry no dollars), pnl, net_bp, errors (events) and exits."""
+    def period(t):
+        return "after" if t is not None and t >= start else "before"
+    first_t = {}
+    for e in events:
+        if e.get("kind") == "fill_entry":
+            k = rung_key(e)
+            if k is None:
+                continue
+            old_t = first_t.get(k)
+            if e["_t"] is not None and (old_t is None or e["_t"] < old_t):
+                first_t[k] = e["_t"]
+            else:
+                first_t.setdefault(k, None)
+    parts = {p: {"usds": [], "fills": 0, "pnl": 0.0, "errors": [], "exits": 0} for p in ("before", "after")}
+    untied = 0
+    for e in events:
+        kind = e.get("kind")
+        if kind == "fill_entry":
+            k = rung_key(e)
+            q = parts[period(first_t[k] if k is not None else e["_t"])]
+            q["fills"] += 1
+            q["usds"].append(num(e.get("usd")))
+        elif kind == "fill_exit":
+            k = rung_key(e)
+            if k is not None and k in first_t:
+                q = parts[period(first_t[k])]
+            else:
+                untied += 1
+                q = parts[period(e["_t"])]
+            q["exits"] += 1
+            q["pnl"] += num(e.get("pnl")) or 0.0
+        elif kind == "error":
+            parts[period(e["_t"])]["errors"].append((e["_t"], str(e.get("error", e.get("message", "(no message)")))))
+    for q in parts.values():
+        known = [u for u in q["usds"] if u is not None]
+        q["bought"] = sum(known) if (known or not q["fills"]) else None
+        q["net_bp"] = 1e4 * q["pnl"] / q["bought"] if q["bought"] else None
+        del q["usds"]
+    return {"before": parts["before"], "after": parts["after"], "untied": untied}
+
+
+def before_block(sp, split, entries, start):
+    """The block under rule A's table: the main book's record before start, kept apart."""
+    L = [f"### Before {fmt_t(start)}, kept apart", ""]
+    b = split["before"]
+    if sp["first"] is None or sp["first"] >= start:
+        return L + ["The book has no events before this time, so there is no earlier record.", ""]
+    days = (min(start, sp["newest"]) - sp["first"]).total_seconds() / 86400
+    ex, un = classify_errors("spot", b["errors"], entries)
+    return L + [table(["Measure", "Before"], [
+        ["Days (calendar, first event to start)", f"{days:.1f}"],
+        ["Rungs bought", str(b["fills"])],
+        ["Dollars bought", money(b["bought"]) if b["bought"] is not None else "n/a (not logged)"],
+        ["Mean net per dollar (exits after the start included)", bp(b["net_bp"])],
+        ["Errors", str(len(b["errors"]))],
+        ["Unexplained", str(len(un))]]), ""]
+
+
+def period_view(sp, rt, parts, entries, start):
+    """The numbers of rule A's table for the period from start (see split_book), as the same keys the whole-log table uses
+    plus the text cells. rt is the book's running-time result; the rates use it restricted to [start, newest]."""
+    newest, first = sp["newest"], sp["first"]
+    a = max(start, first) if first is not None else start       # time before the book's first event is not counted
+    span = (newest - a).total_seconds() if newest is not None and newest > a else 0.0
+    after = parts["after"]
+    ex, un = classify_errors("spot", after["errors"], entries)
+    rt2 = dict(rt, cal_h=span / 3600, run_h=up_hours(rt, a, newest) if span > 0 else 0.0)
+    return {"days": span / 86400, "fills": after["fills"], "net_bp": after["net_bp"], "errors": len(after["errors"]),
+            "explained": ex, "unexplained": len(un), "rt": rt2,
+            "unexplained_msgs": Counter(clean(msg)[:ERR_CHARS] for _, msg in un)}
 
 
 # ---------------------------------------------------------------- running time
@@ -809,6 +917,7 @@ def build_report(root, now):
             dqs[key] = None
             notes.append(f"{label}: data quality could not be worked out ({clean(type(exc).__name__)}).")
 
+    ta_state, ta_start, ta_label = load_test_a_start(root)
     L = ["# Paper trading status", "", f"Report made {fmt_t(now)}.", ""]
     rows = []
     for key, folder, label, _, _ in books:
@@ -857,36 +966,64 @@ def build_report(root, now):
           "Days are calendar days, from the first to the newest event (hours in real time are under Running time). Change is against starting capital ($250,000 spot, $10,000 perp). "
           "Net per dollar is total P&L of exits over total dollars bought, so rungs still open count as bought "
           "with no P&L yet. A rung can exit in several pieces, so exit events can outnumber fills. The perp logs do not record contract size, so their dollars bought are not available.", ""]
+    if ta_state == "ok":
+        L += [f"Rule A is counted from {fmt_t(ta_start)}; see the section below.", ""]
 
     # rule A
     sp = st["spot"]
-    L += ["## Spot book against forward rule A", "", f"> {RULE_A}", ""]
+    L += ["## Spot book against forward rule A", ""]
+    if ta_state == "bad":
+        L += ["reports/owner/test_a_start.json could not be read; rule A is shown on the whole log.", ""]
+    L += [f"> {RULE_A}", ""]
+    if ta_state == "ok":
+        L += [f"Counted from {fmt_t(ta_start)}" + (f" ({ta_label})" if ta_label else "")
+              + ": the main book's inputs changed then. The registered rule is counted again from that time "
+              "(reports/owner/FORWARD_TESTS.md).", ""]
+    split = view = None
+    if ta_state == "ok" and sp["status"] == "ok":
+        try:
+            split = split_book(loaded["spot"]["events"], ta_start)
+            view = period_view(sp, rts["spot"], split, entries, ta_start)
+        except Exception as exc:  # never fail on odd data
+            split = view = None
+            notes.append(f"Rule A split at the start time could not be worked out ({clean(type(exc).__name__)}); "
+                         "shown on the whole log.")
     if sp["status"] != "ok":
         L += [f"No spot log to judge ({sp['status']}). Status: NOT YET (too early).", ""]
     else:
+        if view is None:
+            view = {"days": sp["days"], "fills": sp["fills"], "net_bp": sp["net_bp"], "errors": sp["errors"],
+                    "explained": sp["explained"], "unexplained": sp["unexplained"], "rt": rts["spot"],
+                    "unexplained_msgs": sp["unexplained_msgs"]}
+        vrt = view["rt"]
         L += [table(["Measure", "So far"], [
-            ["Days (calendar)", f"{sp['days']:.1f} of 21"],
-            ["Days in real time", f"{rts['spot']['run_h'] / 24:.1f}" if rts["spot"]["ok"] else NOT_DERIVABLE],
-            ["Rungs", f"{sp['fills']} of 60"],
-            [f"Rung fills a day (rule text: {RULE_A_RATE})", both_rates(sp["fills"], rts["spot"])],
-            ["Mean net per dollar", bp(sp["net_bp"])],
-            ["Errors (total)", str(sp["errors"])],
-            ["Explained", str(len(sp["explained"]))],
-            ["Unexplained", str(sp["unexplained"])]]), ""]
+            ["Days (calendar)", f"{view['days']:.1f} of 21"],
+            ["Days in real time", f"{vrt['run_h'] / 24:.1f}" if vrt["ok"] else NOT_DERIVABLE],
+            ["Rungs", f"{view['fills']} of 60"],
+            [f"Rung fills a day (rule text: {RULE_A_RATE})", both_rates(view["fills"], vrt)],
+            ["Mean net per dollar", bp(view["net_bp"])],
+            ["Errors (total)", str(view["errors"])],
+            ["Explained", str(len(view["explained"]))],
+            ["Unexplained", str(view["unexplained"])]]), ""]
         if expl_note:
             L += [expl_note, ""]
-        if sp["explained"]:
+        if view["explained"]:
             L += ["Explained errors:", "",
                   table(["Time (UTC)", "Error (first 160 characters)", "Explanation", "Queued fix"],
                         [[fmt_t(t), clean(msg)[:ERR_CHARS], en["explained"], en["fix"]]
-                         for t, msg, en in sp["explained"]]), ""]
-        if sp["unexplained_msgs"] and sp["unexplained"]:
+                         for t, msg, en in view["explained"]]), ""]
+        if view["unexplained_msgs"] and view["unexplained"]:
             L += ["Unexplained errors:", "",
                   table(["Error message (first 160 characters)", "Count"],
-                        [[m, str(n)] for m, n in sp["unexplained_msgs"].most_common()]), ""]
-        L += [f"Status: **{rule_a(sp)}**", "",
+                        [[m, str(n)] for m, n in view["unexplained_msgs"].most_common()]), ""]
+        L += [f"Status: **{rule_a(view)}**", "",
               "CHECK means unexplained errors are present or net is at or below 0. NOT YET means the 3 weeks and 60 rungs are not "
               "reached. ON TRACK means both are reached with no unexplained errors and net above 0. The owner declares any pass.", ""]
+        if split is not None:
+            L += before_block(sp, split, entries, ta_start)
+            if split["untied"]:
+                L += [f"{split['untied']} exit event(s) match no entry fill by ladder id and rung number; each is counted "
+                      "in the period of its own time.", ""]
 
     # spot detail
     L += ["## Spot book detail", ""]

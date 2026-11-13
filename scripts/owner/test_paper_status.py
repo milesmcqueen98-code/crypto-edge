@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Tests for paper_status.py on small synthetic logs. Run: python scripts/owner/test_paper_status.py"""
+import importlib.util
 import json
 import os
+import subprocess
 import sys
 import tempfile
 from datetime import datetime, timedelta, timezone
@@ -534,6 +536,221 @@ def t18_tests():
               and "Both logs are needed for this comparison" in text.split("## Fourth book")[1], text[-1500:])
 
 
+def section(text, title):
+    """The text of the '## title' section, up to the next '## ' heading."""
+    return text.split("## " + title + "\n", 1)[1].split("\n## ", 1)[0]
+
+
+RULE_A_TITLE = "Spot book against forward rule A"
+START_FILE = os.path.join("reports", "owner", "test_a_start.json")
+
+
+def put_start(root, content):
+    os.makedirs(os.path.join(root, "reports", "owner"), exist_ok=True)
+    with open(os.path.join(root, START_FILE), "w") as f:
+        f.write(content if isinstance(content, str) else json.dumps(content))
+
+
+def split_book_root(tmp, start_day=8):
+    """Main book with a start at Nov 8 00:00 UTC. Before: A-1/4 $3,000 (exit after the start, +30), A-2/4 $1,000 (exit -10),
+    A-1/6 bought in two fills, $500 before and $1,500 after the start (exit +5), one error. After: B-1/4 $2,000 (exit +12),
+    B-2/4 $4,000 (open), one error. Newest event Nov 9 12:00."""
+    spot = [
+        {"ts": "2026-11-07T00:00:00", "kind": "backfill", "minutes": 10, "coins": 18},
+        entry("2026-11-07T02:00:00", 4, 3000, "A-1"),
+        {"ts": "2026-11-07T07:00:00", "kind": "error", "error": "early failure"},
+        entry("2026-11-07T10:00:00", 4, 1000, "A-2"),
+        exit_("2026-11-07T12:00:00", 4, -10.0, "time", "A-2"),
+        entry("2026-11-07T23:50:00", 6, 500, "A-1"),
+        entry("2026-11-08T00:10:00", 6, 1500, "A-1"),
+        exit_("2026-11-08T03:00:00", 4, 30.0, "tp", "A-1"),
+        exit_("2026-11-08T04:00:00", 6, 5.0, "tp", "A-1"),
+        entry("2026-11-08T06:00:00", 4, 2000, "B-1"),
+        {"ts": "2026-11-08T07:00:00", "kind": "error", "error": "late failure"},
+        exit_("2026-11-08T09:00:00", 4, 12.0, "tp", "B-1"),
+        entry("2026-11-08T20:00:00", 4, 4000, "B-2"),
+        {"ts": "2026-11-09T12:00:00", "kind": "heartbeat", "equity": 250000, "committed": 1000, "free": 1000},
+    ]
+    write(tmp, "paper_spot", spot)
+    write(tmp, "paper_spot_w2", [{"ts": "2026-11-07T01:00:00", "kind": "backfill"},
+                                 entry("2026-11-07T03:00:00", 4, 1000, "W-1"),
+                                 exit_("2026-11-07T05:00:00", 4, 3.0, "tp", "W-1"),
+                                 {"ts": "2026-11-09T11:00:00", "kind": "heartbeat", "equity": 250003}])
+    write(tmp, "paper", [{"ts": "2026-11-09T10:00:00", "kind": "heartbeat", "equity": 10000}])
+
+
+def old_module():
+    """paper_status.py as it is on origin/main (read with git; None when git cannot give it)."""
+    repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    try:
+        src = subprocess.run(["git", "-C", repo, "show", "origin/main:scripts/owner/paper_status.py"],
+                             capture_output=True, text=True, timeout=30, check=True).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    spec = importlib.util.spec_from_loader("paper_status_main", loader=None)
+    mod = importlib.util.module_from_spec(spec)
+    exec(compile(src, "paper_status_main.py", "exec"), mod.__dict__)
+    return mod
+
+
+def test_a_start_tests():
+    start = "2026-11-08T00:00:00Z"
+    with tempfile.TemporaryDirectory() as tmp:
+        split_book_root(tmp)
+        plain = ps.build_report(tmp, NOW)
+        # no file: the same text as with an empty reports folder, and no trace of the feature
+        os.makedirs(os.path.join(tmp, "reports", "owner"))
+        check("test A: no file, empty reports folder gives the same text", ps.build_report(tmp, NOW) == plain)
+        check("test A: no file, no Counted-from line, no before block, no Summary sentence",
+              "Counted from" not in plain and "kept apart" not in plain and "Rule A is counted from" not in plain
+              and "could not be read" not in plain)
+        old = old_module()
+        if old is None:
+            print("skip test A: origin/main copy not available (git); no-file equality with the old script not checked")
+        else:
+            check("test A: no file, text equals what paper_status.py on origin/main writes (synthetic book)",
+                  old.build_report(tmp, NOW) == plain)
+            with tempfile.TemporaryDirectory() as tmp2:
+                build_root(tmp2)
+                check("test A: no file, text equals origin/main on the first synthetic log",
+                      old.build_report(tmp2, NOW) == ps.build_report(tmp2, NOW))
+
+        # file present
+        put_start(tmp, {"start": start, "label": "release 3"})
+        text = ps.build_report(tmp, NOW)
+        ra = section(text, RULE_A_TITLE)
+        check("test A: Counted-from line with label",
+              "Counted from 2026-11-08 00:00 UTC (release 3): the main book's inputs changed then. The registered rule is "
+              "counted again from that time (reports/owner/FORWARD_TESTS.md)." in ra, ra)
+        check("test A: Summary sentence", "Rule A is counted from 2026-11-08 00:00 UTC; see the section below." in text)
+        rows = {l.split(" | ")[0].lstrip("| "): l for l in ra.splitlines() if l.startswith("| ")}
+        check("test A: rule table counts rungs from the start only (2 fills)", rows["Rungs"] == "| Rungs | 2 of 60 |", rows["Rungs"])
+        check("test A: rule table days from the start to the newest event", rows["Days (calendar)"] == "| Days (calendar) | 1.5 of 21 |",
+              rows["Days (calendar)"])
+        check("test A: net per dollar of the later rungs only: 12 over 6000", rows["Mean net per dollar"] == "| Mean net per dollar | "
+              + ps.bp(1e4 * 12 / 6000) + " |", rows["Mean net per dollar"])
+        check("test A: later period's errors split", rows["Errors (total)"].endswith("| 1 |") and rows["Unexplained"].endswith("| 1 |")
+              and "late failure" in ra and "early failure" not in ra.split("### Before")[0], ra)
+        check("test A: status word from the later period (net above 0, one unexplained error)", "Status: **CHECK**" in ra)
+        before = ra.split("### Before 2026-11-08 00:00 UTC, kept apart")[1]
+        brow = {l.split(" | ")[0].lstrip("| "): l for l in before.splitlines() if l.startswith("| ")}
+        check("test A: before block present", "### Before 2026-11-08 00:00 UTC, kept apart" in ra)
+        check("test A: before days 1.0", any(k.startswith("Days") and l.split(" | ")[1].strip(" |") == "1.0" for k, l in brow.items()), brow)
+        check("test A: before rungs: 4 fills, the two-fill rung counted once as a whole in the earlier period",
+              brow["Rungs bought"].endswith("| 4 |"), brow["Rungs bought"])
+        check("test A: before dollars 6,000 (3000+1000+500+1500)", brow["Dollars bought"].endswith("| " + ps.money(6000.0) + " |"),
+              brow["Dollars bought"])
+        nb = [l for k, l in brow.items() if k.startswith("Mean net")][0]
+        check("test A: before net includes the exits after the start: (30-10+5) over 6000", nb.endswith("| " + ps.bp(1e4 * 25 / 6000) + " |"), nb)
+        check("test A: before errors 1, unexplained 1", brow["Errors"].endswith("| 1 |") and brow["Unexplained"].endswith("| 1 |"))
+        check("test A: the exit after the start belongs to the earlier rung, not the rule table (12 not 37)",
+              ps.bp(1e4 * 37 / 12000) not in ra and ps.bp(1e4 * 30 / 3000) not in ra)
+        whole = ps.stats(ps.load_book(tmp, "paper_spot"), 250000.0, True)
+        sb = ps.split_book(ps.load_book(tmp, "paper_spot")["events"], ps.parse_ts(start))
+        check("test A: the two periods add up to the whole log (fills, dollars, P&L, errors)",
+              sb["before"]["fills"] + sb["after"]["fills"] == whole["fills"] == 6
+              and abs(sb["before"]["bought"] + sb["after"]["bought"] - whole["bought"]) < 1e-9
+              and abs(sb["before"]["pnl"] + sb["after"]["pnl"] - whole["pnl"]) < 1e-9
+              and len(sb["before"]["errors"]) + len(sb["after"]["errors"]) == whole["errors"] and sb["untied"] == 0)
+        # every other section equal
+        sp_plain = [x for x in plain.split("\n## ")]
+        sp_text = [x for x in text.split("\n## ")]
+        diff = [i for i, (a, b) in enumerate(zip(sp_plain, sp_text)) if a != b]
+        titles = [sp_plain[i].split("\n", 1)[0] for i in diff]
+        check("test A: same sections in both reports", len(sp_plain) == len(sp_text), (len(sp_plain), len(sp_text)))
+        check("test A: only the Summary and the rule A section differ", titles == ["Summary", RULE_A_TITLE], titles)
+        check("test A: W2 section identical", section(text, "W2 against the main spot book") == section(plain, "W2 against the main spot book"))
+        sentence = "Rule A is counted from 2026-11-08 00:00 UTC; see the section below."
+        summ = section(text, "Summary").replace(sentence, "")
+        check("test A: Summary numbers identical (only the sentence added)",
+              " ".join(summ.split()) == " ".join(section(plain, "Summary").split()) and sentence in section(text, "Summary"))
+        # no label: no parenthesis
+        put_start(tmp, {"start": start})
+        t2 = section(ps.build_report(tmp, NOW), RULE_A_TITLE)
+        check("test A: no label, no parenthesis", "Counted from 2026-11-08 00:00 UTC: the main book's inputs" in t2, t2)
+        # start forms: trailing Z, offset, naive
+        for form in ("2026-11-08T00:00:00Z", "2026-11-08T02:00:00+02:00", "2026-11-07T19:00:00-05:00", "2026-11-08T00:00:00"):
+            put_start(tmp, {"start": form, "label": "release 3"})
+            check("test A: start form accepted: " + form, section(ps.build_report(tmp, NOW), RULE_A_TITLE) == ra)
+        # a rung first bought before and again after the start is whole in the earlier period; moving start between the fills
+        put_start(tmp, {"start": "2026-11-08T00:05:00Z"})
+        t3 = section(ps.build_report(tmp, NOW), RULE_A_TITLE)
+        check("test A: start between the two fills of A-1/6: both fills stay with the earlier period",
+              "| Rungs | 2 of 60 |" in t3 and "| Rungs bought | 4 |" in t3, t3)
+        # start later than the newest event
+        put_start(tmp, {"start": "2026-11-20T00:00:00Z"})
+        t4 = section(ps.build_report(tmp, NOW), RULE_A_TITLE)
+        check("test A: start after the newest event: zero rungs, 0.0 days, NOT YET",
+              "| Rungs | 0 of 60 |" in t4 and "| Days (calendar) | 0.0 of 21 |" in t4 and "Status: **NOT YET (too early)**" in t4, t4)
+        check("test A: start after the newest event: before block holds the whole record (6 fills, $12,000, 2 errors)",
+              "| Rungs bought | 6 |" in t4 and "| Dollars bought | " + ps.money(12000.0) + " |" in t4 and "| Errors | 2 |" in t4
+              and "| Mean net per dollar (exits after the start included) | " + ps.bp(1e4 * 37 / 12000) + " |" in t4, t4)
+        # start earlier than the first event: the whole record is the period, the before block is one line
+        put_start(tmp, {"start": "2026-11-01T00:00:00Z"})
+        t5 = section(ps.build_report(tmp, NOW), RULE_A_TITLE)
+        check("test A: start before the first event: one-line before block",
+              "### Before 2026-11-01 00:00 UTC, kept apart\n\nThe book has no events before this time, so there is no earlier record.\n"
+              in t5 and "| Measure | Before |" not in t5, t5)
+        plain_tab = [l for l in section(plain, RULE_A_TITLE).splitlines() if l.startswith("| ")]
+        t5_tab = [l for l in t5.splitlines() if l.startswith("| ")]
+        check("test A: start before the first event: the table equals the whole-log table", plain_tab == t5_tab, (plain_tab, t5_tab))
+        # unreadable file: same report plus one line at the top of the rule A section
+        heading = "## " + RULE_A_TITLE + "\n\n"
+        line = "reports/owner/test_a_start.json could not be read; rule A is shown on the whole log.\n\n"
+        want = plain.replace(heading, heading + line, 1)
+        for name, content in (("bad JSON", "{not json"), ("start missing", '{"label": "x"}'),
+                              ("start not a time", '{"start": "later"}'), ("start not text", '{"start": 5}'),
+                              ("not an object", "[1, 2]"), ("empty file", "")):
+            put_start(tmp, content)
+            got = ps.build_report(tmp, NOW)
+            check("test A: unreadable file (" + name + "): the no-file report plus one line", got == want)
+        check("test A: the added line is the first line of the section",
+              section(want, RULE_A_TITLE).lstrip().startswith(line.strip()))
+        os.remove(os.path.join(tmp, START_FILE))
+        os.mkdir(os.path.join(tmp, START_FILE))
+        check("test A: a directory in place of the file counts as unreadable", ps.build_report(tmp, NOW) == want)
+        os.rmdir(os.path.join(tmp, START_FILE))
+    # an exit that matches no entry is counted in the period of its own time and reported
+    with tempfile.TemporaryDirectory() as tmp:
+        write(tmp, "paper_spot", [entry("2026-11-07T02:00:00", 4, 1000, "A-1"),
+                                  exit_("2026-11-07T03:00:00", 4, 5.0, "tp", "A-1"),
+                                  exit_("2026-11-08T03:00:00", 4, 7.0, "tp", "Z-9"),
+                                  exit_("2026-11-07T04:00:00", 4, 1.0, "tp", "Z-8")])
+        put_start(tmp, {"start": "2026-11-08T00:00:00Z"})
+        ra = section(ps.build_report(tmp, NOW), RULE_A_TITLE)
+        check("test A: untied exits counted by their own time and reported",
+              "2 exit event(s) match no entry fill" in ra and "| Mean net per dollar (exits after the start included) | "
+              + ps.bp(1e4 * 6 / 1000) + " |" in ra, ra)
+    # the status word: 21 days and 60 rungs since the start
+    with tempfile.TemporaryDirectory() as tmp:
+        def long_book(extra_error_after=False):
+            ev = [{"ts": "2026-11-01T00:00:00", "kind": "backfill"},
+                  {"ts": "2026-11-02T00:00:00", "kind": "error", "error": "old trouble"},
+                  entry("2026-11-03T00:00:00", 4, 1000, "OLD-1")]
+            for i in range(60):
+                t = datetime(2026, 11, 10, 2, tzinfo=timezone.utc) + timedelta(hours=i)
+                ev += [entry(iso(t), 4, 1000, f"N-{i}"), exit_(iso(t + timedelta(hours=1)), 4, 2.0, "tp", f"N-{i}")]
+            if extra_error_after:
+                ev.append({"ts": "2026-11-20T00:00:00", "kind": "error", "error": "new trouble"})
+            ev.append({"ts": "2026-12-01T00:00:00", "kind": "heartbeat", "equity": 250100})
+            ev.sort(key=lambda e: e["ts"])
+            write(tmp, "paper_spot", ev)
+        put_start(tmp, {"start": "2026-11-10T00:00:00Z"})
+        long_book()
+        now2 = datetime(2026, 12, 1, 1, tzinfo=timezone.utc)
+        ra = section(ps.build_report(tmp, now2), RULE_A_TITLE)
+        check("test A: 21 days, 60 rungs, net above 0, earlier unexplained error: ON TRACK",
+              "| Days (calendar) | 21.0 of 21 |" in ra and "| Rungs | 60 of 60 |" in ra and "Status: **ON TRACK**" in ra
+              and "| Unexplained | 0 |" in ra, ra)
+        os.remove(os.path.join(tmp, START_FILE))
+        check("test A: the same book on the whole log is CHECK (the earlier error counts)",
+              "Status: **CHECK**" in section(ps.build_report(tmp, now2), RULE_A_TITLE))
+        put_start(tmp, {"start": "2026-11-10T00:00:00Z"})
+        long_book(extra_error_after=True)
+        ra = section(ps.build_report(tmp, now2), RULE_A_TITLE)
+        check("test A: an unexplained error after the start: CHECK", "Status: **CHECK**" in ra and "new trouble" in ra, ra)
+
+
 def main():
     with tempfile.TemporaryDirectory() as tmp:
         build_root(tmp)
@@ -689,6 +906,7 @@ def main():
     data_quality_tests()
     third_book_tests()
     t18_tests()
+    test_a_start_tests()
 
     print("\n" + ("all passed" if not FAILS else f"{len(FAILS)} failed: {FAILS}"))
     sys.exit(1 if FAILS else 0)
