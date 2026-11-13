@@ -1,12 +1,12 @@
 {
  "run": "43318554715",
- "heartbeat": "2026-11-13T02:00:56Z",
+ "heartbeat": "2026-11-13T02:30:56Z",
  "started": "2026-11-12T22:18:41Z",
  "planned_end": "2026-11-13T04:03:40Z",
  "rows_last_hour": {
   "book": 1079,
   "hl": 1080,
-  "candles": 1285,
+  "candles": 1286,
   "cfm": 1740,
   "tbar": 1062
  },
@@ -18,9 +18,9 @@
   "tbar": 59
  },
  "errors": {
-  "book:deadline": 2,
-  "book:missing": 2,
-  "book:timeout": 3
+  "book:deadline": 3,
+  "book:missing": 3,
+  "book:timeout": 5
  },
  "refused": {},
  "coins": [
