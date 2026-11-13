@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 """Tests for paper_status.py on small synthetic logs. Run: python scripts/owner/test_paper_status.py"""
-import importlib.util
 import json
 import os
-import subprocess
 import sys
 import tempfile
 from datetime import datetime, timedelta, timezone
@@ -579,20 +577,6 @@ def split_book_root(tmp, start_day=8):
     write(tmp, "paper", [{"ts": "2026-11-09T10:00:00", "kind": "heartbeat", "equity": 10000}])
 
 
-def old_module():
-    """paper_status.py as it is on origin/main (read with git; None when git cannot give it)."""
-    repo = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    try:
-        src = subprocess.run(["git", "-C", repo, "show", "origin/main:scripts/owner/paper_status.py"],
-                             capture_output=True, text=True, timeout=30, check=True).stdout
-    except (OSError, subprocess.SubprocessError):
-        return None
-    spec = importlib.util.spec_from_loader("paper_status_main", loader=None)
-    mod = importlib.util.module_from_spec(spec)
-    exec(compile(src, "paper_status_main.py", "exec"), mod.__dict__)
-    return mod
-
-
 def test_a_start_tests():
     start = "2026-11-08T00:00:00Z"
     with tempfile.TemporaryDirectory() as tmp:
@@ -604,16 +588,23 @@ def test_a_start_tests():
         check("test A: no file, no Counted-from line, no before block, no Summary sentence",
               "Counted from" not in plain and "kept apart" not in plain and "Rule A is counted from" not in plain
               and "could not be read" not in plain)
-        old = old_module()
-        if old is None:
-            print("skip test A: origin/main copy not available (git); no-file equality with the old script not checked")
-        else:
-            check("test A: no file, text equals what paper_status.py on origin/main writes (synthetic book)",
-                  old.build_report(tmp, NOW) == plain)
-            with tempfile.TemporaryDirectory() as tmp2:
-                build_root(tmp2)
-                check("test A: no file, text equals origin/main on the first synthetic log",
-                      old.build_report(tmp2, NOW) == ps.build_report(tmp2, NOW))
+        # the no-file rule A table, row by row, from the synthetic events (2.5 days, 6 fills, $12,000, P&L 37, 2 errors)
+        ra0 = section(plain, RULE_A_TITLE)
+        rows0 = [l for l in ra0.split("Unexplained errors:")[0].splitlines() if l.startswith("| ")]
+        want_rows = ["| Measure | So far |",
+                     "| Days (calendar) | 2.5 of 21 |",
+                     "| Days in real time | " + ps.NOT_DERIVABLE + " |",
+                     "| Rungs | 6 of 60 |",
+                     "| Rung fills a day (rule text: " + ps.RULE_A_RATE + ") | "
+                     + f"{6 / (60 / 24):.2f} per calendar day; " + ps.NOT_DERIVABLE + " per running day |",
+                     "| Mean net per dollar | " + ps.bp(1e4 * 37 / 12000) + " |",
+                     "| Errors (total) | 2 |",
+                     "| Explained | 0 |",
+                     "| Unexplained | 2 |"]
+        check("test A: no file, every row of the rule A table as computed by hand", rows0 == want_rows, rows0)
+        check("test A: no file, unexplained errors listed (one each)",
+              "| early failure | 1 |" in ra0 and "| late failure | 1 |" in ra0)
+        check("test A: no file, status line CHECK (two unexplained errors)", "\nStatus: **CHECK**\n" in ra0)
 
         # file present
         put_start(tmp, {"start": start, "label": "release 3"})
