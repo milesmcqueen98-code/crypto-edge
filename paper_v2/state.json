@@ -2,73 +2,73 @@
  "positions": {},
  "orders": {
   "NEAR": {
-   "id": "paper-fa933b394d",
+   "id": "paper-2f29ea455e",
    "side": "BUY",
-   "px": 3.2759,
+   "px": 3.2133000000000003,
    "contracts": 1,
    "kind": "entry",
-   "active_from": "2026-11-13T00:52:00"
-  },
-  "XRP": {
-   "id": "paper-95237aa942",
-   "side": "BUY",
-   "px": 1.0149000000000001,
-   "contracts": 4,
-   "kind": "entry",
-   "active_from": "2026-11-13T00:52:00"
+   "active_from": "2026-11-13T06:44:00"
   },
   "PEPE": {
-   "id": "paper-63b8152ceb",
+   "id": "paper-4ec8b72a05",
    "side": "BUY",
-   "px": 0.004288,
+   "px": 0.004255,
    "contracts": 5,
    "kind": "entry",
-   "active_from": "2026-11-13T00:52:00"
-  },
-  "XLM": {
-   "id": "paper-bc1af44f6a",
-   "side": "BUY",
-   "px": 0.14479,
-   "contracts": 3,
-   "kind": "entry",
-   "active_from": "2026-11-13T00:52:00"
-  },
-  "HYPE": {
-   "id": "paper-aa5b7aef6f",
-   "side": "BUY",
-   "px": 70.78,
-   "contracts": 3,
-   "kind": "entry",
-   "active_from": "2026-11-13T00:52:00"
+   "active_from": "2026-11-13T06:44:00"
   },
   "AAVE": {
-   "id": "paper-3cd79b254c",
+   "id": "paper-3c8fcd76a5",
    "side": "BUY",
-   "px": 110.34,
+   "px": 107.66,
    "contracts": 4,
    "kind": "entry",
-   "active_from": "2026-11-13T00:52:00"
+   "active_from": "2026-11-13T06:44:00"
+  },
+  "ZEC": {
+   "id": "paper-e4395d8446",
+   "side": "BUY",
+   "px": 859.95,
+   "contracts": 2,
+   "kind": "entry",
+   "active_from": "2026-11-13T06:44:00"
+  },
+  "SUI": {
+   "id": "paper-cbc37638be",
+   "side": "BUY",
+   "px": 0.7653000000000001,
+   "contracts": 6,
+   "kind": "entry",
+   "active_from": "2026-11-13T06:44:00"
+  },
+  "XRP": {
+   "id": "paper-f3e65b3472",
+   "side": "BUY",
+   "px": 0.9965,
+   "contracts": 5,
+   "kind": "entry",
+   "active_from": "2026-11-13T06:44:00"
   }
  },
  "equity": 10023.21873,
  "day": "2026-11-13",
  "day_start_equity": 10023.21873,
  "halted_day": null,
- "last_minute": "2026-11-13T00:52:00",
+ "last_minute": "2026-11-13T06:44:00",
  "pending_sig": {
-  "NEAR": 0.009049933838999439,
-  "HYPE": 0.005307918747614413,
-  "PEPE": 0.01183308803116163,
+  "NEAR": 0.009870073554551398,
+  "HYPE": 0.00539437287707519,
+  "PEPE": 0.0123719485721469,
   "BCH": 0.004307320804260713,
-  "XRP": 0.00456935051629935,
-  "SUI": 0.004237948845684803,
-  "XLM": 0.005122278501825893,
-  "AAVE": 0.006747806051940369,
-  "ENA": 0.007582959839230696,
-  "ONDO": 0.006189945419457767,
-  "ZEC": 0.013986102641571106,
+  "XRP": 0.00486075857570468,
+  "SUI": 0.004690023429182859,
+  "XLM": 0.00518390995323635,
+  "AAVE": 0.006439507013329909,
+  "ENA": 0.008006040353135818,
+  "ONDO": 0.00615774585178188,
+  "ZEC": 0.015328620452833787,
   "HBAR": 0.004541589206218015,
   "DOGE": 0.0033789639551515213,
-  "SOL": 0.0035902268142924657
+  "SOL": 0.0035038752983983937
  }
 }
