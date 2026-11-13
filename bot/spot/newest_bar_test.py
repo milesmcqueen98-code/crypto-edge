@@ -43,6 +43,10 @@ from bot.spot import engine as E  # noqa: E402
 COLS = ["open", "high", "low", "close", "volume"]
 FAILS = []
 CFG = json.load(open(os.path.join(HERE, "config.json")))
+# stored history has no trades list: the base settings are candle mode (every input switch absent, so the engine's
+# defaults apply: candles, guard off), whatever config.json's inputs are; each case below sets the switches it tests
+for _k in ("newest_bar", "trades_coins", "stale_guard", "trades_rows", "trades_budget_s", "confirm_s"):
+    CFG.pop(_k, None)
 
 
 def check(name, ok, extra=""):

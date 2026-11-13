@@ -17,7 +17,8 @@ Checks:
 - the bot's equity equals the exchange's USD balance (every fill booked exactly once).
 
 Usage: python bot/spot/live_sim_test.py "2025-10-10 20:00" "2025-10-11 02:00" "--death=2025-10-10 21:10"
-       [--config=path/to/config.json]   (default bot/spot/config.json)
+       [--config=path/to/config.json]   (default bot/spot/config.json; its input settings are not used: history has
+                                         no trades list, so the run is on final candles)
 """
 import os
 import random
@@ -238,6 +239,9 @@ def main(start, end, death=None, death_min=20, config=None):
     import json
     cfg = json.load(open(config or os.path.join(HERE, "config.json")))
     cfg.update(capital=cap, usd_reserve=0.0)
+    # stored history has no trades list: this replay runs on final candles, whatever the config's inputs are
+    cfg.update(newest_bar="candles", stale_guard=False)
+    cfg.pop("trades_coins", None)
     sd = tempfile.mkdtemp(prefix="spot_live_")
     eng = E.Engine(mode="live", cfg=cfg, state_dir=sd, market=mkt, broker=ex, clock=now, echo=False)
     t0 = time.time()
