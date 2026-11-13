@@ -44,6 +44,8 @@ TB_DEFAULT_COINS = ["BTC", "ETH", "SOL", "XRP", "LTC", "ZEC"]   # the coins the 
 TB_ALL_COINS = 18                                               # coins in the book (rule item 5)
 TB_MIN_MINUTES = 4000                                           # real-time minutes the rule asks for
 HEARTBEAT_MIN = 30                                              # the engine writes a heartbeat every 30 minutes
+HEARTBEAT_GAP_MAX_MIN = 45                                      # more than this between heartbeats needs an explanation
+HEARTBEAT_RESTART_GAP_MAX_MIN = 75                              # a run handover with a backfill may leave one out
 FIRST_RUNG = 4                                                  # the first (4-sigma) bid; deeper rungs are 6 and 8
 MATCH_SECONDS = 120                                             # same coin within two minutes either side
 
@@ -351,8 +353,13 @@ def running_time(events, first, last):
       against heartbeat spacing, where a heartbeat gap of 480 minutes ends at a catch_up of 472 minutes, and a gap of
       180 ends at one of 145. Both books write a heartbeat every 30 minutes while live.) Real-time time is calendar
       time from the first to the last event minus the union of those gaps, clipped to that span.
-    - A book with no catch_up events is taken as never gapped only if it has at least two heartbeats and no two
-      consecutive heartbeats are more than 45 minutes apart. Otherwise the log cannot support it: not derivable.
+    - A book with no catch_up events is taken as never gapped only if it has at least two heartbeats and every pair
+      of consecutive heartbeats is either at most 45 minutes apart, or at most 75 minutes apart with a backfill event
+      in between (after the first heartbeat, up to and including the second). Reason: the paper runs hand over to
+      each other about every six hours, and the new run downloads its history (writing a backfill event) for about
+      five minutes before its first step. When that runs over a half-hour mark one heartbeat is left out. The engine
+      writes a catch_up event at any start after a gap of two minutes or more, so a start without one continued
+      within a minute. Any other pair, or no such explanation, means the log cannot support it: not derivable.
     - A run whose log was never saved leaves no events, so it looks like a gap; the share can then be too low."""
     rt = {"ok": False, "first": first, "last": last, "cal_h": None, "run_h": None, "share": None, "gaps": [],
           "down": [], "note": NOT_DERIVABLE}
@@ -372,8 +379,15 @@ def running_time(events, first, last):
             gaps.append((a, b))
     if n_cu == 0:
         hb = sorted(e["_t"] for e in events if e.get("kind") == "heartbeat" and e.get("_t") is not None)
-        if len(hb) < 2 or any((y - x).total_seconds() > 45 * 60 for x, y in zip(hb, hb[1:])):
+        if len(hb) < 2:
             return rt
+        bf = [e["_t"] for e in events if e.get("kind") == "backfill" and e.get("_t") is not None]
+        for x, y in zip(hb, hb[1:]):
+            gap_min = (y - x).total_seconds() / 60
+            if gap_min <= HEARTBEAT_GAP_MAX_MIN:
+                continue
+            if gap_min > HEARTBEAT_RESTART_GAP_MAX_MIN or not any(x < t <= y for t in bf):
+                return rt
     down = merge_intervals(gaps)
     lost = sum((b - a).total_seconds() for a, b in down) / 3600
     rt.update(ok=True, down=down, note="", run_h=rt["cal_h"] - lost, share=100.0 * (rt["cal_h"] - lost) / rt["cal_h"],
