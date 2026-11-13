@@ -682,3 +682,14 @@ FORWARD_TESTS.md.
     to put to Miles: a private repository the VM pushes to, or an export he attaches.
   - **Status report:** rule A can be counted from a start time (`main` 1456de4). The start file is added at
     release 3; until then the report is unchanged.
+- **14:01. The release 3 candidate passed on GitHub runners.**
+  - **Full offline suite** (run 43475841318, 75 minutes, on commit fec476a): no file with a failure. Parity replay
+    156 rungs and 88 parents on both sides; live-path simulation 111 entries and $11,723.34, and 109 entries and
+    $8,421.28 with the server death; on the new inputs the same numbers, 2,892 bars built from trades, no fallback,
+    15 ladders kept across the switch. The watchdog's test joined the list one commit later (ec6f19a); I ran it
+    here: 31 checks pass.
+  - **Paper run of the new main-book config on live data** (run 43475847326, 17:50 to 18:00 UTC): no error. 54
+    bars built from trades in nine minutes (six coins a minute), no fallback, data ready at a median of 9.7 s and
+    12.2 s at the latest, 17 new bids. Six coin-minutes on the candle path were skipped for an old answer.
+  - **A four-coin variant is being tested as well** (branch owner/release-3-four: BTC, ETH, SOL, XRP), in case
+    the read takes LTC and ZEC off the list. Suite run 43488258360, paper run 43488263182.
