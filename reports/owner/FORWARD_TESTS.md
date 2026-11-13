@@ -32,6 +32,18 @@ them.
   not proven. The commit step now retries over four minutes, limits every remote call to 45 s and keeps a rescue
   branch as the last resort (on `main` since Nov 12 13:44 UTC). Every paper run that began after the Nov 11 fixes
   has pushed its log and started the next run.
+
+**What release 3 does to tests A, B and W2 (fixed Nov 13 2026, 08:48 ET, before the third book's read).**
+- **Test A starts again at release 3.** Its three weeks and 60 rungs are counted from the main book's first run on
+  the new inputs. Until then the book bid from a BTC row one minute late in most minutes (about a third of its bids
+  more than 5 bp from the research level) and ran about 70% of the time, so its fills are not the strategy's. The
+  record before release 3 stays in the log and is reported apart. That record is favourable so far (35 rungs, 76 bp
+  net per dollar by Nov 13), so this sets aside a good number, not a bad one.
+- **The W2 comparison goes on unchanged.** W2 and the main book switch together and have had the same inputs in
+  every minute, so the comparison stays like for like.
+- **Test B, the pilot, compares the live bot with the main book from the pilot's start,** both on release 3 or
+  later.
+- If the read fails, none of this applies until a later release 3.
 - **Rung fills are above rule A's band when counted per running day:** 21 rungs in 60.5 live hours is 8.3 a day,
   against 1 to 6 (5.8 per calendar day). The reconciliation (reports/owner/reconcile/README.md) shows it was the
   market, not the fault: on final candles the research would have had 16 first-bid fills in the same live minutes,

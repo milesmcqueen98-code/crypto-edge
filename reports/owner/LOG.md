@@ -632,3 +632,8 @@ FORWARD_TESTS.md.
     (bar_source_prereg.md, deviation log).
   - **No reconciliation was run** and no outcome was read. The reads stay as scheduled: third book Nov 14, 09:00
     ET; Part 1 after it; Part 2 Nov 15, 08:40 ET.
+- **08:48. Test A's count at release 3, fixed before the read.** If release 3 ships, test A's three weeks and 60
+  rungs start again with the main book's first run on the new inputs; the record made on the late BTC input is kept
+  and reported apart. It is a favourable record (35 rungs, 76 bp net per dollar), so the choice is not made to hide
+  a bad one. The W2 comparison continues, since both books switch together. Registry: FORWARD_TESTS.md, the note
+  under the first table.
