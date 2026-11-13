@@ -114,6 +114,11 @@ changes no rule.
      `fail`). It reads the twelve coins on the common minutes and writes part2_rule.md. The script is the rule above
      as code (63 checks; on `main` since Nov 12, before any read). In that folder's tables the label "main" means
      the third book and "tb" the fourth.
+  4. **If the bids are short** (fixed Nov 13 at 08:46 ET): if either book has fewer than 300 new bids on the twelve
+     at 22:29 UTC on Nov 14, the period's end moves later in steps of six hours (04:29, 10:29, 16:29 UTC on Nov 15,
+     and so on) until both have 300, and steps 1 to 3 use that end. The bids are counted from the two logs alone:
+     arm events on one of the twelve coins at a minute that is a decision minute of both books
+     (scripts/owner/reconcile/common.py, live_minutes). No research is fetched for a count.
 
 ## Deviation log
 - **Nov 11 2026, 09:17 ET (orchestrator).** Made after the tool's development run and before any minute of either
@@ -190,3 +195,11 @@ changes no rule.
     period of at least 4,320 minutes.
   - **The exact commands** are in "How the reads are run". The only look at these books' bids so far is the interim
     one of this morning (59 and 70 bids on the twelve, no wrong-side bid in either).
+- **Nov 13 2026, 08:46 ET (orchestrator).** What happens if the bids are short; no rule changes.
+  - **Why:** the rule waits for 300 new bids on the twelve in each book but did not say how the period's end is
+    then chosen. Left open, the end could be picked after seeing results.
+  - **Fixed now:** the end moves later in whole steps of six hours until both books have 300 (step 4 of "How the
+    reads are run"). The count uses the logs only.
+  - **What was known when this was written:** the counts from the logs through 09:00 UTC on Nov 13: 158 new bids on
+    the twelve in the third book and 159 in the fourth, on 2,008 common minutes. At that pace both reach about 330
+    by 22:29 UTC on Nov 14. No research has been fetched for these books since the interim look of Nov 12.

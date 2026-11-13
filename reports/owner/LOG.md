@@ -597,3 +597,38 @@ FORWARD_TESTS.md.
     18:40 UTC.
   - **Schedule:** third book's read Nov 14, 09:00 ET; Part 1 after it; Part 2 moved to Nov 15, 08:40 ET; a morning
     check on Nov 13.
+
+## Nov 13 2026 (times ET; UTC is five hours later)
+
+- **08:46. Morning check.**
+  - **Runs:** every paper run since 12:49 UTC on Nov 12 ended in success, pushed its log and started its
+    successor: spot at 18:38, 00:29, 06:19 and 12:10 UTC, perp at 19:02, 00:52, 06:44 and 12:34 UTC, the fourth
+    book at 15:57, 21:48, 03:39 and 09:28 UTC. The runs that began after 13:44 UTC on Nov 12 used the hardened
+    commit step; no rescue branch exists. The collector's record is current and nothing was refused.
+  - **Third book at 12:10 UTC:** 3,489 of its 4,000 minutes (58.1 of 58.2 hours). Items 1 to 5 hold: 19,806 of
+    19,806 trades bars verified; no refusal; data step median 10.2 s, at or under 20 s in 99.1% of 114 half hours;
+    no error; 14 of 61,218 rows unconfirmed.
+  - **The venue serves more old candle answers today.** The third book skipped 316 coin-minutes of the twelve for
+    an old answer in the first 12 hours of Nov 13, against 190 in all of Nov 12. The main book had no BTC row for
+    the minute just closed in 637 of 720 minutes (88%). The fourth book reads no newest bar from candles and skips
+    nothing for this.
+  - **Fourth book at 09:00 UTC:** 2,075 minutes without a gap. 35,621 of 35,622 trades bars verified; data step
+    median 13.5 s (12.1 s today), at or under 20 s in 98.6% of 69 half hours (largest 20.2 s); no error; no
+    unconfirmed row. 33,932 trades rows replaced by the venue's candle (5,368 with a different close), 988 dropped,
+    61 of 36,810 still waiting. Its code record names commit 58eba8b.
+  - **A fault in the status report, fixed** (agent, reviewed; `main` 96d1834). The report said the fourth book's
+    running time could not be derived. Cause: a hand-over whose start-up ran over a half-hour mark leaves one
+    heartbeat out, and the report treated two heartbeats an hour apart as a possible gap for a book with no
+    logged gap. It now accepts such a pair when a start lies between them. The book itself had no fault. 20 new
+    checks; the other books' numbers are unchanged.
+  - **Item 6, provisional, two counted days** (Nov 11 and 12): BTC's trades bar materially off in 1 of 2,178
+    compared minutes (0.05%). ETH, SOL, XRP, LTC and ZEC pass both measures on both days. LTC is the closest: on
+    Nov 12 exactly equal in 87.7% of minutes against 87.0% for its first-seen candle, materially off in 1.95%
+    against 5.58%. For BTC the collector has a final candle to compare in 1,236 and 942 of 1,440 minutes.
+  - **Bid counts, from the logs alone.** Item 7's pair through 12:00 UTC: 418 new bids in the main book and 315
+    in the third on 2,746 common minutes, so item 7 has the 200 it needs. Part 2's pair through 09:00 UTC: 158 and
+    159 new bids on the twelve on 2,008 common minutes, against 300 needed by 22:29 UTC on Nov 14. That is close,
+    so the plan now says what happens if they are short: the period's end moves in six-hour steps
+    (bar_source_prereg.md, deviation log).
+  - **No reconciliation was run** and no outcome was read. The reads stay as scheduled: third book Nov 14, 09:00
+    ET; Part 1 after it; Part 2 Nov 15, 08:40 ET.

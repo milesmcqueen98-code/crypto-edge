@@ -94,7 +94,9 @@ Written before either book's log for these days has been read.
    full days of decisions on either count (4,320 minutes from 01:53). The research job is run with all three
    spot books (`--books paper_spot,paper_spot_tb,paper_spot_t18`, and the three folders in the sparse list), as in
    interim look 2, so one research table serves every comparison. Item 6 keeps its own dates
-   (scripts/owner/tb_rule6.py with --start 2026-11-11T01:52 --end 2026-11-14T01:52).
+   (scripts/owner/tb_rule6.py with --start 2026-11-11T01:52 --end 2026-11-14T01:52). Its daily table comes from
+   scripts/forward/input_checks.py, whose --end is exclusive: --start 2026-11-11 --end 2026-11-15 covers Nov 11
+   to Nov 14.
 
 ## Deviation log
 (none yet)
