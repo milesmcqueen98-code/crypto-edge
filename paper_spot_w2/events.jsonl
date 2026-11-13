@@ -1634,3 +1634,176 @@
 {"ts": "2026-11-13T11:28:00", "kind": "arm", "coin": "ETH", "ladder": "ETH-1230", "px": 1926.29, "usd": 15723, "pred": 30.5, "sigma_bp": 29.0, "usd_bids_ahead": null}
 {"ts": "2026-11-13T11:30:00", "kind": "heartbeat", "equity": 251565.08, "mtm": 251565.08, "committed": 119971, "free": 131594, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"newest_absent": 53, "candle_old": 47, "reprice": 435, "btc_candle_old": 29, "btc_stale": 28, "arm": 4, "disarm": 3}, "step_s": {"data": [8.87, 9.24], "cancel": [9.565000000000001, 10.0], "place": [9.565000000000001, 10.0]}}
 {"ts": "2026-11-13T12:00:00", "kind": "heartbeat", "equity": 251565.08, "mtm": 251565.08, "committed": 119971, "free": 131594, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"newest_absent": 64, "btc_candle_old": 30, "candle_old": 59, "btc_stale": 30, "reprice": 446}, "step_s": {"data": [8.88, 9.1], "cancel": [9.54, 9.76], "place": [9.54, 9.76]}}
+{"ts": "2026-11-13T12:10:00", "kind": "backfill", "minutes": 15840, "coins": 18}
+{"ts": "2026-11-13T12:10:00", "kind": "catch_up", "gap_minutes": 2, "open": []}
+{"ts": "2026-11-13T12:16:00", "kind": "arm", "coin": "NEAR", "ladder": "NEAR-1231", "px": 3.3840000000000003, "usd": 15723, "pred": 60.6, "sigma_bp": 106.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:16:00", "kind": "arm", "coin": "PEPE", "ladder": "PEPE-1232", "px": 4.3e-06, "usd": 3703, "pred": 58.4, "sigma_bp": 125.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:16:00", "kind": "arm", "coin": "SUI", "ladder": "SUI-1233", "px": 0.7888000000000001, "usd": 7335, "pred": 56.3, "sigma_bp": 48.7, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:16:00", "kind": "arm", "coin": "XRP", "ladder": "XRP-1234", "px": 0.9987, "usd": 15723, "pred": 53.8, "sigma_bp": 50.0, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:16:00", "kind": "arm", "coin": "AAVE", "ladder": "AAVE-1235", "px": 109.06, "usd": 2117, "pred": 53.6, "sigma_bp": 65.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:16:00", "kind": "arm", "coin": "HYPE", "ladder": "HYPE-1236", "px": 71.61, "usd": 14822, "pred": 52.0, "sigma_bp": 58.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:16:00", "kind": "arm", "coin": "ONDO", "ladder": "ONDO-1237", "px": 0.33618000000000003, "usd": 3479, "pred": 51.8, "sigma_bp": 63.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:16:00", "kind": "arm", "coin": "XLM", "ladder": "XLM-1238", "px": 0.1439, "usd": 4947, "pred": 51.3, "sigma_bp": 52.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:16:00", "kind": "arm", "coin": "ENA", "ladder": "ENA-1239", "px": 0.13436, "usd": 3975, "pred": 50.4, "sigma_bp": 81.9, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:16:00", "kind": "arm", "coin": "BCH", "ladder": "BCH-1240", "px": 219.48000000000002, "usd": 1696, "pred": 50.1, "sigma_bp": 44.9, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:16:00", "kind": "arm", "coin": "SOL", "ladder": "SOL-1241", "px": 79.38, "usd": 15723, "pred": 46.3, "sigma_bp": 37.2, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:16:00", "kind": "arm", "coin": "DOGE", "ladder": "DOGE-1242", "px": 0.06424, "usd": 3724, "pred": 45.9, "sigma_bp": 39.0, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:16:00", "kind": "arm", "coin": "LINK", "ladder": "LINK-1243", "px": 9.821, "usd": 4473, "pred": 45.0, "sigma_bp": 43.0, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:16:00", "kind": "arm", "coin": "HBAR", "ladder": "HBAR-1244", "px": 0.06192, "usd": 3132, "pred": 44.5, "sigma_bp": 44.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:16:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1245", "px": 898.0500000000001, "usd": 15723, "pred": 43.7, "sigma_bp": 154.9, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:16:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-1246", "px": 48.483000000000004, "usd": 3603, "pred": 40.1, "sigma_bp": 40.8, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:21:00", "kind": "arm", "coin": "ETH", "ladder": "ETH-1247", "px": 1929.72, "usd": 15723, "pred": 30.9, "sigma_bp": 29.2, "usd_bids_ahead": null}
+{"ts": "2026-11-13T12:30:00", "kind": "heartbeat", "equity": 251565.08, "mtm": 251565.08, "committed": 119971, "free": 131594, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"newest_absent": 48, "btc_stale": 15, "arm": 17, "btc_candle_old": 14, "candle_old": 32, "reprice": 215, "disarm": 1}, "step_s": {"data": [10.34, 10.82], "cancel": [11.14, 11.75], "place": [11.14, 11.75]}}
+{"ts": "2026-11-13T13:00:00", "kind": "heartbeat", "equity": 251565.08, "mtm": 251565.08, "committed": 119971, "free": 131594, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"newest_absent": 104, "btc_candle_old": 30, "candle_old": 80, "btc_stale": 30, "reprice": 453}, "step_s": {"data": [10.32, 11.59], "cancel": [11.215, 12.47], "place": [11.215, 12.47]}}
+{"ts": "2026-11-13T13:13:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1248", "px": 902.0500000000001, "usd": 15723, "pred": 32.0, "sigma_bp": 155.2, "usd_bids_ahead": null}
+{"ts": "2026-11-13T13:19:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1249", "px": 904.22, "usd": 15723, "pred": 30.7, "sigma_bp": 155.2, "usd_bids_ahead": null}
+{"ts": "2026-11-13T13:30:00", "kind": "heartbeat", "equity": 251565.08, "mtm": 251565.08, "committed": 104238, "free": 147327, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP"], "open": [], "counts": {"newest_absent": 119, "btc_candle_old": 30, "candle_old": 74, "btc_stale": 30, "reprice": 439, "disarm": 3, "arm": 2}, "step_s": {"data": [10.34, 11.02], "cancel": [11.254999999999999, 11.89], "place": [11.26, 11.89]}}
+{"ts": "2026-11-13T13:31:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1250", "px": 908.36, "usd": 15723, "pred": 35.8, "sigma_bp": 155.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T13:56:00", "kind": "arm", "coin": "HYPE", "ladder": "HYPE-1251", "px": 72.69, "usd": 14822, "pred": 41.6, "sigma_bp": 58.9, "usd_bids_ahead": null}
+{"ts": "2026-11-13T13:56:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1252", "px": 915.44, "usd": 15723, "pred": 39.0, "sigma_bp": 155.0, "usd_bids_ahead": null}
+{"ts": "2026-11-13T14:00:00", "kind": "heartbeat", "equity": 251565.08, "mtm": 251565.08, "committed": 119971, "free": 131594, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"newest_absent": 92, "btc_candle_old": 30, "candle_old": 63, "btc_stale": 30, "reprice": 463, "arm": 3, "disarm": 2}, "step_s": {"data": [10.48, 10.9], "cancel": [11.265, 11.78], "place": [11.265, 11.78]}}
+{"ts": "2026-11-13T14:08:00", "kind": "arm", "coin": "HYPE", "ladder": "HYPE-1253", "px": 72.79, "usd": 14822, "pred": 40.1, "sigma_bp": 59.0, "usd_bids_ahead": null}
+{"ts": "2026-11-13T14:10:00", "kind": "arm", "coin": "HYPE", "ladder": "HYPE-1254", "px": 72.73, "usd": 14822, "pred": 39.9, "sigma_bp": 59.0, "usd_bids_ahead": null}
+{"ts": "2026-11-13T14:13:00", "kind": "arm", "coin": "HYPE", "ladder": "HYPE-1255", "px": 72.68, "usd": 14822, "pred": 40.1, "sigma_bp": 59.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T14:13:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1256", "px": 913.78, "usd": 15723, "pred": 30.7, "sigma_bp": 154.2, "usd_bids_ahead": null}
+{"ts": "2026-11-13T14:15:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1257", "px": 914.25, "usd": 15723, "pred": 32.1, "sigma_bp": 154.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T14:25:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1258", "px": 915.22, "usd": 15723, "pred": 31.5, "sigma_bp": 153.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T14:30:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1259", "px": 914.88, "usd": 15723, "pred": 31.5, "sigma_bp": 153.0, "usd_bids_ahead": null}
+{"ts": "2026-11-13T14:30:00", "kind": "heartbeat", "equity": 251565.08, "mtm": 251565.08, "committed": 119971, "free": 131594, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"newest_absent": 91, "btc_candle_old": 30, "candle_old": 64, "btc_stale": 30, "reprice": 423, "disarm": 7, "arm": 7}, "step_s": {"data": [10.205, 10.86], "cancel": [11.08, 11.71], "place": [11.08, 11.71]}}
+{"ts": "2026-11-13T14:37:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1260", "px": 900.59, "usd": 15723, "pred": 40.0, "sigma_bp": 152.7, "usd_bids_ahead": null}
+{"ts": "2026-11-13T14:46:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1261", "px": 906.98, "usd": 15723, "pred": 30.5, "sigma_bp": 152.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T14:51:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1262", "px": 897.84, "usd": 15723, "pred": 31.9, "sigma_bp": 152.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T14:57:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1263", "px": 895.22, "usd": 15723, "pred": 32.0, "sigma_bp": 152.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:00:00", "kind": "heartbeat", "equity": 251565.08, "mtm": 251565.08, "committed": 104238, "free": 147327, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP"], "open": [], "counts": {"newest_absent": 95, "btc_candle_old": 30, "candle_old": 66, "btc_stale": 30, "reprice": 444, "disarm": 5, "arm": 4}, "step_s": {"data": [10.285, 10.85], "cancel": [11.1, 11.62], "place": [11.1, 11.62]}}
+{"ts": "2026-11-13T15:03:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1264", "px": 892.47, "usd": 15723, "pred": 32.0, "sigma_bp": 152.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:11:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1265", "px": 890.54, "usd": 15723, "pred": 35.7, "sigma_bp": 152.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:16:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1266", "px": 888.59, "usd": 15723, "pred": 33.1, "sigma_bp": 152.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:21:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1267", "px": 893.78, "usd": 15723, "pred": 31.6, "sigma_bp": 152.2, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:23:00", "kind": "arm", "coin": "AAVE", "ladder": "AAVE-1268", "px": 110.13, "usd": 2116, "pred": 44.1, "sigma_bp": 68.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:23:00", "kind": "arm", "coin": "HBAR", "ladder": "HBAR-1269", "px": 0.062220000000000004, "usd": 3132, "pred": 39.7, "sigma_bp": 46.2, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:23:00", "kind": "arm", "coin": "ENA", "ladder": "ENA-1270", "px": 0.13353, "usd": 3975, "pred": 32.4, "sigma_bp": 81.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:23:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-1271", "px": 48.543, "usd": 3603, "pred": 30.5, "sigma_bp": 41.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:26:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-1272", "px": 48.498, "usd": 3603, "pred": 34.5, "sigma_bp": 41.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:28:00", "kind": "arm", "coin": "ENA", "ladder": "ENA-1273", "px": 0.13307000000000002, "usd": 3975, "pred": 35.4, "sigma_bp": 81.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:28:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-1274", "px": 48.449, "usd": 3603, "pred": 35.0, "sigma_bp": 41.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:29:00", "kind": "arm", "coin": "SUI", "ladder": "SUI-1275", "px": 0.794, "usd": 7335, "pred": 48.5, "sigma_bp": 51.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:30:00", "kind": "heartbeat", "equity": 251565.08, "mtm": 251565.08, "committed": 59457, "free": 192108, "armed": ["LTC", "NEAR", "PEPE", "XLM", "XRP", "ZEC"], "open": [], "counts": {"newest_absent": 85, "btc_candle_old": 30, "candle_old": 41, "btc_stale": 30, "reprice": 324, "arm": 12, "disarm": 21}, "step_s": {"data": [10.475000000000001, 11.0], "cancel": [11.28, 11.85], "place": [11.28, 11.85]}}
+{"ts": "2026-11-13T15:33:00", "kind": "arm", "coin": "SUI", "ladder": "SUI-1276", "px": 0.7926000000000001, "usd": 7335, "pred": 48.5, "sigma_bp": 51.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:33:00", "kind": "arm", "coin": "HYPE", "ladder": "HYPE-1277", "px": 71.7, "usd": 14822, "pred": 44.9, "sigma_bp": 59.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:33:00", "kind": "arm", "coin": "AAVE", "ladder": "AAVE-1278", "px": 109.78, "usd": 2116, "pred": 44.8, "sigma_bp": 68.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:33:00", "kind": "arm", "coin": "HBAR", "ladder": "HBAR-1279", "px": 0.061950000000000005, "usd": 3132, "pred": 39.6, "sigma_bp": 46.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:33:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-1280", "px": 48.386, "usd": 3603, "pred": 34.8, "sigma_bp": 41.7, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:33:00", "kind": "arm", "coin": "ENA", "ladder": "ENA-1281", "px": 0.13304000000000002, "usd": 3975, "pred": 31.3, "sigma_bp": 81.7, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:36:00", "kind": "arm", "coin": "AAVE", "ladder": "AAVE-1282", "px": 109.83, "usd": 2117, "pred": 34.1, "sigma_bp": 68.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:37:00", "kind": "arm", "coin": "HYPE", "ladder": "HYPE-1283", "px": 71.24, "usd": 14822, "pred": 43.1, "sigma_bp": 59.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:38:00", "kind": "arm", "coin": "SUI", "ladder": "SUI-1284", "px": 0.7891, "usd": 7335, "pred": 43.2, "sigma_bp": 51.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:38:00", "kind": "arm", "coin": "ENA", "ladder": "ENA-1285", "px": 0.13252, "usd": 3975, "pred": 37.1, "sigma_bp": 81.9, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:40:00", "kind": "arm", "coin": "AAVE", "ladder": "AAVE-1286", "px": 109.52, "usd": 2116, "pred": 35.1, "sigma_bp": 68.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:40:00", "kind": "arm", "coin": "ONDO", "ladder": "ONDO-1287", "px": 0.33366, "usd": 3479, "pred": 33.4, "sigma_bp": 63.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:41:00", "kind": "arm", "coin": "HBAR", "ladder": "HBAR-1288", "px": 0.06178000000000001, "usd": 3132, "pred": 39.7, "sigma_bp": 46.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:41:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-1289", "px": 48.181000000000004, "usd": 3603, "pred": 35.0, "sigma_bp": 41.7, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:42:00", "kind": "arm", "coin": "SUI", "ladder": "SUI-1290", "px": 0.7883, "usd": 7335, "pred": 42.1, "sigma_bp": 51.0, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:42:00", "kind": "arm", "coin": "ONDO", "ladder": "ONDO-1291", "px": 0.33237000000000005, "usd": 3479, "pred": 35.9, "sigma_bp": 63.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:43:00", "kind": "arm", "coin": "AAVE", "ladder": "AAVE-1292", "px": 109.10000000000001, "usd": 2117, "pred": 43.4, "sigma_bp": 68.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:43:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-1293", "px": 48.219, "usd": 3603, "pred": 34.4, "sigma_bp": 41.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:43:00", "kind": "arm", "coin": "HBAR", "ladder": "HBAR-1294", "px": 0.061790000000000005, "usd": 3132, "pred": 33.2, "sigma_bp": 46.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:43:00", "kind": "arm", "coin": "ENA", "ladder": "ENA-1295", "px": 0.13216, "usd": 3975, "pred": 30.6, "sigma_bp": 81.7, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:46:00", "kind": "arm", "coin": "HYPE", "ladder": "HYPE-1296", "px": 71.28, "usd": 14822, "pred": 43.4, "sigma_bp": 59.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:46:00", "kind": "arm", "coin": "HBAR", "ladder": "HBAR-1297", "px": 0.06189000000000001, "usd": 3132, "pred": 39.2, "sigma_bp": 46.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:47:00", "kind": "arm", "coin": "ENA", "ladder": "ENA-1298", "px": 0.13245, "usd": 3975, "pred": 46.9, "sigma_bp": 81.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:48:00", "kind": "arm", "coin": "SOL", "ladder": "SOL-1299", "px": 78.65, "usd": 15723, "pred": 41.0, "sigma_bp": 37.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:50:00", "kind": "arm", "coin": "BCH", "ladder": "BCH-1300", "px": 221.27, "usd": 1696, "pred": 47.1, "sigma_bp": 46.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:50:00", "kind": "arm", "coin": "ENA", "ladder": "ENA-1301", "px": 0.13310000000000002, "usd": 3975, "pred": 45.9, "sigma_bp": 81.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:50:00", "kind": "arm", "coin": "AAVE", "ladder": "AAVE-1302", "px": 109.75, "usd": 2117, "pred": 41.8, "sigma_bp": 68.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:50:00", "kind": "arm", "coin": "HBAR", "ladder": "HBAR-1303", "px": 0.06207000000000001, "usd": 3132, "pred": 39.2, "sigma_bp": 46.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:51:00", "kind": "arm", "coin": "HYPE", "ladder": "HYPE-1304", "px": 71.89, "usd": 14822, "pred": 42.0, "sigma_bp": 59.7, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:51:00", "kind": "arm", "coin": "SOL", "ladder": "SOL-1305", "px": 79.26, "usd": 15723, "pred": 34.6, "sigma_bp": 37.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:54:00", "kind": "arm", "coin": "ONDO", "ladder": "ONDO-1306", "px": 0.33615, "usd": 3479, "pred": 34.7, "sigma_bp": 63.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:54:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-1307", "px": 48.636, "usd": 3603, "pred": 33.5, "sigma_bp": 41.2, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:54:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1308", "px": 892.96, "usd": 15723, "pred": 31.6, "sigma_bp": 148.7, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:56:00", "kind": "arm", "coin": "HYPE", "ladder": "HYPE-1309", "px": 71.79, "usd": 14822, "pred": 44.2, "sigma_bp": 59.8, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:56:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-1310", "px": 48.614000000000004, "usd": 3603, "pred": 33.9, "sigma_bp": 41.2, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:56:00", "kind": "arm", "coin": "HBAR", "ladder": "HBAR-1311", "px": 0.062380000000000005, "usd": 3132, "pred": 33.6, "sigma_bp": 46.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:57:00", "kind": "arm", "coin": "BCH", "ladder": "BCH-1312", "px": 221.77, "usd": 1696, "pred": 41.4, "sigma_bp": 46.2, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:57:00", "kind": "arm", "coin": "ENA", "ladder": "ENA-1313", "px": 0.13414, "usd": 3975, "pred": 31.4, "sigma_bp": 80.7, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:58:00", "kind": "arm", "coin": "ONDO", "ladder": "ONDO-1314", "px": 0.33667, "usd": 3479, "pred": 40.6, "sigma_bp": 63.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T15:58:00", "kind": "arm", "coin": "XRP", "ladder": "XRP-1315", "px": 1.0077, "usd": 15723, "pred": 30.5, "sigma_bp": 49.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:00:00", "kind": "arm", "coin": "ENA", "ladder": "ENA-1316", "px": 0.13383, "usd": 3975, "pred": 36.4, "sigma_bp": 80.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:00:00", "kind": "heartbeat", "equity": 251565.08, "mtm": 251565.08, "committed": 41728, "free": 209837, "armed": ["ENA", "HYPE", "NEAR", "ONDO", "PEPE"], "open": [], "counts": {"newest_absent": 85, "btc_candle_old": 30, "btc_stale": 30, "disarm": 42, "reprice": 198, "candle_old": 31, "arm": 41}, "step_s": {"data": [10.585, 11.39], "cancel": [11.465, 12.33], "place": [11.465, 12.33]}}
+{"ts": "2026-11-13T16:02:00", "kind": "arm", "coin": "DOGE", "ladder": "DOGE-1317", "px": 0.06445000000000001, "usd": 3724, "pred": 35.9, "sigma_bp": 40.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:03:00", "kind": "arm", "coin": "BCH", "ladder": "BCH-1318", "px": 221.06, "usd": 1696, "pred": 47.2, "sigma_bp": 46.2, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:03:00", "kind": "arm", "coin": "ENA", "ladder": "ENA-1319", "px": 0.13324, "usd": 3975, "pred": 47.1, "sigma_bp": 80.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:03:00", "kind": "arm", "coin": "ONDO", "ladder": "ONDO-1320", "px": 0.33509000000000005, "usd": 3479, "pred": 41.0, "sigma_bp": 63.0, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:03:00", "kind": "arm", "coin": "SOL", "ladder": "SOL-1321", "px": 78.86, "usd": 15723, "pred": 39.9, "sigma_bp": 37.8, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:03:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1322", "px": 891.24, "usd": 15723, "pred": 34.7, "sigma_bp": 146.8, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:03:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-1323", "px": 48.581, "usd": 3603, "pred": 33.4, "sigma_bp": 41.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:03:00", "kind": "arm", "coin": "HBAR", "ladder": "HBAR-1324", "px": 0.062130000000000005, "usd": 3132, "pred": 33.0, "sigma_bp": 46.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:04:00", "kind": "arm", "coin": "LINK", "ladder": "LINK-1325", "px": 9.785, "usd": 4474, "pred": 35.9, "sigma_bp": 44.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:04:00", "kind": "arm", "coin": "AAVE", "ladder": "AAVE-1326", "px": 109.9, "usd": 2116, "pred": 30.8, "sigma_bp": 69.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:06:00", "kind": "arm", "coin": "LINK", "ladder": "LINK-1327", "px": 9.747, "usd": 4473, "pred": 45.1, "sigma_bp": 44.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:06:00", "kind": "arm", "coin": "DOGE", "ladder": "DOGE-1328", "px": 0.06420000000000001, "usd": 3724, "pred": 44.8, "sigma_bp": 40.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:06:00", "kind": "arm", "coin": "XRP", "ladder": "XRP-1329", "px": 1.0053, "usd": 15723, "pred": 33.1, "sigma_bp": 49.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:06:00", "kind": "arm", "coin": "XLM", "ladder": "XLM-1330", "px": 0.145614, "usd": 4947, "pred": 31.8, "sigma_bp": 54.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:06:00", "kind": "arm", "coin": "AAVE", "ladder": "AAVE-1331", "px": 109.97, "usd": 2116, "pred": 30.8, "sigma_bp": 69.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:07:00", "kind": "arm", "coin": "SUI", "ladder": "SUI-1332", "px": 0.795, "usd": 7335, "pred": 58.6, "sigma_bp": 50.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:07:00", "kind": "arm", "coin": "HBAR", "ladder": "HBAR-1333", "px": 0.0621, "usd": 3132, "pred": 46.0, "sigma_bp": 46.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:10:00", "kind": "arm", "coin": "XLM", "ladder": "XLM-1334", "px": 0.145696, "usd": 4947, "pred": 51.0, "sigma_bp": 54.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:10:00", "kind": "arm", "coin": "XRP", "ladder": "XRP-1335", "px": 1.0069000000000001, "usd": 15723, "pred": 32.4, "sigma_bp": 49.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:13:00", "kind": "arm", "coin": "XLM", "ladder": "XLM-1336", "px": 0.145489, "usd": 4947, "pred": 50.9, "sigma_bp": 54.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:13:00", "kind": "arm", "coin": "AAVE", "ladder": "AAVE-1337", "px": 109.67, "usd": 2117, "pred": 31.6, "sigma_bp": 69.2, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:13:00", "kind": "arm", "coin": "XRP", "ladder": "XRP-1338", "px": 1.0064, "usd": 15723, "pred": 31.1, "sigma_bp": 49.7, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:17:00", "kind": "arm", "coin": "XRP", "ladder": "XRP-1339", "px": 1.0014, "usd": 15723, "pred": 31.5, "sigma_bp": 49.8, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:19:00", "kind": "arm", "coin": "HBAR", "ladder": "HBAR-1340", "px": 0.06165, "usd": 3132, "pred": 45.7, "sigma_bp": 46.8, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:19:00", "kind": "arm", "coin": "XRP", "ladder": "XRP-1341", "px": 0.9991000000000001, "usd": 15723, "pred": 36.3, "sigma_bp": 49.8, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:19:00", "kind": "arm", "coin": "ETH", "ladder": "ETH-1342", "px": 1903.45, "usd": 15723, "pred": 30.7, "sigma_bp": 27.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:23:00", "kind": "arm", "coin": "ETH", "ladder": "ETH-1343", "px": 1899.25, "usd": 15723, "pred": 30.5, "sigma_bp": 27.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:30:00", "kind": "heartbeat", "equity": 251565.08, "mtm": 251565.08, "committed": 88506, "free": 163059, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM"], "open": [], "counts": {"newest_absent": 86, "btc_candle_old": 30, "btc_stale": 30, "reprice": 375, "candle_old": 59, "disarm": 18, "arm": 27}, "step_s": {"data": [10.525, 11.48], "cancel": [11.309999999999999, 12.24], "place": [11.315000000000001, 12.25]}}
+{"ts": "2026-11-13T16:31:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1344", "px": 892.53, "usd": 15723, "pred": 31.9, "sigma_bp": 139.7, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:36:00", "kind": "arm", "coin": "XRP", "ladder": "XRP-1345", "px": 1.0007000000000001, "usd": 15723, "pred": 51.3, "sigma_bp": 50.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:36:00", "kind": "arm", "coin": "XLM", "ladder": "XLM-1346", "px": 0.144506, "usd": 4947, "pred": 49.3, "sigma_bp": 54.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:36:00", "kind": "arm", "coin": "AAVE", "ladder": "AAVE-1347", "px": 108.63, "usd": 2117, "pred": 47.6, "sigma_bp": 69.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:38:00", "kind": "arm", "coin": "XRP", "ladder": "XRP-1348", "px": 0.9997, "usd": 15723, "pred": 50.6, "sigma_bp": 50.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:46:00", "kind": "arm", "coin": "AAVE", "ladder": "AAVE-1349", "px": 108.97, "usd": 2117, "pred": 41.8, "sigma_bp": 69.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:46:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1350", "px": 892.14, "usd": 15723, "pred": 32.1, "sigma_bp": 134.2, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:46:00", "kind": "arm", "coin": "PEPE", "ladder": "PEPE-1351", "px": 4.3e-06, "usd": 3703, "pred": 32.0, "sigma_bp": 118.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:47:00", "kind": "arm", "coin": "XRP", "ladder": "XRP-1352", "px": 0.9993000000000001, "usd": 15723, "pred": 30.6, "sigma_bp": 50.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:48:00", "kind": "arm", "coin": "ONDO", "ladder": "ONDO-1353", "px": 0.33295, "usd": 3479, "pred": 42.7, "sigma_bp": 62.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:48:00", "kind": "arm", "coin": "SUI", "ladder": "SUI-1354", "px": 0.7895000000000001, "usd": 7335, "pred": 42.3, "sigma_bp": 50.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:48:00", "kind": "arm", "coin": "SOL", "ladder": "SOL-1355", "px": 78.45, "usd": 15723, "pred": 36.7, "sigma_bp": 37.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:51:00", "kind": "arm", "coin": "SOL", "ladder": "SOL-1356", "px": 78.61, "usd": 15723, "pred": 39.2, "sigma_bp": 37.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:53:00", "kind": "arm", "coin": "BCH", "ladder": "BCH-1357", "px": 219.81, "usd": 1696, "pred": 39.2, "sigma_bp": 46.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:53:00", "kind": "arm", "coin": "SOL", "ladder": "SOL-1358", "px": 78.37, "usd": 15723, "pred": 38.4, "sigma_bp": 37.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:53:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1359", "px": 894.12, "usd": 15723, "pred": 30.5, "sigma_bp": 131.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:54:00", "kind": "arm", "coin": "SUI", "ladder": "SUI-1360", "px": 0.7896000000000001, "usd": 7335, "pred": 41.4, "sigma_bp": 50.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:59:00", "kind": "arm", "coin": "XLM", "ladder": "XLM-1361", "px": 0.144292, "usd": 4947, "pred": 48.8, "sigma_bp": 55.2, "usd_bids_ahead": null}
+{"ts": "2026-11-13T16:59:00", "kind": "arm", "coin": "BCH", "ladder": "BCH-1362", "px": 219.75, "usd": 1696, "pred": 44.6, "sigma_bp": 46.2, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:00:00", "kind": "heartbeat", "equity": 251565.08, "mtm": 251565.08, "committed": 96899, "free": 154666, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "XLM", "XRP"], "open": [], "counts": {"newest_absent": 104, "btc_candle_old": 30, "candle_old": 67, "btc_stale": 30, "reprice": 362, "arm": 19, "disarm": 19}, "step_s": {"data": [10.785, 11.7], "cancel": [11.605, 12.48], "place": [11.605, 12.48]}}
+{"ts": "2026-11-13T17:02:00", "kind": "arm", "coin": "SUI", "ladder": "SUI-1363", "px": 0.7907000000000001, "usd": 7335, "pred": 40.4, "sigma_bp": 50.7, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:02:00", "kind": "arm", "coin": "ENA", "ladder": "ENA-1364", "px": 0.13235000000000002, "usd": 3975, "pred": 36.8, "sigma_bp": 79.9, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:04:00", "kind": "arm", "coin": "HYPE", "ladder": "HYPE-1365", "px": 71.46000000000001, "usd": 14822, "pred": 42.0, "sigma_bp": 58.9, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:05:00", "kind": "arm", "coin": "AAVE", "ladder": "AAVE-1366", "px": 108.84, "usd": 2117, "pred": 40.6, "sigma_bp": 69.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:05:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-1367", "px": 48.509, "usd": 3603, "pred": 31.9, "sigma_bp": 40.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:06:00", "kind": "arm", "coin": "ONDO", "ladder": "ONDO-1368", "px": 0.33367, "usd": 3479, "pred": 35.1, "sigma_bp": 61.8, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:06:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1369", "px": 898.9200000000001, "usd": 15723, "pred": 30.9, "sigma_bp": 126.2, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:08:00", "kind": "arm", "coin": "LINK", "ladder": "LINK-1370", "px": 9.757, "usd": 4473, "pred": 33.7, "sigma_bp": 44.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:10:00", "kind": "arm", "coin": "AAVE", "ladder": "AAVE-1371", "px": 108.76, "usd": 2116, "pred": 40.1, "sigma_bp": 69.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:11:00", "kind": "arm", "coin": "PEPE", "ladder": "PEPE-1372", "px": 4.2900000000000004e-06, "usd": 3703, "pred": 45.9, "sigma_bp": 118.7, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:14:00", "kind": "arm", "coin": "DOGE", "ladder": "DOGE-1373", "px": 0.06403, "usd": 3724, "pred": 38.4, "sigma_bp": 40.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:15:00", "kind": "arm", "coin": "BCH", "ladder": "BCH-1374", "px": 220.12, "usd": 1696, "pred": 44.5, "sigma_bp": 46.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:15:00", "kind": "arm", "coin": "LINK", "ladder": "LINK-1375", "px": 9.724, "usd": 4473, "pred": 40.2, "sigma_bp": 44.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:17:00", "kind": "arm", "coin": "HYPE", "ladder": "HYPE-1376", "px": 71.11, "usd": 14822, "pred": 49.9, "sigma_bp": 58.9, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:17:00", "kind": "arm", "coin": "ENA", "ladder": "ENA-1377", "px": 0.1318, "usd": 3975, "pred": 49.8, "sigma_bp": 80.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:17:00", "kind": "arm", "coin": "ONDO", "ladder": "ONDO-1378", "px": 0.33269000000000004, "usd": 3479, "pred": 43.9, "sigma_bp": 61.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:17:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1379", "px": 901.65, "usd": 15723, "pred": 35.4, "sigma_bp": 121.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:20:00", "kind": "arm", "coin": "HYPE", "ladder": "HYPE-1380", "px": 71.02, "usd": 14822, "pred": 42.2, "sigma_bp": 58.9, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:20:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1381", "px": 899.41, "usd": 15723, "pred": 31.3, "sigma_bp": 120.5, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:21:00", "kind": "arm", "coin": "LTC", "ladder": "LTC-1382", "px": 48.398, "usd": 3603, "pred": 32.0, "sigma_bp": 40.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:23:00", "kind": "arm", "coin": "AAVE", "ladder": "AAVE-1383", "px": 108.08, "usd": 2117, "pred": 47.2, "sigma_bp": 69.6, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:23:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1384", "px": 896.9200000000001, "usd": 15723, "pred": 30.4, "sigma_bp": 119.8, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:25:00", "kind": "arm", "coin": "SUI", "ladder": "SUI-1385", "px": 0.788, "usd": 7335, "pred": 43.1, "sigma_bp": 51.3, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:29:00", "kind": "arm", "coin": "SUI", "ladder": "SUI-1386", "px": 0.7893, "usd": 7335, "pred": 43.2, "sigma_bp": 51.4, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:30:00", "kind": "heartbeat", "equity": 251565.08, "mtm": 251565.08, "committed": 119971, "free": 131594, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"newest_absent": 93, "btc_candle_old": 30, "candle_old": 63, "btc_stale": 30, "disarm": 22, "reprice": 297, "arm": 24}, "step_s": {"data": [10.67, 11.93], "cancel": [11.495000000000001, 12.74], "place": [11.495000000000001, 12.74]}}
+{"ts": "2026-11-13T17:47:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1387", "px": 911.84, "usd": 15723, "pred": 30.8, "sigma_bp": 119.1, "usd_bids_ahead": null}
+{"ts": "2026-11-13T17:57:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1388", "px": 910.46, "usd": 15723, "pred": 30.9, "sigma_bp": 118.9, "usd_bids_ahead": null}
+{"ts": "2026-11-13T18:00:00", "kind": "arm", "coin": "ZEC", "ladder": "ZEC-1389", "px": 908.37, "usd": 15723, "pred": 30.4, "sigma_bp": 118.8, "usd_bids_ahead": null}
+{"ts": "2026-11-13T18:00:00", "kind": "heartbeat", "equity": 251565.08, "mtm": 251565.08, "committed": 119971, "free": 131594, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP", "ZEC"], "open": [], "counts": {"newest_absent": 99, "btc_candle_old": 30, "candle_old": 68, "btc_stale": 30, "reprice": 446, "disarm": 3, "arm": 3}, "step_s": {"data": [10.67, 11.6], "cancel": [11.48, 12.3], "place": [11.48, 12.31]}}
