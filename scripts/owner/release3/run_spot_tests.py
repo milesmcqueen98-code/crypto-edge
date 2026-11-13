@@ -22,7 +22,8 @@ PY = [("merge_test.py", []), ("trades_bar_test.py", []), ("usdc_test.py", []), (
       ("live_sim_test.py", WINDOW), ("live_sim_test.py", WINDOW + [DEATH]),
       ("live_sim_inputs_test.py", WINDOW), ("live_sim_inputs_test.py", WINDOW + [DEATH])]
 SH = ["paper_next_test.sh", "paper_commit_test.sh", "wickctl_test.sh"]
-OTHER = ["scripts/owner/bar_source/test_bar_source.py"]   # builds an engine from bot/spot/config.json (no stepping)
+OTHER = ["bot/spot/deploy/watchdog_test.py",
+         "scripts/owner/bar_source/test_bar_source.py"]   # builds an engine from bot/spot/config.json (no stepping)
 # the result lines each file prints (shown in full; the rest of the output is in the tail below)
 KEY = re.compile(r"^(engine:|PARITY|MISMATCHES|paper settings|\d+ minutes in|entries |bot equity|server dies|back at|"
                  r"switch at|inputs from|trades feed|  first difference|  C, whole log|  [BC]: heartbeats|"

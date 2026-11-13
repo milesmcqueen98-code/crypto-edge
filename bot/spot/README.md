@@ -241,7 +241,9 @@ so fills are the same. It is off (`"quote": "USD"`) because the backtest assumes
 - Your phone gets:
   - a daily equity line;
   - any halt, error, warning or rejected order;
-  - the heartbeat alert if the server goes silent.
+  - the heartbeat alert if the server goes silent;
+  - an alert when the bot skipped new bids in three or more of the last five minutes because BTC's newest price was
+    missing or old;
 - Weekly, run `wickctl report`, and look at the paper book's report next to it (`git pull` and `python bot/spot/run.py
   report` on your computer). Compare fills, net per rung and capture share.
 - Code updates: `wickctl update` pulls the latest code and restarts the bot only if it was running. A bot that was stopped
@@ -358,6 +360,9 @@ a code update also moves the live bot to the release's inputs:
   the key to follow the release again.
 - Paper configs (`config.json`, `config.w2.json`, `config.tb.json`, any other name) run exactly what their own file
   says.
+- A minute skipped by the stale guard (no new bids because BTC's newest price row was missing or old; exits still run)
+  is written as a `stale_input` event. The watchdog sends one alert when three or more occur within one of its
+  five-minute runs, at most once every 30 minutes.
 
 ## Paper run
 `.github/workflows/paper-spot.yml` runs three paper books for about 5h45m per run on GitHub Actions: the incumbent

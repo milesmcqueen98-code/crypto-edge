@@ -36,6 +36,10 @@ book's read. This file states facts only.
 - **Tests.** `replay_test.py`, `live_sim_test.py`, `newest_bar_test.py` state candle mode in their own code (step C).
   `live_sim_test.py` gets `--inputs` and `--switch`. New: `release_inputs_test.py`, `live_sim_inputs_test.py`,
   `scripts/owner/release3/run_spot_tests.py`.
+- **`bot/spot/deploy/watchdog.py`, `bot/spot/deploy/watchdog_test.py` (new).** The watchdog counts `stale_input`
+  events per run and sends one `wickbot stale input` alert (high) for three or more, at most once every 30 minutes
+  (`STALE_INPUT_MIN`, `STALE_INPUT_QUIET_S`, saved as `stale_input_alert` in `watchdog.json`). Everything else it
+  does is unchanged. The test runs the script on temp folders without `NTFY_TOPIC`; `run_spot_tests.py` runs it.
 - **Not changed.** `bot/spot/engine.py`, `bot/market.py`, every safety check in `bot/spot`, `wickctl`,
   `configure.py`, `setup_vm.sh`, `watchdog.py`, the service file, `.github/`.
 
@@ -194,8 +198,10 @@ Both use the generic runner `hunt2.yml` on this branch; `commit` stays empty, no
 ## Found while preparing this, for a bot with real money
 - **The watchdog** (`bot/spot/deploy/watchdog.py`) alerts on events of kind `halt` (urgent), `error`, `warning`
   (high) and `reject` (default), on no completed minute for 5 minutes, on a missing state file, and once a day with
-  equity. So the new start-up `warning` event reaches the phone. A `stale_input` event (BTC stale with the guard on)
-  does not reach an alert; it is counted in the heartbeat (`btc_stale`) and visible in `wickctl log`.
+  equity. So the new start-up `warning` event reaches the phone. One alert (`wickbot stale input`, high)
+  goes out when three or more `stale_input` events (BTC stale with the guard on) arrive within one watchdog run, at
+  most once every 30 minutes; single events send nothing, are counted in the heartbeat (`btc_stale`) and are visible
+  in `wickctl log`.
 - **A restart during fills logs balance warnings.** In the switch simulation the new process's start-up reconcile
   logged seven `coin balance differs from the bot's open rungs` warnings (fills on the exchange in the minute before
   the restart, booked by the bot moments later); entries, exits and P&L were unchanged. The baseline live-path
