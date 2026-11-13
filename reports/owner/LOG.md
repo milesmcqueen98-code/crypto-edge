@@ -637,3 +637,48 @@ FORWARD_TESTS.md.
   and reported apart. It is a favourable record (35 rungs, 76 bp net per dollar), so the choice is not made to hide
   a bad one. The W2 comparison continues, since both books switch together. Registry: FORWARD_TESTS.md, the note
   under the first table.
+- **12:49. Release 3 is built as a candidate on a branch. Nothing is merged; it ships only if tomorrow's read
+  passes, with the coin list the read decides.**
+  - **A fault found before it could bite: the live bot would not have received the new inputs.** The VM runs from
+    `bot/spot/config.live.json`, a copy of `config.json` made when the VM was set up (setup_vm.sh). A release that
+    changes `config.json` never reaches it, so `wickctl update` alone would have left the pilot on the late BTC
+    input.
+  - **Design (mine; built by an agent on branch owner/release-3, commit ec6f19a):**
+    - The live file takes its six input settings from `config.json` at every start. Capital, coins, fees and risk
+      limits stay as the live file has them, and the file is not rewritten. `wickctl status` prints which inputs
+      are in use. `"inputs_local": true` in the live file is an emergency switch back to its own inputs.
+    - A `config.json` that cannot be read never stops a command, the kill-switch commands included.
+    - A live start without the release's inputs prints a warning and writes a `warning` event, which the watchdog
+      sends to the phone.
+    - The watchdog sends one alert when the stale guard skipped new bids in three or more minutes within one of
+      its five-minute runs, at most every 30 minutes. Before, a failing trades feed would have idled the bot with
+      no alert.
+    - The main book's and W2's configs get the third book's three keys, as a commit of its own. The list is
+      provisional.
+    - Replays of history state their own inputs (final candles), so the config change cannot alter them.
+  - **Tests run here by the agent, before and after the change:** parity replay 156 rungs and 88 parents on both
+    sides; live-path simulation 540 minutes, 111 entries, P&L $11,723.34 (109 entries and $8,421.28 with the
+    server death); every event log identical line for line. New: the live-path simulation on the new inputs, with
+    a trades feed made from the same candles, equals the candle run line for line (1,487 lines, 2,892 bars from
+    trades, no fallback); a switch of modes on a running book kept its 15 open ladders and every entry and exit;
+    66 checks on the inputs rule and 31 on the watchdog. I re-ran the light tests and the two new ones: pass.
+  - **On GitHub runners, started 17:45 UTC:** the full offline suite (run 43475841318) and a ten-minute paper run
+    of the new main-book config on live data (run 43475847326).
+  - **A permission refusal, not worked around.** The automatic permission check refused the agent's first commit.
+    That commit had changed the attribution line from the one I had instructed. The agent asked me to commit its
+    files for it; I declined. It redid the same commit as instructed, once, and that went through.
+  - **Found, not changed (engine behaviour; queued for after the Part 2 read, because the third book's code must
+    not change before it):**
+    - At a start the engine compares balances before it books the fills of the minute before, so a restart during
+      fills raises "coin balance differs" warnings (seven in the simulation). Each is a phone alert on the VM.
+    - In a minute skipped by the stale guard, first bids already resting stay until they expire (at most 300 s)
+      or the next good minute replaces them.
+  - **Item 6, a look at an incomplete day:** on Nov 13 so far (13 hours) LTC and ZEC are behind their own
+    first-seen candles on both measures (LTC exactly equal 86.2% against 91.9%, materially off 2.45% against
+    1.81%; ZEC 87.5% against 92.8%, 2.32% against 2.06%). The candles are better today than on Nov 11 and 12. It
+    decides nothing. If the day ends so, the rule takes both off the list at release 3 and the list is BTC, ETH,
+    SOL and XRP.
+  - **Open for the release note:** the pilot's live log stays on the VM, and I need it to read test B. Two ways
+    to put to Miles: a private repository the VM pushes to, or an export he attaches.
+  - **Status report:** rule A can be counted from a start time (`main` 1456de4). The start file is added at
+    release 3; until then the report is unchanged.
