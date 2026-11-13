@@ -249,7 +249,7 @@ so fills are the same. It is off (`"quote": "USD"`) because the backtest assumes
 - Taxes: every rung is a short-term trade, so there are thousands of lots a year. Coinbase reports sales on Form 1099-DA.
   Use its tax export or crypto tax software, and ask a CPA how the wash-sale rule treats crypto for you.
 
-## Newest minute from trades (optional; off by default)
+## Newest minute from trades (off in the code's defaults; `config.json` says what the main book and the live bot use)
 **The gap.** Each minute, 6 s after it closes, the bot reads 1-minute candles and decides its bids. The research used
 final candles. Live, the candles it reads are often not final:
 - Coinbase serves candles through a public cache keyed by the request address. A copy lives up to 300 s. Anyone's
@@ -333,6 +333,32 @@ pass and the place pass of the 4-sigma bids finished. `tb_err` is the last trade
 **Paper.** `.github/workflows/paper-spot.yml` runs the trades book (`config.tb.json`, `paper_spot_tb/`) in its own
 job (`paper_tb`) on its own runner, so the two registered books keep their requests and rate unchanged.
 
+## Inputs of the live bot (taken from the release)
+The live bot runs with `bot/spot/config.live.json`. That file is not in the repository: setup made it once as a copy
+of `config.json`, and `configure` and `preflight` change only the capital, `coins_disabled` and `bid_ttl_s`. So that
+a code update also moves the live bot to the release's inputs:
+- At every start, `run.py` takes these six keys from `bot/spot/config.json` for a file named `config.live.json`:
+  `newest_bar`, `trades_coins`, `stale_guard`, `trades_rows`, `trades_budget_s`, `confirm_s`
+  (`bot/spot/release_inputs.py`). A key that `config.json` does not set is dropped, so the code's default applies.
+  Every other key (capital, coins, fees, risk limits, quote) stays as the live file has it. This holds for every
+  command given that file, `wickctl paper-test` included.
+- The file itself is not changed. `preflight` writes back only `coins_disabled` and `bid_ttl_s`.
+- **To see it:** `wickctl status` prints the inputs line first, for example
+  `inputs: newest minute from trades for BTC, ETH, SOL, XRP, LTC, ZEC; candles for the other coins; stale guard on
+  (from bot/spot/config.json)`, then one line for each setting of the live file that was replaced or dropped.
+  `live` and `paper` print the same line at start (in `live_spot/stdout.log` for the service).
+- `live` also warns when it starts without trades and the stale guard (for example on candles, the mode before
+  release 3): a printed line and a `warning` event in `live_spot/events.jsonl`, so the watchdog sends it to your phone.
+  It still starts.
+- If `bot/spot/config.json` cannot be read, every command goes on with the live file's own input settings and prints
+  one line saying so; the kill switches (`pause`, `resume`, `cancel-all`, `flatten`) never depend on it.
+- **Emergency switch:** `"inputs_local": true` in `config.live.json` keeps the file's own input settings, and they no
+  longer follow releases. The file must then state the mode itself (for the mode before release 3:
+  `"newest_bar": "candles"` and `"stale_guard": false`), because a key it leaves out takes the code's default. Remove
+  the key to follow the release again.
+- Paper configs (`config.json`, `config.w2.json`, `config.tb.json`, any other name) run exactly what their own file
+  says.
+
 ## Paper run
 `.github/workflows/paper-spot.yml` runs three paper books for about 5h45m per run on GitHub Actions: the incumbent
 (`paper_spot/`) and the wick v4 W2 challenger (rungs ¼, ¼, ½; `paper_spot_w2/`, config `config.w2.json`) in job
@@ -384,6 +410,11 @@ Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
   against a fake trades endpoint) and `python bot/spot/newest_bar_test.py` (the two switches in the engine, on
   synthetic tables and on the stored Oct 10 2025 crash). No network. `bot/spot/trades_bar_check.py` is the network
   check for a GitHub runner (hunt2.yml).
+- **Inputs of the live bot:** `python bot/spot/release_inputs_test.py` checks the rules of the section above and runs
+  `run.py status` on temp live files (one made before release 3, one with its own list, one with `inputs_local`).
+  `python bot/spot/live_sim_inputs_test.py "2025-10-10 20:00" "2025-10-11 02:00"` runs the live-path test on
+  `config.json`'s inputs with a trades feed made from the candles, from the start and after a switch from candle mode
+  on the same state, and compares the logs with the candle run. No network.
 - **wickctl update:** `bash bot/spot/deploy/wickctl_test.sh` runs the real `update` branch against stub `sudo`, `systemctl`, `git` and
   `install`. It checks the order of calls for a bot that was active, activating, inactive or failed, and for a failed pull.
   Only a bot that was active or activating is started again. No network, no sudo.
