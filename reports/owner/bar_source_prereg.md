@@ -109,7 +109,8 @@ changes no rule.
      `python scripts/owner/reconcile/two_books.py --research reports/owner/reconcile_tb/part2/research
      --main paper_spot_tb --third paper_spot_t18 --start 2026-11-11T22:30 --end 2026-11-14T22:29
      --out reports/owner/reconcile_tb/part2`
-  3. The fourth book's items 1 to 5 from PAPER_STATUS.md (a report made after the period's end), then the rule:
+  3. The fourth book's items 1 to 5 from the status report run on a copy of its log cut at the period's end (as
+     for the third book's read: reports/owner/paper_reconcile_plan.md, step 6), then the rule:
      `python scripts/owner/bar_source/part2_rule.py --dir reports/owner/reconcile_tb/part2 --items-1-5 pass` (or
      `fail`). It reads the twelve coins on the common minutes and writes part2_rule.md. The script is the rule above
      as code (63 checks; on `main` since Nov 12, before any read). In that folder's tables the label "main" means

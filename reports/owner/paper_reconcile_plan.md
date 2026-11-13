@@ -97,6 +97,10 @@ Written before either book's log for these days has been read.
    (scripts/owner/tb_rule6.py with --start 2026-11-11T01:52 --end 2026-11-14T01:52). Its daily table comes from
    scripts/forward/input_checks.py, whose --end is exclusive: --start 2026-11-11 --end 2026-11-15 covers Nov 11
    to Nov 14.
+6. **Items 1 to 5 on the test period alone** (fixed Nov 13 2026, 08:51 ET): the status report counts every
+   heartbeat a book has written. For the read it is run on a copy of the third book's log cut at the period's end
+   (events up to 01:52 UTC on Nov 14; `python scripts/owner/paper_status.py COPY --now 2026-11-14T01:52:00+00:00`),
+   so that hours after the three days cannot help or hurt.
 
 ## Deviation log
 (none yet)
