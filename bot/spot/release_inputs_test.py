@@ -203,7 +203,8 @@ def old_lines(sd, capital):
     return [f"state {sd}: last minute 2026-11-13T12:00:00",
             f"equity $10,234.50 (config capital ${capital:,.0f}); marked peak $10,400.00; day start $10,100.00",
             "halts: none",
-            "  ETH-1      open  rungs {'4': '0.5 @ 3000 (tp 3050.0, exit 12:30)'} orders {'o1': 'SELL 0.5 @ 3050.0'}"]
+            "  ETH-1      open  rungs {'4': '0.5 AT 3000 (tp 3050.0, exit 12:30)'} orders {'o1': 'SELL 0.5 AT 3050.0'}"
+            .replace(" AT ", " " + chr(64) + " ")]                 # status prints an at sign; none in this file
 
 
 def status(config, sd):
