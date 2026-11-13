@@ -168,6 +168,79 @@ def running_time_tests():
         check("one event: not derivable, no error", not rt["ok"])
 
 
+def restart_gap_tests():
+    """No catch_up: a heartbeat pair 46 to 75 minutes apart is accepted only with a backfill after the first and up to the
+    second heartbeat (a run handover; the new run's history download can leave one heartbeat out)."""
+    def run(times, backfills=(), extra=()):
+        ev = [{"ts": iso(t), "kind": "heartbeat", "equity": 1, "counts": {}} for t in times]
+        ev += [{"ts": iso(t), "kind": "backfill", "minutes": 5} for t in backfills] + list(extra)
+        ev.sort(key=lambda e: e.get("ts", ""))
+        with tempfile.TemporaryDirectory() as tmp:
+            write(tmp, "paper_spot", ev)
+            b = ps.load_book(tmp, "paper_spot")
+            s = ps.stats(b, 250000.0, True)
+            return ps.running_time(b["events"], s["first"], s["newest"])
+
+    def never_gapped(rt, cal_h):
+        return rt["ok"] and rt["gaps"] == [] and rt["down"] == [] and abs(rt["share"] - 100.0) < 1e-9 \
+            and abs(rt["run_h"] - cal_h) < 1e-9
+    check("restart: limits are named constants", ps.HEARTBEAT_GAP_MAX_MIN == 45 and ps.HEARTBEAT_RESTART_GAP_MAX_MIN == 75)
+    rt = run([T(0, 30 * k) for k in range(6)])
+    check("restart: every 30 minutes, derivable and 100%", never_gapped(rt, 2.5), rt)
+    rt = run([T(0), T(0, 30), T(1, 30), T(2)], [T(0, 57)])
+    check("restart: 60 minutes with a backfill between: derivable, 100%, no gaps", never_gapped(rt, 2.0), rt)
+    rt = run([T(0), T(0, 30), T(1, 30), T(2)])
+    check("restart: 60 minutes without a backfill: not derivable", not rt["ok"], rt)
+    rt = run([T(0), T(0, 30), T(1, 30), T(2)], [T(0, 10), T(3)])
+    check("restart: backfills only outside the pair: not derivable", not rt["ok"], rt)
+    rt = run([T(0), T(0, 30), T(2), T(2, 30)], [T(1)])
+    check("restart: 90 minutes with a backfill: not derivable", not rt["ok"], rt)
+    rt = run([T(0), T(0, 30), T(1, 45), T(2, 15)], [T(1)])
+    check("restart: exactly 75 minutes with a backfill: derivable", never_gapped(rt, 2.25), rt)
+    rt = run([T(0), T(0, 30), T(1, 46), T(2, 16)], [T(1)])
+    check("restart: 76 minutes with a backfill: not derivable", not rt["ok"], rt)
+    rt = run([T(0), T(0, 30), T(1, 15), T(1, 45)], [T(1)])
+    check("restart: exactly 45 minutes needs nothing", never_gapped(rt, 1.75), rt)
+    rt = run([T(0), T(0, 30), T(1, 30), T(2)], [T(1, 30)])
+    check("restart: a backfill exactly at the second heartbeat counts", never_gapped(rt, 2.0), rt)
+    rt = run([T(0), T(0, 30), T(1, 30), T(2)], [T(0, 30)])
+    check("restart: a backfill exactly at the first heartbeat does not count", not rt["ok"], rt)
+    rt = run([T(0), T(1), T(1, 30), T(2, 30), T(3)], [T(0, 40), T(1, 50)])
+    check("restart: two long pairs, both backfilled: derivable", never_gapped(rt, 3.0), rt)
+    rt = run([T(0), T(1), T(1, 30), T(2, 30), T(3)], [T(0, 40)])
+    check("restart: two long pairs, one without a backfill: not derivable", not rt["ok"], rt)
+    rt = run([T(0), T(1), T(1, 30), T(3), T(3, 30)], [T(0, 40), T(2)])
+    check("restart: two long pairs, one over 75 minutes: not derivable", not rt["ok"], rt)
+    rt = run([T(0), T(0, 30), T(1, 30), T(2)], [T(0, 57)], extra=[{"ts": "bad", "kind": "backfill"}, {"kind": "backfill"}])
+    check("restart: backfill events without a usable time are skipped", never_gapped(rt, 2.0), rt)
+    # a book with a catch_up event is read as before: the heartbeat spacing does not matter, the gap is the catch_up's
+    for bfs in ([T(0, 57)], []):
+        rt = run([T(0), T(0, 30), T(1, 30), T(2), T(2, 30), T(3), T(3, 30), T(4)], bfs,
+                 [{"ts": iso(T(3)), "kind": "catch_up", "gap_minutes": 60, "open": []}])
+        check("restart: with a catch_up the old result, hours down equal the catch_up gap (backfill %d)" % len(bfs),
+              rt["ok"] and abs(rt["cal_h"] - 4.0) < 1e-9 and abs(rt["run_h"] - 3.0) < 1e-9 and abs(rt["share"] - 75.0) < 1e-9
+              and rt["gaps"] == [(T(2), 1.0)] and rt["down"] == [(T(2), T(3))], rt)
+    # the report: a fourth book whose only long pair is accepted shows minutes and no "not derivable" in its lines
+    with tempfile.TemporaryDirectory() as tmp:
+        tb_books(tmp, GOOD_COUNTS, {"data": [14.0, 15.0]}, n=10)
+        counts = {"tb_built": 538, "tb_empty": 2, "rows_open": 5}
+        t18 = [{"ts": iso(T(0)), "kind": "backfill"}]
+        t18 += [hb(T(0, 30 * k), dict(counts), {"data": [14.0, 15.0]}) for k in (1, 2, 4, 5, 6)]   # 01:00 to 02:00 is one pair
+        t18.append({"ts": iso(T(1, 57)), "kind": "backfill"})
+        # the pair 01:00 and 02:00 is 60 minutes apart with a backfill at 01:57
+        write(tmp, "paper_spot_t18", sorted(t18, key=lambda e: e["ts"]))
+        text = ps.build_report(tmp, NOW)
+        run = text.split("## Running time")[1].split("\n## ")[0]
+        rows = [l for l in run.splitlines() if l.startswith("| Spot T18")]
+        sec = text.split("## Rule progress for the fourth book")[1].split("\n## ")[0]
+        line = [l for l in sec.splitlines() if l.startswith("Real-time minutes run so far")]
+        check("restart: report row for the fourth book has numbers", len(rows) == 1 and "| 3.0 | 3.0 | 100.0% |" in rows[0]
+              and "not derivable" not in rows[0], rows)
+        check("restart: fourth book's minutes line is a number", line == ["Real-time minutes run so far: 180."], line)
+        check("restart: no 'not derivable' in the fourth book's lines", "not derivable" not in sec.split("Real-time minutes")[0]
+              and "not derivable" not in line[0] if line else False)
+
+
 def hb(t, counts=None, step=None, **kw):
     o = {"ts": iso(t), "kind": "heartbeat", "equity": 250000, "committed": 1000, "counts": counts if counts is not None else {}}
     if step is not None:
@@ -612,6 +685,7 @@ def main():
         check("perp days run", v1["days"] is not None and abs(v1["days"] - 2 / 24) < 1e-9, v1["days"])
 
     running_time_tests()
+    restart_gap_tests()
     data_quality_tests()
     third_book_tests()
     t18_tests()
