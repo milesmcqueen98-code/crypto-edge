@@ -438,10 +438,15 @@ Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
   synthetic tables and on the stored Oct 10 2025 crash). No network. `bot/spot/trades_bar_check.py` is the network
   check for a GitHub runner (hunt2.yml).
 - **Inputs of the live bot:** `python bot/spot/release_inputs_test.py` checks the rules of the section above and runs
-  `run.py status` on temp live files (one made before release 3, one with its own list, one with `inputs_local`).
+  `run.py status` on temp live files (one made before release 3, one holding release 3's inputs, one with its own
+  list, one with `inputs_local`).
   `python bot/spot/live_sim_inputs_test.py "2025-10-10 20:00" "2025-10-11 02:00"` runs the live-path test on
-  `config.json`'s inputs with a trades feed made from the candles, from the start and after a switch from candle mode
-  on the same state, and compares the logs with the candle run. No network.
+  `config.json`'s inputs with a trades feed made from the candles, from the start and after a switch on the same
+  state (from candle mode, and from release 3's inputs), and compares the logs with the candle run. Without
+  `--death` it also runs a feed whose trades bars differ from their candles in some minutes and checks that the
+  candle replaced or dropped each of them. No network.
+- **Trades rows replaced by the candle:** `python bot/spot/candle_after_test.py` checks `"trades_rows"` on synthetic
+  tables (replace, drop, counters, the key absent equal to `"keep"`) and on the stored Oct 10 2025 crash.
 - **wickctl update:** `bash bot/spot/deploy/wickctl_test.sh` runs the real `update` branch against stub `sudo`, `systemctl`, `git` and
   `install`. It checks the order of calls for a bot that was active, activating, inactive or failed, and for a failed pull.
   Only a bot that was active or activating is started again. No network, no sudo.

@@ -15,6 +15,8 @@ Part 2, run.py status end to end (a subprocess, temp folder, no network):
   - a live file as a VM set up before release 3 has it (config.json without the input keys, capital changed): the
     inputs line of bot/spot/config.json with the "(from bot/spot/config.json)" marker, then every line status printed
     before;
+  - a live file as a VM set up on release 3 has it (release 3's input keys: trades kept for BTC, ETH, SOL, XRP, ZEC,
+    the stale guard on): the release's line with the marker, one note for each key whose value the release changes;
   - a live file made as setup_vm.sh makes it now (a copy of config.json, capital 0) with a different trades_coins
     list: the release's list is used and a note names both;
   - "inputs_local": true with "newest_bar": "candles": the candle line and the note, no marker;
@@ -46,6 +48,7 @@ from bot.spot import release_inputs as R  # noqa: E402
 FAILS = []
 BASE = json.load(open(os.path.join(HERE, "config.json")))
 MARK = " (from bot/spot/config.json)"
+RELEASE3_COINS = ("BTC", "ETH", "SOL", "XRP", "ZEC")       # trades_coins of release 3's config.json
 
 
 def check(name, ok, extra=""):
@@ -260,8 +263,33 @@ def part2():
         if BASE.get("newest_bar") == "trades":
             check("old live file: trades mode for config.json's list, stale guard on",
                   "newest minute from trades for " + ", ".join(BASE.get("trades_coins") or []) in out[0]
-                  and out[0].endswith("stale guard on" + MARK) and bool(BASE.get("stale_guard")), out[0])
+                  and "; stale guard on" in out[0] and out[0].endswith(MARK) and bool(BASE.get("stale_guard")),
+                  out[0])
         check("old live file: unchanged byte for byte", open(p, "rb").read() == b)
+
+        # 1b. a VM set up on release 3 (setup_vm.sh copied that release's config.json): release 3's input keys,
+        # written out here (bot/spot/config.json on main at release 3, commit 39f7c56a), capital changed
+        r3 = dict(old, newest_bar="trades", stale_guard=True, trades_coins=list(RELEASE3_COINS))
+        p, b = write_live(tmp, r3)
+        rc, out, err = status(p, sd)
+        print("  [live file holding release 3's input keys]\n    " + "\n    ".join(out), flush=True)
+        notes = [x for x in out[1:] if x.startswith("  ") and "live config had" in x]
+        check("release 3 live file: exit 0, the release's line with the marker, first", rc == 0 and out[:1] == [want],
+              str(out[:1]) + err[-300:])
+        want_r3 = (["trades_coins"] if BASE.get("trades_coins") != r3["trades_coins"] else []) + \
+            (["newest_bar"] if BASE.get("newest_bar") != "trades" else []) + \
+            (["stale_guard"] if BASE.get("stale_guard") is not True else [])
+        check("release 3 live file: one note per key whose value the release changes, naming both values",
+              len(notes) == len(want_r3) and all(any(k in x for x in notes) for k in want_r3)
+              and all(str(r3[k]) in x and str(BASE.get(k)) in x for k, x in zip(
+                  [k for k in R.INPUT_KEYS if k in want_r3], notes)), str(notes))
+        if BASE.get("trades_rows") is not None:
+            check("release 3 live file: the release's trades_rows is in use (the file has none, so no note)",
+                  not any("trades_rows" in x for x in notes) and R.describe(R.apply(r3, BASE)[0]) + MARK == out[0],
+                  out[0])
+        check("release 3 live file: then every line status printed before",
+              out[1 + len(notes):] == old_lines(sd, 10000), str(out[1 + len(notes):]))
+        check("release 3 live file: unchanged byte for byte", open(p, "rb").read() == b)
 
         # 2. made as setup_vm.sh makes it after release 3, then edited: the three keys with a different list
         new = dict(BASE, capital=0)
