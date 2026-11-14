@@ -780,3 +780,24 @@ FORWARD_TESTS.md.
   - **Agents:** the release candidate with the new bar source is being built on branch owner/release-4 (Opus).
     The order path and the data step go to Opus agents on their own branches; the venue's interface facts are
     checked from its documentation first.
+- **11:19. Step probe: script reviewed, run 1 started; order path: the venue's facts and the plan.**
+  - **Step probe.** Plan fixed at 10:55 (reports/owner/step_probe_prereg.md). A Sonnet agent built the probe, the
+    summary and the rule with offline tests (61, 23 and 36 checks). Reviewed: the probe uses the engine's own
+    request and check at the engine's own pace, stops at once on a refusal or a rate-limit answer, and writes one
+    row per request. One addition asked for and made: an error that escapes the loop no longer loses the rows.
+    Run 1 started at 16:07 UTC on a runner (run 43613801204, 300 minutes, 54 requests a minute, at most 7 in a
+    second). Run 2 is set for Monday from 13:30 UTC. The rule reads both together.
+  - **The venue's interface facts.** The research agent read the venue's Python library (version 1.8.4) but could
+    not open the documentation: its page requests needed an approval that was not answered in time, and it
+    stopped, as told. It asked for those requests to be allowed. No setting was changed. The pages were then read
+    from this session through its own search results, which the tool allows without that approval. One page was
+    not read: the overview that the venue's retired rate-limit page forwards to needs Miles's approval to open, so
+    the order endpoints' request limit stays unconfirmed and the bot will read it from the venue's own headers.
+  - **What the documentation settles:** several orders can be cancelled in one request, but success only means the
+    cancel was submitted; several orders can be read in one request, with fills and status; the best bid of
+    several products comes in one request; editing a bid in place is not documented for good-till-date orders, so
+    it is not used. Public market data is limited to 10 requests a second per IP (the bot's pace is 7).
+  - **Order path plan** (reports/owner/order_path_plan.md, fixed at 11:16, before any live order): setting
+    `order_path`, today's code untouched as the default, the batch path beside it with today's single requests as
+    the fallback for every piece, the tests before release, and what the first live day must show. An Opus agent
+    is building it on branch owner/order-path.
