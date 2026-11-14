@@ -433,10 +433,12 @@ class LiveBroker:
     BATCH_N = 50                                       # order ids per batch cancel or list request
     BATCH_PAGES = 5                                    # pages followed per list request
     CANCEL_READS = (0.0, 0.15, 0.3, 0.6, 1.0, 1.5, 2.0)    # reads after a batch cancel, seconds after it returned
+    SINGLE_FROM = 0.6                                  # from this read on, an open order is also read singly
     BREAK_AFTER = 3                                    # failed calls in a row that switch a piece off for good
     PIECES = ("snapshot", "cancel_many", "best_bids")
     order_path, orders_rate, place_workers, client_factory = "serial", 10.0, 1, None    # class defaults (see above)
     sleep = None                                       # injectable wait for every wait of the new methods (None: sleep)
+    last_cancel_rounds = None                          # cancel_many: the read round each order was seen final
     mono = None                                        # injectable clock for the pace (None: time.monotonic)
     RL = (("limit", "x-ratelimit-limit", "rate_limit_limit"), ("remaining", "x-ratelimit-remaining",
                                                                  "rate_limit_remaining"),
@@ -601,26 +603,43 @@ class LiveBroker:
 
     def cancel_many(self, orders):
         """Cancel several orders and wait for the venue to confirm: {order id: (fill not yet booked as (qty, px, fee)
-        or None, confirmed)}, the pair cancel() returns, for every order given. One batch cancel per BATCH_N ids (an
-        exception is swallowed: the reads decide), then reads of the orders not yet final at CANCEL_READS seconds
-        after the cancel returned: one snapshot, and status() for an order it does not cover (an exception there:
-        unknown this round). Final at the end: confirmed; otherwise not."""
+        or None, confirmed)}, the pair cancel() returns, for every order given.
+        - One batch cancel per BATCH_N ids. A group whose request raised or came back without a results list is
+          cancelled at once order by order with today's cancel(), whose answers are used (no read schedule for it).
+        - The other orders are read at CANCEL_READS seconds after the last batch cancel returned, until final: one
+          snapshot, and status() for an order it does not cover (an exception there: unknown this round). From the
+          read at SINGLE_FROM s on, an order the snapshot shows not final is also read with status(), which decides
+          for that round (if it raises, the snapshot's view stands). Final at the end: confirmed; otherwise not.
+        last_cancel_rounds: {order id: index of the read round it was seen final, or "single" for today's cancel}."""
         orders = list(orders)
-        ids = list(dict.fromkeys(o["id"] for o in orders))
+        byid = {}
+        for o in orders:
+            byid.setdefault(o["id"], o)
+        ids = list(byid)
         if not ids:
             return {}
         if not self.batch_on("cancel_many"):
             raise RuntimeError("cancel_many is switched off")
-        good = False
+        single, rounds, t0 = {}, {}, None
         for g in range(0, len(ids), self.BATCH_N):
+            group = ids[g:g + self.BATCH_N]
             try:
-                r = self._req(self.c.cancel_orders, order_ids=ids[g:g + self.BATCH_N])
-                good = good or isinstance(r.get("results"), list)
+                r = self._req(self.c.cancel_orders, order_ids=group)
+                good = isinstance(r.get("results"), list)
             except Exception:
-                pass
-        self._ok("cancel_many", good)
-        t0, last, final = self._now(), {}, set()
-        for at in self.CANCEL_READS:
+                good = False
+            self._ok("cancel_many", good)
+            if good:
+                t0 = self._now()
+                continue
+            for i in group:                                # today's cancel, at once, for this group
+                self._pace()
+                single[i] = self.cancel(byid[i])
+                rounds[i] = "single"
+        if t0 is None:
+            t0 = self._now()
+        last, final = {}, set(single)
+        for k, at in enumerate(self.CANCEL_READS):
             todo = [i for i in ids if i not in final]
             if not todo:
                 break
@@ -634,11 +653,26 @@ class LiveBroker:
                         s = self.status(i)
                     except Exception:
                         s = None
+                elif at >= self.SINGLE_FROM - 1e-9 and s["status"] not in self.TERMINAL:
+                    try:                                   # the list may lag the single read: it decides
+                        self._pace()
+                        s = self.status(i)
+                    except Exception:
+                        pass
                 last[i] = s
                 if s and s["status"] in self.TERMINAL:
                     final.add(i)
-        return {o["id"]: ((self.increment(o, last.get(o["id"])) if last.get(o["id"]) else None),
-                          bool(last.get(o["id"]) and last[o["id"]]["status"] in self.TERMINAL)) for o in orders}
+                    rounds[i] = k
+        self.last_cancel_rounds = rounds
+        out = {}
+        for o in orders:
+            i = o["id"]
+            if i in single:
+                out[i] = single[i]
+            else:
+                s = last.get(i)
+                out[i] = ((self.increment(o, s) if s else None), bool(s and s["status"] in self.TERMINAL))
+        return out
 
     def _find_on(self, c, product, cid, tries=2):
         """_find_by_client_id on client c, paced, waiting through the injectable sleep."""

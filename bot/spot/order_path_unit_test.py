@@ -236,8 +236,21 @@ SP = E.Spec("ETH-USD", 0.01, 1e-8, 1.0)
 
 
 # ------------------------------------------------------------------------------------------------ part 1
+class NoSleep:
+    """time.sleep replaced while today's cancel() runs (it waits 0.4 s between its reads)."""
+
+    def __init__(self, ck):
+        self.ck = ck
+
+    def __enter__(self):
+        self.old, E.time.sleep = E.time.sleep, self.ck.sleep
+
+    def __exit__(self, *a):
+        E.time.sleep = self.old
+
+
 def t_cancel_many():
-    # the batch cancel raises: the reads decide (here the venue did cancel)
+    # the batch cancel raises: today's cancel for each order at once, its answers used (here the venue did cancel)
     ck = Clock()
     v = Venue(ck)
     v.add("a")
@@ -245,16 +258,67 @@ def t_cancel_many():
     v.script["cancel_orders"] = [lambda kw: (v.orders["a"].update(status="CANCELLED"),
                                              v.orders["b"].update(status="CANCELLED"), raises("timeout")(kw))[2]]
     b = broker(v, ck)
-    r = b.cancel_many([order("a"), order("b")])
-    check("cancel_many: the batch cancel raises -> the reads decide (both cancelled: confirmed, no fill)",
-          r == {"a": (None, True), "b": (None, True)} and methods(v) == ["cancel_orders", "list_orders"], str(r))
+    with NoSleep(ck):
+        r = b.cancel_many([order("a"), order("b")])
+    check("cancel_many: the batch cancel raises -> today's cancel for each order at once (cancel of one id, then "
+          "its read), its answers used; no read schedule", r == {"a": (None, True), "b": (None, True)}
+          and methods(v) == ["cancel_orders", "cancel_orders", "get_order", "cancel_orders", "get_order"]
+          and b.last_cancel_rounds == {"a": "single", "b": "single"}, str((r, methods(v))))
     b2 = broker(Venue(ck), ck)
     b2.c.v.add("c")
     b2.c.v.script["cancel_orders"] = [raises("timeout")]
     b2.c.v.reads["c"] = ["OPEN"]
-    r2 = b2.cancel_many([order("c")])
-    check("cancel_many: the batch cancel raises and the order stays open -> not confirmed after seven reads",
-          r2 == {"c": (None, False)} and methods(b2.c.v).count("list_orders") == 7, str(r2))
+    with NoSleep(ck):
+        r2 = b2.cancel_many([order("c")])
+    check("cancel_many: the batch cancel raises and the order stays open -> today's cancel: six reads, not "
+          "confirmed, no list read", r2 == {"c": (None, False)} and methods(b2.c.v).count("get_order") == 6
+          and "list_orders" not in methods(b2.c.v), str(r2))
+    v3 = Venue(ck)
+    v3.add("d")
+    v3.script["cancel_orders"] = [lambda kw: {"oops": 1}]
+    with NoSleep(ck):
+        r3 = broker(v3, ck).cancel_many([order("d")])
+    check("cancel_many: an answer without a results list -> today's cancel for its orders, confirmed",
+          r3 == {"d": (None, True)} and methods(v3) == ["cancel_orders", "cancel_orders", "get_order"], str(r3))
+
+    # the second of two groups raises: the first group by the read schedule, the second by today's cancel
+    ck = Clock()
+    v = Venue(ck)
+    ids = [f"g{k}" for k in range(60)]
+    for i in ids:
+        v.add(i)
+    v.script["cancel_orders"] = [None, raises("503")]
+    with NoSleep(ck):
+        r = broker(v, ck).cancel_many([order(i) for i in ids])
+    k = [(c[1], len(c[2].get("order_ids") or [c[2].get("order_id")])) for c in v.calls]
+    want = [("cancel_orders", 50), ("cancel_orders", 10)] + [("cancel_orders", 1), ("get_order", 1)] * 10 + \
+        [("list_orders", 50)]
+    check("cancel_many: the batch request raises for the second of two groups -> that group by today's cancel at "
+          "once, in order, then the first group by the reads; all confirmed",
+          k == want and all(x == (None, True) for x in r.values()), str(k[:4]))
+
+    # the list keeps showing OPEN while the single read says CANCELLED: confirmed at the 0.6 s round
+    ck = Clock()
+    v = Venue(ck)
+    v.add("a", status="CANCELLED")
+    v.add("b", status="CANCELLED")
+    v.script["cancel_orders"] = [lambda kw: {"results": [dict(success=True, order_id=i) for i in kw["order_ids"]]}]
+    v.script["list_orders"] = [lambda kw: {"orders": [dict(v.view(i), status="OPEN") for i in kw["order_ids"]]}] * 7
+    b = broker(v, ck)
+    r = b.cancel_many([order("a"), order("b")])
+    check("cancel_many: the list stays OPEN, the single read says CANCELLED -> confirmed at the 0.6 s round by "
+          "single reads", r == {"a": (None, True), "b": (None, True)}
+          and methods(v) == ["cancel_orders"] + ["list_orders"] * 4 + ["get_order"] * 2
+          and b.last_cancel_rounds == {"a": 3, "b": 3}, str((r, methods(v))))
+    v = Venue(ck)
+    v.add("a")
+    v.reads["a"] = ["OPEN"]
+    v.script["cancel_orders"] = [lambda kw: {"results": [dict(success=True, order_id="a")]}]
+    v.script["get_order"] = [raises("503")] * 4
+    r = broker(v, ck).cancel_many([order("a")])
+    check("cancel_many: the single read raises from 0.6 s on -> the snapshot's view stands (open): not confirmed, "
+          "a single read tried at each of the last four rounds", r == {"a": (None, False)}
+          and methods(v).count("get_order") == 4 and methods(v).count("list_orders") == 7, str(methods(v)))
 
     # the answer covers some orders only
     ck = Clock()
@@ -596,9 +660,10 @@ def t_breaker():
     for _ in range(5):
         b.snapshot(["a"])
     check("breaker: a success in between resets the count (fail, fail, ok, fail, fail -> on)", b.batch_on("snapshot"))
-    v.script["cancel_orders"] = [raises("x"), lambda kw: {"oops": 1}, raises("x")]
-    for _ in range(3):
-        b.cancel_many([order("a")])
+    v.script["cancel_orders"] = [raises("x"), None, lambda kw: {"oops": 1}, None, raises("x"), None]
+    with NoSleep(ck):
+        for _ in range(3):
+            b.cancel_many([order("a")])
     check("breaker: cancel_many's batch request -> off after three failures; cancel_many then raises (the engine "
           "falls back to today's cancel)", not b.batch_on("cancel_many") and b.take_trips() == ["cancel_many"])
     try:
