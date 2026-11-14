@@ -23,6 +23,7 @@ import math
 import os
 import sys
 import time
+import traceback
 from datetime import datetime, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -240,6 +241,29 @@ def run(args, market, clock, sleep, out_dir):
     return 0
 
 
+def guarded_run(args, market, clock, sleep, out_dir):
+    """run() with a guard: an exception that escapes run() must not lose the rows already written (hunt2.yml skips
+    its commit step on a non-zero exit). It writes OUT/crash.json (type, text, the last 2000 characters of the
+    traceback, the UTC time), prints the traceback to stderr and returns 0. KeyboardInterrupt and SystemExit are not
+    caught. An existing calls.csv is refused before the guard: that raises FileExistsError (non-zero exit), so a run
+    that never started cannot look successful."""
+    calls_path = os.path.join(out_dir, "calls.csv")
+    if os.path.exists(calls_path) and os.path.getsize(calls_path) > 0:
+        raise FileExistsError(f"{calls_path} already exists: a run never overwrites another run's rows")
+    try:
+        return run(args, market, clock, sleep, out_dir)
+    except Exception as exc:
+        tb = traceback.format_exc()
+        sys.stderr.write(tb)
+        doc = {"type": type(exc).__name__, "text": str(exc), "traceback_tail": tb[-2000:],
+               "time_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
+        os.makedirs(out_dir, exist_ok=True)
+        with open(os.path.join(out_dir, "crash.json"), "w") as f:
+            json.dump(doc, f, indent=1)
+            f.write("\n")
+        return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--minutes", type=int, default=300)
@@ -254,7 +278,7 @@ def main(argv=None):
         if not 0.0 <= getattr(args, name) <= LATEST_START_S:
             ap.error(f"--{name.replace('_', '-')} must be between 0 and {LATEST_START_S:g}")
     import bot.market as market
-    return run(args, market, time.time, time.sleep, args.out)
+    return guarded_run(args, market, time.time, time.sleep, args.out)
 
 
 if __name__ == "__main__":

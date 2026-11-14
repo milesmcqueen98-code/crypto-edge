@@ -2,7 +2,9 @@
 0.2 s per fake call. No network, no real sleep. Run: python scripts/owner/step_probe/test_probe.py
 (one line per check, last line "N checks, F failed", non-zero exit on a failure)."""
 import argparse
+import contextlib
 import csv
+import io
 import json
 import os
 import shutil
@@ -268,6 +270,58 @@ def main():
         clk.t = BASE + 4.0
         g("u", {"limit": 1000, "after": 5})
         check("wrapper: later pages add a send time but do not change the first", info["sent"] == BASE + 3.5 and len(sends) == 2)
+
+        # the guard around run()
+        def guard_case(exc_type):
+            clk = Clock(BASE + 10)
+            mk = FakeMarket(clk)
+            o = tempfile.mkdtemp(dir=tmp)
+            orig, n = probe.append_rows, [0]
+
+            def bad(path, rows):
+                n[0] += 1
+                if n[0] == 2:
+                    raise exc_type("disk went away")
+                return orig(path, rows)
+            probe.append_rows = bad
+            try:
+                err = io.StringIO()
+                with contextlib.redirect_stderr(err):
+                    rc_ = probe.guarded_run(args_for(2), mk, clk.now, clk.sleep, o)
+            finally:
+                probe.append_rows = orig
+            return rc_, o, err.getvalue()
+        rc_g, og, errtext = guard_case(RuntimeError)
+        with open(os.path.join(og, "crash.json")) as f:
+            cj = json.load(f)
+        with open(os.path.join(og, "calls.csv"), newline="") as f:
+            kept = list(csv.DictReader(f))
+        check("guard: an escaping RuntimeError returns 0 and writes crash.json (type, text, traceback tail, UTC time)",
+              rc_g == 0 and cj["type"] == "RuntimeError" and cj["text"] == "disk went away" and "Traceback" in cj["traceback_tail"]
+              and len(cj["traceback_tail"]) <= 2000 and cj["time_utc"].endswith("Z"), cj)
+        check("guard: the traceback goes to stderr", "RuntimeError: disk went away" in errtext)
+        check("guard: rows already appended (the early pass, 18 rows) are still in calls.csv and run.json exists",
+              len(kept) == 18 and os.path.exists(os.path.join(og, "run.json")), len(kept))
+        try:
+            guard_case(KeyboardInterrupt)
+            ok = False
+        except KeyboardInterrupt:
+            ok = True
+        check("guard: KeyboardInterrupt is not caught", ok)
+        clk = Clock(BASE + 10)
+        mk = FakeMarket(clk)
+        try:
+            probe.guarded_run(args_for(1), mk, clk.now, clk.sleep, og)
+            ok = False
+        except FileExistsError:
+            ok = True
+        check("guard: an existing calls.csv still raises FileExistsError (non-zero exit), no request made", ok and not mk.calls)
+        clk = Clock(BASE + 10)
+        mk = FakeMarket(clk)
+        o_ok = tempfile.mkdtemp(dir=tmp)
+        rc_ok = probe.guarded_run(args_for(1), mk, clk.now, clk.sleep, o_ok)
+        check("guard: a normal run through guarded_run returns 0 and writes no crash.json",
+              rc_ok == 0 and not os.path.exists(os.path.join(o_ok, "crash.json")) and len(mk.calls) == 72)
 
         # the real module is not touched by the tests
         check("tests never import bot.market", "bot.market" not in sys.modules)
