@@ -825,9 +825,9 @@ class Engine:
                                      order_path="batch", orders_rate=self.cfg.get("orders_rate", 10),
                                      place_workers=self.cfg.get("place_workers", 1))
             if self.broker.rate_headers_off:
-                self.log("warning", msg="order path: the installed coinbase-advanced-py "
-                                        f"({library_version()}) does not know rate_limit_headers; its clients are built "
-                                        "without it, so the heartbeat has no rate_limit field")
+                self.log("warning", msg=f"order path: the installed coinbase-advanced-py ({library_version()}) "
+                                        "does not know rate_limit_headers; its clients are built without it, so the "
+                                        "heartbeat has no rate_limit field")
         if self.broker is None:
             self.broker = (LiveBroker(self.cfg.get("count_usdc_as_cash", False), self.cfg.get("quote", "USD"))
                            if self.mode == "live" else PaperBroker(self.cfg.get("paper_capture", 0.5)))
