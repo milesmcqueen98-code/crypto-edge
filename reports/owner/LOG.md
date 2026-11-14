@@ -801,3 +801,8 @@ FORWARD_TESTS.md.
     `order_path`, today's code untouched as the default, the batch path beside it with today's single requests as
     the fallback for every piece, the tests before release, and what the first live day must show. An Opus agent
     is building it on branch owner/order-path.
+- **12:50. The main book's first run on release 3 is under way.** Run 43620656443 started at 17:21 UTC from a
+  commit that holds release 3 (bot/spot/config.json: newest bar from trades, guard on, list BTC, ETH, SOL, XRP,
+  ZEC). Both of its jobs, the main book with W2 and the third book, are still running after 29 minutes, so there
+  was no start-up fault. Its log reaches `main` when the run ends, at about 23:12 UTC. Tomorrow's read confirms
+  the heartbeat counters and puts test A's start on file.
