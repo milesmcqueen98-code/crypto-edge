@@ -3,6 +3,12 @@
 Branch `owner/release-3`. Prepared as a candidate; whether it ships, and with which coin list, is decided by the third
 book's read. This file states facts only.
 
+**What shipped (added by the owner on Nov 14 2026).** The third book's read passed and took LTC off the list, so
+release 3 went out with BTC, ETH, SOL, XRP and ZEC. This file was written for the candidate with six coins: where it
+names the six, read the five. The five-coin version passed the same runner tests on commit 0fb7f12c (offline suite,
+run 43602816403: no file with a failure; paper run on live data, run 43602818937: 40 bars built from trades in eight
+minutes, no fallback, no error). The release note is in reports/owner/RELEASES.md.
+
 ## What changed, file by file
 - **`bot/spot/release_inputs.py` (new).** Pure functions, standard library only (Python 3.8 and later).
   - `INPUT_KEYS`: `newest_bar`, `trades_coins`, `stale_guard`, `trades_rows`, `trades_budget_s`, `confirm_s`.

@@ -266,12 +266,16 @@ final candles. Live, the candles it reads are often not final:
 **The switches** (in the config file; the defaults keep today's behaviour exactly):
 - `"newest_bar"`: `"candles"` (default) as today, or `"trades"`.
 - `"trades_coins"`: the coins rebuilt from trades (default: BTC and every coin). Coins not listed are never asked for trades;
-  their rows come from candles, under the cache rules below. An unknown name stops the bot at start-up. The trades book lists
-  BTC, ETH, SOL, XRP, LTC and ZEC.
+  their rows come from candles, under the cache rules below. An unknown name stops the bot at start-up. From release 3
+  `config.json` lists BTC, ETH, SOL, XRP and ZEC for the main book, W2 and the live bot. The third paper book
+  (`config.tb.json`) still lists LTC as well.
   - **Why a list.** For the other twelve coins Coinbase cuts the candle late after quiet minutes (8% to 41% of
     minute boundaries): the 17:32 candle holds trades stamped in the first seconds of 17:33. A bar built from the
-    trade stamps then differs from the final candle the research used, and no fixed offset fixes it. For the six
-    listed coins the bar cut at the minute matches the final candle (0 to 0.6% material errors out of sample).
+    trade stamps then differs from the final candle the research used, and no fixed offset fixes it.
+  - **How good the listed coins are** (the third book's three-day read, Nov 11 to 14 2026, share of a day's minutes
+    in which the trades bar was materially off the final candle): BTC 0.0% to 0.7%, ETH, SOL and XRP 0.0% to 0.9%,
+    ZEC 1.3% to 3.0%, LTC 2.0% to 3.3%. A coin stays on the list only if its trades bar beats its own first-seen
+    candle on every day. LTC did not on one day, so release 3 left it off. ZEC passed by a small margin.
 - With `"trades"`, for each coin on the list, each minute:
   - The minute that just closed is rebuilt from Coinbase's public trades list (`bot/market.py`,
     `minute_trades_bars`). So is any of the 4 minutes before it that is still open (repair). An open minute has no
@@ -346,7 +350,7 @@ a code update also moves the live bot to the release's inputs:
   command given that file, `wickctl paper-test` included.
 - The file itself is not changed. `preflight` writes back only `coins_disabled` and `bid_ttl_s`.
 - **To see it:** `wickctl status` prints the inputs line first, for example
-  `inputs: newest minute from trades for BTC, ETH, SOL, XRP, LTC, ZEC; candles for the other coins; stale guard on
+  `inputs: newest minute from trades for BTC, ETH, SOL, XRP, ZEC; candles for the other coins; stale guard on
   (from bot/spot/config.json)`, then one line for each setting of the live file that was replaced or dropped.
   `live` and `paper` print the same line at start (in `live_spot/stdout.log` for the service).
 - `live` also warns when it starts without trades and the stale guard (for example on candles, the mode before
