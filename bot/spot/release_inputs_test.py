@@ -7,7 +7,10 @@ Part 1, the pure functions:
     base lacks is dropped and noted; keys outside INPUT_KEYS are never touched; "inputs_local": true keeps everything
     and gives one note; false or absent does not; neither argument is changed; applying twice equals applying once;
   - applies: true only for the base name config.live.json;
-  - describe: trades mode with and without a list, candle mode, guard on and off, trades_rows;
+  - describe: trades mode with and without a list, candle mode, guard on and off, trades_rows; the order path clause
+    only for "order_path": "batch";
+  - the order-path keys (order_path, orders_rate, place_workers) are taken from the base like the input keys, and
+    "inputs_local": true keeps the live file's;
   - preflight_file: the file as read plus coins_disabled and bid_ttl_s, nothing taken from the release;
   - release_inputs.py and run.py parse as Python 3.8, and importing release_inputs loads no pandas or numpy.
 Part 2, run.py status end to end (a subprocess, temp folder, no network):
@@ -61,7 +64,11 @@ def expected_line(cfg):
                "newest minute from trades for " + ", ".join(tc) + "; candles for the other coins")
     else:
         src = "candles for every coin"
-    return "inputs: " + src + "; stale guard " + ("on" if cfg.get("stale_guard") else "off")
+    line = "inputs: " + src + "; stale guard " + ("on" if cfg.get("stale_guard") else "off")
+    if cfg.get("order_path") == "batch":
+        line += ("; order path batch (" + str(cfg.get("orders_rate", 10)) + " requests a second, "
+                 + str(cfg.get("place_workers", 1)) + " placing threads)")
+    return line
 
 
 # ------------------------------------------------------------------------------------------------ part 1
@@ -153,6 +160,37 @@ def part1():
     check("describe: trades_rows mentioned when set", d5.endswith("; stale guard on; trades_rows candle_after")
           and "BTC, ETH;" in d5, d5)
     check("describe: trades_rows not mentioned when absent", "trades_rows" not in d1 + d2 + d3 + d4)
+    d6 = R.describe({"newest_bar": "trades", "trades_coins": ["BTC"], "stale_guard": True, "order_path": "batch",
+                     "orders_rate": 10, "place_workers": 3})
+    check("describe: the order path clause for batch", d6 == "inputs: newest minute from trades for BTC; candles for "
+          "the other coins; stale guard on; order path batch (10 requests a second, 3 placing threads)", d6)
+    d7 = R.describe({"newest_bar": "trades", "trades_coins": ["BTC"], "stale_guard": True, "order_path": "serial",
+                     "orders_rate": 10, "place_workers": 3})
+    check("describe: no clause for serial, nor without the key (the lines above)",
+          d7 == "inputs: newest minute from trades for BTC; candles for the other coins; stale guard on"
+          and "order path" not in d1 + d2 + d3 + d4 + d5, d7)
+    d8 = R.describe({"order_path": "batch", "orders_rate": "ten"})
+    check("describe: a batch path with odd values still gives a line (status never fails on it)",
+          d8.endswith("; order path batch (ten requests a second, 1 placing threads)"), d8)
+
+    # the order-path keys follow the release like the input keys
+    check("INPUT_KEYS holds the six input keys and the three order-path keys",
+          R.INPUT_KEYS[:6] == ("newest_bar", "trades_coins", "stale_guard", "trades_rows", "trades_budget_s",
+                               "confirm_s") and R.ORDER_KEYS == ("order_path", "orders_rate", "place_workers")
+          and R.INPUT_KEYS[6:] == R.ORDER_KEYS)
+    base_o = dict(base, order_path="batch", orders_rate=10, place_workers=3)
+    new_o, notes_o = R.apply(dict(live, order_path="serial", place_workers=1), base_o)
+    check("order keys: taken from the release, a differing value replaced and noted",
+          (new_o["order_path"], new_o["orders_rate"], new_o["place_workers"]) == ("batch", 10, 3)
+          and len(notes_o) == 2 and "order_path" in notes_o[0] and "'serial'" in notes_o[0]
+          and "place_workers" in notes_o[1], str(notes_o))
+    new_d2, notes_d2 = R.apply(dict(live, order_path="batch", orders_rate=5), base)
+    check("order keys: a key the release lacks is dropped (the code's default, serial, applies) and noted",
+          not any(k in new_d2 for k in R.ORDER_KEYS) and len(notes_d2) == 2, str(notes_d2))
+    new_l2, notes_l2 = R.apply(dict(live, inputs_local=True, order_path="serial"), base_o)
+    check("order keys: inputs_local true keeps the live file's own order path",
+          new_l2["order_path"] == "serial" and "orders_rate" not in new_l2 and len(notes_l2) == 1, str(new_l2))
+
     check("describe matches the line written out independently for config.json and config.tb.json",
           all(R.describe(c) == expected_line(c) for c in
               (BASE, json.load(open(os.path.join(HERE, "config.tb.json"))))))

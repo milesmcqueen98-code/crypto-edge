@@ -1,16 +1,17 @@
 """Input settings that the live bot takes from the release (bot/spot/README.md, "Inputs of the live bot").
 
 The live bot runs with bot/spot/config.live.json, an untracked copy of bot/spot/config.json made when the VM was set
-up. Its data-source settings (INPUT_KEYS) are taken from the release's bot/spot/config.json at every start, so a code
-update also moves the live bot to the release's inputs. Every other key stays as the live file has it. A live file
-with "inputs_local": true keeps its own input settings.
+up. Its data-source settings and its order-path settings (INPUT_KEYS) are taken from the release's bot/spot/config.json
+at every start, so a code update also moves the live bot to the release's inputs. Every other key stays as the live
+file has it. A live file with "inputs_local": true keeps its own input settings.
 
 Pure functions, standard library only (Python 3.8 and later); the caller loads the files.
 """
 import copy
 import os
 
-INPUT_KEYS = ("newest_bar", "trades_coins", "stale_guard", "trades_rows", "trades_budget_s", "confirm_s")
+ORDER_KEYS = ("order_path", "orders_rate", "place_workers")       # README, "Order path"
+INPUT_KEYS = ("newest_bar", "trades_coins", "stale_guard", "trades_rows", "trades_budget_s", "confirm_s") + ORDER_KEYS
 LOCAL_SWITCH = "inputs_local"
 LIVE_NAME = "config.live.json"
 
@@ -68,4 +69,7 @@ def describe(cfg):
     line = "inputs: %s; stale guard %s" % (src, "on" if cfg.get("stale_guard", False) else "off")
     if cfg.get("trades_rows") is not None:
         line += "; trades_rows %s" % cfg["trades_rows"]
+    if cfg.get("order_path") == "batch":
+        line += "; order path batch (%s requests a second, %s placing threads)" % (cfg.get("orders_rate", 10),
+                                                                                   cfg.get("place_workers", 1))
     return line
