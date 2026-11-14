@@ -1178,7 +1178,7 @@ def t_engine_setting():
     check("engine: any other order_path is refused at start", ok)
     m = Mini()
     try:
-        check("engine, heartbeat: no rate_limit field before any header was seen", m.e._hb_rate_limit() == {})
+        check("engine, heartbeat: no rate_limit field before any header was seen", m.e._hb_live_fields() == {})
         m.v.script["get_best_bid_ask"] = [lambda kw: {"pricebooks": [], "rate_limit_limit": "30",
                                                       "rate_limit_remaining": "28", "rate_limit_reset": "1"}]
         m.allocate()
@@ -1220,6 +1220,90 @@ def t_engine_place_guard():
         m.close()
 
 
+class FakeLib:
+    """A stand-in for the installed coinbase library: RESTClient constructors with or without rate_limit_headers."""
+
+    def __init__(self, knows_headers, version="0.9-test"):
+        import types
+        self.made = []
+        made = self.made
+
+        if knows_headers:
+            class RESTClient(Client):
+                def __init__(self, api_key=None, api_secret=None, timeout=None, rate_limit_headers=False):
+                    super().__init__(Venue(None), name="lib")
+                    made.append(dict(timeout=timeout, rate_limit_headers=rate_limit_headers))
+        else:
+            class RESTClient(Client):                  # an older library: the argument is unknown
+                def __init__(self, api_key=None, api_secret=None, timeout=None):
+                    super().__init__(Venue(None), name="lib")
+                    made.append(dict(timeout=timeout))
+        self.mods = {"coinbase": types.ModuleType("coinbase"), "coinbase.rest": types.ModuleType("coinbase.rest"),
+                     "coinbase.__version__": types.ModuleType("coinbase.__version__")}
+        self.mods["coinbase.rest"].RESTClient = RESTClient
+        self.mods["coinbase.__version__"].__version__ = version
+
+    def __enter__(self):
+        self.old = {k: sys.modules.get(k) for k in self.mods}
+        self.env = {k: os.environ.get(k) for k in ("COINBASE_API_KEY", "COINBASE_API_SECRET")}
+        sys.modules.update(self.mods)
+        os.environ.update(COINBASE_API_KEY="test-key", COINBASE_API_SECRET="test-secret")
+        return self
+
+    def __exit__(self, *a):
+        for k, v in self.old.items():
+            if v is None:
+                sys.modules.pop(k, None)
+            else:
+                sys.modules[k] = v
+        for k, v in self.env.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
+def t_old_library():
+    with FakeLib(True) as lib:
+        b = E.LiveBroker(order_path="batch", place_workers=3)
+        b.client_factory()
+        check("library: a constructor that knows rate_limit_headers -> the batch clients built with it (after the "
+              "unchanged serial line's client and a probe: main client, one thread's client)",
+              not b.rate_headers_off and lib.made == [dict(timeout=10, rate_limit_headers=False)]
+              + [dict(timeout=10, rate_limit_headers=True)] * 3, str(lib.made))
+        b0 = E.LiveBroker()
+        check("library: the serial broker's client as before (no rate_limit_headers)",
+              lib.made[-1] == dict(timeout=10, rate_limit_headers=False), str(lib.made[-1]))
+    with FakeLib(False) as lib:
+        b = E.LiveBroker(order_path="batch", place_workers=3)
+        c = b.client_factory()
+        check("library: a constructor that rejects rate_limit_headers -> no stop: clients built without it",
+              b.rate_headers_off and isinstance(c, Client) and all(m == dict(timeout=10) for m in lib.made),
+              str(lib.made))
+        sd = tempfile.mkdtemp(prefix="order_path_unit_")
+        try:
+            e = E.Engine(mode="live", cfg=dict(capital=1000.0, order_path="batch", place_workers=3), state_dir=sd,
+                         market=StubMarket({}), echo=False, clock=lambda: T0)
+            w = [json.loads(x) for x in open(os.path.join(sd, "events.jsonl"))]
+            check("library: the engine says so once in a warning event at start", len(w) == 1
+                  and w[0]["kind"] == "warning" and "does not know rate_limit_headers" in w[0]["msg"]
+                  and e.broker.rate_headers_off, str(w))
+            v = E.library_version()
+            e._heartbeat(T0.floor("h"))
+            e._heartbeat(T0.floor("h") + pd.Timedelta(minutes=30))
+            hb = [json.loads(x) for x in open(os.path.join(sd, "events.jsonl")) if '"heartbeat"' in x]
+            check("library: its version in the first heartbeat only, no rate_limit field",
+                  v and hb[0].get("library") == v and "library" not in hb[1]
+                  and not any("rate_limit" in h for h in hb), str((v, hb)))
+        finally:
+            shutil.rmtree(sd, ignore_errors=True)
+    m = Mini(mode="paper")
+    try:
+        check("library: a paper engine's heartbeat has no library field", m.e._hb_live_fields() == {})
+    finally:
+        m.close()
+
+
 def part2():
     t_engine_new_keep()
     t_engine_fill_before_cancel()
@@ -1232,6 +1316,7 @@ def part2():
     t_engine_snap_check()
     t_engine_setting()
     t_engine_place_guard()
+    t_old_library()
 
 
 if __name__ == "__main__":

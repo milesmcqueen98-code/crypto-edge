@@ -520,11 +520,11 @@ def compare(a, b):
     if d is not None:
         print(f"  first difference at line {d}:\n    {a['tag']}: {la[d] if d < len(la) else None}\n"
               f"    {b['tag']}: {lb[d] if d < len(lb) else None}", flush=True)
-    ha = [{k: v for k, v in e.items() if k not in ("counts", "step_s", "rate_limit")} for e in ea
+    ha = [{k: v for k, v in e.items() if k not in ("counts", "step_s", "rate_limit", "library")} for e in ea
           if e["kind"] == "heartbeat"]
-    hb = [{k: v for k, v in e.items() if k not in ("counts", "step_s", "rate_limit")} for e in eb
+    hb = [{k: v for k, v in e.items() if k not in ("counts", "step_s", "rate_limit", "library")} for e in eb
           if e["kind"] == "heartbeat"]
-    check(f"{tag}: heartbeats equal apart from the counters, step timing and rate_limit", ha == hb)
+    check(f"{tag}: heartbeats equal apart from the counters, step timing, rate_limit and library", ha == hb)
     ca, cb = {}, {}
     for e in ea:
         for k, v in (e.get("counts") or {}).items():

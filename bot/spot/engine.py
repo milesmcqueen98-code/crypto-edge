@@ -52,6 +52,20 @@ warnings.filterwarnings("ignore", message="Mean of empty slice")
 warnings.filterwarnings("ignore", category=RuntimeWarning, module="edge.wick")
 
 
+def library_version():
+    """The installed coinbase-advanced-py version, or None (it is not installed, or cannot be read)."""
+    try:
+        from importlib import metadata
+        return metadata.version("coinbase-advanced-py")
+    except Exception:
+        pass
+    try:
+        from coinbase.__version__ import __version__
+        return str(__version__)
+    except Exception:
+        return None
+
+
 def now_utc():
     return pd.Timestamp.now(tz="UTC").tz_localize(None)
 
@@ -237,10 +251,15 @@ class LiveBroker:
             secret = os.environ["COINBASE_API_SECRET"].replace("\\n", "\n")     # accept the one-line (\\n) form
             client = RESTClient(api_key=os.environ["COINBASE_API_KEY"], api_secret=secret, timeout=10)   # no hung loop
             if order_path == "batch":                       # the venue's limit headers on every answer; one client
-                key = os.environ["COINBASE_API_KEY"]        # per placing thread (README, "Order path")
+                kw = dict(api_key=os.environ["COINBASE_API_KEY"], api_secret=secret, timeout=10)   # per placing thread
+                try:                                        # (README, "Order path")
+                    RESTClient(rate_limit_headers=True, **kw)
+                    kw["rate_limit_headers"] = True
+                except TypeError:                           # an older library without the argument: no headers
+                    self.rate_headers_off = True
 
                 def make():
-                    return RESTClient(api_key=key, api_secret=secret, timeout=10, rate_limit_headers=True)
+                    return RESTClient(**kw)
                 client, client_factory = make(), client_factory or make
         self.order_path, self.client_factory = order_path, client_factory
         self.orders_rate, self.place_workers = float(orders_rate), int(place_workers)
@@ -439,6 +458,7 @@ class LiveBroker:
     order_path, orders_rate, place_workers, client_factory = "serial", 10.0, 1, None    # class defaults (see above)
     sleep = None                                       # injectable wait for every wait of the new methods (None: sleep)
     last_cancel_rounds = None                          # cancel_many: the read round each order was seen final
+    rate_headers_off = False                           # the installed library does not know rate_limit_headers
     mono = None                                        # injectable clock for the pace (None: time.monotonic)
     RL = (("limit", "x-ratelimit-limit", "rate_limit_limit"), ("remaining", "x-ratelimit-remaining",
                                                                  "rate_limit_remaining"),
@@ -804,6 +824,10 @@ class Engine:
             self.broker = LiveBroker(self.cfg.get("count_usdc_as_cash", False), self.cfg.get("quote", "USD"),
                                      order_path="batch", orders_rate=self.cfg.get("orders_rate", 10),
                                      place_workers=self.cfg.get("place_workers", 1))
+            if self.broker.rate_headers_off:
+                self.log("warning", msg="order path: the installed coinbase-advanced-py "
+                                        f"({library_version()}) does not know rate_limit_headers; its clients are built "
+                                        "without it, so the heartbeat has no rate_limit field")
         if self.broker is None:
             self.broker = (LiveBroker(self.cfg.get("count_usdc_as_cash", False), self.cfg.get("quote", "USD"))
                            if self.mode == "live" else PaperBroker(self.cfg.get("paper_capture", 0.5)))
@@ -1427,7 +1451,7 @@ class Engine:
                                              "usdc_hold": round(self.broker.last_usdc[1], 2)}
                                             if getattr(self.broker, "last_usdc", None) is not None else {}),
                      step_s=self._step_s(),
-                     **self._hb_rate_limit(),
+                     **self._hb_live_fields(),
                      **({"tb_err": self._tb_err} if self._tb_err else {}))
             self.counts = {}
             self._tm = {k: [] for k in self._tm}
@@ -1741,13 +1765,23 @@ class Engine:
         except Exception:
             self.count("obs_error")
 
-    def _hb_rate_limit(self):
-        """Heartbeat field rate_limit: the venue's last limit headers (batch path, once seen)."""
+    def _hb_live_fields(self):
+        """Heartbeat fields of the live broker: library, the installed coinbase-advanced-py version (first heartbeat
+        of the process, when it can be read); rate_limit, the venue's last limit headers (batch path, once seen).
+        Nothing for any other broker."""
+        out = {}
         try:
+            if isinstance(self.broker, LiveBroker) and not getattr(self, "_lib_logged", False):
+                self._lib_logged = True
+                v = library_version()
+                if v:
+                    out["library"] = v
             rl = self.broker.rate_limit() if self._batch_on() else None
+            if rl:
+                out["rate_limit"] = rl
         except Exception:
-            rl = None
-        return {"rate_limit": rl} if rl else {}
+            self.count("obs_error")
+        return out
 
     def _settle_snap(self, t):
         """Batch path, before _settle's loop: one read of every resting order of every ladder ({} when the piece is

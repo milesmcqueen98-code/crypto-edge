@@ -71,6 +71,12 @@ if a.cmd in ("paper", "live"):
         if os.environ.get("I_UNDERSTAND_LIVE_TRADING") != "yes":
             sys.exit("Live mode places real orders. Set I_UNDERSTAND_LIVE_TRADING=yes after reading bot/spot/README.md.")
     print_inputs()
+    if a.cmd == "live":                                    # the installed library (README, "Order path")
+        try:
+            from importlib import metadata
+            print("library: coinbase-advanced-py " + metadata.version("coinbase-advanced-py"), flush=True)
+        except Exception as err:
+            print(f"library: coinbase-advanced-py version not found ({repr(err)[:80]})", flush=True)
     warn = None
     if a.cmd == "live" and not (cfg.get("newest_bar", "candles") == "trades" and cfg.get("stale_guard", False)):
         warn = ("live trading is starting without the release 3 inputs (trades with the stale guard); "
