@@ -121,6 +121,46 @@ changes no rule.
      arm events on one of the twelve coins at a minute that is a decision minute of both books
      (scripts/owner/reconcile/common.py, live_minutes). No research is fetched for a count.
 
+## Result of Part 1 (read Nov 14 2026, 10:34 ET)
+Run as "How the reads are run" says: runner job 43603482156 on branch owner/read-barsrc (4,320 decision minutes,
+seven whole-book passes, 30,240 engine steps, 1,224 candle answers, nothing refused), then compare.py with the third
+book's log. Tables: reports/owner/bar_source/ (summary.md has every coin and day).
+
+- **The two checks on the emulation, read first.**
+  - Way B on ETH, SOL, XRP, LTC and ZEC against the third book's logged score at its new bids: 240 of 249 within
+    0.5 points (96.4%). The bar is 90%, so Part 1 may be used for its one decision.
+  - Way A on the twelve: 486 of 528 within 0.5 points (92.0%). Reported, as planned.
+- **The single-coin clause: no coin stays on candles.** For each of the twelve the score-miss share under C is
+  lower than under A over the three days, and for no coin is it higher on two of the three days (it is higher on
+  one day for six coins, on none for the other six).
+- **The twelve together, three days, 51,840 coin-minutes:**
+
+  | Measure | A, candles | B, trades kept | C, trades then candles | C with all 18 coins |
+  |---|---|---|---|---|
+  | Disagreement on arming | 240 of 49,272 (0.49%) | 378 of 49,376 (0.77%) | 167 of 49,239 (0.34%) | 163 of 49,237 (0.33%) |
+  | Score more than 1.0 point from the research | 1,733 (3.3%) | 3,706 (7.1%) | 1,344 (2.6%) | 1,279 (2.5%) |
+  | Level more than 5 bp from the research | 572 (1.1%) | 7,354 (14.2%) | 572 (1.1%) | 497 (1.0%) |
+
+  - C has fewer score misses than A on each day: 393, 439 and 512 against 565, 561 and 607.
+  - B is worse than A on every measure. Its level is off in one coin-minute in seven. That is why it was dropped as
+    a candidate on Nov 11.
+- **By coin, score-miss share under C against A:** DOGE 2.6% against 6.2%, HYPE 1.2% against 2.1%, NEAR 2.1% against
+  3.2%, PEPE 5.1% against 6.1%, LINK 1.9% against 2.4%, SUI 1.8% against 2.2%, XLM 1.8% against 2.1%, ENA 3.4%
+  against 3.9%, HBAR 3.0% against 3.3%, BCH 3.1% against 3.3%, AAVE 3.7% against 3.8%, ONDO 1.6% against 1.7%. The
+  gain is large for DOGE, HYPE and NEAR and small for AAVE, ONDO and BCH.
+- **LTC and ZEC, reported only** (score misses under A, B, C; then level more than 5 bp off): LTC 1.1%, 1.2%, 0.8%;
+  level 1.2%, 2.8%, 1.2%. ZEC 3.0%, 1.4%, 1.3%; level 1.5%, 4.1%, 1.5%. Keeping trades rows puts the level off more
+  often for both; C does not. This agrees with the third book's read, which took LTC off the list and found ZEC's
+  level errors.
+- **Limits:**
+  - **The level column says little about the bot.** The level errors under A and C fall in 54 minutes, and in 50 of
+    them at least ten of the twelve coins are off at once, which points to BTC. In 40 of the 54 the collector's own
+    BTC bar was a fallback, one minute or an hour back (it could not verify 49 of its 4,575 BTC bars). The third
+    book had no fallback in its three days.
+  - **The gain is modest in size.** C removes about a fifth of A's score misses and about a third of its
+    disagreements on arming. Whether that shows in a running book is Part 2's question.
+- **What it decides:** the single-coin clause only. If Part 2 passes, all twelve go to way C and none is held back.
+
 ## Deviation log
 - **Nov 11 2026, 09:17 ET (orchestrator).** Made after the tool's development run and before any minute of either
   registered window was read for this plan.

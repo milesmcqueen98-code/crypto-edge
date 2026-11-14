@@ -745,3 +745,14 @@ FORWARD_TESTS.md.
     9. The other blocks are unchanged.
   - **Still to do for test A:** put the main book's first start on the new inputs on file
     (reports/owner/test_a_start.json) once that run's log is on `main`.
+- **10:34. Part 1 of the bar-source plan is read: the emulation holds, and no coin is held back on candles.** Run
+  as planned (job 43603482156; tables in reports/owner/bar_source; result in bar_source_prereg.md).
+  - **Checks on the emulation:** way B on the five traded coins agrees with the third book's logged score at 240
+    of 249 bids (bar 90%); way A on the twelve at 486 of 528.
+  - **Single-coin clause:** for every one of the twelve, way C has fewer score misses than way A over the three
+    days. None stays on candles.
+  - **The twelve together:** score more than 1.0 point from the research in 2.6% of coin-minutes under C against
+    3.3% under A and 7.1% with trades rows kept; disagreement on arming 0.34% against 0.49% and 0.77%.
+  - **Reading:** C is better than today's candles on every coin, by a modest amount: about a fifth fewer score
+    misses. Keeping trades rows is the worst of the three, which fits what the third book showed for LTC and ZEC.
+    Part 1 decides nothing else; the release question rests on Part 2, tomorrow.
