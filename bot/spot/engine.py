@@ -656,7 +656,8 @@ class LiveBroker:
         return None
 
     def _place_on(self, c, spec, side, px, size, post_only=True, end_time=None):
-        """place() on client c, paced: the same request and the same answer."""
+        """place() on client c, paced: the same request and the same answer; an answer it cannot read (not a dict,
+        success without an order id, ...) is searched by client order id as after an exception."""
         cid = f"{ORDER_TAG}-{uuid.uuid4().hex[:20]}"
         try:
             if end_time is not None:
@@ -669,9 +670,16 @@ class LiveBroker:
         except Exception as err:
             oid = self._find_on(c, self._p(spec.product), cid)  # a timed-out call may still have placed it
             return (oid, None) if oid else (None, repr(err)[:300])
-        if r.get("success"):
-            return r["success_response"]["order_id"], None
-        return None, json.dumps(r.get("error_response") or r, default=str)[:300]
+        try:
+            if r.get("success"):
+                oid = (r.get("success_response") or {}).get("order_id")
+                if not oid:
+                    raise ValueError("success without an order id")
+                return oid, None
+            return None, json.dumps(r.get("error_response") or r, default=str)[:300]
+        except Exception:                                  # an answer it cannot read: the order may exist
+            oid = self._find_on(c, self._p(spec.product), cid)
+            return (oid, None) if oid else (None, ("unreadable answer: " + repr(r))[:300])
 
     def _place_thread(self, q):
         """One placement on this thread's own client (made by the factory on the thread's first use)."""
@@ -686,23 +694,27 @@ class LiveBroker:
 
     def place_many(self, reqs):
         """reqs: [(spec, side, px, size, post_only, end_time)]. [(order id or None, error or None)] in request order,
-        each what place() returns for that request. One worker or one request: a plain loop on this broker's client.
-        Otherwise place_workers threads, each on its own client; results collected in request order."""
+        each what place() returns for that request; an answer it cannot read is searched by client order id, and an
+        exception anywhere becomes that request's (None, error). Never raises. One worker or one request: a plain loop
+        on this broker's client. Otherwise place_workers threads, each on its own client."""
         reqs = list(reqs)
         st = self._bs()
+        out = []
         if min(self.place_workers, len(reqs)) <= 1:
-            return [self._place_on(self.c, *q) for q in reqs]
+            for q in reqs:
+                try:
+                    out.append(self._place_on(self.c, *q))
+                except Exception as err:                   # never lose the others
+                    out.append((None, repr(err)[:300]))
+            return out
         if st["pool"] is None:
             st["pool"] = ThreadPoolExecutor(max_workers=self.place_workers)
         futs = [st["pool"].submit(self._place_thread, q) for q in reqs]
-        out, first = [], None
-        for f in futs:                                     # every request finishes before anything is returned
+        for f in futs:                                     # a result for every request, whatever a worker did
             try:
                 out.append(f.result())
             except Exception as err:
-                first = first or err
-        if first is not None:
-            raise first                                    # as place() would: an answer it cannot read
+                out.append((None, repr(err)[:300]))
         return out
 
 
@@ -1848,8 +1860,17 @@ class Engine:
             d["ttl"] = self.ttl
             d["end"] = self.clock() + pd.Timedelta(seconds=self.ttl) if self.ttl else None
         sent = [d for d in plans if "res" not in d]
-        out = self.broker.place_many([(d["sp"], "BUY", d["px"], d["size"], True, d["end"]) for d in sent]) \
-            if sent else []
+        try:
+            out = self.broker.place_many([(d["sp"], "BUY", d["px"], d["size"], True, d["end"]) for d in sent]) \
+                if sent else []
+        except Exception as err:                           # some bids may rest unknown to the state: sweep now
+            self.log("error", t=t, error=f"order path: place_many failed, no new bid this minute: {err!r}"[:300])
+            for d in plans:
+                if not d["lad"]["orders"]:
+                    self.state["ladders"].pop(d["lad"]["id"], None)
+            self.reconcile(t)
+            self._mark("place", t)
+            return
         self._broker_news(t)
         for d, (oid, err) in zip(sent, out):
             while oid is None and err and any(x in str(err).upper() for x in ("DURATION", "END_TIME", "EXPIR")):
@@ -1863,7 +1884,10 @@ class Engine:
                     break
                 d["ttl"] = self.ttl
                 d["end"] = self.clock() + pd.Timedelta(seconds=self.ttl) if self.ttl else None
-                oid, err = self.broker.place_many([(d["sp"], "BUY", d["px"], d["size"], True, d["end"])])[0]
+                try:
+                    oid, err = self.broker.place_many([(d["sp"], "BUY", d["px"], d["size"], True, d["end"])])[0]
+                except Exception as e:                     # never raises (place_many); kept for safety
+                    oid, err = None, repr(e)[:300]
                 self._broker_news(t)
             if oid is None:
                 d["res"] = (False, err or "rejected")

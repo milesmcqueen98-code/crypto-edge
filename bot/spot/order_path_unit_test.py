@@ -185,6 +185,26 @@ class Client:
     def create_order(self, **kw):
         return self._new(kw, "create_order")
 
+    def get_accounts(self, **kw):
+        self._rec("get_accounts", kw)
+        return {"accounts": [dict(currency="USD", available_balance=dict(value="1000000"), hold=dict(value="0"))]}
+
+    def get_transaction_summary(self, **kw):
+        self._rec("get_transaction_summary", kw)
+        return {"fee_tier": {"pricing_tier": "test", "maker_fee_rate": "0.0006", "taker_fee_rate": "0.00125"}}
+
+    def get_fills(self, **kw):
+        f = self._rec("get_fills", kw)
+        if f:
+            return f(kw)
+        return {"fills": [dict(order_id=i) for i in getattr(self.v, "filled_ids", [])], "cursor": ""}
+
+    def preview_order(self, **kw):
+        f = self._rec("preview_order", kw)
+        if f:
+            return f(kw)
+        return {"errs": []}
+
     def limit_order_gtc_buy(self, **kw):
         return self._new(dict(kw, side="BUY"), "limit_order_gtc_buy")
 
@@ -495,6 +515,67 @@ def t_place_many():
     check("place_many: the same three clients on the next call (no new client)", len(made) == 3 and len(r2) == 4)
 
 
+def t_place_never_loses():
+    end = E.pd.Timestamp("2025-10-10 20:10:06")
+    v = Venue(None)
+    made, lock = [], threading.Lock()
+
+    def factory():
+        with lock:
+            c = Client(v, name=f"w{len(made)}")
+            made.append(c)
+        return c
+    b = E.LiveBroker(client=Client(v), client_factory=factory, place_workers=3)
+    b.sleep = lambda s: None
+    reqs = [(E.Spec(f"C{k}-USD", 0.01, 1e-8, 1.0), "BUY", 10.0 + k, 1.0, True, end) for k in range(3)]
+    orig = Client._new
+
+    def new(self, kw, m):                              # C1: the venue says success but gives no order id
+        if kw["product_id"] == "C1-USD":
+            self._rec(m, kw)
+            return {"success": True, "success_response": {}}
+        return orig(self, kw, m)
+    Client._new = new
+    try:
+        r = b.place_many(reqs)
+    finally:
+        Client._new = orig
+    srch = [c for c in v.calls if c[1] == "list_orders"]
+    check("place_many: a success answer without an id while two others succeed -> the two recorded, the third "
+          "searched by client order id and reported", r[0][0] and r[2][0] and r[0][1] is None and r[2][1] is None
+          and r[1][0] is None and r[1][1].startswith("unreadable answer: ") and len(srch) == 2
+          and all(c[2]["product_ids"] == ["C1-USD"] for c in srch), str(r))
+
+    def new2(self, kw, m):                             # ... and the order did rest: found under its client id
+        if kw["product_id"] == "C1-USD":
+            orig(self, kw, m)
+            return "not a dict"
+        return orig(self, kw, m)
+    Client._new = new2
+    try:
+        r = b.place_many(reqs)
+    finally:
+        Client._new = orig
+    check("place_many: an answer that is not a dict, the order placed -> found under its client order id",
+          r[1][0] is not None and r[1][1] is None and all(x[0] for x in r), str(r))
+    real = b._place_thread
+
+    def boom(q):
+        if q[0].product == "C2-USD":
+            raise RuntimeError("worker broke outside _place_on")
+        return real(q)
+    b._place_thread = boom
+    r = b.place_many(reqs)
+    check("place_many: a worker that raises outside _place_on -> that request's (None, error), the others placed, "
+          "no raise", r[0][0] and r[1][0] and r[2][0] is None and "worker broke" in r[2][1], str(r))
+    b1 = E.LiveBroker(client=Client(Venue(None)))
+    b1.sleep = lambda s: None
+    b1._place_on = lambda c, *q: (_ for _ in ()).throw(RuntimeError("loop broke"))
+    r = b1.place_many(reqs)
+    check("place_many, one worker: an exception becomes each request's (None, error), no raise",
+          len(r) == 3 and all(x[0] is None and "loop broke" in x[1] for x in r), str(r))
+
+
 def t_breaker():
     ck = Clock()
     v = Venue(ck)
@@ -634,6 +715,7 @@ def part1():
     t_snapshot()
     t_best_bids()
     t_place_many()
+    t_place_never_loses()
     t_breaker()
     t_pace()
     t_headers()
@@ -953,6 +1035,34 @@ def t_engine_setting():
         m.close()
 
 
+def t_engine_place_guard():
+    m = Mini()
+    try:
+        def broken(reqs):                              # one bid reaches the venue, then the call raises
+            sp, side, px, size, po, end = reqs[0]
+            m.b._place_on(m.b.c, sp, side, px, size, po, end)
+            raise RuntimeError("place_many broke")
+        real = m.b.place_many
+        m.b.place_many = broken
+        m.allocate()
+        k = methods(m.v)
+        err = [x for x in m.ev("error") if "place_many failed" in x.get("error", "")]
+        swept = [x for x in m.ev("warning") if x.get("msg") == "cancelled a bot order missing from state"]
+        check("engine, place_many raises: an error event, the sweep ran at once (the orphan bid cancelled), no "
+              "ladder left without an order", len(err) == 1 and len(swept) == 1 and "list_orders" in k
+              and k.count("cancel_orders") == 1 and not m.e.ladders(), str(k))
+        m.b.place_many = real
+        m.next()
+        m.allocate()
+        ids = [o["id"] for l in m.e.ladders() for o in l["orders"].values()]
+        live = [i for i, o in m.v.orders.items() if o["status"] == "OPEN"]
+        check("engine, place_many raises: next minute one bid per coin, each recorded once, the venue's open orders "
+              "exactly the recorded ones", len(m.e.ladders()) == 2 and len(ids) == 2 and sorted(ids) == sorted(live),
+              str((ids, live)))
+    finally:
+        m.close()
+
+
 def part2():
     t_engine_new_keep()
     t_engine_fill_before_cancel()
@@ -962,6 +1072,7 @@ def part2():
     t_engine_cancel_raises()
     t_engine_settle()
     t_engine_setting()
+    t_engine_place_guard()
 
 
 if __name__ == "__main__":
