@@ -38,7 +38,7 @@ Reported, not checked: requests per minute by kind and a modelled clock (MODEL: 
 one place_many on k threads overlap, bound by the pace; the waits of the code itself count), for (ii) and (iii).
 
 Usage: python bot/spot/order_path_test.py "2025-10-10 20:00" "2025-10-11 02:00" ["--death=2025-10-10 21:10"]
-       [--only=ii,iii]   (default: i, ii and iii)
+       [--only=ii,iii]   (default: i, ii and iii)   [--keep]   keep the runs' state folders (else removed on a pass)
 """
 import json
 import os
@@ -603,7 +603,9 @@ def main():
             if tag == "iii":
                 check("(iii): each placing client was used by one thread only", one)
     print(f"{time.time() - t0:.0f} s", flush=True)
-    if not FAILS:
+    for r in res.values():
+        print(f"  ({r['tag']}) events {r['sd']}", flush=True)
+    if not FAILS and "--keep" not in sys.argv:
         for r in res.values():
             shutil.rmtree(r["sd"], ignore_errors=True)
 

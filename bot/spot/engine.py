@@ -732,6 +732,14 @@ class Engine:
         self.state_path = os.path.join(self.state_dir, "state.json")
         self.log = Log(os.path.join(self.state_dir, "events.jsonl"), self.clock, echo=self.echo)
         self.state = self._load_state()
+        # order path (README, "Order path"): "serial" (default, today's requests) or "batch" (live only)
+        self.order_path = self.cfg.get("order_path", "serial")
+        if self.order_path not in ("serial", "batch"):
+            raise ValueError(f"order_path must be serial or batch, not {self.order_path}")
+        if self.broker is None and self.mode == "live" and self.order_path == "batch":
+            self.broker = LiveBroker(self.cfg.get("count_usdc_as_cash", False), self.cfg.get("quote", "USD"),
+                                     order_path="batch", orders_rate=self.cfg.get("orders_rate", 10),
+                                     place_workers=self.cfg.get("place_workers", 1))
         if self.broker is None:
             self.broker = (LiveBroker(self.cfg.get("count_usdc_as_cash", False), self.cfg.get("quote", "USD"))
                            if self.mode == "live" else PaperBroker(self.cfg.get("paper_capture", 0.5)))
@@ -1355,6 +1363,7 @@ class Engine:
                                              "usdc_hold": round(self.broker.last_usdc[1], 2)}
                                             if getattr(self.broker, "last_usdc", None) is not None else {}),
                      step_s=self._step_s(),
+                     **self._hb_rate_limit(),
                      **({"tb_err": self._tb_err} if self._tb_err else {}))
             self.counts = {}
             self._tm = {k: [] for k in self._tm}
@@ -1376,6 +1385,7 @@ class Engine:
 
     def _settle(self, m, t):
         """Book fills for minute m (the one that just closed)."""
+        snap_kw = self._settle_snap(t) if self._batch_on() else {}     # batch path: one read of every order
         for c in self.coins:
             if not any(lad["orders"] for lad in self.ladders(c)):
                 continue
@@ -1388,7 +1398,7 @@ class Engine:
                        and not (side == "BUY" and key != "e4" and lad.get("tp4_touched") and not self.broker.live)]
                 if not sel:
                     continue
-                for (lid, key), q, px, fee, done in self.broker.fills(c, sel, bar, m, tick):
+                for (lid, key), q, px, fee, done in self.broker.fills(c, sel, bar, m, tick, **snap_kw):
                     lad = self.state["ladders"].get(lid)
                     o = lad["orders"].get(key) if lad else None
                     if o is None:
@@ -1535,6 +1545,8 @@ class Engine:
         return self.last_close(c, t)
 
     def _allocate(self, pn, t):
+        if self._batch_on():
+            return self._allocate_batch(pn, t)
         busy, armed = set(), {}
         for lad in self.ladders():
             if lad["status"] == "armed":
@@ -1640,6 +1652,254 @@ class Engine:
             self.count("arm")
             self.log("arm", t=t, coin=c, ladder=lad["id"], px=px, usd=round(size * px), pred=round(pred, 1),
                      sigma_bp=round(float(row["sig"]) * 1e4, 1), usd_bids_ahead=ahead)
+
+    # ---------- the batch order path (README, "Order path"): the same orders as _allocate, fewer requests
+    BATCH_METHODS = ("snapshot", "cancel_many", "best_bids", "place_many", "batch_on", "take_counts", "take_trips",
+                     "rate_limit")
+
+    def _batch_on(self):
+        """The batch path runs when the setting is "batch", the broker is live and has the batch methods (a paper
+        broker never does)."""
+        b = self.broker
+        return getattr(self, "order_path", "serial") == "batch" and bool(getattr(b, "live", False)) and all(
+            hasattr(b, m) for m in self.BATCH_METHODS)
+
+    def _broker_news(self, t):
+        """The broker's batch-path counters into this minute's counts; a warning for each piece it switched off."""
+        try:
+            for k, v in self.broker.take_counts().items():
+                self.count(k, v)
+            for p in self.broker.take_trips():
+                self.count("batch_fallback")
+                self.log("warning", t=t, msg=f"order path: {p} switched off after {self.broker.BREAK_AFTER} failed "
+                                             "requests in a row; single requests until the bot restarts")
+        except Exception:
+            self.count("obs_error")
+
+    def _hb_rate_limit(self):
+        """Heartbeat field rate_limit: the venue's last limit headers (batch path, once seen)."""
+        try:
+            rl = self.broker.rate_limit() if self._batch_on() else None
+        except Exception:
+            rl = None
+        return {"rate_limit": rl} if rl else {}
+
+    def _settle_snap(self, t):
+        """Batch path, before _settle's loop: one read of every resting order of every ladder ({} when the piece is
+        off: every order is then read singly, as on the serial path)."""
+        if not self.broker.batch_on("snapshot"):
+            return {}
+        ids = [o["id"] for lad in self.ladders() for o in lad["orders"].values()]
+        if not ids:
+            return {}
+        snap = self.broker.snapshot(ids)
+        self._broker_news(t)
+        return {"snap": snap}
+
+    def _cancel_answer(self, lad, key, t, minute, ans):
+        """_cancel with the broker's answer already in hand (inc, ok): the same bookkeeping, in the same order."""
+        o = lad["orders"].pop(key, None)
+        if o is None:
+            return True
+        o["cancel_req"] = True
+        inc, ok = ans.get(o["id"], (None, False))
+        if inc:                                            # it filled before the cancel took effect
+            q, px, fee = inc
+            o["filled"] += q
+            o["value"] += q * px
+            o["fees"] += fee
+            self._apply_fill(lad, key, o, q, px, fee, minute or t.floor("min"))
+        if not ok:
+            lad["orders"][key] = o
+            self.count("cancel_unconfirmed")
+            self.log("warning", t=t, coin=lad["coin"], ladder=lad["id"], key=key, msg="cancel not confirmed; retrying")
+            return False
+        if o["side"] == "BUY" and np.isfinite(self.cash_live):
+            self.cash_live += self.hold_usd(o)
+        return True
+
+    def _allocate_batch(self, pn, t):
+        """_allocate, _arm_plan, _arm and _place with today's outcome for every coin, on fewer requests: decide every
+        coin first; one best-bid request; one batch cancel of the dropped and re-priced bids (confirmed by reading);
+        one place_many of the new bids, highest score first."""
+        # a. candidates and cash: as _allocate
+        busy, armed = set(), {}
+        for lad in self.ladders():
+            if lad["status"] == "armed":
+                armed[lad["coin"]] = lad
+            elif "4" in lad["tranches"] or "e4" in lad["orders"]:
+                busy.add(lad["coin"])
+        halted = self._halted(t)
+        prev = t - pd.Timedelta(minutes=1)
+        cands, rows = [], {}
+        if not halted and self.fresh("BTC", t):
+            for c in self.tradable:
+                if c in busy or not self.fresh(c, t) or c in self._skip_old:
+                    continue
+                row = pn[c].iloc[-1]
+                if not all(np.isfinite(row[f]) for f in ("level", "sig", "z_res60", "bid_depth_bp")):
+                    continue
+                pred = float(np.mean([m.predict(row[wick.FEATS].to_numpy(np.float64)[None, :])[0] for m in self.models]))
+                if pred > self.thr:
+                    cands.append((pred, c))
+                    rows[c] = row
+        cands.sort(reverse=True)
+        free = self.free_cash() + sum(self.hold_usd(l["orders"]["e4"]) for l in armed.values() if "e4" in l["orders"]
+                                      and l["coin"] not in self._skip_old)   # a skipped coin's bid keeps resting
+        alloc = {}
+        for pred, c in cands:
+            want = self.signal_usd(c) * self.rung_w["4"]   # order notional; its hold adds the maker fee
+            if want <= 0:
+                self.count("no_adv")
+                continue
+            need = want * (1 + self.fee_m())
+            if need <= free:
+                alloc[c], free = want, free - need
+            elif free >= 0.5 * need:
+                alloc[c], free = 0.999 * free / (1 + self.fee_m()), 0.0
+            else:
+                self.count("cash_short")
+                self.log("cash_short", t=t, coin=c, pred=round(pred, 1), want=round(want), free=round(max(free, 0)))
+        # b. decide every coin, no request in between: drop (lost approval or cash), keep, re-price or new
+        drop = [lad for c, lad in armed.items() if c not in alloc and c not in self._skip_old]
+        dec = []
+        for pred, c in cands:
+            if c not in alloc:
+                continue
+            lad, sp = armed.get(c), self.spec(c)
+            px = floor_to(float(rows[c]["level"]), sp.tick)
+            size = floor_size(alloc[c] / px, sp.lot)
+            o = lad["orders"].get("e4") if lad is not None else None
+            if lad is not None:
+                fresh = not o or not o.get("expires") or \
+                    pd.Timestamp(o["expires"]) - self.clock() > pd.Timedelta(seconds=REFRESH_S)
+                if o and fresh and abs(o["px"] - px) < sp.tick / 2 and abs(o["size"] - size) <= 0.02 * size:
+                    lad.update(sig=float(rows[c]["sig"]), pred=pred)
+                    continue                               # unchanged: keep the queue position
+                if not o:
+                    lad.update(sig=float(rows[c]["sig"]), pred=pred)
+            dec.append(dict(c=c, pred=pred, row=rows[c], px=px, size=size, plan_size=size, lad=lad, o=o, go=True))
+        # c. best bids: one request for every coin that may get a bid; a coin it does not cover is asked singly
+        bids = {}
+        if dec and self.broker.batch_on("best_bids"):
+            bids = self.broker.best_bids([self.spec(d["c"]).product for d in dec])
+            self._broker_news(t)
+        # d. cancel: the dropped bids, then the re-priced ones, in today's order; one request, confirmed by reading
+        todo = [(lad, None) for lad in drop] + [(d["lad"], d) for d in dec if d["o"]]
+        ans = None
+        live = [lad["orders"]["e4"] for lad, _ in todo if "e4" in lad["orders"]]
+        if live and self.broker.batch_on("cancel_many"):
+            for o in live:
+                o["cancel_req"] = True
+            try:
+                ans = self.broker.cancel_many(live)
+            except Exception as err:                       # today's single cancels instead
+                ans = None
+                self.log("warning", t=t, msg=f"order path: batch cancel failed, single cancels used: {err!r}"[:300])
+            self._broker_news(t)
+        for lad, d in todo:
+            gone = self._cancel(lad, "e4", t, minute=prev) if ans is None else \
+                self._cancel_answer(lad, "e4", t, prev, ans)
+            if d is None:
+                if gone and lad["status"] == "armed":
+                    self.state["ladders"].pop(lad["id"], None)
+                    self.count("disarm")
+            elif not gone or lad["status"] != "armed":     # still resting (retry next minute), or it filled first
+                d["go"] = False
+            else:
+                self.count("reprice")
+                lad.update(sig=float(d["row"]["sig"]), pred=d["pred"])
+        # e. the market test of _arm_plan, with the bids of c
+        plans = []
+        for d in dec:
+            if not d["go"]:
+                continue
+            c, lad = d["c"], d["lad"]
+            prod = self.spec(c).product
+            bb = bids[prod] if prod in bids else self._market_px(c, t)
+            if not (np.isfinite(bb) and d["px"] < bb):     # market already at or below the level
+                if lad is not None and not lad["orders"]:
+                    self.state["ladders"].pop(lad["id"], None)
+                self.count("skip_market_below")
+                continue
+            plans.append(d)
+        self._mark("cancel", t)
+        # f. place: one place_many in today's order, then what _arm and _place do with each answer
+        for d in plans:
+            c, sp = d["c"], self.spec(d["c"])
+            lad = d["lad"]
+            if lad is not None and lad["id"] not in self.state["ladders"]:
+                lad = None
+            d["new"] = lad is None
+            if d["new"]:
+                self.state["seq"] += 1
+                lad = dict(id=f"{c}-{self.state['seq']}", coin=c, status="armed", sig=float(d["row"]["sig"]),
+                           pred=d["pred"], S=self.signal_usd(c), orders={}, tranches={}, pending=[], pnl=0.0)
+                self.state["ladders"][lad["id"]] = lad
+            lad["S"] = self.signal_usd(c)
+            d["lad"], d["sp"], d["notes"] = lad, sp, []
+            if self._no_buys:                              # _place's checks before its request
+                d["res"] = (False, "no new bids while market data or cash is unavailable")
+                continue
+            d["size"] = floor_size(d["size"], sp.lot)
+            if d["size"] <= 0 or d["size"] * d["px"] < sp.min_usd:
+                d["res"] = (False, "below minimum size")
+                continue
+            d["ttl"] = self.ttl
+            d["end"] = self.clock() + pd.Timedelta(seconds=self.ttl) if self.ttl else None
+        sent = [d for d in plans if "res" not in d]
+        out = self.broker.place_many([(d["sp"], "BUY", d["px"], d["size"], True, d["end"]) for d in sent]) \
+            if sent else []
+        self._broker_news(t)
+        for d, (oid, err) in zip(sent, out):
+            while oid is None and err and any(x in str(err).upper() for x in ("DURATION", "END_TIME", "EXPIR")):
+                if d["ttl"] < self.ttl:
+                    pass                                   # sent before an earlier bid raised the lifetime: send again
+                elif 0 < self.ttl < 3600:
+                    self.ttl = min(3600, 2 * self.ttl)     # Coinbase wants longer-lived bids: use its minimum
+                    self.state["gtd_ttl_s"] = self.ttl
+                    d["notes"].append(f"good-til-date bids now last {self.ttl} s (Coinbase minimum)")
+                else:
+                    break
+                d["ttl"] = self.ttl
+                d["end"] = self.clock() + pd.Timedelta(seconds=self.ttl) if self.ttl else None
+                oid, err = self.broker.place_many([(d["sp"], "BUY", d["px"], d["size"], True, d["end"])])[0]
+                self._broker_news(t)
+            if oid is None:
+                d["res"] = (False, err or "rejected")
+                d["err"] = err
+                continue
+            lad, end = d["lad"], d["end"]
+            lad["orders"]["e4"] = dict(id=oid, side="BUY", px=d["px"], size=d["size"], filled=0.0, value=0.0, fees=0.0,
+                                       active_from=t.isoformat(), first_fill=None, open_rule=True,
+                                       expires=None if end is None else end.isoformat())
+            if np.isfinite(self.cash_live):
+                self.cash_live -= self.hold_usd(lad["orders"]["e4"])
+            d["res"] = (True, None)
+        for d in plans:                                    # every bid is placed: the events, in today's order
+            lad = d["lad"]
+            for msg in d["notes"]:
+                self.log("warning", t=t, msg=msg)
+            if "err" in d:
+                self.log("reject", t=t, coin=lad["coin"], ladder=lad["id"], key="e4", px=d["px"], size=d["size"],
+                         error=d["err"])
+            if not d["res"][0]:
+                if not lad["orders"]:
+                    self.state["ladders"].pop(lad["id"], None)
+                continue
+            if d["new"]:
+                ahead = None
+                if self.cfg.get("log_book", True):
+                    try:
+                        a, reached = self.market.bids_ahead(d["sp"].product, d["px"])
+                        ahead = round(a) if reached else f">{round(a)}"
+                    except Exception:
+                        pass
+                self.count("arm")
+                self.log("arm", t=t, coin=d["c"], ladder=lad["id"], px=d["px"], usd=round(d["plan_size"] * d["px"]),
+                         pred=round(d["pred"], 1), sigma_bp=round(float(d["row"]["sig"]) * 1e4, 1),
+                         usd_bids_ahead=ahead)
+        self._mark("place", t)
 
     # ---------- risk
     def _new_day(self, t):

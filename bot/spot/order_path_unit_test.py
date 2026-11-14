@@ -17,8 +17,19 @@ Part 1, LiveBroker's new methods, one check per case:
   - rate-limit headers: the last ones seen are kept (library names and raw header names);
   - fills() without snap makes exactly today's requests; with snap it reads only the orders the snapshot lacks;
   - a broker built with the defaults has today's attributes and no client factory.
-Part 2, the engine's batch path (Engine._allocate_batch, _settle), on a small scripted venue:
-  added in the engine step (see part2 below).
+Part 2, the engine's batch path (Engine._allocate_batch, _settle) on a small live engine over the same scripted venue
+(two coins, stub models, hand-made levels):
+  - new bids: one best-bid request, one place_many, arm events; an unchanged bid is kept with no request;
+  - a fill before the cancel of a re-priced bid: booked once (and not again by the next settle), no new bid for that
+    coin, the ladder open;
+  - an unconfirmed cancel: the order kept with today's warning, no new bid, the cancel retried next minute;
+  - a duration error on every bid of one place_many: the lifetime doubled once with one warning, every bid sent again
+    singly at the new lifetime and placed;
+  - best_bids failing three minutes in a row: one warning event and batch_fallback, then today's single request;
+  - cancel_many raising: one warning, today's single cancel for each order, the same outcome;
+  - _settle reads every resting order with one request (fills from the snapshot; a missed order read singly);
+  - the setting: "serial" and absent never touch the batch methods; a paper engine ignores "batch"; any other value
+    is refused at start; the heartbeat gets rate_limit only once headers were seen.
 
 Usage: python bot/spot/order_path_unit_test.py
 """
@@ -160,6 +171,11 @@ class Client:
         f = self._rec(m, kw)
         if f:
             return f(kw)
+        g = (kw.get("order_configuration") or {}).get("limit_limit_gtd")
+        if g and getattr(self.v, "min_end", None) is not None and \
+                E.pd.Timestamp(g["end_time"].rstrip("Z")) < self.v.min_end:
+            return {"success": False, "error_response": {"error": "INVALID_END_TIME",
+                                                         "preview_failure_reason": "DURATION_TOO_SMALL"}}
         with self.v.lock:
             self.v.n += 1
             oid = f"o{self.v.n}"
@@ -625,7 +641,331 @@ def part1():
     t_defaults()
 
 
+# ------------------------------------------------------------------------------------------------ part 2
+import json  # noqa: E402
+import shutil  # noqa: E402
+import tempfile  # noqa: E402
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+from edge import wick  # noqa: E402
+
+T0 = pd.Timestamp("2025-10-10 20:00")
+
+
+class StubModel:
+    def __init__(self, pred):
+        self.pred = pred
+
+    def predict(self, x):
+        return np.array([self.pred])
+
+
+class StubMarket:
+    """The market object of a live engine: specs, the public best bid (counted), the book depth."""
+
+    def __init__(self, bids):
+        self.bids, self.calls = bids, []
+
+    def spec(self, c):
+        return E.Spec(f"{c}-USD", 0.01, 1e-8, 1.0)
+
+    def best_bid(self, product):
+        self.calls.append(("best_bid", product))
+        return self.bids.get(product, np.nan)
+
+    def bids_ahead(self, product, px):
+        self.calls.append(("bids_ahead", product))
+        return 0.0, True
+
+
+class Mini:
+    """A live engine on the batch path over the scripted venue; levels set by hand each minute."""
+
+    def __init__(self, path="batch", mode="live", bids=None):
+        self.ck = Clock()
+        self.v = Venue(self.ck)
+        self.v.bids = dict(bids or {"ETH-USD": 101.0, "SOL-USD": 21.0})
+        self.mkt = StubMarket(self.v.bids)
+        self.t = T0
+        self.sd = tempfile.mkdtemp(prefix="order_path_unit_")
+        cfg = dict(capital=250000.0, bid_ttl_s=300, adv_frac=None, usd_reserve=0.0, log_book=True)
+        if path is not None:
+            cfg["order_path"] = path
+        self.b = E.LiveBroker(client=Client(self.v), order_path="batch")
+        self.b.sleep, self.b.mono = self.ck.sleep, self.ck.now
+        try:
+            self.e = E.Engine(mode=mode, cfg=cfg, state_dir=self.sd, market=self.mkt, echo=False,
+                              broker=self.b if mode == "live" else None,
+                              clock=lambda: self.t + pd.Timedelta(seconds=6))
+        except Exception:
+            self.close()
+            raise
+        self.e.models, self.e.thr = [StubModel(5.0)], 1.0
+        self.e.tradable = ["ETH", "SOL"]
+        self.e.coins = ["ETH", "SOL"]
+        self.e.specs = {c: self.mkt.spec(c) for c in ("ETH", "SOL")}
+        self.level = {"ETH": 100.0, "SOL": 20.0}
+
+    def bars(self):
+        idx = pd.date_range(self.t - pd.Timedelta(minutes=5), self.t - pd.Timedelta(minutes=1), freq="min")
+        for c, px in (("BTC", 60000.0), ("ETH", 102.0), ("SOL", 22.0)):
+            self.e.spot[c] = pd.DataFrame({"open": px, "high": px, "low": px, "close": px, "volume": 1.0}, index=idx)
+
+    def pn(self):
+        out = {}
+        for c in ("ETH", "SOL"):
+            row = {f: 0.0 for f in wick.FEATS}
+            row.update(level=self.level[c], sig=0.01, z_res60=0.0, bid_depth_bp=1.0)
+            out[c] = pd.DataFrame([row])
+        return out
+
+    def allocate(self):
+        self.bars()
+        self.v.calls, self.mkt.calls = [], []
+        self.e._allocate(self.pn(), self.t)
+
+    def settle(self):
+        self.bars()
+        self.v.calls = []
+        self.e._settle(self.t - pd.Timedelta(minutes=1), self.t)
+
+    def next(self):
+        self.t += pd.Timedelta(minutes=1)
+
+    def ev(self, kind=None):
+        p = os.path.join(self.sd, "events.jsonl")
+        out = [json.loads(x) for x in open(p)] if os.path.exists(p) else []
+        return [x for x in out if kind is None or x["kind"] == kind]
+
+    def e4(self, c):
+        lad = [l for l in self.e.ladders(c)]
+        return lad[0]["orders"].get("e4") if lad else None
+
+    def close(self):
+        shutil.rmtree(self.sd, ignore_errors=True)
+
+
+def t_engine_new_keep():
+    m = Mini()
+    try:
+        check("engine: the setting is read and the batch path is on (live broker with the methods)",
+              m.e.order_path == "batch" and m.e._batch_on())
+        m.allocate()
+        k = methods(m.v)
+        check("engine, new bids: one best-bid request, then the two bids (one place_many, plain loop), no cancel",
+              k == ["get_best_bid_ask", "create_order", "create_order"]
+              and not any(x[0] == "best_bid" for x in m.mkt.calls)
+              and len(m.ev("arm")) == 2 and [x[0] for x in m.mkt.calls] == ["bids_ahead", "bids_ahead"], str(k))
+        sol = m.e4("SOL")
+        m.next()
+        m.allocate()
+        check("engine, an unchanged bid: kept, no request at all", methods(m.v) == [] and m.e4("SOL") is sol
+              and len(m.ev("arm")) == 2, str(methods(m.v)))
+    finally:
+        m.close()
+
+
+def t_engine_fill_before_cancel():
+    m = Mini()
+    try:
+        m.allocate()
+        o = m.e4("ETH")
+        m.v.orders[o["id"]].update(status="FILLED", filled_size=repr(o["size"]), average_filled_price=repr(o["px"]),
+                                   total_fees=repr(o["size"] * o["px"] * 6e-4))
+        m.next()
+        m.level["ETH"] = 99.0                          # ETH re-prices; it filled before the cancel
+        m.allocate()
+        k = methods(m.v)
+        eth = m.e.ladders("ETH")[0]
+        ent = m.ev("fill_entry")
+        check("engine, a fill before the cancel: booked once, the ladder open, no new ETH bid",
+              len(ent) == 1 and ent[0]["coin"] == "ETH" and eth["status"] == "open" and "e4" not in eth["orders"]
+              and not any(c[1] == "create_order" and c[2]["product_id"] == "ETH-USD" for c in m.v.calls)
+              and k[:2] == ["get_best_bid_ask", "cancel_orders"], str(k))
+        check("engine, a fill before the cancel: no reprice counted", m.e.counts.get("reprice") is None)
+        m.next()
+        m.settle()
+        check("engine, a fill before the cancel: the next settle does not book it again",
+              len(m.ev("fill_entry")) == 1)
+    finally:
+        m.close()
+
+
+def t_engine_unconfirmed():
+    m = Mini()
+    try:
+        m.allocate()
+        o = m.e4("ETH")
+        m.v.reads[o["id"]] = ["OPEN"]                  # the venue keeps showing it open
+        m.v.script["cancel_orders"] = [lambda kw: {"results": [dict(success=True, order_id=i)
+                                                               for i in kw["order_ids"]]}]
+        m.next()
+        m.level["ETH"] = 99.0
+        m.allocate()
+        w = [x for x in m.ev("warning") if x.get("msg") == "cancel not confirmed; retrying"]
+        check("engine, an unconfirmed cancel: the order kept, today's warning, no new ETH bid",
+              m.e4("ETH") is o and len(w) == 1 and m.e.counts.get("cancel_unconfirmed") == 1
+              and not any(c[1] == "create_order" for c in m.v.calls))
+        del m.v.reads[o["id"]]
+        m.next()
+        m.allocate()
+        k = methods(m.v)
+        check("engine, an unconfirmed cancel: retried next minute, then the new bid",
+              k[:2] == ["get_best_bid_ask", "cancel_orders"] and "create_order" in k and m.e4("ETH")["px"] == 99.0
+              and m.e.counts.get("reprice") == 1, str(k))
+    finally:
+        m.close()
+
+
+def t_engine_duration():
+    m = Mini()
+    try:
+        m.v.min_end = m.t + pd.Timedelta(seconds=6 + 400)    # the venue wants bids living at least 400 s
+        m.allocate()
+        k = methods(m.v)
+        w = [x for x in m.ev("warning") if "good-til-date bids now last" in x.get("msg", "")]
+        ends = sorted(m.e4(c)["expires"] for c in ("ETH", "SOL"))
+        check("engine, a duration error on both bids of one place_many: lifetime doubled once (one warning), both "
+              "sent again singly at 600 s and placed", m.e.ttl == 600 and len(w) == 1 and m.e.state["gtd_ttl_s"] == 600
+              and k == ["get_best_bid_ask"] + ["create_order"] * 4 and len(m.ev("arm")) == 2
+              and ends == [(m.t + pd.Timedelta(seconds=606)).isoformat()] * 2 and not m.ev("reject"), str(k))
+        ev = [x["kind"] for x in m.ev()]
+        check("engine, duration: the events in today's order (warning, arm, arm)", ev == ["warning", "arm", "arm"],
+              str(ev))
+    finally:
+        m.close()
+
+
+def t_engine_breaker():
+    m = Mini()
+    try:
+        m.v.script["get_best_bid_ask"] = [raises("x")] * 3
+        for i in range(3):
+            for c in ("ETH", "SOL"):                   # a new level each minute: every coin asks for its bid again
+                m.level[c] += 0.5
+            m.allocate()
+            if i < 2:
+                m.next()
+        w = [x for x in m.ev("warning") if "best_bids switched off" in x.get("msg", "")]
+        check("engine, best_bids failing three minutes in a row: one warning event, batch_fallback counted",
+              len(w) == 1 and m.e.counts.get("batch_fallback") == 1, str(w))
+        m.next()
+        m.level["ETH"] += 0.5
+        m.allocate()
+        check("engine, best_bids off: no best-bid request; today's single request (public book) instead",
+              "get_best_bid_ask" not in methods(m.v) and ("best_bid", "ETH-USD") in m.mkt.calls, str(m.mkt.calls))
+    finally:
+        m.close()
+
+
+def t_engine_cancel_raises():
+    m = Mini()
+    try:
+        m.allocate()
+
+        def boom(orders):
+            raise RuntimeError("cancel_many broke")
+        m.b.cancel_many = boom
+        m.next()
+        m.level["ETH"] = 99.0
+        old = E.time.sleep
+        E.time.sleep = m.ck.sleep                      # today's cancel waits with time.sleep
+        try:
+            m.allocate()
+        finally:
+            E.time.sleep = old
+        k = methods(m.v)
+        w = [x for x in m.ev("warning") if "batch cancel failed" in x.get("msg", "")]
+        check("engine, cancel_many raises: one warning, today's single cancel (cancel_orders of one id, then "
+              "get_order), then the new bid", len(w) == 1 and k == ["get_best_bid_ask", "cancel_orders", "get_order",
+                                                                    "create_order"]
+              and m.e4("ETH")["px"] == 99.0 and m.e.counts.get("reprice") == 1, str(k))
+    finally:
+        m.close()
+
+
+def t_engine_settle():
+    m = Mini()
+    try:
+        m.allocate()
+        o = m.e4("ETH")
+        m.v.orders[o["id"]].update(filled_size=repr(o["size"] / 2), average_filled_price=repr(o["px"]))
+        m.next()
+        m.v.script["list_orders"] = [lambda kw: {"orders": [m.v.view(i) for i in kw["order_ids"]
+                                                            if m.v.orders[i]["product_id"] == "ETH-USD"]}]
+        m.settle()
+        k = methods(m.v)
+        check("engine, settle: one read of every resting order; the order it missed read singly; the part fill booked",
+              k[:2] == ["list_orders", "get_order"] and len(m.ev("fill_entry")) == 1
+              and m.e.counts.get("snap_miss") == 1, str(k))
+    finally:
+        m.close()
+
+
+def t_engine_setting():
+    for path in (None, "serial"):
+        m = Mini(path=path)
+        try:
+            called = []
+            for n in ("snapshot", "cancel_many", "best_bids", "place_many"):
+                setattr(m.b, n, (lambda n: lambda *a, **k: called.append(n))(n))
+            m.allocate()
+            m.next()
+            m.level["ETH"] = 99.0
+            old = E.time.sleep
+            E.time.sleep = m.ck.sleep
+            try:
+                m.allocate()
+                m.settle()
+            finally:
+                E.time.sleep = old
+            check(f"engine, order_path {path!r}: the serial path, no batch method called",
+                  not m.e._batch_on() and not called and len(m.ev("arm")) == 2, str(called))
+        finally:
+            m.close()
+    m = Mini(mode="paper")
+    try:
+        check("engine: a paper engine with order_path batch stays on the paper path",
+              m.e.order_path == "batch" and isinstance(m.e.broker, E.PaperBroker) and not m.e._batch_on())
+    finally:
+        m.close()
+    try:
+        Mini(path="fast")
+        ok = False
+    except ValueError:
+        ok = True
+    check("engine: any other order_path is refused at start", ok)
+    m = Mini()
+    try:
+        check("engine, heartbeat: no rate_limit field before any header was seen", m.e._hb_rate_limit() == {})
+        m.v.script["get_best_bid_ask"] = [lambda kw: {"pricebooks": [], "rate_limit_limit": "30",
+                                                      "rate_limit_remaining": "28", "rate_limit_reset": "1"}]
+        m.allocate()
+        m.t = T0.floor("h") + pd.Timedelta(hours=1)
+        m.e._heartbeat(m.t)
+        hb = m.ev("heartbeat")
+        check("engine, heartbeat: rate_limit once seen, and the batch counters in counts",
+              hb and hb[-1].get("rate_limit") == {"limit": "30", "remaining": "28", "reset": "1"}
+              and hb[-1]["counts"].get("bbo_miss") == 2, str(hb[-1] if hb else None))
+    finally:
+        m.close()
+
+
+def part2():
+    t_engine_new_keep()
+    t_engine_fill_before_cancel()
+    t_engine_unconfirmed()
+    t_engine_duration()
+    t_engine_breaker()
+    t_engine_cancel_raises()
+    t_engine_settle()
+    t_engine_setting()
+
+
 if __name__ == "__main__":
     part1()
+    part2()
     print("ORDER PATH UNIT TEST " + ("FAILED: " + ", ".join(FAILS) if FAILS else "PASSED"))
     sys.exit(1 if FAILS else 0)
