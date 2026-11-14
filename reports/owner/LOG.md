@@ -827,3 +827,23 @@ FORWARD_TESTS.md.
     remains: the candle requests move out of the critical seconds. With all 18 coins from trades that puts the end
     of the data step at about 9.2 s after the minute on a runner, against 10.3 s for release 3's way and 13.4 s
     for the fourth book's.
+- **17:46. Order path build reviewed; seven changes asked for. Scorecard re-scored: 51 of 100.**
+  - **What came back** (branch owner/order-path): the batch methods on the live broker, the engine's batch path
+    beside today's code, a stand-in for the venue's library so that the real broker class runs in the live-path
+    simulation for the first time, 70 unit checks, and a three-way run in which the test exchange, the real broker
+    on today's path and the real broker on the batch path agree on every entry, exit and dollar. Today's functions
+    keep their text: four lines changed, 559 added.
+  - **The model of the clock** (0.1 s a request; a model, not a measurement): from the end of the data step to the
+    last new bid, a median 7.8 s on today's path and 2.0 s on the batch path; 50 requests a minute against 19.
+  - **Reviewed line by line.** The batch path reproduces today's decisions coin by coin. Seven changes before it is
+    a candidate: (1) one unreadable placement answer must not lose the bookkeeping of the others; (2) a failed
+    batch cancel falls back to single cancels at once, and late reads are checked against the single read; (3) an
+    order with a recent fill is always read singly; (4) a running check of the batch read against the single
+    read, which switches the batch read off after two mismatches; (5) an older library on the server must not
+    stop the bot; (6) a command the account owner runs once, `order-check`, which places three tiny bids at half
+    the market price, reads and cancels them through the batch requests and reports what the venue really does;
+    (7) documents. The agent is on them.
+  - **Scorecard:** "the live bot matches the research" from 11 to 9, total 51. The order path's gap was there
+    before today; the score now says so.
+  - **Still running:** the release candidate with the new bar source (tests are slow on two cores). The data-step
+    build waits for it. Part 3 of the timing study waits for a free core.
