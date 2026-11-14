@@ -66,6 +66,9 @@ def describe(cfg):
     else:
         src = "candles for every coin"
     line = "inputs: %s; stale guard %s" % (src, "on" if cfg.get("stale_guard", False) else "off")
-    if cfg.get("trades_rows") is not None:
-        line += "; trades_rows %s" % cfg["trades_rows"]
+    rows = cfg.get("trades_rows")
+    if rows == "candle_after":
+        line += "; the venue's candle replaces each trades row afterwards"
+    elif rows is not None and rows != "keep":                # "keep" is the default behaviour: nothing to add
+        line += "; trades_rows %s" % rows
     return line

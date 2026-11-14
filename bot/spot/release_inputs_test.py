@@ -7,7 +7,8 @@ Part 1, the pure functions:
     base lacks is dropped and noted; keys outside INPUT_KEYS are never touched; "inputs_local": true keeps everything
     and gives one note; false or absent does not; neither argument is changed; applying twice equals applying once;
   - applies: true only for the base name config.live.json;
-  - describe: trades mode with and without a list, candle mode, guard on and off, trades_rows;
+  - describe: trades mode with and without a list, candle mode, guard on and off, trades_rows (candle_after in plain
+    words, keep adds nothing, any other value named);
   - preflight_file: the file as read plus coins_disabled and bid_ttl_s, nothing taken from the release;
   - release_inputs.py and run.py parse as Python 3.8, and importing release_inputs loads no pandas or numpy.
 Part 2, run.py status end to end (a subprocess, temp folder, no network):
@@ -61,7 +62,9 @@ def expected_line(cfg):
                "newest minute from trades for " + ", ".join(tc) + "; candles for the other coins")
     else:
         src = "candles for every coin"
-    return "inputs: " + src + "; stale guard " + ("on" if cfg.get("stale_guard") else "off")
+    rows = {"candle_after": "; the venue's candle replaces each trades row afterwards", None: "", "keep": ""}
+    return ("inputs: " + src + "; stale guard " + ("on" if cfg.get("stale_guard") else "off")
+            + rows.get(cfg.get("trades_rows"), "; trades_rows " + str(cfg.get("trades_rows"))))
 
 
 # ------------------------------------------------------------------------------------------------ part 1
@@ -150,12 +153,22 @@ def part1():
           d4 == "inputs: candles for every coin; stale guard on", d4)
     d5 = R.describe({"newest_bar": "trades", "trades_coins": ["BTC", "ETH"], "stale_guard": True,
                      "trades_rows": "candle_after"})
-    check("describe: trades_rows mentioned when set", d5.endswith("; stale guard on; trades_rows candle_after")
-          and "BTC, ETH;" in d5, d5)
-    check("describe: trades_rows not mentioned when absent", "trades_rows" not in d1 + d2 + d3 + d4)
-    check("describe matches the line written out independently for config.json and config.tb.json",
+    check("describe: trades_rows candle_after in plain words", d5 == "inputs: newest minute from trades for BTC, "
+          "ETH; candles for the other coins; stale guard on; the venue's candle replaces each trades row afterwards",
+          d5)
+    d6 = R.describe({"newest_bar": "trades", "trades_coins": ["BTC", "ETH"], "stale_guard": True,
+                     "trades_rows": "keep"})
+    check("describe: trades_rows keep (the default behaviour) adds nothing",
+          d6 == "inputs: newest minute from trades for BTC, ETH; candles for the other coins; stale guard on", d6)
+    d7 = R.describe({"newest_bar": "trades", "stale_guard": True, "trades_rows": "later"})
+    check("describe: any other trades_rows value is named as it is",
+          d7 == "inputs: newest minute from trades for BTC and every coin; stale guard on; trades_rows later", d7)
+    check("describe: trades_rows not mentioned when absent", "trades_rows" not in d1 + d2 + d3 + d4
+          and "candle replaces" not in d1 + d2 + d3 + d4)
+    check("describe matches the line written out independently for config.json, config.tb.json and config.t18.json",
           all(R.describe(c) == expected_line(c) for c in
-              (BASE, json.load(open(os.path.join(HERE, "config.tb.json"))))))
+              (BASE, json.load(open(os.path.join(HERE, "config.tb.json"))),
+               json.load(open(os.path.join(HERE, "config.t18.json"))))))
 
     # preflight write-back
     raw = {"capital": 12000.0, "coins_disabled": [], "bid_ttl_s": 300, "quote": "USD"}
