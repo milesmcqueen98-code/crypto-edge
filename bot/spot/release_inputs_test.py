@@ -285,7 +285,8 @@ def part2():
         if BASE.get("newest_bar") == "trades":
             check("old live file: trades mode for config.json's list, stale guard on",
                   "newest minute from trades for " + ", ".join(BASE.get("trades_coins") or []) in out[0]
-                  and out[0].endswith("stale guard on" + MARK) and bool(BASE.get("stale_guard")), out[0])
+                  and "; stale guard on" in out[0] and out[0].endswith(MARK) and bool(BASE.get("stale_guard")),
+                  out[0])
         check("old live file: unchanged byte for byte", open(p, "rb").read() == b)
 
         # 2. made as setup_vm.sh makes it after release 3, then edited: the three keys with a different list
