@@ -1,15 +1,15 @@
 # Paper trading status
 
-Report made 2026-11-13 23:50 UTC.
+Report made 2026-11-14 00:15 UTC.
 
 | Book | Newest event | Age | Flag |
 |---|---|---|---|
-| Spot (main) | 2026-11-13 23:36 UTC | 0.2 h ago | ok |
-| Spot W2 | 2026-11-13 23:36 UTC | 0.2 h ago | ok |
-| Spot TB (trades input) | 2026-11-13 23:35 UTC | 0.3 h ago | ok |
-| Spot T18 (all coins on trades) | 2026-11-13 21:07 UTC | 2.7 h ago | ok |
-| Perp v1 (control) | 2026-11-13 18:25 UTC | 5.4 h ago | ok |
-| Perp R2-08 | 2026-11-13 18:25 UTC | 5.4 h ago | ok |
+| Spot (main) | 2026-11-13 23:36 UTC | 0.7 h ago | ok |
+| Spot W2 | 2026-11-13 23:36 UTC | 0.7 h ago | ok |
+| Spot TB (trades input) | 2026-11-13 23:35 UTC | 0.7 h ago | ok |
+| Spot T18 (all coins on trades) | 2026-11-13 21:07 UTC | 3.1 h ago | ok |
+| Perp v1 (control) | 2026-11-14 00:15 UTC | 0.0 h ago | ok |
+| Perp R2-08 | 2026-11-14 00:15 UTC | 0.0 h ago | ok |
 
 A book is flagged STALE when its newest event is more than 8 hours old.
 
@@ -23,8 +23,8 @@ GitHub drops scheduled runs. While a book is not running it places no new bids; 
 | Spot W2 | 2026-11-07 00:44 UTC | 2026-11-13 23:36 UTC | 166.9 | 122.2 | 73.3% |
 | Spot TB (trades input) | 2026-11-11 01:47 UTC | 2026-11-13 23:35 UTC | 69.8 | 69.7 | 99.9% |
 | Spot T18 (all coins on trades) | 2026-11-11 22:25 UTC | 2026-11-13 21:07 UTC | 46.7 | 46.7 | 100.0% |
-| Perp v1 (control) | 2026-11-06 14:34 UTC | 2026-11-13 18:25 UTC | 171.8 | 121.0 | 70.4% |
-| Perp R2-08 | 2026-11-06 22:45 UTC | 2026-11-13 18:25 UTC | 163.7 | 115.3 | 70.4% |
+| Perp v1 (control) | 2026-11-06 14:34 UTC | 2026-11-14 00:15 UTC | 177.7 | 126.8 | 71.4% |
+| Perp R2-08 | 2026-11-06 22:45 UTC | 2026-11-14 00:15 UTC | 169.5 | 121.0 | 71.4% |
 
 The five longest gaps of each book (a gap is the time the book was not running before a restart):
 
@@ -54,7 +54,7 @@ The five longest gaps of each book (a gap is the time the book was not running b
 | Perp R2-08 | 2026-11-09 10:03 UTC | 5.0 |
 | Perp R2-08 | 2026-11-09 20:47 UTC | 4.4 |
 
-Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 0.2 h; Spot W2 0.2 h; Spot TB (trades input) 0.3 h; Spot T18 (all coins on trades) 2.7 h; Perp v1 (control) 5.4 h; Perp R2-08 5.4 h.
+Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 0.7 h; Spot W2 0.7 h; Spot TB (trades input) 0.7 h; Spot T18 (all coins on trades) 3.1 h; Perp v1 (control) 0.0 h; Perp R2-08 0.0 h.
 
 ## Summary
 
@@ -64,8 +64,8 @@ Hours in real time are calendar hours (first event to last event) minus the gaps
 | Spot W2 | 7.0 | $251,565 | +0.63% | 35 | $204,060 | 76.7 bp | 49 / 10 | 23 (21 made money) | 1 |
 | Spot TB (trades input) | 2.9 | $250,433 | +0.17% | 4 | $62,574 | 69.3 bp | 4 / 0 | 3 (3 made money) | 0 |
 | Spot T18 (all coins on trades) | 1.9 | $250,465 | +0.19% | 5 | $66,979 | 69.4 bp | 5 / 0 | 4 (4 made money) | 0 |
-| Perp v1 (control) | 7.2 | $10,046 | +0.46% | 3 | n/a (not logged) | n/a | 2 / 1 | - | 0 |
-| Perp R2-08 | 6.8 | $10,023 | +0.23% | 3 | n/a (not logged) | n/a | 2 / 1 | - | 0 |
+| Perp v1 (control) | 7.4 | $10,046 | +0.46% | 3 | n/a (not logged) | n/a | 2 / 1 | - | 0 |
+| Perp R2-08 | 7.1 | $10,023 | +0.23% | 3 | n/a (not logged) | n/a | 2 / 1 | - | 0 |
 
 Days are calendar days, from the first to the newest event (hours in real time are under Running time). Change is against starting capital ($250,000 spot, $10,000 perp). Net per dollar is total P&L of exits over total dollars bought, so rungs still open count as bought with no P&L yet. A rung can exit in several pieces, so exit events can outnumber fills. The perp logs do not record contract size, so their dollars bought are not available.
 
@@ -284,8 +284,8 @@ Totals: tb_replaced 45,492, tb_replaced_diff 7,233, tb_dropped 1,289.
 
 | Book | Fills | Fills per calendar day | Fills per running day | Net per trade | Equity | Change | Bids placed |
 |---|---|---|---|---|---|---|---|
-| Perp v1 (control) | 3 | 0.42 | 0.59 | 65.7 bp | $10,046 | +0.46% | 40,147 |
-| Perp R2-08 | 3 | 0.44 | 0.62 | 33.0 bp | $10,023 | +0.23% | 37,925 |
+| Perp v1 (control) | 3 | 0.41 | 0.57 | 65.7 bp | $10,046 | +0.46% | 41,761 |
+| Perp R2-08 | 3 | 0.42 | 0.59 | 33.0 bp | $10,023 | +0.23% | 39,528 |
 
 Net per trade is the mean of the net bp of each exit. Fills per calendar day is fills divided by calendar days from the first to the newest event; fills per running day divides by the days the book was live (see Running time).
 
