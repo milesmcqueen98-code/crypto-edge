@@ -22,5 +22,14 @@
     "4": 1,
     "6": 1,
     "8": 1
-  }
+  },
+  "newest_bar": "trades",
+  "stale_guard": true,
+  "trades_coins": [
+    "BTC",
+    "ETH",
+    "SOL",
+    "XRP",
+    "ZEC"
+  ]
 }

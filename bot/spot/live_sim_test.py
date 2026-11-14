@@ -17,7 +17,13 @@ Checks:
 - the bot's equity equals the exchange's USD balance (every fill booked exactly once).
 
 Usage: python bot/spot/live_sim_test.py "2025-10-10 20:00" "2025-10-11 02:00" "--death=2025-10-10 21:10"
-       [--config=path/to/config.json]   (default bot/spot/config.json)
+       [--config=path/to/config.json]   (default bot/spot/config.json; its input settings are not used: history has
+                                         no trades list, so the run is on final candles)
+       [--inputs=bot/spot/config.json]  run on that file's input settings instead (taken as the live bot takes them),
+                                         with a trades feed made from the candles: every trades bar equals its candle
+                                         and no answer is old (bot/spot/live_sim_inputs_test.py compares the runs)
+       [--switch=2025-10-10 21:00]      with --inputs: candle mode until then, then a fresh process on the inputs,
+                                         on the same state folder
 """
 import os
 import random
@@ -52,6 +58,37 @@ class LiveReplayMarket(ReplayMarket):
 
     def bids_ahead(self, product, px):
         return 0.0, True
+
+
+class TradesFeedMarket(LiveReplayMarket):
+    """The same stored candles plus a trades feed made from them (as FirstSeen in bot/spot/newest_bar_test.py): every
+    trades bar equals its candle, a minute with no volume has no trades, every paging pass is proven complete, and
+    while the feed is on every candle answer reports being made 8 s after its request's end (no answer is old).
+    With the feed off it is LiveReplayMarket exactly (no answer facts)."""
+
+    def __init__(self, start, end, clock):
+        super().__init__(start, end, clock)
+        self.on, self.tb_calls = False, 0
+
+    def spot_candles(self, coin, start, end):
+        if self.on:
+            if not hasattr(self, "candle_meta"):
+                self.candle_meta = {}
+            self.candle_meta[coin] = {"gen": pd.Timestamp(end) + pd.Timedelta(seconds=8), "start": pd.Timestamp(start)}
+        return super().spot_candles(coin, start, end)
+
+    def _bar(self, coin, m):
+        d = self.D[coin]
+        return d.loc[m].to_dict() if m in d.index and d.loc[m, "volume"] > 0 else None
+
+    def trades_bars(self, coin, m0, m1, deadline=None):
+        self.tb_calls += 1
+        return dict(bars={x: self._bar(coin, x) for x in pd.date_range(m0, m1, freq="min")}, verified=True,
+                    reason=None, pages=1)
+
+    def trades_bar(self, coin, m, deadline=None):
+        self.tb_calls += 1
+        return dict(bar=self._bar(coin, m), verified=True, reason=None, pages=1)
 
 
 class FakeExchange:
@@ -229,15 +266,29 @@ class FakeExchange:
         return dict(tier="fake VIP 1", maker_bp=6.0, taker_bp=12.5, volume_30d=None)
 
 
-def main(start, end, death=None, death_min=20, config=None):
+SWITCH_SEEN = {}                     # --switch: the ladders open before and after it (read by live_sim_inputs_test.py)
+
+
+def main(start, end, death=None, death_min=20, config=None, inputs=None, switch=None):
     clock = {"t": pd.Timestamp(start)}
     now = lambda: clock["t"] + pd.Timedelta(seconds=6)  # noqa: E731
-    mkt = LiveReplayMarket(start, end, now)
+    mkt = LiveReplayMarket(start, end, now) if inputs is None else TradesFeedMarket(start, end, now)
     cap = 250000.0
     ex = FakeExchange(mkt, now, cap)
     import json
     cfg = json.load(open(config or os.path.join(HERE, "config.json")))
     cfg.update(capital=cap, usd_reserve=0.0)
+    # stored history has no trades list: this replay runs on final candles, whatever the config's inputs are
+    cfg.update(newest_bar="candles", stale_guard=False)
+    cfg.pop("trades_coins", None)
+    cfg_in = None
+    if inputs is not None:                                 # --inputs: the input settings of that file, taken the way
+        from bot.spot import release_inputs as RI          # the live bot takes them from bot/spot/config.json
+        cfg_in, notes = RI.apply(cfg, json.load(open(inputs)))
+        print(f"inputs from {inputs}: {RI.describe(cfg_in)}; trades feed made from the candles"
+              + (f"; candle mode until {switch}, then a fresh process on these inputs" if switch else ""))
+        if switch is None:
+            cfg, mkt.on = cfg_in, True
     sd = tempfile.mkdtemp(prefix="spot_live_")
     eng = E.Engine(mode="live", cfg=cfg, state_dir=sd, market=mkt, broker=ex, clock=now, echo=False)
     t0 = time.time()
@@ -245,6 +296,19 @@ def main(start, end, death=None, death_min=20, config=None):
     steps = pd.date_range(start, pd.Timestamp(end) + pd.Timedelta(minutes=3 * H), freq="min", inclusive="left")
     dead_until, death_ok = None, None
     for t in steps:
+        if cfg_in is not None and switch is not None and t == pd.Timestamp(switch):
+            clock["t"] = t                                 # wickctl update: the process stops, a new one starts with
+            ex._advance()                                  # the new inputs on the same state folder
+            before = sorted(l["id"] for l in eng.ladders())
+            cfg, mkt.on = cfg_in, True
+            eng = E.Engine(mode="live", cfg=cfg, state_dir=sd, market=mkt, broker=ex, clock=now, echo=False)
+            if t >= pd.Timestamp(end):
+                eng.tradable = []
+            eng.start()
+            after = sorted(l["id"] for l in eng.ladders())
+            SWITCH_SEEN.update(t=str(t), before=before, after=after)
+            print(f"switch at {t}: {len(before)} ladders open before, {len(after)} after the new process started; "
+                  f"same ladders: {before == after}; events {sd}")
         if death is not None and t == pd.Timestamp(death):
             dead_until = t + pd.Timedelta(minutes=death_min)
             open_buys = sum(1 for o in ex.orders.values() if o["status"] == "OPEN" and o["side"] == "BUY")
@@ -301,11 +365,16 @@ def main(start, end, death=None, death_min=20, config=None):
     if len(errs):
         print("errors logged (expected only from injected faults):")
         print(errs.error.astype(str).str[:120].value_counts().head(10).to_string())
+    if inputs is not None:
+        print(f"trades feed calls: {mkt.tb_calls}")
     print("LIVE-PATH TEST", "PASSED" if ok else "FAILED")
+    return sd, ok
 
 
 if __name__ == "__main__":
     a = [x for x in sys.argv[1:] if not x.startswith("--")]
     d = next((x.split("=", 1)[1] for x in sys.argv[1:] if x.startswith("--death=")), None)
     cf = next((x.split("=", 1)[1] for x in sys.argv[1:] if x.startswith("--config=")), None)
-    main(a[0], a[1], death=d, config=cf)
+    ip = next((x.split("=", 1)[1] for x in sys.argv[1:] if x.startswith("--inputs=")), None)
+    sw = next((x.split("=", 1)[1] for x in sys.argv[1:] if x.startswith("--switch=")), None)
+    main(a[0], a[1], death=d, config=cf, inputs=ip, switch=sw)

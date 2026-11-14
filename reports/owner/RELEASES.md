@@ -4,6 +4,108 @@ A release is any change on `main` that can alter what the bot does with orders, 
 The paper books pick a release up at their next run. The live bot picks it up when Miles updates the VM. Each entry
 says what changed, why, how it was tested, and what Miles needs to do.
 
+## Release 3 (Nov 14 2026): verified inputs for the main book, W2 and the live bot
+
+### What changed
+1. **The main paper book and W2 use the third book's inputs** (`bot/spot/config.json`, `bot/spot/config.w2.json`:
+   `"newest_bar": "trades"`, `"trades_coins"`, `"stale_guard": true`).
+   - For BTC, ETH, SOL, XRP and ZEC the minute that just closed is built from Coinbase's public trades list, and
+     used only when the list is proven complete.
+   - The other thirteen coins keep the candle path with release 2's cache rules. LTC was on the third book's list
+     and is not on this one (see Why).
+   - The guard is on: no new bid in a minute when BTC's newest row is missing or old, and none on a coin whose
+     candle answer is old. Exits and take-profits run as always.
+2. **The live bot follows the release's inputs** (`bot/spot/run.py`, new `bot/spot/release_inputs.py`).
+   - **The fault this closes:** the VM runs from `bot/spot/config.live.json`, a copy of `config.json` made when the
+     VM was set up. A change of `config.json` never reached it, so `wickctl update` alone would have left the pilot
+     on the late BTC input.
+   - At every start, a file named `config.live.json` now takes six input settings from `config.json`. Capital,
+     coins, fees and risk limits stay as the live file has them. The file is not rewritten.
+   - `wickctl status` prints the inputs in use.
+   - `"inputs_local": true` in the live file keeps that file's own input settings. It is the emergency switch back.
+   - If `config.json` cannot be read, every command runs on the live file's own settings and says so. The kill
+     switches never depend on it.
+   - A live start without these inputs prints a warning and writes a `warning` event, which reaches the phone.
+   - `preflight` writes back only `coins_disabled` and `bid_ttl_s`. It no longer saves a `--capital` override into
+     the file; `wickctl` never passed one.
+3. **One new phone alert** (`bot/spot/deploy/watchdog.py`): when the guard skipped new bids in three or more
+   minutes within one five-minute check, at most once every 30 minutes. Before, a failing trades feed would have
+   idled the bot with no alert.
+4. **Replays of history state their own inputs** (`replay_test.py`, `live_sim_test.py`, `newest_bar_test.py`): final
+   candles, because history has no trades list. The config change cannot alter them.
+5. **Nothing in the engine changed.** `bot/spot/engine.py` and `bot/market.py` are as in release 2.
+
+### Why
+- **The third paper book passed its registered three-day read** (FORWARD_TESTS.md; the record is
+  reports/owner/reconcile_tb/read/README.md). It ran these inputs from Nov 11 to Nov 14 next to the main book.
+  - All 24,252 trades bars were verified. No refusal, no error. Data was ready at a median of 10.1 s.
+  - BTC's trades bar was materially off in 6 of 2,938 compared minutes (0.20%). BTC's candle as the bot first sees
+    it was materially off in most minutes.
+  - New bids more than 5 bp from the research level: 9 of 550, against 360 of 715 in the main book.
+  - New bids the research would not have placed: 23 of 550 (4.2%), against 153 of 715 (21.4%).
+- **What the old inputs did in the same three days:** the main book had six first-bid fills the research did not
+  have, bought 9 to 73 bp above the research's level. The third book had none, and its three fills are at the
+  research's price to the tick.
+- **Why LTC is off the list:** the rule keeps a coin only if its trades bar beats the coin's own first-seen candle
+  on both measures on every day. LTC did not on Nov 13.
+
+### Effect on trading
+- **Main book and W2:** from their next run, at about 17:20 UTC on Nov 14.
+- **Live bot:** when Miles updates the VM.
+- **Bid levels follow BTC's true newest close.** That is the measured gain. About half the main book's new bids
+  were more than 5 bp from the research level; with these inputs it was about one in sixty.
+- **What stays imperfect, and is under test:**
+  - **The thirteen coins on the candle path.** In the third book 19 of 349 new bids on its twelve (5.4%) were bids
+    the research would not have placed, and 752 coin-minutes in three days were skipped for an old answer. A
+    skipped minute means no new bid on that coin.
+  - **A trades-built row is kept for good.** It gave ZEC level errors of 9 to 23 bp on three bids. ZEC passed the
+    rule by a small margin on the last day and is the weakest coin on the list.
+  - Part 2 of the bar-source plan tests the way meant to remove both: trades for the newest minute of all 18
+    coins, the venue's candle afterwards. Its read is on Nov 15. If it passes, one more input release follows
+    after its own tests.
+- **Test A is counted again from this release** (registered Nov 13, before the read): the main book's three weeks
+  and 60 rungs start with its first run on these inputs. The earlier record is kept and shown apart.
+- **The third and fourth paper books run on unchanged.**
+
+### Tests
+- **Identical before and after the change,** run in the work container and again on GitHub runners:
+  - parity replay of Oct 10 to 12 2025: 156 rungs and 88 parents on both sides, every rung identical;
+  - live-path simulation: 540 minutes, 111 entries, P&L $11,723.34, bot equity equal to the exchange's to
+    $0.0002; with the server death 109 entries and $8,421.28;
+  - merge 21, trades bar 37, USDC 11, newest bar 73, hand-over 11, commit step 38, update command 7 checks.
+- **New:**
+  - the inputs rule, 66 checks: which settings move, which never do, the emergency switch, an unreadable
+    `config.json`, the warning, and `status` end to end on a live file as a VM set up before this release has it;
+  - the live-path simulation on these inputs, with a trades feed made from the same candles: every event equal to
+    the candle run's, heartbeat counters aside; no fallback;
+  - a switch of modes on a running book: no exception, all 15 open ladders kept, every entry and exit equal;
+  - the watchdog, 31 checks.
+- **On GitHub runners, for this exact list:** The full offline suite on commit 0fb7f12c (run 43602816403): no file with a failure, the same replay and live-path numbers, 2,410 bars built from trades on the new inputs, 15 ladders kept across the switch. A paper run of the new main-book config on live data (run 43602818937, to 14:30 UTC): no error, 40 bars built from trades in eight minutes (five coins a minute), no fallback, data ready at a median of 11.1 s and 14.0 s at the latest. The same two runs passed on Nov 13 with
+  six coins and with four.
+- **Not tested:** real orders; the VM's own network path to the trades list, which `wickctl paper-test` on the VM
+  exercises for the first time; `preflight`'s write-back end to end (its rule is unit-tested).
+
+### What Miles does
+- **Nothing is required.** The paper books switch by themselves.
+- **To take the release on the VM** (it starts nothing by itself):
+  1. `wickctl update`
+  2. `wickctl status`. It must show the line `inputs: newest minute from trades for BTC, ETH, SOL, XRP, ZEC;
+     candles for the other coins; stale guard on (from bot/spot/config.json)`.
+  3. `wickctl paper-test 35`. In the heartbeat line look for `"tb_built"` and for no entry that begins `tb_fb_`.
+     This is the first test of the VM's own path to the trades list.
+- **The pilot can start on this release** (bot/spot/README.md, "Configure, check, start" and "Go live in
+  stages"). Or wait a day or two: if the Nov 15 read passes, one more input release follows, and installing once
+  is less work. Either order is safe, because the live bot now takes its inputs from whichever release is
+  installed.
+- **One decision, when convenient:** the pilot's live log stays on the VM, and the owner of the algorithm needs it
+  to read test B. Either a private repository the VM pushes its log to (about ten minutes to set up, then
+  automatic), or a file exported and attached about once a week.
+- **A known nuisance:** restarting the bot within a minute of a fill can send "coin balance differs" alerts. They
+  clear when the bot books the fill moments later. A fix is queued.
+- **The emergency switch back to the old inputs:** add `"inputs_local": true, "newest_bar": "candles",
+  "stale_guard": false` to `bot/spot/config.live.json`, then `wickctl restart`. The phone gets a warning at that
+  start, by design.
+
 ## Release 2 (Nov 10 2026): verified inputs behind a switch, a third paper book, paper runs without gaps
 
 ### What changed

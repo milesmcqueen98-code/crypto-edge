@@ -734,3 +734,14 @@ FORWARD_TESTS.md.
     four. Nothing is merged until those pass.
   - **Part 1 of the bar-source plan:** its runner job was started at 14:10 UTC on branch owner/read-barsrc (run
     43603482156, about an hour). It is read after this.
+- **10:12. Release 3 is on `main`.** The main book, W2 and the live bot go to the third book's inputs, with BTC,
+  ETH, SOL, XRP and ZEC on the trades list (RELEASES.md).
+  - **Runner tests on this exact list:** The full offline suite on commit 0fb7f12c (run 43602816403): no file with a failure, the same replay and live-path numbers, 2,410 bars built from trades on the new inputs, 15 ladders kept across the switch. A paper run of the new main-book config on live data (run 43602818937, to 14:30 UTC): no error, 40 bars built from trades in eight minutes (five coins a minute), no fallback, data ready at a median of 11.1 s and 14.0 s at the latest.
+  - **Paper books:** the main book and W2 take it at their next run, at about 17:20 UTC on Nov 14. The third and fourth books are
+    unchanged.
+  - **Live bot:** nothing changes until Miles runs `wickctl update`. The note tells him what to check, and that
+    one more input release may follow the Nov 15 read.
+  - **Scorecard: 47 to 53.** "The live bot matches the research" from 6 to 11; "Controls and monitoring" from 8 to
+    9. The other blocks are unchanged.
+  - **Still to do for test A:** put the main book's first start on the new inputs on file
+    (reports/owner/test_a_start.json) once that run's log is on `main`.

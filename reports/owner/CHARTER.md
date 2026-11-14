@@ -12,16 +12,18 @@ is reports/crypto-edge-findings.md; every forward test is in FORWARD_TESTS.md be
 ## Where the algorithm stands (re-scored at every review)
 Scores are the owner's judgment of what has been verified, not a forecast. The open points say where the work is.
 
-| Block | Weight | Before Nov 10 | Nov 10 2026 | What holds it back |
-|---|---|---|---|---|
-| Research evidence: out-of-sample Sharpe that held on unseen 2022-23 data | 25 | 17 | 17 | Best estimate at $250K is Sharpe 2.94 / 2.66 / 1.91 (selection / check / 2022-23, unverified costs doubled). It missed the deflated-Sharpe bar (0.77 against 0.95). Only time and live data add points |
-| The live bot matches the research: inputs, timing, fills | 20 | 6 | 6 | Timing is measured and within a few percent. Inputs are measured and faulty: the bot's BTC candle request returned an old cached copy in every minute of a two-hour probe (ETH in 79%), and rows can stay wrong. Against the research on final candles, 67% of the paper book's new bids and 11 of its 13 first-bid fills were in common. The fix (release 2) is built behind a switch and not on yet |
-| Fills proven with real orders (capture share) | 20 | 3 | 3 | No live fill yet. Trade prints support the fill rule and the capacity. The pilot is the test |
-| Costs and idle cash | 10 | 4 | 4 | Fees are assumed; idle cash earns nothing until the USDC check; the fee rebate is unverified |
-| Controls and monitoring | 10 | 6 | 8 | Stops and the reconcile sweep were in place. Added: automatic paper status, an explained-error list, an update command that cannot start the bot |
-| Forward data for new information | 10 | 0 | 5 | The collector is built and tested; it has to run for months before anything can be read |
-| Process: plans before data, releases, records | 5 | 3 | 4 | Charter, registry, release notes and log exist. Two plans needed logged deviations on the first day |
-| **Total** | **100** | **39** | **47** | |
+| Block | Weight | Before Nov 10 | Nov 10 2026 | Nov 14 2026 | What holds it back |
+|---|---|---|---|---|---|
+| Research evidence: out-of-sample Sharpe that held on unseen 2022-23 data | 25 | 17 | 17 | 17 | Best estimate at $250K is Sharpe 2.94 / 2.66 / 1.91 (selection / check / 2022-23, unverified costs doubled). It missed the deflated-Sharpe bar (0.77 against 0.95). Only time and live data add points |
+| The live bot matches the research: inputs, timing, fills | 20 | 6 | 6 | 11 | Inputs: fixed for BTC, which moves every bid, and for ETH, SOL, XRP and ZEC. In a three-day paper test next to the old inputs, bids more than 5 bp from the research level fell from 360 of 715 to 9 of 550, and bids the research would not have placed from 21% to 4%; 93% of bids were in common with the research. Release 3 puts the main book, W2 and the live bot on these inputs. Left: thirteen coins still read first-seen candles (about one bid in twenty there is one the research would not place, and minutes are skipped for old answers); the way meant to fix that is under test. No live order has yet been compared with the research |
+| Fills proven with real orders (capture share) | 20 | 3 | 3 | 3 | No live fill yet. Trade prints support the fill rule and the capacity. The pilot is the test |
+| Costs and idle cash | 10 | 4 | 4 | 4 | Fees are assumed; idle cash earns nothing until the USDC check; the fee rebate is unverified |
+| Controls and monitoring | 10 | 6 | 8 | 9 | Stops and the reconcile sweep were in place. Added since: automatic paper status with the registered rules in it, paper logs that hand over without gaps and cannot be lost to one failed push, the live bot's inputs tied to the release, a warning when it starts on other inputs, and a phone alert when the stale guard keeps skipping bids. Left: a restart during fills raises false balance warnings |
+| Forward data for new information | 10 | 0 | 5 | 5 | The collector is built and tested; it has to run for months before anything can be read |
+| Process: plans before data, releases, records | 5 | 3 | 4 | 4 | Charter, registry, release notes and log exist. Two plans needed logged deviations on the first day |
+| **Total** | **100** | **39** | **47** | **53** | |
+
+Re-scored on Nov 14 at 10:12 ET, after the third paper book's read and release 3: the second block from 6 to 11 and the fifth from 8 to 9. The second block gets full marks only when live orders match the research.
 
 Re-scored on Nov 10 at about 13:50 ET, after the candle probe. In the morning the second block stood at 9 and the total at
 50. The probe did not make the bot worse; it showed a fault that was already there.

@@ -13,6 +13,7 @@
                                                          cancels one $10 bid far below the market; needs the live switch)
 """
 import argparse
+import copy
 import json
 import os
 import sys
@@ -30,7 +31,18 @@ p.add_argument("--capital", type=float, default=None, help="override the config'
 p.add_argument("--state-dir", default=None, help="default: paper_spot/ (paper) or live_spot/ (live and the live tools)")
 p.add_argument("--flatten", action="store_true")
 a = p.parse_args()
-cfg = json.load(open(a.config))
+from bot.spot import release_inputs  # noqa: E402  (standard library only)
+raw = json.load(open(a.config))                            # the file as written; preflight writes back to this
+cfg = copy.deepcopy(raw)
+inputs_notes, inputs_from_release = [], False
+if release_inputs.applies(a.config):                       # config.live.json: input settings from the release
+    try:
+        cfg, inputs_notes = release_inputs.apply(cfg, json.load(open(os.path.join(HERE, "config.json"))))
+        inputs_from_release = raw.get(release_inputs.LOCAL_SWITCH) is not True
+    except Exception as err:                               # never stops a command (stop, cancel-all, live, ...)
+        cfg, inputs_notes = copy.deepcopy(raw), []
+        print(f"inputs: bot/spot/config.json could not be read ({repr(err)[:120]}); this file's own input settings "
+              "are used", flush=True)
 if a.capital:
     cfg["capital"] = a.capital
 live_cmds = ("live", "preflight", "cancel-all", "usdc-check")
@@ -43,6 +55,13 @@ def need_keys():
         sys.exit("Set COINBASE_API_KEY and COINBASE_API_SECRET (see bot/spot/README.md, step 3).")
 
 
+def print_inputs():
+    """The input settings in use (README, "Inputs of the live bot"), and where they came from."""
+    print(release_inputs.describe(cfg) + (" (from bot/spot/config.json)" if inputs_from_release else ""), flush=True)
+    for n in inputs_notes:
+        print("  " + n, flush=True)
+
+
 if a.cmd in ("paper", "live"):
     from bot.spot.engine import Engine
     if a.cmd == "live":
@@ -51,8 +70,17 @@ if a.cmd in ("paper", "live"):
             sys.exit("No capital set for live trading. Run: sudo wickctl configure")
         if os.environ.get("I_UNDERSTAND_LIVE_TRADING") != "yes":
             sys.exit("Live mode places real orders. Set I_UNDERSTAND_LIVE_TRADING=yes after reading bot/spot/README.md.")
+    print_inputs()
+    warn = None
+    if a.cmd == "live" and not (cfg.get("newest_bar", "candles") == "trades" and cfg.get("stale_guard", False)):
+        warn = ("live trading is starting without the release 3 inputs (trades with the stale guard); "
+                + release_inputs.describe(cfg))
+        print("WARNING: " + warn, flush=True)
     mins = a.minutes if a.minutes is not None else (345 if a.cmd == "paper" else 1e9)
-    Engine(mode=a.cmd, cfg=cfg, state_dir=sd).run(mins)
+    eng = Engine(mode=a.cmd, cfg=cfg, state_dir=sd)
+    if warn:
+        eng.log("warning", msg=warn)                       # events.jsonl: the watchdog alerts on warning events
+    eng.run(mins)
 
 elif a.cmd == "preflight":
     need_keys()
@@ -138,11 +166,9 @@ elif a.cmd == "preflight":
                 break
         print(f"good-til-date bids: {f'{ttl} s' if ttl else 'NOT AVAILABLE - the bot would rest good-til-cancelled bids'}")
     if os.path.abspath(a.config) != os.path.abspath(os.path.join(HERE, "config.json")):
-        cfg["coins_disabled"] = sorted(blocked)
-        if ttl:
-            cfg["bid_ttl_s"] = ttl
-        json.dump(cfg, open(a.config, "w"), indent=2)
-        print(f"wrote coins_disabled {sorted(blocked)} and bid_ttl_s {cfg.get('bid_ttl_s')} to {a.config}")
+        out = release_inputs.preflight_file(raw, sorted(blocked), ttl)   # never freezes release inputs into the file
+        json.dump(out, open(a.config, "w"), indent=2)
+        print(f"wrote coins_disabled {sorted(blocked)} and bid_ttl_s {out.get('bid_ttl_s')} to {a.config}")
     else:
         print('put these in "coins_disabled" in your live config:', json.dumps(sorted(blocked)))
     print("\npreflight", "PASSED" if ok and tradable and not unknown else "FAILED")
@@ -150,6 +176,7 @@ elif a.cmd == "preflight":
 elif a.cmd == "status":
     import pandas as pd
     st_path = os.path.join(sd, "state.json")
+    print_inputs()
     if not os.path.exists(st_path):
         sys.exit(f"no state in {sd}")
     st = json.load(open(st_path))

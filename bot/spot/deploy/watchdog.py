@@ -2,7 +2,9 @@
 """Watchdog for the live spot bot, run every 5 minutes by wickbot-watchdog.timer.
 
 Pushes a phone alert (ntfy.sh topic in NTFY_TOPIC) when: the bot has not completed a minute in 5 minutes; a new
-halt, error, warning or rejected order appears in the log; or (once a day, after 00:05 UTC) with yesterday's P&L.
+halt, error, warning or rejected order appears in the log; three or more stale_input events (minutes with no new bids
+because BTC's newest price row was missing or old) arrive within one run, one alert at most every 30 minutes; or (once
+a day, after 00:05 UTC) with yesterday's P&L. A single stale_input event sends nothing.
 Without NTFY_TOPIC it prints the alerts (journalctl -u wickbot-watchdog)."""
 import json
 import os
@@ -11,6 +13,8 @@ import time
 import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+STALE_INPUT_MIN = 3          # stale_input events in one run's batch that make an alert
+STALE_INPUT_QUIET_S = 1800   # seconds before the next such alert
 SD = os.path.join(ROOT, sys.argv[1] if len(sys.argv) > 1 else "live_spot")
 MARK = os.path.join(SD, "watchdog.json")
 
@@ -46,14 +50,22 @@ def main():
             fh.seek(min(mark.get("offset", 0), os.path.getsize(ev_path)))
             new = fh.read()
             mark["offset"] = fh.tell()
+        stale_n = 0
         for line in new.splitlines():
             try:
                 e = json.loads(line)
             except ValueError:
                 continue
+            if e.get("kind") == "stale_input":
+                stale_n += 1
             if e.get("kind") in ("halt", "error", "warning", "reject"):
                 prio = "urgent" if e["kind"] == "halt" else "high" if e["kind"] in ("error", "warning") else "default"
                 push(f"wickbot {e['kind']}", json.dumps({k: v for k, v in e.items() if k != "kind"})[:400], prio)
+        now = time.time()
+        if stale_n >= STALE_INPUT_MIN and now - mark.get("stale_input_alert", 0) >= STALE_INPUT_QUIET_S:
+            push("wickbot stale input", f"no new bids in {stale_n} of the last minutes: BTC's newest price row was "
+                 "missing or old (stale guard). Exits still run. If it lasts, look at live_spot/stdout.log.", "high")
+            mark["stale_input_alert"] = now
     st = json.load(open(st_path))
     today = time.strftime("%Y-%m-%d", time.gmtime())
     if mark.get("day") != today and time.gmtime().tm_hour == 0 and time.gmtime().tm_min >= 5:
