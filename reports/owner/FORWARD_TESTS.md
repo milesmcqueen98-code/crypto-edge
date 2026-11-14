@@ -55,6 +55,33 @@ them.
   07:43 to 13:00 UTC, the main book had no BTC row for the minute just closed in 279 of about 320 minutes. The main book and W2 keep that behaviour until
   the "verified inputs" test below is read, so their results so far and until then carry that fault.
 
+**Later releases, test A and the time of the step (fixed Nov 14 2026, 10:54 ET, before Part 2 of the bar-source plan is read and before the main book's first run on release 3).**
+- **Test A does not start again at a later release.** Its three weeks and 60 rungs run from the main book's first
+  run on release 3 through every release after it. It starts again only for a fault of the kind release 3 fixed:
+  more than 10% of the book's new bids off the research on either reconciliation measure (the level more than 5 bp
+  away, or the score on the other side of the threshold; before release 3 the main book had 50% and 21%). The read shows each release's stretch apart and all of
+  them together. The pass rule is applied to all together.
+- **Why:** on release 3's inputs the third book had 1.6% and 4.2% on those two measures over three days. A release
+  that brings a few more bids into line does not make that record another strategy's. The paper books also fill on
+  whole-minute candles, so the second at which they place a bid does not change their fills.
+- **W2** switches with the main book at every release, as before.
+- **Test B** counts only the minutes in which the live bot and the main book ran the same release.
+- **The release that follows Part 2 must not place its bids later in the minute than release 3 does.**
+  - **What the logs show** (heartbeats, Nov 11 22:30 UTC to Nov 14): the fourth book's data step ends a median
+    13.4 s after the minute. The third book's ends at 10.3 s and the main book's, on candles only, at 9.6 s.
+    Eighteen trades requests one after another cost about three seconds.
+  - **Part 2 cannot see this.** It counts bids by the minute, on books that fill on whole minutes. The live bot's
+    new bid rests only from the second it is placed.
+  - **The size, from the timing study** (reports/owner/timing/README.md): with the new bid at 15 s instead of 10 s
+    the live timing fills 83% / 85% / 78% of the research's first bids in the same minute, against 87% / 90% / 83%.
+    That is about one point a second.
+  - **The gain it would be traded for:** Part 1 put the new way at about 30% fewer wrong arming decisions on the
+    twelve (167 against 240 in about 49,000 coin-minutes). In the third book the twelve had 19 wrong-side bids in
+    349, so that is one to two bids in a hundred.
+  - **So** the fourth book's way, as it runs today, would give back in resting time more than it gains in bids.
+    Part 2 still decides the bar source. The release that carries it is built so that its step is no slower than
+    release 3's, and that build runs as a paper book first, on a rule fixed before that book starts.
+
 **Note on item 6 of the "verified inputs" rule (amended Nov 10 2026, 21:14 ET; its second part tightened at 21:23 ET on the same data).**
 - As first written, item 6 asked a material-error share of at most 1% of all six listed coins.
 - The collector's first 4.3 hours (21:44 to 02:00 UTC, a quiet US evening) show, for the trades bar: BTC, ETH, SOL and
@@ -90,6 +117,11 @@ them.
 - With a same-minute match, a pilot with perfect capture would be expected at about 77-86%, too close to the 70% bar to
   say anything about capture. With a two-minute window it would be expected at about 82-90%. The 70% bar stays.
 - The same-minute rate is reported as well at the read.
+- **Added Nov 14 2026, 10:54 ET, before any pilot data.** These expected rates assume the new bid rests from 10 s
+  after the minute. Read from the code, the live bot as built is slower than that (CHARTER.md, "Live order
+  timing"); how much is not measured, because no live run exists yet. Rule B's three weeks and 50 rungs are
+  therefore counted from the release that carries the rebuilt order path. If the pilot starts before it, those
+  days are reported apart, with the step times the live log records.
 
 ## Challengers running or registered
 

@@ -244,3 +244,15 @@ book's log. Tables: reports/owner/bar_source/ (summary.md has every coin and day
   - **What was known when this was written:** the counts from the logs through 09:00 UTC on Nov 13: 158 new bids on
     the twelve in the third book and 159 in the fourth, on 2,008 common minutes. At that pace both reach about 330
     by 22:29 UTC on Nov 14. No research has been fetched for these books since the interim look of Nov 12.
+- **Nov 14 2026, 10:54 ET (orchestrator), before Part 2 is read.** What a pass leads to; no rule changes.
+  - **The rule stands as written:** a pass makes "trades for the newest minute, the venue's candle afterwards" the
+    proposal for the next release.
+  - **One condition on that release, fixed now:** it must not place its bids later in the minute than release 3
+    does. The fourth book's data step ends a median 13.4 s after the minute, against 10.3 s in the third book,
+    because it asks for 18 coins' trades one after another. The paper books do not feel that, since they fill on
+    whole-minute candles. The live bot would: by the timing study each second costs about one point of same-minute
+    fills, and three seconds is more than the new way gains in bids (FORWARD_TESTS.md, the note of this date).
+  - **What follows:** the release is built with the candle requests outside the critical seconds and the trades
+    requests side by side, and that build runs as a paper book first, on a rule fixed before it starts.
+  - **What was known when this was written:** Part 1's result of this morning, the interim look of Nov 12, and the
+    books' step times from their heartbeats. No research has been fetched for Part 2's period.

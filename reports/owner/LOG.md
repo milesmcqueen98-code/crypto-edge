@@ -756,3 +756,27 @@ FORWARD_TESTS.md.
   - **Reading:** C is better than today's candles on every coin, by a modest amount: about a fifth fewer score
     misses. Keeping trades rows is the worst of the three, which fits what the third book showed for LTC and ZEC.
     Part 1 decides nothing else; the release question rests on Part 2, tomorrow.
+- **10:54. The time of the step is a fidelity gap of its own, and the larger one.** Found while preparing the
+  release that may follow Part 2. Nothing on `main` changes today.
+  - **The data step.** Heartbeats since Nov 11 22:30 UTC: the main book's data step ends a median 9.6 s after the
+    minute, the third book's at 10.3 s and the fourth book's at 13.4 s. The fourth book's way is three seconds
+    slower because it fetches 18 coins' trades one after another, after the candles.
+  - **Why it matters only live.** The paper books fill on the whole minute's candle. The live bot's bid rests from
+    the second it is placed. The timing study has the slope: about one point of the research's same-minute fills
+    for every second.
+  - **Fixed before Part 2's read:** the release that carries the new bar source must be no slower than release 3,
+    and test A does not start again at later releases (FORWARD_TESTS.md; the plan's deviation log).
+  - **The order path, read from the code (bot/spot/engine.py), is slower than the study assumed.** Each minute the
+    live bot asks the venue for the status of every resting order, then cancels each old bid and polls until the
+    venue confirms it, then asks for each coin's best bid, and only after all of that places the new bids. For 15
+    bids that is about 75 calls in a row. At 0.1 s a call the new bids rest from about 17 to 18 s after the minute.
+    The study's central case was 10 s and its slow case 15 s. This is an estimate: no live run exists, so nothing
+    is measured.
+  - **Decisions.** (1) Rebuild the order path so that it takes a handful of calls: one batch cancel, one read of
+    the open orders and of the fills, one price request for all coins, then the bids. (2) Take the candle requests
+    out of the critical seconds and fetch trades side by side. (3) Measure how early after the minute the venue's
+    trades list is complete, and move the step earlier only if it is. Each is a fidelity change with its own tests
+    and release note. Rule B's count starts at the release with the new order path.
+  - **Agents:** the release candidate with the new bar source is being built on branch owner/release-4 (Opus).
+    The order path and the data step go to Opus agents on their own branches; the venue's interface facts are
+    checked from its documentation first.
