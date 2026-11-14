@@ -557,6 +557,13 @@ def model_report(r):
     for k in kinds:
         v = [per[m].get(k, 0) for m in mins]
         print(f"    {k}: median {np.median(v):.0f}, max {max(v)}, total {sum(v)}", flush=True)
+    for k in ("get_order", "get_fills", "list_orders(ids)"):  # where the reads come from (settle, allocate, ...)
+        ph = {}
+        for x in log:
+            if x["kind"] == k:
+                ph[x["phase"]] = ph.get(x["phase"], 0) + 1
+        if ph:
+            print(f"    {k} by phase (total): " + ", ".join(f"{p} {n}" for p, n in sorted(ph.items())), flush=True)
     first, last = [], []
     for m in mins:
         ml = [x for x in log if x["minute"] == m]
