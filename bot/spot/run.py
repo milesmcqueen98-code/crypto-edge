@@ -11,6 +11,9 @@
   python bot/spot/run.py reset-halt                      clear the drawdown stop after you have looked at why it fired
   python bot/spot/run.py usdc-check                      ladder v5 C4: the pre-registered USDC verification (places and
                                                          cancels one $10 bid far below the market; needs the live switch)
+  python bot/spot/run.py order-check [--place-test-orders]  the batch order path's requests against Coinbase (README,
+                                                         "Order path"); with the flag it places and cancels three $25
+                                                         bids far below the market (needs the live switch)
 """
 import argparse
 import copy
@@ -24,12 +27,14 @@ sys.path.insert(0, ROOT)
 
 p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 p.add_argument("cmd", choices=["paper", "live", "preflight", "status", "report", "stop", "resume", "cancel-all",
-                               "reset-halt", "usdc-check"])
+                               "reset-halt", "usdc-check", "order-check"])
 p.add_argument("--minutes", type=float, default=None, help="how long to run (default: 345 paper, forever live)")
 p.add_argument("--config", default=os.path.join(HERE, "config.json"))
 p.add_argument("--capital", type=float, default=None, help="override the config's capital (first start only)")
 p.add_argument("--state-dir", default=None, help="default: paper_spot/ (paper) or live_spot/ (live and the live tools)")
 p.add_argument("--flatten", action="store_true")
+p.add_argument("--place-test-orders", action="store_true", help="order-check: place and cancel the three test orders")
+p.add_argument("--print-plan", action="store_true", help="order-check: print what it would do, and stop")
 a = p.parse_args()
 from bot.spot import release_inputs  # noqa: E402  (standard library only)
 raw = json.load(open(a.config))                            # the file as written; preflight writes back to this
@@ -316,6 +321,24 @@ elif a.cmd == "usdc-check":
           "rejected, if Coinbase changes the program, or if USDC trades below 0.997 for 15 minutes: then pause the bot "
           "and hold the USDC; never sell it at a discount.")
     print("\nusdc-check", "PASSED (steps 1-2)" if ok else "FAILED")
+
+elif a.cmd == "order-check":
+    # README, "Order path": the batch requests against the real venue, before the bot relies on them
+    from bot.spot import order_check
+    if a.print_plan:
+        print(order_check.plan(cfg))
+        sys.exit(0)
+    need_keys()
+    if a.place_test_orders and os.environ.get("I_UNDERSTAND_LIVE_TRADING") != "yes":
+        sys.exit("order-check --place-test-orders places (and cancels) three real $25 bids. Set "
+                 "I_UNDERSTAND_LIVE_TRADING=yes to run it.")
+    from bot.spot.engine import LiveBroker, LiveMarket
+    meta = json.load(open(os.path.join(ROOT, "bot", "v2", "model_meta.json")))
+    off = set(cfg.get("coins_disabled", []))
+    br = LiveBroker(cfg.get("count_usdc_as_cash", False), cfg.get("quote", "USD"), order_path="batch",
+                    orders_rate=cfg.get("orders_rate", 10), place_workers=cfg.get("place_workers", 1))
+    res = order_check.run(br, LiveMarket(), [c for c in meta["coins"] if c not in off], cfg, a.place_test_orders, sd)
+    sys.exit(0 if res["passed"] else 1)
 
 elif a.cmd == "reset-halt":
     st_path = os.path.join(sd, "state.json")

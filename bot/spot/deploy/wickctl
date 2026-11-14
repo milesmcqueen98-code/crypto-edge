@@ -24,6 +24,9 @@ case "${1:-help}" in
   flatten)    sudo systemctl stop wickbot && py cancel-all --flatten ;;
   cancel-all) sudo systemctl stop wickbot && py cancel-all ;;
   reset-halt) py reset-halt ;;
+  order-check) py order-check --print-plan   # README, "Order path"
+              read -r -p "Type yes to place and cancel the three test orders (else: the read-only parts only): " ans
+              if [ "$ans" = "yes" ]; then py order-check --place-test-orders; else py order-check; fi ;;
   restart)    sudo systemctl restart wickbot ;;
   stop)       sudo systemctl stop wickbot; echo "Service stopped. Resting bids expire on their own within minutes;" \
                 "take-profits stay. To also sell everything: wickctl flatten" ;;
@@ -51,6 +54,7 @@ wickctl stop             stop the bot process
 wickctl flatten          stop the bot, cancel every bot order and sell every open position at market
 wickctl cancel-all       stop the bot and cancel every bot order (positions stay)
 wickctl reset-halt       clear the 25% drawdown stop after you've looked at why it fired
+wickctl order-check      check the batch order path against Coinbase (asks before placing three tiny test bids)
 wickctl update           pull the latest code; restart the bot only if it was running
 EOF
   ;;
