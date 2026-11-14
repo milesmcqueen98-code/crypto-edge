@@ -1,74 +1,83 @@
 {
- "positions": {},
- "orders": {
-  "NEAR": {
-   "id": "paper-81c04b6fdf",
-   "side": "BUY",
-   "px": 3.1965000000000003,
-   "contracts": 1,
-   "kind": "entry",
-   "active_from": "2026-11-14T11:56:00"
-  },
-  "AAVE": {
-   "id": "paper-105ecb2cba",
-   "side": "BUY",
-   "px": 104.01,
-   "contracts": 4,
-   "kind": "entry",
-   "active_from": "2026-11-14T11:56:00"
-  },
-  "PEPE": {
-   "id": "paper-36e0fed2aa",
-   "side": "BUY",
-   "px": 0.004099,
-   "contracts": 6,
-   "kind": "entry",
-   "active_from": "2026-11-14T11:56:00"
-  },
-  "SUI": {
-   "id": "paper-e8a3dbf8dc",
-   "side": "BUY",
-   "px": 0.7527,
-   "contracts": 6,
-   "kind": "entry",
-   "active_from": "2026-11-14T11:56:00"
-  },
+ "positions": {
   "HYPE": {
-   "id": "paper-d0702734a3",
-   "side": "BUY",
-   "px": 67.27,
    "contracts": 3,
-   "kind": "entry",
-   "active_from": "2026-11-14T11:56:00"
-  },
-  "ZEC": {
-   "id": "paper-581c281b1f",
-   "side": "BUY",
-   "px": 861.85,
-   "contracts": 2,
-   "kind": "entry",
-   "active_from": "2026-11-14T11:56:00"
+   "entry_px": 65.45,
+   "entry_ts": "2026-11-14T16:48:00",
+   "exit_due": "2026-11-14T17:49:00",
+   "tp_px": 66.59,
+   "fees": 0.3927
   }
  },
- "equity": 10057.212679999999,
+ "orders": {
+  "HYPE": {
+   "id": "paper-200414b76b",
+   "side": "SELL",
+   "px": 66.59,
+   "contracts": 3,
+   "kind": "tp",
+   "active_from": "2026-11-14T16:49:00"
+  },
+  "NEAR": {
+   "id": "paper-8c5e896295",
+   "side": "BUY",
+   "px": 3.0229000000000004,
+   "contracts": 1,
+   "kind": "entry",
+   "active_from": "2026-11-14T17:46:00"
+  },
+  "AAVE": {
+   "id": "paper-16833c4188",
+   "side": "BUY",
+   "px": 100.97,
+   "contracts": 4,
+   "kind": "entry",
+   "active_from": "2026-11-14T17:46:00"
+  },
+  "PEPE": {
+   "id": "paper-8a419fe3bd",
+   "side": "BUY",
+   "px": 0.0037319999999999996,
+   "contracts": 6,
+   "kind": "entry",
+   "active_from": "2026-11-14T17:46:00"
+  },
+  "SUI": {
+   "id": "paper-92ee8055a8",
+   "side": "BUY",
+   "px": 0.7163,
+   "contracts": 7,
+   "kind": "entry",
+   "active_from": "2026-11-14T17:46:00"
+  },
+  "ZEC": {
+   "id": "paper-628eb8f03b",
+   "side": "BUY",
+   "px": 834.5500000000001,
+   "contracts": 3,
+   "kind": "entry",
+   "active_from": "2026-11-14T17:46:00"
+  }
+ },
+ "equity": 10062.107829999999,
  "day": "2026-11-14",
  "day_start_equity": 10046.27738,
  "halted_day": null,
- "last_minute": "2026-11-14T11:56:00",
+ "last_minute": "2026-11-14T17:46:00",
  "pending_sig": {
-  "ENA": 0.007929972850617268,
-  "NEAR": 0.009949404280943264,
-  "PEPE": 0.010523367139167378,
-  "AAVE": 0.00711422909653503,
-  "ZEC": 0.011511106000894552,
+  "ENA": 0.00854937722872063,
+  "NEAR": 0.010020041734863948,
+  "PEPE": 0.01183919214824605,
+  "AAVE": 0.0071217970059858976,
+  "ZEC": 0.011603273502066138,
   "BCH": 0.004556131321856171,
-  "HYPE": 0.006748791236201863,
-  "SUI": 0.005501546161878061,
-  "ONDO": 0.006027863109035536,
-  "XRP": 0.004803403981436221,
-  "XLM": 0.00575307475480142,
+  "HYPE": 0.007245868671872944,
+  "SUI": 0.005827593966621838,
+  "ONDO": 0.00646444838531246,
+  "XRP": 0.00498318040146804,
+  "XLM": 0.0057348089871977915,
   "ETH": 0.004046397825018811,
-  "HBAR": 0.004887852396612695,
+  "HBAR": 0.005029871325789959,
   "SOL": 0.004337427847675269
  }
 }
