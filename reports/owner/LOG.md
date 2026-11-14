@@ -806,3 +806,24 @@ FORWARD_TESTS.md.
   ZEC). Both of its jobs, the main book with W2 and the third book, are still running after 29 minutes, so there
   was no start-up fault. Its log reaches `main` when the run ends, at about 23:12 UTC. Tomorrow's read confirms
   the heartbeat counters and puts test A's start on file.
+- **16:26. Step probe, run 1: complete with no fault. An interim look.**
+  - **The run** (43613801204): 300 minutes, 16:08 to 21:07 UTC, 16,218 calls in 21,211 requests, never more than 7
+    in a second. No refusal, no rate-limit answer, no pass skipped, no crash file.
+  - **Interim look.** It can find a fault and pass nothing; the rule is read on both runs after Monday's.
+    - **At 6 s and later,** when the engine asks today: 5,201 of 5,202 requests verified, and all 5,197 that have a
+      reference equal it.
+    - **Earlier:** sent in second 1, 74% verified and 83% of those equal the reference; second 2, 90% and 93%;
+      second 3, 96% and 97%; seconds 4 and 5 (383 requests), 100% and 96%. BTC, always sent at 1.0 s: 43%
+      verified, and half of those equal.
+    - **Why:** every unverified early request got a first page that the venue had made before the minute ended.
+      Early bars that pass the check still miss prints that reach the list a few seconds late.
+  - **What it points to (not a verdict):** the public trades list is complete only about 6 s after the minute. If
+    Monday's run agrees, the step cannot start earlier while it asks for trades by request. Only a stream of
+    trades could, and that would need its own probe.
+  - **How long requests take on this runner:** 0.11 to 0.17 s for most coins, 0.5 to 0.6 s for BTC, whose minute
+    spans several pages. The 18-coin pass takes a median 3.2 s, which is what a pace of 7 a second allows for
+    its 22 or so requests. Sending them side by side would not shorten it.
+  - **Decision for the data-step build:** it drops the side-by-side setting and the step-time setting. One thing
+    remains: the candle requests move out of the critical seconds. With all 18 coins from trades that puts the end
+    of the data step at about 9.2 s after the minute on a runner, against 10.3 s for release 3's way and 13.4 s
+    for the fourth book's.
