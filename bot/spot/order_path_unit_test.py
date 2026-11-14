@@ -1044,9 +1044,52 @@ def t_engine_settle():
                                                             if m.v.orders[i]["product_id"] == "ETH-USD"]}]
         m.settle()
         k = methods(m.v)
-        check("engine, settle: one read of every resting order; the order it missed read singly; the part fill booked",
-              k[:2] == ["list_orders", "get_order"] and len(m.ev("fill_entry")) == 1
-              and m.e.counts.get("snap_miss") == 1, str(k))
+        check("engine, settle: the fills request, one read of every resting order; the order it missed read singly; "
+              "the part fill booked", k[:3] == ["get_fills", "list_orders", "get_order"]
+              and len(m.ev("fill_entry")) == 1 and m.e.counts.get("snap_miss") == 1, str(k))
+    finally:
+        m.close()
+
+
+def t_engine_settle_recent_fill():
+    m = Mini()
+    try:
+        m.allocate()
+        o = m.e4("ETH")
+        m.v.orders[o["id"]].update(filled_size=repr(o["size"] / 2), average_filled_price=repr(o["px"]))
+        m.v.filled_ids = [o["id"]]                     # the fills list names it ...
+        stale = lambda kw: {"orders": [dict(m.v.view(i), filled_size="0.0", average_filled_price="0.0")  # noqa: E731
+                                       for i in kw["order_ids"]]}       # ... the order list still shows it unfilled
+        m.v.script["list_orders"] = [stale, stale]
+        m.next()
+        m.settle()
+        k = [(c[1], c[2].get("order_ids") or c[2].get("order_id")) for c in m.v.calls]
+        ent = m.ev("fill_entry")
+        check("engine, settle: an order the list shows unfilled while the fills list names it -> left out of the "
+              "list request, read singly, its fill booked this minute",
+              k[0][0] == "get_fills" and k[1] == ("list_orders", [m.e4("SOL")["id"]]) and ("get_order", o["id"]) in k
+              and len(ent) == 1 and ent[0]["coin"] == "ETH", str(k))
+        fl = [c[2]["start_sequence_timestamp"] for c in m.v.calls if c[1] == "get_fills"]
+        m.next()
+        m.settle()
+        fl2 = [c[2]["start_sequence_timestamp"] for c in m.v.calls if c[1] == "get_fills"]
+        check("engine, settle: booked once (the next minute's settle books nothing more); the fills request goes "
+              "back 3 minutes the first time, then to the previous settle minus 10 s",
+              len(m.ev("fill_entry")) == 1 and fl == [(T0 + pd.Timedelta(seconds=66) - pd.Timedelta(minutes=3))
+                                                      .strftime("%Y-%m-%dT%H:%M:%S.%fZ")]
+              and fl2 == [(T0 + pd.Timedelta(seconds=56)).strftime("%Y-%m-%dT%H:%M:%S.%fZ")], str((fl, fl2)))
+    finally:
+        m.close()
+    m = Mini()
+    try:
+        m.allocate()
+        m.v.script["get_fills"] = [raises("503")]
+        m.next()
+        m.settle()
+        k = methods(m.v)
+        check("engine, settle: the fills request raising -> no list request this minute, every order read singly, "
+              "snap_miss for each", k == ["get_fills", "get_order", "get_order"] and m.e.counts.get("snap_miss") == 2,
+              str(k))
     finally:
         m.close()
 
@@ -1136,6 +1179,7 @@ def part2():
     t_engine_breaker()
     t_engine_cancel_raises()
     t_engine_settle()
+    t_engine_settle_recent_fill()
     t_engine_setting()
     t_engine_place_guard()
 

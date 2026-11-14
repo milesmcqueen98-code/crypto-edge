@@ -541,6 +541,11 @@ class LiveBroker:
                     last_fill=od.get("last_fill_time"))
     _sd = staticmethod(_sd)
 
+    def fills_since(self, since):
+        """filled_order_ids(since), paced (the batch settle's check for orders with a recent fill). May raise."""
+        self._pace()
+        return self.filled_order_ids(since)
+
     def snapshot(self, ids):
         """The state of several orders: one list request per group of BATCH_N ids, following the cursor while
         has_next (at most BATCH_PAGES pages). {order id: status() dict} for the requested ids the answer names; an
@@ -1701,7 +1706,7 @@ class Engine:
 
     # ---------- the batch order path (README, "Order path"): the same orders as _allocate, fewer requests
     BATCH_METHODS = ("snapshot", "cancel_many", "best_bids", "place_many", "batch_on", "take_counts", "take_trips",
-                     "rate_limit")
+                     "rate_limit", "fills_since")
 
     def _batch_on(self):
         """The batch path runs when the setting is "batch", the broker is live and has the batch methods (a paper
@@ -1732,13 +1737,25 @@ class Engine:
 
     def _settle_snap(self, t):
         """Batch path, before _settle's loop: one read of every resting order of every ladder ({} when the piece is
-        off: every order is then read singly, as on the serial path)."""
+        off: every order is then read singly, as on the serial path). Orders with a fill since the previous batch
+        settle (one fills request, from its wall time minus 10 s; the first time 3 minutes back) are left out of it
+        and read singly. If the fills request raises, no snapshot this minute (snap_miss for every order)."""
         if not self.broker.batch_on("snapshot"):
             return {}
         ids = [o["id"] for lad in self.ladders() for o in lad["orders"].values()]
         if not ids:
             return {}
-        snap = self.broker.snapshot(ids)
+        now = pd.Timestamp(self.clock())
+        prev = getattr(self, "_snap_prev", None)
+        since = prev - pd.Timedelta(seconds=10) if prev is not None else now - pd.Timedelta(minutes=3)
+        try:
+            recent = set(self.broker.fills_since(since))
+        except Exception:
+            self.count("snap_miss", len(ids))
+            return {}
+        self._snap_prev = now
+        ask = [i for i in ids if i not in recent]          # a recent fill: read singly, as today
+        snap = self.broker.snapshot(ask) if ask else {}
         self._broker_news(t)
         return {"snap": snap}
 
