@@ -1,0 +1,135 @@
+{
+ "live": {
+  "brief_minutes": 3624,
+  "brief_hours": 60.4,
+  "decision_minutes": 3563,
+  "decision_hours": 59.38333333333333,
+  "startups": [
+   [
+    "2026-11-11 07:37:00",
+    "2026-11-11 07:43:00",
+    "arm"
+   ],
+   [
+    "2026-11-11 19:18:00",
+    "2026-11-11 19:22:00",
+    "arm"
+   ],
+   [
+    "2026-11-12 01:07:00",
+    "2026-11-12 01:13:00",
+    "assumed (+6 min)"
+   ],
+   [
+    "2026-11-12 06:58:00",
+    "2026-11-12 07:04:00",
+    "assumed (+6 min)"
+   ],
+   [
+    "2026-11-12 12:49:00",
+    "2026-11-12 12:55:00",
+    "assumed (+6 min)"
+   ],
+   [
+    "2026-11-12 18:38:00",
+    "2026-11-12 18:44:00",
+    "assumed (+6 min)"
+   ],
+   [
+    "2026-11-13 00:29:00",
+    "2026-11-13 00:35:00",
+    "assumed (+6 min)"
+   ],
+   [
+    "2026-11-13 06:19:00",
+    "2026-11-13 06:25:00",
+    "assumed (+6 min)"
+   ],
+   [
+    "2026-11-13 12:10:00",
+    "2026-11-13 12:16:00",
+    "arm"
+   ],
+   [
+    "2026-11-13 18:01:00",
+    "2026-11-13 18:07:00",
+    "assumed (+6 min)"
+   ],
+   [
+    "2026-11-13 23:51:00",
+    "2026-11-13 23:57:00",
+    "assumed (+6 min)"
+   ]
+  ],
+  "error_minutes": [],
+  "gaps": [
+   [
+    "2026-11-11 01:47:00",
+    "2026-11-11 07:37:00"
+   ],
+   [
+    "2026-11-11 13:28:00",
+    "2026-11-11 19:18:00"
+   ],
+   [
+    "2026-11-13 12:08:00",
+    "2026-11-13 12:10:00"
+   ]
+  ]
+ },
+ "m1": {
+  "n": 716,
+  "median": -1.3452092023669149,
+  "p5": -15.528436081848064,
+  "p95": 14.62774397250788,
+  "median_abs": 5.068111599143554,
+  "share_abs_gt5": 0.5027932960893855,
+  "share_abs_gt20": 0.05865921787709497,
+  "raw_median": -2.1708961307959074,
+  "raw_p5": -15.96865568322142,
+  "raw_p95": 14.393900737812992,
+  "raw_median_abs": 5.333502277837243,
+  "raw_share_abs_gt5": 0.526536312849162,
+  "raw_share_abs_gt20": 0.061452513966480445
+ },
+ "m2": {
+  "n": 716,
+  "median_abs_diff": 0.8347386899999982,
+  "median_diff": 0.049214015000000444,
+  "p90_abs_diff": 13.044321729999998,
+  "share_other_side": 0.21368715083798884,
+  "n_other_side": 153,
+  "median_abs_diff_vs_btc1late": 0.03786784000000054,
+  "median_abs_diff_vs_btc2late": 1.4373955149999986
+ },
+ "m3": {
+  "bot_new_bids": 716,
+  "bot_matched": 461,
+  "share_bot_in_research": 0.6438547486033519,
+  "bot_research_armed_at_t": 0.7863128491620112,
+  "bot_after_cash_short": 0,
+  "research_new_bids": 591,
+  "research_cash_blocked": 0,
+  "research_new_bids_ex_cash": 591,
+  "research_matched": 459,
+  "share_research_in_bot": 0.7766497461928934,
+  "bot_arms_outside_decision_minutes": 1,
+  "research_stale_blocked": 0,
+  "research_near_stale_pm1": 0,
+  "research_new_bids_ex_blocked": 591,
+  "stale_input_minutes": 0
+ },
+ "research_fill_episodes": 5,
+ "research_fill_matched": 2,
+ "stale": {
+  "stale_input_minutes": 0,
+  "heartbeats": 118,
+  "skip_old_total": 0,
+  "note": "skip_old: coins given no new bid because their newest row was old, summed over the heartbeats inside the period (each covers the 30 minutes to its ts); not logged per coin, so not matched to research bids"
+ },
+ "period": {
+  "book": "paper_spot",
+  "start": "2026-11-11 01:47:00",
+  "end": "2026-11-14 01:52:00"
+ }
+}

@@ -701,3 +701,36 @@ FORWARD_TESTS.md.
     minutes (four coins a minute), no fallback, data ready at a median of 11.4 s and 16.5 s at the latest.
   - **So both lists the read can plausibly give are tested:** six coins (owner/release-3, ec6f19a) and four. A
     list of five lies between them on the same code. Nothing is merged.
+
+## Nov 14 2026 (times ET; UTC is five hours later)
+
+- **09:21. The third paper book's three-day read: all seven items pass. LTC leaves the trades list.** Applied
+  once, as written (FORWARD_TESTS.md; record in reports/owner/reconcile_tb/read/README.md).
+  - **Runs overnight:** every paper and collector run succeeded, saved its log and started its successor.
+  - **Period:** first event 01:47 UTC on Nov 11, last decision minute 01:52 UTC on Nov 14. 4,318 real-time
+    minutes against 4,000.
+  - **Items 1 to 5,** on the log cut at the period's end: 24,252 of 24,252 trades bars verified; no refusal; data
+    step median 10.1 s, at or under 20 s in 99.3% of 140 half hours; no error; 15 of 75,240 rows unconfirmed.
+  - **Item 6,** collector's record, three counted days: BTC's trades bar materially off in 6 of 2,938 compared
+    minutes (0.20%, limit 1%). ETH, SOL, XRP and ZEC beat their own first-seen candles on both measures on every
+    day. LTC did not on Nov 13 (materially off 2.30% against 1.39%; exactly equal 87.1% against 93.6%), so by the
+    rule it leaves the list at release 3 and the days do not start again.
+  - **ZEC stays, as the rule says, and is the weakest coin on the list.** It passed Nov 13 by a small margin.
+    Yesterday's look at the incomplete day had it behind; the full day put it ahead. On Nov 14 so far, a day the
+    rule does not count, it is no better than its candle.
+  - **Item 7,** research job 43602782356, 3,557 minutes both books were live: new bids more than 5 bp from the
+    research level 9 of 550 (1.6%) in the third book against 360 of 715 (50.3%) in the main book; bids the
+    research would not have placed 23 of 550 (4.2%) against 153 of 715 (21.4%).
+  - **For the record:** bids in common with the research 93% and 94% in the third book against 64% and 78% in the
+    main book. The main book had six first-bid fills the research did not have, bought 9 to 73 bp above the
+    research's level; the third book had none, and its three fills are at the research's price to the tick. The
+    main book's fault grew with the venue's old BTC answers: 229 of its 377 new bids on Nov 13 were more than 5 bp
+    off.
+  - **What is left in the third book:** 19 of 349 new bids on the twelve candle-path coins the research would not
+    have placed (5.4%), 752 coin-minutes skipped for an old candle answer, and nine level errors, all on Nov 13:
+    five at one minute from one BTC bar 5.1 bp off, one from a kept LTC trades row, three on ZEC (up to 23 bp).
+  - **Release 3 follows** with BTC, ETH, SOL, XRP and ZEC on the list. That five-coin version of the candidate is
+    under test on runners now (suite 43602816403, paper run 43602818937); yesterday's runs covered six coins and
+    four. Nothing is merged until those pass.
+  - **Part 1 of the bar-source plan:** its runner job was started at 14:10 UTC on branch owner/read-barsrc (run
+    43603482156, about an hour). It is read after this.

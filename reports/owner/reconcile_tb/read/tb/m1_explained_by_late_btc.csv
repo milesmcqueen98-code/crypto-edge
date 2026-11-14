@@ -1,0 +1,7 @@
+x,y,n,corr,slope,intercept,r2
+beta x BTC 1-min return to t-1 (sign flipped),err_raw_bp,784,0.04688,0.009095,-0.7487,0.002198
+beta x BTC 1-min return to t-1 (sign flipped),err_bp,784,0.0216,0.002441,-0.1196,0.0004665
+beta x BTC 2-min return to t-1 (sign flipped),err_raw_bp,784,0.0335,0.004681,-0.7399,0.001123
+beta x BTC 2-min return to t-1 (sign flipped),err_bp,784,0.01509,0.001228,-0.1171,0.0002277
+"replayed level error, BTC 1 min late (engine code)",err_raw_bp,784,0.04706,0.009131,-0.7488,0.002214
+"replayed level error, BTC 2 min late (engine code)",err_raw_bp,784,0.03363,0.004702,-0.74,0.001131
