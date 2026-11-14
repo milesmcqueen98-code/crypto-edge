@@ -541,6 +541,19 @@ class LiveBroker:
                     last_fill=od.get("last_fill_time"))
     _sd = staticmethod(_sd)
 
+    def read_one(self, oid):
+        """status(oid), paced (the batch settle's running check of the snapshot). May raise."""
+        self._pace()
+        return self.status(oid)
+
+    def switch_off(self, piece):
+        """Switch a piece off as a tripped breaker does (reported once through take_trips)."""
+        st = self._bs()
+        with st["lock"]:
+            if piece not in st["off"]:
+                st["off"].add(piece)
+                st["trips"].append(piece)
+
     def fills_since(self, since):
         """filled_order_ids(since), paced (the batch settle's check for orders with a recent fill). May raise."""
         self._pace()
@@ -1706,7 +1719,8 @@ class Engine:
 
     # ---------- the batch order path (README, "Order path"): the same orders as _allocate, fewer requests
     BATCH_METHODS = ("snapshot", "cancel_many", "best_bids", "place_many", "batch_on", "take_counts", "take_trips",
-                     "rate_limit", "fills_since")
+                     "rate_limit", "fills_since", "read_one", "switch_off")
+    MISMATCH_OFF = 2                                       # mismatches of the snapshot that switch it off
 
     def _batch_on(self):
         """The batch path runs when the setting is "batch", the broker is live and has the batch methods (a paper
@@ -1755,9 +1769,41 @@ class Engine:
             return {}
         self._snap_prev = now
         ask = [i for i in ids if i not in recent]          # a recent fill: read singly, as today
-        snap = self.broker.snapshot(ask) if ask else {}
+        snap = dict(self.broker.snapshot(ask)) if ask else {}
         self._broker_news(t)
+        cov = [i for i in ask if i in snap]
+        if cov:                                            # running check: one covered order also read singly
+            n = getattr(self, "_snap_check_n", 0)
+            self._snap_check_n = n + 1
+            i = cov[n % len(cov)]
+            try:
+                one = self.broker.read_one(i)
+            except Exception:
+                one = None                                 # no check this minute; the snapshot's view stands
+            if one is not None:
+                if self._snap_differs(snap[i], one):
+                    self.count("snap_mismatch")
+                    self.log("warning", t=t, msg="order path: the order list differs from the single read",
+                             order=i, snapshot=snap[i], single=one)
+                    self._snap_mismatch = getattr(self, "_snap_mismatch", 0) + 1
+                    if self._snap_mismatch >= self.MISMATCH_OFF:
+                        self.broker.switch_off("snapshot")
+                        self._broker_news(t)
+                        return {}                          # read every order singly from this minute on
+                snap[i] = one
         return {"snap": snap}
+
+    def _snap_differs(a, b):
+        """A snapshot dict a against a single read b made after it: a mismatch when a shows more filled, or when the
+        fills are equal and the status, average price or fees differ (floats to 1e-9 relative)."""
+        def eq(x, y):
+            return abs(x - y) <= 1e-9 * max(abs(x), abs(y))
+        if a["filled"] > b["filled"] and not eq(a["filled"], b["filled"]):
+            return True
+        if eq(a["filled"], b["filled"]):
+            return a["status"] != b["status"] or not eq(a["avg"], b["avg"]) or not eq(a["fees"], b["fees"])
+        return False
+    _snap_differs = staticmethod(_snap_differs)
 
     def _cancel_answer(self, lad, key, t, minute, ans):
         """_cancel with the broker's answer already in hand (inc, ok): the same bookkeeping, in the same order."""

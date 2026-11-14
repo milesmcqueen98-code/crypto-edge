@@ -1094,6 +1094,55 @@ def t_engine_settle_recent_fill():
         m.close()
 
 
+def t_engine_snap_check():
+    m = Mini()
+    try:
+        m.allocate()
+        m.next()
+        m.settle()
+        k = methods(m.v)
+        check("engine, running check: equal dicts -> nothing counted; one covered order read singly after the list",
+              k == ["get_fills", "list_orders", "get_order"] and "snap_mismatch" not in m.e.counts
+              and not m.ev("warning"), str(k))
+        for oid in m.v.orders:                         # both bids fill a part; the list does not show it yet
+            m.v.orders[oid].update(filled_size=repr(30.0), average_filled_price=repr(1.0))
+        lag = lambda kw: {"orders": [dict(m.v.view(i), filled_size="0.0", average_filled_price="0.0")  # noqa: E731
+                                     for i in kw["order_ids"]]}
+        m.v.script["list_orders"] = [lag]
+        m.next()
+        m.settle()
+        check("engine, running check: a fill landing between the two reads (the single read shows more) -> not a "
+              "mismatch; the single read used for that order (its fill booked)", "snap_mismatch" not in m.e.counts
+              and len(m.ev("fill_entry")) == 1, str(m.e.counts))
+    finally:
+        m.close()
+    m = Mini()
+    try:
+        m.allocate()
+        for oid in m.v.orders:
+            m.v.orders[oid]["status"] = "QUEUED"
+        other = lambda kw: {"orders": [dict(m.v.view(i), status="OPEN") for i in kw["order_ids"]]}  # noqa: E731
+        m.v.script["list_orders"] = [other, other]
+        m.next()
+        m.settle()
+        w = [x for x in m.ev("warning") if "differs from the single read" in x.get("msg", "")]
+        check("engine, running check: a different status with equal fills -> a mismatch, counted and logged with both "
+              "dicts", m.e.counts.get("snap_mismatch") == 1 and len(w) == 1 and w[0]["snapshot"]["status"] == "OPEN"
+              and w[0]["single"]["status"] == "QUEUED", str(w))
+        m.next()
+        m.settle()
+        off = [x for x in m.ev("warning") if "snapshot switched off" in x.get("msg", "")]
+        check("engine, running check: the second mismatch switches the snapshot off (reported once, batch_fallback)",
+              m.e.counts.get("snap_mismatch") == 2 and len(off) == 1 and m.e.counts.get("batch_fallback") == 1
+              and not m.b.batch_on("snapshot"), str(off))
+        m.next()
+        m.settle()
+        check("engine, running check: snapshot off -> settle reads every order singly (no fills or list request)",
+              methods(m.v) == ["get_order", "get_order"], str(methods(m.v)))
+    finally:
+        m.close()
+
+
 def t_engine_setting():
     for path in (None, "serial"):
         m = Mini(path=path)
@@ -1180,6 +1229,7 @@ def part2():
     t_engine_cancel_raises()
     t_engine_settle()
     t_engine_settle_recent_fill()
+    t_engine_snap_check()
     t_engine_setting()
     t_engine_place_guard()
 
