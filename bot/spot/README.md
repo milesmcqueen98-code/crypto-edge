@@ -377,20 +377,33 @@ does any check. `"serial"` (or no key) is the code as it was, request for reques
 bot; a paper book ignores the key (its event log is equal to the byte with and without it).
 
 **Each minute on the batch path:**
-1. **Fills: one request** (list orders by id, up to 50 ids a request) reads every resting order of every ladder;
-   fills are booked from it exactly as from single reads. An order the answer does not name is read singly.
+1. **Fills.** One request for the fills since the previous minute's settle (minus 10 s; at start 3 minutes back).
+   Then **one request** (list orders by id, up to 50 ids a request) reads every other resting order of every ladder,
+   and fills are booked from it exactly as from single reads. An order with a recent fill, and an order the answer
+   does not name, is read singly. If the fills request fails, every order is read singly that minute.
+   - **A running check:** each minute one order the list answer covered (in turn) is also read singly, and the single
+     read is the one used. If the list shows more filled than the single read made after it, or the same fill with a
+     different status, price or fees, that is a mismatch (`snap_mismatch`, a `warning` with both answers). The second
+     mismatch switches the list read off for good (every order read singly), with one warning.
 2. **Decide every coin, no request in between:** bids to drop (approval or cash lost), bids to keep (unchanged level
    and size, not about to expire), bids to re-price, new bids.
 3. **Best bids: one request** (best bid/ask) for every coin that may get a bid. A coin it does not cover is asked
    for singly from the public book, as before.
-4. **Cancel: one request** (batch cancel) for the dropped bids, then the re-priced ones. Each is confirmed by reading
-   it (one list request for all of them) at 0, 0.15, 0.3, 0.6, 1.0, 1.5 and 2.0 s after the cancel returned, until it
-   is final; the serial path reads six times 0.4 s apart. A fill that came before the cancel is booked and that coin
-   gets no new bid. A cancel not confirmed keeps its order in the books with the usual warning, and is retried next
-   minute.
+4. **Cancel: one request** (batch cancel) for the dropped bids, then the re-priced ones.
+   - Each is confirmed by reading it (one list request for all of them) at 0, 0.15, 0.3, 0.6, 1.0, 1.5 and 2.0 s
+     after the cancel returned, until it is final; the serial path reads six times 0.4 s apart. From the 0.6 s read
+     on, an order the list still shows open is also read singly, and the single read decides.
+   - If the batch cancel fails for a group of orders (an exception, or an answer without results), those orders are
+     cancelled one by one at once with the serial path's cancel.
+   - A fill that came before the cancel is booked and that coin gets no new bid. A cancel not confirmed keeps its
+     order in the books with the usual warning, and is retried next minute.
 5. **Place** the new bids, highest score first, on `place_workers` threads, each with its own client. A bid Coinbase
    refuses for its lifetime doubles the lifetime once (as before) and is sent again singly; a bid that was sent
    before the lifetime went up is sent again at the new lifetime. Then the `arm` events, with their book depth.
+   - **No placement loses the others.** An answer that cannot be read (success without an order id, not an answer
+     at all) is searched by its client order id, as after a timeout; an error in one thread is that bid's error.
+   - If the placing call fails anyway, an `error` event, no new bid that minute, and the reconcile sweep runs at
+     once (it cancels any bot order missing from the state).
 - **Unchanged, on the serial requests:** deeper rungs, take-profits, exits, renewals of expiring bids, the 1-second
   fill poll, the reconcile sweep, `cancel-all`, `flatten`.
 
@@ -403,23 +416,38 @@ then ends its inputs line with `; order path batch (10 requests a second, 3 plac
 
 **What falls back to single requests, and when:**
 - An order or a coin a batch answer does not name: that order or coin, singly, every time (counted).
+- An order with a fill since the last minute: singly, every time.
 - A piece (the read of several orders, the batch cancel, the best bids) that fails three times in a row (an exception,
-  or an answer with nothing usable): switched off until the bot restarts, with one `warning` event (your phone gets
-  it). Its single requests are used from then on.
+  or an answer with nothing usable), or the read of several orders after two mismatches: switched off until the bot
+  restarts, with one `warning` event (your phone gets it). Its single requests are used from then on.
 - The batch cancel raising inside the bot: a `warning` event, and the single cancels for those orders that minute.
 
-**Counters** (in the heartbeat's `counts`, batch path only): `snap_miss` (orders a read of several did not name),
-`bbo_miss` (coins the best-bid answer did not cover), `batch_fallback` (a piece switched off), `http_429` (requests
-Coinbase refused for the rate). The heartbeat also gets `rate_limit`, the last `x-ratelimit-limit`, `-remaining` and
-`-reset` Coinbase sent, once it has sent them (the batch path builds its clients with the library's
-`rate_limit_headers=True`).
+**Counters** (in the heartbeat's `counts`, batch path only): `snap_miss` (orders a read of several did not name, or
+every order in a minute whose fills request failed), `snap_mismatch` (the running check), `bbo_miss` (coins the
+best-bid answer did not cover), `batch_fallback` (a piece switched off), `http_429` (requests Coinbase refused for the
+rate). The heartbeat also gets `rate_limit`, the last `x-ratelimit-limit`, `-remaining` and `-reset` Coinbase sent,
+once it has sent them (the batch path builds its clients with the library's `rate_limit_headers=True`), and, in its
+first heartbeat, `library`, the installed `coinbase-advanced-py` version (live only). `live` prints the same version
+at start. A library too old to know `rate_limit_headers`: the clients are built without it, one `warning` at start,
+no `rate_limit` field.
+
+**Check it against Coinbase before relying on it:** `wickctl order-check` (or `python bot/spot/run.py order-check
+--config bot/spot/config.live.json [--place-test-orders]`). It prints what it will do; `wickctl` asks for the word
+`yes` before it places anything. Without the flag it only reads best bids. With it (and the live switch), it places
+three post-only bids of about $25 at half the best bid (ETH, SOL, XRP when tradable), each previewed first, with the
+bot's own placing call; reads them with one list request and singly and compares; cancels them with the batch cancel
+and notes when each was seen cancelled; then cancels singly anything not confirmed and says loudly if a test order
+is still open (it expires by itself at its end time). It ends with `order check PASSED` or `FAILED` and the reasons,
+and writes the whole result as one JSON file in `live_spot/` (the path is printed). Stop the bot first: its sweep
+would cancel the test orders too (they carry the bot's tag), and both would share the account's rate limit.
 
 **Tests:** `python bot/spot/order_path_unit_test.py` (every new request and every fallback, against a scripted
-stand-in for Coinbase's library; no network, no real wait) and `python bot/spot/order_path_test.py "2025-10-10 20:00"
-"2025-10-11 02:00"` (with and without `"--death=2025-10-10 21:10"`): the live-path simulation three ways, the fake
-exchange as broker, the real broker on the serial path and on the batch path, over a stand-in for the library; all
-three must agree exactly. It also counts requests per minute and prints a modelled clock (0.1 s a request).
-`bot/spot/sandbox_test.py` checks the new requests' shapes against Coinbase's static sandbox on a runner.
+stand-in for Coinbase's library; no network, no real wait), `python bot/spot/order_check_test.py` (the check, on the
+same stand-in) and `python bot/spot/order_path_test.py "2025-10-10 20:00" "2025-10-11 02:00"` (with and without
+`"--death=2025-10-10 21:10"`): the live-path simulation three ways, the fake exchange as broker, the real broker on
+the serial path and on the batch path, over a stand-in for the library; all three must agree exactly. It also
+counts requests per minute and prints a modelled clock (0.1 s a request). `bot/spot/sandbox_test.py` checks the new
+requests' shapes against Coinbase's static sandbox on a runner.
 
 ## Paper run
 `.github/workflows/paper-spot.yml` runs three paper books for about 5h45m per run on GitHub Actions: the incumbent
