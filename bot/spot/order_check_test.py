@@ -81,11 +81,12 @@ def main():
               k.count("get_best_bid_ask") == 5 and [x["products"] for x in r["best_bids"]["runs"]] == [4] * 5
               and all(abs(x["diff_bp"] - 1.0) < 0.01 for x in r["best_bids"]["compare"].values())
               and list(r["best_bids"]["compare"]) == ["ETH-USD", "SOL-USD", "XRP-USD"], str(r["best_bids"]))
-        check("all parts: three bids, ETH, SOL, XRP, at half the best bid floored to the tick, about $25 each, "
-              "previewed first, sent with one place_many (three creates)",
+        low = [E.floor_to(0.5 * min(BIDS[p], Market().best_bid(p)), 0.01) for p in ("ETH-USD", "SOL-USD", "XRP-USD")]
+        check("all parts: three bids, ETH, SOL, XRP, at half the lower of the batch and the public best bid (here the "
+              "public one) floored to the tick, about $25 each, previewed first, sent with one place_many",
               [p["product"] for p in pl] == ["ETH-USD", "SOL-USD", "XRP-USD"]
-              and [p["px"] for p in pl] == [1250.0, 100.0, 1.25]
-              and all(24.9 < p["px"] * p["size"] <= 25.0 for p in pl) and k.count("preview_order") == 3
+              and [p["px"] for p in pl] == low and all(abs(x - y) < 1e-9 for x, y in zip(low, [1249.87, 99.99, 1.24]))
+              and all(24.9 < p["px"] * p["size"] <= 25.0 + 1e-6 for p in pl) and k.count("preview_order") == 3
               and k.count("create_order") == 3 and k.index("preview_order") < k.index("create_order"), str(pl))
         check("all parts: lifetime bid_ttl_s (600 s)", all(p["end"] == str(NOW + pd.Timedelta(seconds=600)) for p in pl))
         check("all parts: the snapshot names all three and equals the single reads; cancel_many confirms each at the "
@@ -114,6 +115,18 @@ def main():
         check("preview errors: that product skipped (noted), the other two placed and cancelled, PASSED",
               r["passed"] and [p["product"] for p in r["placed"]] == ["ETH-USD", "XRP-USD"]
               and any("SOL-USD: skipped" in n for n in r["notes"]), str(r["notes"]))
+
+        # the batch best bid disagrees with the public book, or is missing: that product skipped, the check FAILS
+        ck, v, b = setup()
+        v.bids["SOL-USD"] = 2 * BIDS["SOL-USD"]        # twice the public book's
+        del v.bids["XRP-USD"]                          # no batch bid at all
+        r, out = go(True, v, b, ck, d)
+        made = [c[2]["product_id"] for c in v.calls if c[1] == "create_order"]
+        check("bids that disagree (batch twice the public) or a missing batch bid: both skipped and named, nothing "
+              "placed for them, ETH placed, FAILED", not r["passed"] and made == ["ETH-USD"]
+              and any("SOL-USD: skipped" in x and "differ by more than 5%" in x for x in r["reasons"])
+              and any("XRP-USD: skipped, no batch best bid" in x for x in r["reasons"])
+              and [p["product"] for p in r["placed"]] == ["ETH-USD"], str(r["reasons"]))
 
         # an order that stays open after cancel_many: cancelled singly in the clean-up
         ck, v, b = setup()

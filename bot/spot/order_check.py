@@ -17,15 +17,17 @@ from bot.spot import engine as E
 
 PREFER = ("ETH", "SOL", "XRP")
 TEST_USD = 25.0
+AGREE = 0.05                                           # the batch and the public best bid must agree this closely
 PLAN = """order check: the batch order path's requests against Coinbase (bot/spot/README.md, "Order path")
   a. build the broker as the bot's batch path does (orders_rate {rate}, place_workers {workers}); print the library
      version
   b. best bids of every coin's product, five times: how many came back, how long each request took, and for three
      products the difference to the public book's best bid (read-only)
   c. ONLY WITH --place-test-orders: three real post-only good-til-date bids (ETH, SOL, XRP when tradable, else the
-     first three tradable coins), each about ${usd:.0f} at half the best bid (far below the market: they should not
-     fill), each previewed first (a product whose preview has errors is skipped), lifetime bid_ttl_s ({ttl} s),
-     sent with one place_many
+     first three tradable coins), each about ${usd:.0f} at half the lower of the batch and the public best bid (far
+     below the market: they should not fill; a product whose two bids are missing or differ by more than 5% is
+     skipped and fails the check), each previewed first (a product whose preview has errors is skipped), lifetime
+     bid_ttl_s ({ttl} s), sent with one place_many
   d. ONLY WITH --place-test-orders: read them with one snapshot and singly, compare; cancel them with cancel_many
      and record when each was seen cancelled; then cancel singly any test order not confirmed cancelled and read it
      again (an order still open expires by itself at its end time)
@@ -167,10 +169,22 @@ def _place(broker, market, pick, bids, cfg, res, say, now):
     reqs, meta = [], []
     for c in pick:
         p = f"{c}-USD"
+        bb = bids.get(p)                                   # the batch answer under test ...
+        try:
+            pub = float(market.best_bid(p))                # ... and the public book: never price from the first alone
+        except Exception:
+            pub = float("nan")
+        ok_b = isinstance(bb, float) and math.isfinite(bb) and bb > 0
+        ok_p = math.isfinite(pub) and pub > 0
+        if not (ok_b and ok_p) or max(bb, pub) / min(bb, pub) - 1 > AGREE:
+            why = ("no batch best bid" if not ok_b else "no public best bid" if not ok_p else
+                   f"the batch best bid {bb} and the public one {pub} differ by more than {AGREE:.0%}")
+            res["reasons"].append(f"{p}: skipped, {why}")
+            say(f"c. {p}: skipped, {why}")
+            continue
         try:
             sp = market.spec(c)
-            bb = bids.get(p) or float(market.best_bid(p))
-            px = E.floor_to(0.5 * bb, sp.tick)
+            px = E.floor_to(0.5 * min(bb, pub), sp.tick)   # half the lower of the two
             size = E.floor_size(TEST_USD / px, sp.lot)
             if size * px < sp.min_usd:                     # not below the product's minimum order
                 size = math.ceil(sp.min_usd / px / sp.lot - 1e-9) * sp.lot
