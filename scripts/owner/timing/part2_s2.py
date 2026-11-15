@@ -144,9 +144,13 @@ def ev(F, era, blend):
     return par, d, out["instant"][2]
 
 
-def run(scr, deep_path):
+def run(scr, deep_path, out=None, pols=None, pairs=None, with_rule=True):
+    """out: the folder of parents.csv.gz and of the outputs (default reports/owner/timing); pols, pairs: the policies
+    and the pairs of the table (default parts 1 and 2's); with_rule: write s2_rule.csv (part 3 has no rule)."""
+    out = OUT if out is None else out
+    pols = P2.POLS if pols is None else pols
     t0 = time.time()
-    J, R, d0s, Cs = P2.base(scr)
+    J, R, d0s, Cs = P2.base(scr, out)
     st = J.src.eq("stale")
     J["lev"] = np.where(st, J.L_prev, J.L)
     J["sg"] = np.where(st, J.sig_prev, J.sig)
@@ -161,7 +165,7 @@ def run(scr, deep_path):
         idx, cache = candles(tag)
         E = J[J.era == e].copy()
         res = []
-        for p in P2.POLS:
+        for p in pols:
             F = build_rows(E[E.policy == p], tag, deep, "prints", cache, idx)
             par, d, Q = ev(F, e, blend=False)
             res.append((p, par, d))
@@ -207,16 +211,18 @@ def run(scr, deep_path):
         val[-1]["D_vs_C_pct"] = 100 * (val[-1]["D_p0_s2"] / val[-1]["C_rebuilt_candles_nocash"] - 1)
         print(f"{e}: S2 ({time.time() - t0:.0f}s)", flush=True)
     # table: per-day series per policy -> reuse part2.table on a frame with one row per (policy, day)
-    T = P2.table(V, "s2", d0s, Cs, "S2")
+    T = P2.table(V, "s2", d0s, Cs, "S2", pols, pairs)
     pd.set_option("display.width", 250)
-    T.to_csv(os.path.join(OUT, "s2.csv"), index=False, float_format="%.6g")
-    P2.rule(T).to_csv(os.path.join(OUT, "s2_rule.csv"), index=False)
-    pd.DataFrame(val).to_csv(os.path.join(OUT, "s2_check.csv"), index=False, float_format="%.6g")
-    pd.DataFrame(rowchk).to_csv(os.path.join(OUT, "s2_rowcheck.csv"), index=False, float_format="%.6g")
-    pd.concat(pars, ignore_index=True).to_csv(os.path.join(OUT, "s2_parents.csv.gz"), index=False,
+    T.to_csv(os.path.join(out, "s2.csv"), index=False, float_format="%.6g")
+    if with_rule:
+        P2.rule(T).to_csv(os.path.join(out, "s2_rule.csv"), index=False)
+    pd.DataFrame(val).to_csv(os.path.join(out, "s2_check.csv"), index=False, float_format="%.6g")
+    pd.DataFrame(rowchk).to_csv(os.path.join(out, "s2_rowcheck.csv"), index=False, float_format="%.6g")
+    pd.concat(pars, ignore_index=True).to_csv(os.path.join(out, "s2_parents.csv.gz"), index=False,
                                               float_format="%.8g")
     print(pd.DataFrame(rowchk).to_string(index=False))
     print(pd.DataFrame(val).round(1).to_string(index=False))
     print(T.round(3).to_string(index=False))
-    print(P2.rule(T).to_string(index=False))
+    if with_rule:
+        print(P2.rule(T).to_string(index=False))
     print(f"done ({time.time() - t0:.0f}s)")

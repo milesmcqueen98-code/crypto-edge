@@ -46,16 +46,17 @@ def first_through(rl_ms, rl_px, level, tick):
     return float(rl_ms[hit[0]]) if len(hit) else np.nan
 
 
-def derive(ms, px, pre_ms, pre_px, L_prev, L, tick):
+def derive(ms, px, pre_ms, pre_px, L_prev, L, tick, starts=STARTS):
     """One studied minute. ms, px: prints in [q, q + 70 s) ordered by (time, trade_id), ms after q.
-    pre_ms, pre_px: the last print before q (NaN if unknown)."""
+    pre_ms, pre_px: the last print before q (NaN if unknown). starts: the start times (ms) of the per-start columns;
+    the default is the six of the plan (part 3 passes fifteen, scripts/owner/timing/rederive_runner.py)."""
     ms = np.asarray(ms, dtype=np.float64)
     px = np.asarray(px, dtype=np.float64)
     assert (np.diff(ms) >= 0).all() and (len(ms) == 0 or (ms[0] >= 0 and ms[-1] < WIN_MS))
     m60 = ms < 60000.0
     out = dict(n60=int(m60.sum()), n70=int(len(ms)), min60=float(px[m60].min()) if m60.any() else np.nan,
                min70=float(px.min()) if len(px) else np.nan, pre_ms=float(pre_ms), pre_px=float(pre_px))
-    for s in STARTS:
+    for s in starts:
         k = int(np.searchsorted(ms, s, "left"))          # prints strictly before q + s
         if k > 0:
             out[f"last_px_{s}"], out[f"last_ms_{s}"] = float(px[k - 1]), float(ms[k - 1])

@@ -11,6 +11,8 @@
           research's 4-sigma fill, else the coin and quarter mean). This is evaluate.py's "rung alone", now for all.
   S2      the whole ladder for every parent of every policy (s2 subcommand; needs the deep prints, deviation 3).
 Inputs: the parents of evaluate.py (reports/owner/timing/parents.csv.gz) and its scratch (studied minutes).
+Part 3 (scripts/owner/timing/part3.py) calls run_s1 and part2_s2.run with its own policy list, pairs and folders;
+the defaults are parts 1 and 2's.
 usage: python scripts/owner/timing/part2.py s1 <scratch_dir>
        python scripts/owner/timing/part2.py s2 <scratch_dir> <deep_all.parquet>
 """
@@ -82,8 +84,8 @@ def row_pnl(Q, info, era, kw):
     return pnl
 
 
-def load(scr):
-    Pp = pd.read_csv(os.path.join(OUT, "parents.csv.gz"), parse_dates=["q"])
+def load(scr, src=None):
+    Pp = pd.read_csv(os.path.join(OUT if src is None else src, "parents.csv.gz"), parse_dates=["q"])
     S = pd.concat([pd.read_parquet(os.path.join(scr, f"studied_{t}.parquet")) for t in ("main", "early")],
                   ignore_index=True)
     J = Pp.merge(S, on=["coin", "q"], how="left", validate="m:1")
@@ -132,13 +134,14 @@ def match(a, b, w):
     return out
 
 
-def moves(J):
+def moves(J, pols=None):
+    pols = POLS if pols is None else pols
     J = J.assign(mi=((J.q - pd.Timestamp("2020-01-01")) // pd.Timedelta(minutes=1)).astype(np.int64))
     rows, top = [], []
     for e in EV.ERAS:
         E = J[J.era == e]
         b0 = E[E.policy == "P0"]
-        for p in POLS[1:]:
+        for p in [x for x in pols if x != "P0"]:
             X = E[E.policy == p]
             r = dict(era=e, policy=p, vs="P0", p0_parents=len(b0), parents=len(X))
             xs = {c: np.sort(g.mi.to_numpy()) for c, g in X.groupby("coin")}
@@ -179,26 +182,27 @@ def moves(J):
 
 
 # ------------------------------------------------------------------------------------------------ tables
-def table(V, col, d0s, Cs, label):
+def table(V, col, d0s, Cs, label, pols=None, pairs=None):
     """Per era and pooled: each policy's P&L under `col`, against P0 and P1, and the daily Sharpe change.
     V: {era: frame of parents with era, policy, coin, q, col, day}."""
+    POLS_, PAIRS_ = (POLS if pols is None else pols), (PAIRS if pairs is None else pairs)
     rows = []
     pooled = {}
     for e, E in V.items():
         d0, C = d0s[e], Cs[e]
         idx = d0.index
-        tot = {p: float(E.loc[E.policy == p, col].sum()) for p in POLS}
-        daily = {p: E[E.policy == p].groupby("day")[col].sum().reindex(idx, fill_value=0.0) for p in POLS}
-        for p in POLS:
+        tot = {p: float(E.loc[E.policy == p, col].sum()) for p in POLS_}
+        daily = {p: E[E.policy == p].groupby("day")[col].sum().reindex(idx, fill_value=0.0) for p in POLS_}
+        for p in POLS_:
             pooled.setdefault(p, 0.0)
             pooled[p] += tot[p]
-        for p, ref in PAIRS:
+        for p, ref in PAIRS_:
             dx = d0 + (daily[p] - daily["P0"]) / C
             dr = d0 + (daily[ref] - daily["P0"]) / C
             rows.append(dict(val=label, era=e, policy=p, vs=ref, pnl_policy=tot[p], pnl_ref=tot[ref],
                              dpnl_usd=tot[p] - tot[ref], dpnl_pct=100 * (tot[p] - tot[ref]) / tot[ref],
                              dsharpe=fsim.stats(dx, C, e)["sharpe"] - fsim.stats(dr, C, e)["sharpe"]))
-    for p, ref in PAIRS:
+    for p, ref in PAIRS_:
         rows.append(dict(val=label, era="pooled", policy=p, vs=ref, pnl_policy=pooled[p], pnl_ref=pooled[ref],
                          dpnl_usd=pooled[p] - pooled[ref], dpnl_pct=100 * (pooled[p] - pooled[ref]) / pooled[ref],
                          dsharpe=np.nan))
@@ -219,9 +223,9 @@ def rule(T):
     return pd.DataFrame(out)
 
 
-def base(scr):
+def base(scr, src=None):
     lsim.ensure_frozen()
-    J = load(scr)
+    J = load(scr, src)
     R, d0s, Cs = {}, {}, {}
     for e in EV.ERAS:
         R[e] = research_rows(e)
@@ -230,9 +234,12 @@ def base(scr):
     return J, R, d0s, Cs
 
 
-def run_s1(scr):
+def run_s1(scr, out=None, pols=None, pairs=None, with_rule=True):
+    """out: the folder of parents.csv.gz and of the outputs (default reports/owner/timing); with_rule: write the
+    plan's reading of parts 1 and 2 (s1_rule.csv; part 3 has no rule)."""
+    out = OUT if out is None else out
     t0 = time.time()
-    J, R, d0s, Cs = base(scr)
+    J, R, d0s, Cs = base(scr, out)
     # removed-ladder value of each parent, as evaluate.py: research ladder, else the rung alone
     V, chk = {}, []
     for e in EV.ERAS:
@@ -255,19 +262,21 @@ def run_s1(scr):
                         r4_share_of_ladder_all=float(Rall.r4.sum() / Rall.ladder.sum()),
                         research_parents=len(Rall)))
         print(f"{e}: S1 ({time.time() - t0:.0f}s)", flush=True)
-    M, top = moves(pd.concat(V.values(), ignore_index=True))
-    T = table(V, "s1", d0s, Cs, "S1")
-    M.to_csv(os.path.join(OUT, "moves.csv"), index=False, float_format="%.6g")
-    top.to_csv(os.path.join(OUT, "removed_top_p1.csv"), index=False, float_format="%.6g")
-    T.to_csv(os.path.join(OUT, "s1.csv"), index=False, float_format="%.6g")
-    pd.DataFrame(chk).to_csv(os.path.join(OUT, "s1_check.csv"), index=False, float_format="%.6g")
-    rule(T).to_csv(os.path.join(OUT, "s1_rule.csv"), index=False)
+    M, top = moves(pd.concat(V.values(), ignore_index=True), pols)
+    T = table(V, "s1", d0s, Cs, "S1", pols, pairs)
+    M.to_csv(os.path.join(out, "moves.csv"), index=False, float_format="%.6g")
+    top.to_csv(os.path.join(out, "removed_top_p1.csv"), index=False, float_format="%.6g")
+    T.to_csv(os.path.join(out, "s1.csv"), index=False, float_format="%.6g")
+    pd.DataFrame(chk).to_csv(os.path.join(out, "s1_check.csv"), index=False, float_format="%.6g")
+    if with_rule:
+        rule(T).to_csv(os.path.join(out, "s1_rule.csv"), index=False)
     pd.set_option("display.width", 250)
     print(M.round(3).to_string(index=False))
     print(top.to_string(index=False))
     print(T.round(3).to_string(index=False))
     print(pd.DataFrame(chk).round(3).to_string(index=False))
-    print(rule(T).to_string(index=False))
+    if with_rule:
+        print(rule(T).to_string(index=False))
 
 
 if __name__ == "__main__":

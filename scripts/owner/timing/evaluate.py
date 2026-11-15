@@ -30,6 +30,13 @@ P&L (prereg, "What is reported" 4-5), first order, against P0, at S* (today's vo
     research does not have contributes its 4-sigma rung alone.
   P&L(X) = P&L(P0) + delta(X vs P0); X against P1 = P&L(X) - P&L(P1). Each delta is booked on the parent's exit day
   and added to the incumbent's daily series for the Sharpe change.
+Part 3 (plan: "Part 3" and "Part 3, deviation 1"): POLICIES3 adds nine timings of the live bot and its rebuild and
+three with no carried bid (a third policy field, carry = False: the bid of the minute before never rests into the new
+minute and is never kept; each approved minute places its new bid at p, subject to the same skip test, and it rests
+to the end of that minute only). main() takes the policy set, the output folder and the derived rows' file pattern
+as arguments (defaults: the six policies, reports/owner/timing, derived_*.parquet); the fifteen-start rows of part 3
+(derived3_*.parquet, one union path per row, scripts/owner/timing/rederive_runner.py on branch owner/timing-data)
+are read by path_of. scripts/owner/timing/part3.py drives part 3.
 usage: python scripts/owner/timing/evaluate.py <scratch_dir> <derived_dir>
 """
 import glob
@@ -49,6 +56,10 @@ import prints_derive as PDV  # noqa: E402
 # policy: (stale bid cancelled at c ms, new bid placed at p ms); P0 has no stale bid
 POLICIES = {"P0": (0.0, 0), "P1": (8000.0, 10000), "P1a": (6500.0, 7500), "P1b": (12000.0, 15000),
             "P2": (1000.0, 1300), "P3": (8000.0, 8000)}
+# part 3: (cancel ms, new bid ms[, carry]); carry False = no carried bid (N1 to N3)
+POLICIES3 = {"B0": (14250.0, 17250), "B0f": (12400.0, 13900), "B0s": (18000.0, 24000), "B1": (10800.0, 11700),
+             "B2": (9300.0, 10200), "B3": (4300.0, 5200), "B4": (1100.0, 2000), "B1r": (10700.0, 12150),
+             "B2r": (9630.0, 11080), "N1": (0.0, 11700, False), "N2": (0.0, 10200, False), "N3": (0.0, 5200, False)}
 END_MS = 60000.0
 H = 60
 
@@ -57,9 +68,13 @@ H = 60
 def step(rest, L, appr, tick, path, pol):
     """One studied minute. rest: price of the bid carried in from q-1 (None if none); L = L(q); appr: approved at q;
     path: dict with 'rl' {start ms: (times, prices) running-minimum path from that start} and 'last' {start ms: last
-    print price before it (NaN if unknown)}; pol: (c, p).
+    print price before it (NaN if unknown)}; pol: (c, p) or (c, p, carry); carry False: no bid is carried in or out
+    (no stale bid, no kept bid; an unfilled new bid ends with the minute).
     Returns dict(fill, px, ms, src in {'stale', 'kept', 'new'}, rest (carried to q+1), skip, unknown_pre)."""
-    c, p = pol
+    c, p = pol[0], pol[1]
+    carry = carries(pol)
+    if not carry:
+        rest = None
     out = dict(fill=False, px=np.nan, ms=np.nan, src="", rest=None, skip=False, unknown_pre=False)
     if rest is not None and appr and abs(L - rest) <= 0.5 * tick + 1e-12 * abs(L):
         t = PDV.first_through(*path["rl"][0], rest, tick)
@@ -83,9 +98,14 @@ def step(rest, L, appr, tick, path, pol):
     t = PDV.first_through(*path["rl"][p], L, tick)
     if t < END_MS:
         out.update(fill=True, px=L, ms=t, src="new")
-    else:
+    elif carry:
         out["rest"] = L
     return out
+
+
+def carries(pol):
+    """A policy's third field (default True: the bid of minute q-1 is carried into q)."""
+    return bool(pol[2]) if len(pol) > 2 else True
 
 
 def run_coin(L, appr, tick, studied, pol, close_after):
@@ -93,6 +113,7 @@ def run_coin(L, appr, tick, studied, pol, close_after):
     studied: {minute index: path}; close_after(i, px, src) -> the ladder's exit minute index of a parent filled at i.
     Returns a list of parents (i, px, ms, src) and per-studied-minute flags {i: (skip, unknown_pre)}."""
     T = len(L)
+    carry = carries(pol)
     rest, free_from = None, 0
     parents, flags = [], {}
     for i in range(1, T):
@@ -109,7 +130,9 @@ def run_coin(L, appr, tick, studied, pol, close_after):
             else:
                 rest = r["rest"]
             continue
-        if appr[i] and np.isfinite(L[i]):
+        if not carry:
+            rest = None
+        elif appr[i] and np.isfinite(L[i]):
             if rest is None or abs(L[i] - rest) > 0.5 * tick + 1e-12 * abs(L[i]):
                 rest = L[i]
         else:
@@ -118,22 +141,30 @@ def run_coin(L, appr, tick, studied, pol, close_after):
 
 
 # ------------------------------------------------------------------------------------------------ data
-def load_paths(ddir):
-    fs = sorted(glob.glob(os.path.join(ddir, "derived_*.parquet")))
+def load_paths(ddir, pattern="derived_*.parquet"):
+    fs = sorted(glob.glob(os.path.join(ddir, pattern)))
     D = pd.concat([pd.read_parquet(f) for f in fs], ignore_index=True)
     D["q"] = pd.to_datetime(D.q)
     assert not D.duplicated(["coin", "q"]).any()
-    st = pd.concat([pd.read_csv(f) for f in sorted(glob.glob(os.path.join(ddir, "status_*.csv*")))], ignore_index=True)
+    sf = sorted(glob.glob(os.path.join(ddir, "status_*.csv*")))
+    if sf:
+        st = pd.concat([pd.read_csv(f) for f in sf], ignore_index=True)
+    else:                                                 # part 3's rows carry their window's status
+        st = D[["window_id", "status"]].drop_duplicates("window_id")
     return D, st
 
 
-def path_of(r):
-    if "low_ms" in r:                                     # the compact copy (compact.py): one union of the paths
-        a, b = np.asarray(r["low_ms"], float), np.asarray(r["low_px"], float)
-        return dict(rl={s: PDV.running_min(a, b, s) for s in PDV.STARTS},
-                    last={s: float(r[f"last_px_{s}"]) for s in PDV.STARTS})
-    return dict(rl={s: (np.asarray(r[f"rl_ms_{s}"], float), np.asarray(r[f"rl_px_{s}"], float)) for s in PDV.STARTS},
-                last={s: float(r[f"last_px_{s}"]) for s in PDV.STARTS})
+def path_of(r, starts=PDV.STARTS):
+    """The paths and last prints of one derived row for the given starts (ms). Three layouts: the runners' per-start
+    lists (rl_ms_<s>, rl_px_<s>); compact.py's copy (low_ms, low_px: the union cut to the prices that can matter);
+    part 3's rows (un_ms, un_px: the whole union, from which every start's path is rebuilt exactly)."""
+    for a_, b_ in (("un_ms", "un_px"), ("low_ms", "low_px")):
+        if a_ in r:
+            a, b = np.asarray(r[a_], float), np.asarray(r[b_], float)
+            return dict(rl={s: PDV.running_min(a, b, s) for s in starts},
+                        last={s: float(r[f"last_px_{s}"]) for s in starts})
+    return dict(rl={s: (np.asarray(r[f"rl_ms_{s}"], float), np.asarray(r[f"rl_px_{s}"], float)) for s in starts},
+                last={s: float(r[f"last_px_{s}"]) for s in starts})
 
 
 def research_book(era):
@@ -189,9 +220,16 @@ SEC_BINS = [0, 8000, 10000, 15000, 30000, 60001]
 SEC_LAB = ["0-8s", "8-10s", "10-15s", "15-30s", "30-60s"]
 
 
-def main(scr, ddir):
+def main(scr, ddir, policies=None, out=None, flags_path=None, pattern="derived_*.parquet"):
+    """policies: {name: (c, p[, carry])} with P0 and P1 among them (default POLICIES); out: output folder (default
+    reports/owner/timing); flags_path: the per-minute skip flags (default <scr>/minute_flags.csv.gz)."""
+    policies = POLICIES if policies is None else policies
+    assert "P0" in policies and "P1" in policies
+    out = OUT if out is None else out
+    flags_path = os.path.join(scr, "minute_flags.csv.gz") if flags_path is None else flags_path
+    starts = tuple(sorted({0} | {int(v[1]) for v in policies.values()}))
     t0 = time.time()
-    D, st = load_paths(ddir)
+    D, st = load_paths(ddir, pattern)
     print(f"derived rows {len(D)}, windows {len(st)}: {st.status.value_counts().to_dict()}", flush=True)
     sys.path.insert(0, os.path.join(ROOT, "scripts", "ladder_v6x"))
     import lsim  # noqa: F401
@@ -223,7 +261,8 @@ def main(scr, ddir):
         maker, taker = info["maker_bp"] / 1e4, info["taker_bp"] / 1e4
         hs, imp_y = fsim.HS_BP * 2.0 / 1e4, fsim.IMPACT_Y * 2.0
         res = {}
-        for pol_name, pol in POLICIES.items():
+        pcache = {}                                          # the paths of a coin's minutes, built once
+        for pol_name, pol in policies.items():
             par_rows = []
             for c, g in J.groupby("coin"):
                 L = Z[f"{c}_L"]
@@ -231,13 +270,16 @@ def main(scr, ddir):
                 tick = float(g.tick.iloc[0])
                 ii = ts.get_indexer(g.q)
                 assert (ii > 0).all()
-                studied = {}
-                for i, r in zip(ii, g.to_dict("records")):
-                    if r["have"]:
-                        studied[i] = path_of(r)
-                    else:                                    # no prints: nothing can fill, no skip
-                        studied[i] = dict(rl={s: (np.zeros(0), np.zeros(0)) for s in PDV.STARTS},
-                                          last={s: np.nan for s in PDV.STARTS})
+                if c not in pcache:
+                    studied = {}
+                    for i, r in zip(ii, g.to_dict("records")):
+                        if r["have"]:
+                            studied[i] = path_of(r, starts)
+                        else:                                # no prints: nothing can fill, no skip
+                            studied[i] = dict(rl={s: (np.zeros(0), np.zeros(0)) for s in starts},
+                                              last={s: np.nan for s in starts})
+                    pcache[c] = studied
+                studied = pcache[c]
                 gi = dict(zip(ii, g.to_dict("records")))
 
                 def close_after(i, px, src, gi=gi):
@@ -388,13 +430,13 @@ def main(scr, ddir):
                              print_min_below_candle_low=int((x.min60 < x.low * (1 - 0.5e-4)).sum()))
             conf_rows[-len(eras) + eras.index(e)].update(qa_rows_c)
     T = pd.DataFrame(rows_out)
-    T.to_csv(os.path.join(OUT, "policies.csv"), index=False, float_format="%.6g")
-    pd.DataFrame(sec_rows).to_csv(os.path.join(OUT, "entry_by_seconds.csv"), index=False, float_format="%.6g")
-    pd.DataFrame(ft_rows).to_csv(os.path.join(OUT, "p0_fill_times.csv"), index=False, float_format="%.6g")
-    pd.DataFrame(conf_rows).to_csv(os.path.join(OUT, "p0_vs_research.csv"), index=False, float_format="%.6g")
-    pd.DataFrame(qa_rows).to_csv(os.path.join(OUT, "parents.csv.gz"), index=False, float_format="%.10g")
+    T.to_csv(os.path.join(out, "policies.csv"), index=False, float_format="%.6g")
+    pd.DataFrame(sec_rows).to_csv(os.path.join(out, "entry_by_seconds.csv"), index=False, float_format="%.6g")
+    pd.DataFrame(ft_rows).to_csv(os.path.join(out, "p0_fill_times.csv"), index=False, float_format="%.6g")
+    pd.DataFrame(conf_rows).to_csv(os.path.join(out, "p0_vs_research.csv"), index=False, float_format="%.6g")
+    pd.DataFrame(qa_rows).to_csv(os.path.join(out, "parents.csv.gz"), index=False, float_format="%.10g")
     M = pd.DataFrame(minute_rows, columns=["tag", "policy", "coin", "q", "skip", "unknown_pre"])
-    M.to_csv(os.path.join(scr, "minute_flags.csv.gz"), index=False)
+    M.to_csv(flags_path, index=False)
     print(T[["era", "policy", "vs", "parents", "shared", "shared_share", "only_policy", "only_ref", "entry_bp",
              "dpnl_pct", "dsharpe"]].to_string(index=False))
     print(f"done ({time.time() - t0:.0f}s)")
