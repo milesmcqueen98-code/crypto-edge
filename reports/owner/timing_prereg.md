@@ -230,3 +230,26 @@ For each minute q, with c = seconds after q when the stale bid is cancelled and 
     change (class 3 in the charter). Nothing is adopted from this part; a later test would need its own plan.
 - **Limits:** those of parts 1 and 2 (first order only, levels from final candles, mid-coin times), plus this: the
   times are assumptions until the pilot's heartbeats record the real ones.
+
+### Part 3, deviation 1 (Nov 15 2026, 02:29 ET, orchestrator; logged before any evaluation)
+- **Two policies are added; none is removed or changed.** The builds have moved since the table was fixed.
+
+  | Name | Stands for | Cancel | New bid |
+  |---|---|---|---|
+  | B1r | The order path as reviewed (branch owner/order-path), today's data step | 10.7 | 12.15 |
+  | B2r | B1r with the data step of the built candidate (branch owner/release-4) | 9.63 | 11.08 |
+
+  - **Where the times come from:** the order path's simulation after its reviews has the cancel request about
+    0.5 s after the data step's end, the first new bid 1.6 s after it and the last 2.3 s (medians; a model at 0.1 s
+    a request). The middle bid is taken at 1.95 s. The candidate's data step ends at a modelled 9.13 s with all 18
+    coins from trades.
+- **How the paths are made.** The reduced print paths on file hold the path from six placement times only (0, 1.3,
+  7.5, 8, 10 and 15 s), so the new placement times need paths of their own. They are derived on a runner from the
+  first fetch's print artifacts, with the same function and no new request to the venue. The six old times are
+  derived again in the same job and must equal the paths on file exactly; if they do not, nothing is evaluated
+  until the difference is explained.
+- **N1 to N3 as code.** "No carried bid" means the bid of the minute before never rests into the new minute and is
+  never kept: each approved minute places its new bid at the policy's time, subject to the same skip test.
+- **An earlier step by requests is off the table** (step probe, first run, interim look: the venue's trades list
+  held the closed minute in 74% of requests made one second after it and 96% at three seconds). B3 therefore
+  stands for a stream-fed step, like B4, and is kept for information.
