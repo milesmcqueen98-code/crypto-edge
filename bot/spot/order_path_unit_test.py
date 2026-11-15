@@ -1176,6 +1176,120 @@ def t_snap_rule():
         m.close()
 
 
+def t_fallback_minutes():
+    fb = lambda m: m.e.counts.get("fallback_min", 0)  # noqa: E731
+    miss_sol = lambda m: (lambda kw: {"orders": [m.v.view(i) for i in kw["order_ids"]  # noqa: E731
+                                                 if m.v.orders[i]["product_id"] != "SOL-USD"]})
+    m = Mini()                                         # the snapshot misses an order
+    try:
+        m.allocate()
+        m.next()
+        m.v.script["list_orders"] = [miss_sol(m)]
+        m.settle()
+        check("fallback_min: the snapshot missed an order -> 1", fb(m) == 1 and m.e.counts.get("snap_miss") == 1,
+              str(m.e.counts))
+    finally:
+        m.close()
+    m = Mini(bids={"ETH-USD": 101.0})                  # the best-bid answer misses a coin
+    try:
+        m.allocate()
+        check("fallback_min: the best-bid answer missed a coin -> 1", fb(m) == 1 and m.e.counts.get("bbo_miss") == 1,
+              str(m.e.counts))
+    finally:
+        m.close()
+    m = Mini()                                         # a piece switched off, then used singly every minute
+    try:
+        m.b.switch_off("best_bids")
+        m.allocate()
+        n1 = fb(m)
+        m.next()
+        m.level["ETH"] = 99.0
+        with NoSleep(m.ck):
+            m.allocate()
+        check("fallback_min: a piece switched off -> 1 (batch_fallback); the next minute it is used singly -> 1 more",
+              n1 == 1 and m.e.counts.get("batch_fallback") == 1 and fb(m) == 2, str(m.e.counts))
+    finally:
+        m.close()
+    m = Mini()                                         # the fills request raises
+    try:
+        m.allocate()
+        m.next()
+        m.v.script["get_fills"] = [raises("503")]
+        m.settle()
+        check("fallback_min: the fills request before the snapshot raised -> 1", fb(m) == 1, str(m.e.counts))
+    finally:
+        m.close()
+    m = Mini()                                         # a batch cancel group falls back to today's cancel()
+    try:
+        m.allocate()
+        m.next()
+        m.level["ETH"] = 99.0
+        m.v.script["cancel_orders"] = [raises("503")]
+        with NoSleep(m.ck):
+            m.allocate()
+        check("fallback_min: cancel_many cancelled a group with today's cancel() -> cancel_single 1, fallback_min 1",
+              m.e.counts.get("cancel_single") == 1 and fb(m) == 1 and m.e4("ETH")["px"] == 99.0, str(m.e.counts))
+    finally:
+        m.close()
+    m = Mini()                                         # cancel_many raises: the engine's _cancel
+    try:
+        m.allocate()
+        m.b.cancel_many = lambda orders: (_ for _ in ()).throw(RuntimeError("broke"))
+        m.next()
+        m.level["ETH"] = 99.0
+        with NoSleep(m.ck):
+            m.allocate()
+        check("fallback_min: cancel_many raised, the engine used _cancel -> 1", fb(m) == 1, str(m.e.counts))
+    finally:
+        m.close()
+    m = Mini()                                         # the place_many guard
+    try:
+        m.b.place_many = lambda reqs: (_ for _ in ()).throw(RuntimeError("broke"))
+        m.allocate()
+        check("fallback_min: the place_many guard fired -> 1", fb(m) == 1, str(m.e.counts))
+    finally:
+        m.close()
+    m = Mini(bids={"ETH-USD": 101.0, "SOL-USD": 21.0})  # two fallbacks in one step count once
+    try:
+        m.allocate()
+        m.next()
+        m.v.script["list_orders"] = [miss_sol(m)]
+        del m.v.bids["SOL-USD"]
+        m.level["SOL"] = 19.0
+        m.settle()
+        with NoSleep(m.ck):
+            m.allocate()
+        check("fallback_min: a snapshot miss and a best-bid miss in the same step count once",
+              m.e.counts.get("snap_miss") == 1 and m.e.counts.get("bbo_miss") == 1 and fb(m) == 1, str(m.e.counts))
+        m.next()
+        m.v.script["get_fills"] = [raises("503")]     # another fallback, in the next step
+        m.settle()
+        check("fallback_min: ... and a fallback in the next step counts again", fb(m) == 2, str(m.e.counts))
+    finally:
+        m.close()
+    m = Mini()                                         # the design's own single reads count nothing
+    try:
+        m.allocate()
+        o = m.e4("ETH")
+        m.v.orders[o["id"]].update(filled_size=repr(o["size"] / 4), average_filled_price=repr(o["px"]))
+        m.v.filled_ids = [o["id"]]                     # a recent fill: read singly
+        m.next()
+        m.settle()                                     # and the running check's single read
+        sol = m.e4("SOL")
+        m.v.reads[sol["id"]] = ["OPEN"]                # the list shows it open: single reads from 0.6 s
+        m.v.script["cancel_orders"] = [lambda kw: {"results": [dict(success=True, order_id=i)
+                                                               for i in kw["order_ids"]]}]
+        m.next()
+        m.level["SOL"] = 19.5
+        with NoSleep(m.ck):
+            m.allocate()
+        k = methods(m.v)
+        check("fallback_min: the running check, the reads of recent fills and the reads from 0.6 s count nothing",
+              "fallback_min" not in m.e.counts and k.count("get_order") >= 4, str((m.e.counts, k)))
+    finally:
+        m.close()
+
+
 def t_engine_setting():
     for path in (None, "serial"):
         m = Mini(path=path)
@@ -1348,6 +1462,7 @@ def part2():
     t_engine_settle_recent_fill()
     t_engine_snap_check()
     t_snap_rule()
+    t_fallback_minutes()
     t_engine_setting()
     t_engine_place_guard()
     t_old_library()

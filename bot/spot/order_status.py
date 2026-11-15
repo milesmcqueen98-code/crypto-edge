@@ -11,8 +11,7 @@ import statistics
 from datetime import datetime, timedelta
 
 COUNTERS = ("reprice", "arm", "cancel_unconfirmed", "snap_miss", "snap_mismatch", "bbo_miss", "batch_fallback",
-            "http_429")
-FALLBACKS = ("snap_miss", "bbo_miss", "batch_fallback")
+            "http_429", "cancel_single", "fallback_min")
 HB_MIN = 30                                            # minutes between heartbeats (Engine._heartbeat)
 NOT_PASSED = "order check: not yet passed on this server (wickctl order-check)"
 
@@ -132,10 +131,8 @@ def block(cfg, state_dir, lines, now, library):
     out.append(f"  data step ended: median {_r(s['data'])} s after the minute (largest {_r(s['data_max'])})")
     out.append(f"  place minus data: median {_r(s['gap'])} s (largest {_r(s['gap_max'])})")
     out.append("  counters: " + ", ".join(f"{k} {s['counts'].get(k, 0):g}" for k in COUNTERS))
-    n = sum(s["counts"].get(k, 0) for k in FALLBACKS)
+    k, m = s["counts"].get("fallback_min", 0), s["minutes"]
     out.append(f"  place minus data: median {_r(s['gap'])} s (the plan's first-day figure is 3 s or less)")
-    out.append(f"  single-request fallbacks: {n:g} in {s['minutes']} minutes (the plan's figure is fewer than 5% of "
-               "minutes)")
-    out.append("  (that count is snap_miss + bbo_miss + batch_fallback: orders and coins read singly, and pieces "
-               "switched off; the heartbeats do not say in how many minutes a fallback happened)")
+    out.append(f"  single-request fallbacks: in {k:g} of {m} minutes, {100.0 * k / m if m else 0.0:.1f}% (the plan's "
+               "figure is fewer than 5% of minutes)")
     return out

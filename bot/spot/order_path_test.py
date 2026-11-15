@@ -532,7 +532,7 @@ def compare(a, b):
     for e in eb:
         for k, v in (e.get("counts") or {}).items():
             cb[k] = cb.get(k, 0) + v
-    new = ("snap_miss", "bbo_miss", "batch_fallback", "http_429")
+    new = ("snap_miss", "snap_mismatch", "bbo_miss", "batch_fallback", "http_429", "cancel_single", "fallback_min")
     check(f"{tag}: the engine's counters equal, the batch path's own aside",
           {k: v for k, v in ca.items() if k not in new} == {k: v for k, v in cb.items() if k not in new},
           str({k: (ca.get(k), cb.get(k)) for k in set(ca) | set(cb) if ca.get(k) != cb.get(k)}))

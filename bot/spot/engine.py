@@ -544,7 +544,7 @@ class LiveBroker:
         return out
 
     def take_counts(self):
-        """Counters of the batch path since the last call: snap_miss, bbo_miss, http_429."""
+        """Counters of the batch path since the last call: snap_miss, bbo_miss, cancel_single, http_429."""
         st = self._bs()
         with st["lock"]:
             out, st["counts"] = st["counts"], {}
@@ -670,6 +670,7 @@ class LiveBroker:
             if good:
                 t0 = self._now()
                 continue
+            self._count("cancel_single", len(group))      # a fallback to today's requests
             for i in group:                                # today's cancel, at once, for this group
                 self._pace()
                 single[i] = self.cancel(byid[i])
@@ -1753,13 +1754,26 @@ class Engine:
         return getattr(self, "order_path", "serial") == "batch" and bool(getattr(b, "live", False)) and all(
             hasattr(b, m) for m in self.BATCH_METHODS)
 
+    FALLBACKS = ("snap_miss", "bbo_miss", "cancel_single")     # broker counters that mean a single-request fallback
+
+    def _fallback(self, t):
+        """fallback_min: at most once per minute step (keyed by the step's minute), when anything in it fell back from
+        a batch request to today's single requests."""
+        key = pd.Timestamp(t).floor("min")
+        if getattr(self, "_fb_minute", None) != key:
+            self._fb_minute = key
+            self.count("fallback_min")
+
     def _broker_news(self, t):
         """The broker's batch-path counters into this minute's counts; a warning for each piece it switched off."""
         try:
             for k, v in self.broker.take_counts().items():
                 self.count(k, v)
+                if k in self.FALLBACKS and v:
+                    self._fallback(t)
             for p in self.broker.take_trips():
                 self.count("batch_fallback")
+                self._fallback(t)
                 self.log("warning", t=t, msg=f"order path: {p} switched off after {self.broker.BREAK_AFTER} failed "
                                              "requests in a row; single requests until the bot restarts")
         except Exception:
@@ -1788,9 +1802,11 @@ class Engine:
         off: every order is then read singly, as on the serial path). Orders with a fill since the previous batch
         settle (one fills request, from its wall time minus 10 s; the first time 3 minutes back) are left out of it
         and read singly. If the fills request raises, no snapshot this minute (snap_miss for every order)."""
-        if not self.broker.batch_on("snapshot"):
-            return {}
         ids = [o["id"] for lad in self.ladders() for o in lad["orders"].values()]
+        if not self.broker.batch_on("snapshot"):
+            if ids:
+                self._fallback(t)                          # switched off: every order read singly this minute
+            return {}
         if not ids:
             return {}
         now = pd.Timestamp(self.clock())
@@ -1800,6 +1816,7 @@ class Engine:
             recent = set(self.broker.fills_since(since))
         except Exception:
             self.count("snap_miss", len(ids))
+            self._fallback(t)
             return {}
         self._snap_prev = now
         ask = [i for i in ids if i not in recent]          # a recent fill: read singly, as today
@@ -1932,10 +1949,14 @@ class Engine:
         if dec and self.broker.batch_on("best_bids"):
             bids = self.broker.best_bids([self.spec(d["c"]).product for d in dec])
             self._broker_news(t)
+        elif dec:
+            self._fallback(t)                              # switched off: each coin's best bid asked singly
         # d. cancel: the dropped bids, then the re-priced ones, in today's order; one request, confirmed by reading
         todo = [(lad, None) for lad in drop] + [(d["lad"], d) for d in dec if d["o"]]
         ans = None
         live = [lad["orders"]["e4"] for lad, _ in todo if "e4" in lad["orders"]]
+        if live and not self.broker.batch_on("cancel_many"):
+            self._fallback(t)                              # switched off: today's single cancels
         if live and self.broker.batch_on("cancel_many"):
             for o in live:
                 o["cancel_req"] = True
@@ -1943,6 +1964,7 @@ class Engine:
                 ans = self.broker.cancel_many(live)
             except Exception as err:                       # today's single cancels instead
                 ans = None
+                self._fallback(t)
                 self.log("warning", t=t, msg=f"order path: batch cancel failed, single cancels used: {err!r}"[:300])
             self._broker_news(t)
         for lad, d in todo:
@@ -2000,6 +2022,7 @@ class Engine:
             out = self.broker.place_many([(d["sp"], "BUY", d["px"], d["size"], True, d["end"]) for d in sent]) \
                 if sent else []
         except Exception as err:                           # some bids may rest unknown to the state: sweep now
+            self._fallback(t)
             self.log("error", t=t, error=f"order path: place_many failed, no new bid this minute: {err!r}"[:300])
             for d in plans:
                 if not d["lad"]["orders"]:

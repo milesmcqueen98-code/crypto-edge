@@ -4,7 +4,7 @@ No network, no keys.
 
 Part 1, summarize() on hand-made lines: the medians of the data mark and of place minus data, their largest values,
 the counter sums, the 24-hour cut, the minutes covered, a heartbeat without step_s, a malformed line, the newest
-rate_limit and library; no heartbeat at all.
+rate_limit and library; no heartbeat at all; the fallback line from fallback_min (and K 0 without the field).
 Part 2, `run.py status` end to end on a temp state folder: a serial config and one without the key print exactly
 the lines of today; a batch config prints them, then the block, with no order-check file, a passed one with test
 orders, a failed one, a read-only one; an event log with no recent heartbeat.
@@ -50,8 +50,10 @@ def part1():
              hb(NOW - timedelta(minutes=90), None, None, {"arm": 2}, library="1.8.4"),   # no step_s
              "{not json",
              json.dumps(dict(ts=(NOW - timedelta(minutes=70)).isoformat(), kind="fill_entry", coin="ETH")),
-             hb(NOW - timedelta(minutes=60), 10.0, 12.0, {"reprice": 5, "snap_miss": 1, "other": 9}),
-             hb(NOW - timedelta(minutes=50), 11.0, 15.0, {"bbo_miss": 2, "http_429": 1},
+             hb(NOW - timedelta(minutes=60), 10.0, 12.0, {"reprice": 5, "snap_miss": 1, "other": 9,
+                                                          "fallback_min": 1}),
+             hb(NOW - timedelta(minutes=50), 11.0, 15.0, {"bbo_miss": 2, "http_429": 1, "fallback_min": 2,
+                                                          "cancel_single": 3},
                 rate_limit={"limit": "30", "remaining": "20", "reset": "1"}),     # 10 minutes after the one before
              hb(NOW, 12.0, 13.0, {"reprice": 3, "batch_fallback": 1, "cancel_unconfirmed": 4})]
     s = S.summarize(lines, NOW)
@@ -63,7 +65,7 @@ def part1():
           str((s["gap"], s["gap_max"])))
     check("summarize: counter sums, only the listed counters, the cut one left out",
           s["counts"] == {"arm": 2, "reprice": 8, "snap_miss": 1, "bbo_miss": 2, "http_429": 1, "batch_fallback": 1,
-                          "cancel_unconfirmed": 4}, str(s["counts"]))
+                          "cancel_unconfirmed": 4, "fallback_min": 3, "cancel_single": 3}, str(s["counts"]))
     check("summarize: a malformed line skipped and counted; the non-heartbeat event ignored", s["malformed"] == 1)
     check("summarize: the newest rate_limit and library with their times",
           s["rate_limit"]["remaining"] == "20" and s["rate_limit_ts"] == NOW - timedelta(minutes=50)
@@ -72,9 +74,16 @@ def part1():
     check("summarize: no heartbeat at all", e["heartbeats"] == 0 and e["data"] is None and e["minutes"] == 0)
     b = S.block({"orders_rate": 10, "place_workers": 3}, tempfile.gettempdir() + "/none-here", lines, NOW, "1.8.4")
     want = ["  place minus data: median 2.00 s (the plan's first-day figure is 3 s or less)",
-            "  single-request fallbacks: 4 in 100 minutes (the plan's figure is fewer than 5% of minutes)"]
-    check("block: the two closing lines (N = snap_miss + bbo_miss + batch_fallback = 1 + 2 + 1)",
-          all(w in b for w in want), "\n".join(b))
+            "  single-request fallbacks: in 3 of 100 minutes, 3.0% (the plan's figure is fewer than 5% of minutes)"]
+    check("block: the two closing lines (K = the sum of fallback_min, 1 + 2, of the 100 minutes covered)",
+          b[-2:] == want, "\n".join(b))
+    check("block: the counters line names cancel_single and fallback_min; no line about not knowing the minutes",
+          any(x.startswith("  counters: ") and x.endswith("cancel_single 3, fallback_min 3") for x in b)
+          and not any("do not say in how many minutes" in x for x in b), "\n".join(b))
+    b0 = S.block({}, tempfile.gettempdir() + "/none-here", [hb(NOW, 9.0, 10.0, {"reprice": 1})], NOW, None)
+    check("block: heartbeats with no fallback_min at all -> K is 0",
+          b0[-1] == "  single-request fallbacks: in 0 of 30 minutes, 0.0% (the plan's figure is fewer than 5% of "
+          "minutes)", b0[-1])
 
 
 def write_state(d, lines=None, checks=()):
@@ -101,7 +110,8 @@ def part2():
     d = tempfile.mkdtemp(prefix="order_status_")
     try:
         now = datetime.now(timezone.utc).replace(tzinfo=None)
-        lines = [hb(now - timedelta(minutes=30 * k), 9.0 + k % 3, 11.5 + k % 2, {"reprice": 10, "snap_miss": k % 2})
+        lines = [hb(now - timedelta(minutes=30 * k), 9.0 + k % 3, 11.5 + k % 2,
+                    dict({"reprice": 10, "snap_miss": k % 2}, **({"fallback_min": 1} if k % 2 else {})))
                  for k in range(4)][::-1]
         cfg = {"capital": 10000, "newest_bar": "candles"}
         for label, extra in (("no order_path key", {}), ("order_path serial", {"order_path": "serial"})):
@@ -125,7 +135,8 @@ def part2():
               any(x.startswith("  last 24 h: 4 heartbeats, 120 minutes covered") for x in out)
               and "  data step ended: median 9.50 s after the minute (largest 11.00)" in out
               and any(x.startswith("  counters: reprice 40, arm 0, cancel_unconfirmed 0, snap_miss 2,") for x in out)
-              and any(x.startswith("  single-request fallbacks: 2 in 120 minutes") for x in out), str(out))
+              and out[-1] == "  single-request fallbacks: in 2 of 120 minutes, 1.7% (the plan's figure is fewer "
+              "than 5% of minutes)", str(out))
         for label, r, want in (
                 ("passed with test orders", dict(started="2026-11-15 10:00:00", passed=True, place_test_orders=True,
                                                  reasons=[]), "PASSED, test orders placed"),
