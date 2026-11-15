@@ -3,7 +3,7 @@
 Branch `owner/order-path`. Built to the plan in `reports/owner/order_path_plan.md`, which is unchanged, and then
 changed by the owner's review of `cc70fa8a` (seven items, section "After the review") and second review of
 `483133fd` (four items, section "After the second review") and third review of `544921be` (section "After the
-third review"). This file states facts only. "Run here" means run in this container, offline, on a copy of the branch with `data/minute` and
+third review") and fourth review of `af6565f2` (section "After the fourth review"). This file states facts only. "Run here" means run in this container, offline, on a copy of the branch with `data/minute` and
 `data/cfm` linked read-only from the main clone. Nothing here touched the network except `git push`.
 
 ## After the review (commits after `cc70fa8a`)
@@ -39,6 +39,33 @@ third review"). This file states facts only. "Run here" means run in this contai
 - **6. `order-check`.** `bot/spot/order_check.py`, `python bot/spot/run.py order-check [--place-test-orders]
   [--print-plan]`, `wickctl order-check`. Section "The order check" below.
 - **7.** README "Order path" and this file.
+
+## After the fourth review (commits after `af6565f2`)
+- **`fallback_min`** (batch path only): one a minute at most, when anything in that minute fell back from a batch
+  request to the single requests. `Engine._fallback(t)` keys it by the step's minute, so `step()` keeps its text and
+  a catch-up settle counts in the minute it settles. It fires on: a snapshot miss, a best-bid miss, a piece switched
+  off, a minute in which a switched-off piece is used singly (not in the review's list; added so that the share is
+  not undercounted after a switch-off), the fills request raising, a batch cancel group cancelled with today's
+  `cancel()` (new broker counter `cancel_single`, one per order), `cancel_many` raising, the `place_many` guard. The
+  running check, the reads of recent fills and the reads from 0.6 s inside `cancel_many` count nothing.
+- **The status block**: the counters line gains `cancel_single` and `fallback_min`; the last line is
+  `single-request fallbacks: in K of M minutes, P% (the plan's figure is fewer than 5% of minutes)`; the bracketed
+  line about not knowing the minutes is gone.
+- **Tests:** one unit check per trigger, two fallbacks in one step counting once (and the next step again), the
+  design's own reads counting nothing; `order_status_test.py` for the new line and for K 0 without the field.
+- **In the simulation** `order_path_test.py` leaves the batch path's own counters (`snap_miss`, `snap_mismatch`,
+  `bbo_miss`, `batch_fallback`, `http_429`, `cancel_single`, `fallback_min`) out of the comparison of the engine's
+  counters with run (i), and leaves `counts` out of the heartbeat comparison altogether (the other heartbeat fields
+  are compared); it prints the batch path's counters for (iii). Run (iii) counted `fallback_min` in no minute, with and without the
+  death (its batch counters printed "none"): the stand-in names every order a list read asks for, answers every
+  best-bid request with a price for every product that has one in the stored data, never fails a batch cancel or a
+  fills request, and no piece switched off.
+- **Rerun for this item** (`86af7023`): `order_path_unit_test.py` 116 of 116, `order_status_test.py` 25 of 25,
+  `order_check_test.py` 18 of 18, `release_inputs_test.py` 74 of 74, `paper_next_test.sh` 11,
+  `paper_commit_test.sh` 38, `wickctl_test.sh` 8, `order_path_test.py` with and without the death 23 of 23 each
+  (111 / 109 entries, every exit, ladder, equity, fault count and event line equal to (i), as before; request counts
+  and modelled times unchanged). The replay, the live-path simulations and the inputs test were not rerun: the change
+  is in the batch path only, which they do not run.
 
 ## After the third review (commits after `544921be`)
 No change to `engine.py`, the brokers or the order check's behaviour.
@@ -82,7 +109,9 @@ No change to `engine.py`, the brokers or the order check's behaviour.
     (that count is snap_miss + bbo_miss + batch_fallback: orders and coins read singly, and pieces switched off; the
       heartbeats do not say in how many minutes a fallback happened)
   ```
-  (the counters line and the last line are one line each on the screen; wrapped here.)
+  (the counters line and the last line are one line each on the screen; wrapped here. Since the fourth review the
+  counters line also names `cancel_single` and `fallback_min`, the fallback line reads `single-request fallbacks: in K
+  of M minutes, P% (...)` and the bracketed line is gone: README, "Order path".)
 - **Rerun for this item:** `order_status_test.py` 23 of 23, `order_path_unit_test.py` 106 of 106,
   `order_check_test.py` 18 of 18, `release_inputs_test.py` 74 of 74 (73 before), `paper_next_test.sh` 11,
   `paper_commit_test.sh` 38, `wickctl_test.sh` 8: all passed. No heavy test was rerun: none of them calls `run.py

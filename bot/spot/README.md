@@ -425,8 +425,10 @@ then ends its inputs line with `; order path batch (10 requests a second, 3 plac
   restarts, with one `warning` event (your phone gets it). Its single requests are used from then on.
 - The batch cancel raising inside the bot: a `warning` event, and the single cancels for those orders that minute.
 
-**Counters** (in the heartbeat's `counts`, batch path only): `snap_miss` (orders a read of several did not name, or
-every order in a minute whose fills request failed), `snap_mismatch` (the running check), `bbo_miss` (coins the
+**Counters** (in the heartbeat's `counts`, batch path only): `fallback_min` (minutes with a fallback to single
+requests, above), `cancel_single` (orders cancelled one by one because their batch cancel failed), `snap_miss`
+(orders a read of several did not name, or every order in a minute whose fills request failed), `snap_mismatch` (the
+running check), `bbo_miss` (coins the
 best-bid answer did not cover), `batch_fallback` (a piece switched off), `http_429` (requests Coinbase refused for the
 rate). The heartbeat also gets `rate_limit`, the last `x-ratelimit-limit`, `-remaining` and `-reset` Coinbase sent,
 once it has sent them (the batch path builds its clients with the library's `rate_limit_headers=True`), and, in its
@@ -457,10 +459,9 @@ order path: batch (10 requests a second, 3 placing threads)
   last 24 h: 48 heartbeats, 1440 minutes covered (2026-11-14 15:00 .. 2026-11-15 14:30 UTC)
   data step ended: median 9.50 s after the minute (largest 11.00)
   place minus data: median 2.50 s (largest 3.50)
-  counters: reprice 4100, arm 380, cancel_unconfirmed 2, snap_miss 3, snap_mismatch 0, bbo_miss 0, batch_fallback 0, http_429 0
+  counters: reprice 4100, arm 380, cancel_unconfirmed 2, snap_miss 3, snap_mismatch 0, bbo_miss 0, batch_fallback 0, http_429 0, cancel_single 0, fallback_min 2
   place minus data: median 2.50 s (the plan's first-day figure is 3 s or less)
-  single-request fallbacks: 3 in 1440 minutes (the plan's figure is fewer than 5% of minutes)
-  (that count is snap_miss + bbo_miss + batch_fallback: orders and coins read singly, and pieces switched off; the heartbeats do not say in how many minutes a fallback happened)
+  single-request fallbacks: in 2 of 1440 minutes, 0.1% (the plan's figure is fewer than 5% of minutes)
 ```
 (the numbers here are an example, not a result). It reads `live_spot/events.jsonl` line by line
 (`bot/spot/order_status.py`; a malformed line is skipped):
@@ -471,11 +472,14 @@ order path: batch (10 requests a second, 3 placing threads)
   heartbeat's place mark minus its data mark;
 - **counters**: the sums of the heartbeats' `counts`;
 - the **newest** `rate_limit` and `library` fields anywhere in the log;
-- **single-request fallbacks**: `snap_miss` + `bbo_miss` + `batch_fallback` summed over the heartbeats. These count
-  orders read singly because a list answer did not name them (or every order of a minute whose fills request
-  failed), coins whose best bid was asked singly, and pieces switched off. They are not minutes: the heartbeats
-  hold sums per half hour, not which minutes had a fallback, so the line gives the sum and the minutes covered, not a
-  share.
+- **single-request fallbacks**: K, the sum of `fallback_min` over the heartbeats, of M, the minutes covered, and
+  K / M. `fallback_min` goes up by one, at most once per minute, when anything in that minute fell back from a batch
+  request to the single requests: a list answer missed an order (`snap_miss`), the best-bid answer missed a coin
+  (`bbo_miss`), a piece was switched off (`batch_fallback`) or was used singly because it is off, the fills request
+  before the list read failed, a batch cancel group was cancelled order by order (`cancel_single`, one per order),
+  the batch cancel raised, or the placing call raised. The running check's single read, the single reads of orders
+  with a recent fill and the single reads from 0.6 s on inside the cancel are part of the design and do not count.
+  Heartbeats without `fallback_min` give K 0 (a counter is written only when it counted).
 - the **order check**: the newest `order_check_*.json` in the state folder (its time, PASSED or FAILED with the
   reasons on one line, test orders placed or read-only), or `order check: none on this server yet (wickctl
   order-check)`.
