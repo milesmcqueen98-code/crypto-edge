@@ -55,9 +55,18 @@ def need_keys():
         sys.exit("Set COINBASE_API_KEY and COINBASE_API_SECRET (see bot/spot/README.md, step 3).")
 
 
+def book_coins():
+    """The book's coins (bot/v2/model_meta.json) for the inputs line; None when they cannot be read."""
+    try:
+        return list(json.load(open(os.path.join(ROOT, "bot", "v2", "model_meta.json")))["coins"])
+    except Exception:
+        return None
+
+
 def print_inputs():
     """The input settings in use (README, "Inputs of the live bot"), and where they came from."""
-    print(release_inputs.describe(cfg) + (" (from bot/spot/config.json)" if inputs_from_release else ""), flush=True)
+    print(release_inputs.describe(cfg, book_coins()) + (" (from bot/spot/config.json)" if inputs_from_release else ""),
+          flush=True)
     for n in inputs_notes:
         print("  " + n, flush=True)
 
@@ -73,7 +82,7 @@ if a.cmd in ("paper", "live"):
     print_inputs()
     warn = None
     if a.cmd == "live" and not (cfg.get("newest_bar", "candles") == "trades" and cfg.get("stale_guard", False)):
-        warn = ("live trading is starting without the release 3 inputs (trades with the stale guard); "
+        warn = ("live trading is starting without the release's verified inputs (trades with the stale guard); "
                 + release_inputs.describe(cfg))
         print("WARNING: " + warn, flush=True)
     mins = a.minutes if a.minutes is not None else (345 if a.cmd == "paper" else 1e9)

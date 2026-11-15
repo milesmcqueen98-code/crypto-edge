@@ -53,11 +53,12 @@ def _names(coins):
     return ", ".join(str(c) for c in coins)
 
 
-def describe(cfg):
-    """One plain line for a human, built only from the config."""
+def describe(cfg, coins=None):
+    """One plain line for a human, built only from the config and, when given, the book's coins (a trades list that
+    holds BTC and every one of them reads as no list does)."""
     if cfg.get("newest_bar", "candles") == "trades":
         tc = cfg.get("trades_coins")
-        if tc is None:
+        if tc is None or (tc and coins is not None and set(["BTC"] + list(coins)) <= set(tc)):
             src = "newest minute from trades for BTC and every coin"
         elif not tc:
             src = "newest minute from trades for no coin (empty list); candles for every coin"
@@ -66,7 +67,7 @@ def describe(cfg):
     else:
         src = "candles for every coin"
     line = "inputs: %s; stale guard %s" % (src, "on" if cfg.get("stale_guard", False) else "off")
-    rows = cfg.get("trades_rows")
+    rows = cfg.get("trades_rows") if cfg.get("newest_bar", "candles") == "trades" else None   # read in trades mode only
     if rows == "candle_after":
         line += "; the venue's candle replaces each trades row afterwards"
     elif rows is not None and rows != "keep":                # "keep" is the default behaviour: nothing to add
