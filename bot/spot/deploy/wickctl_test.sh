@@ -45,4 +45,11 @@ check "4 failed"                    failed     0 "stop pull install"       "stay
 check "5 pull fails, was active"    active     1 "stop pull start"         "pull failed"
 check "6 pull fails, was inactive"  inactive   1 "stop pull"               "pull failed"
 if bash -n "$W"; then echo "PASS  7 bash -n wickctl"; else echo "FAIL  7 bash -n wickctl"; fail=1; fi
+# order-check while the service is active: one line, a non-zero exit, nothing run (no sudo, no python)
+export LOG=$T/log WAS=active WICK_DIR=$T/repo; : > "$LOG"
+out=$(PATH=$T/bin:$PATH bash "$W" order-check </dev/null 2>&1); rc=$?
+if [ "$rc" != 0 ] && [ "$out" = "The bot is running: stop it first (wickctl stop), then run wickctl order-check." ] \
+    && [ "$(cat "$LOG")" = "systemctl is-active --quiet wickbot" ]; then
+  echo "PASS  8 order-check refuses while active: \"$out\""
+else echo "FAIL  8 order-check while active: rc $rc, \"$out\", calls [$(paste -sd' ' "$LOG")]"; fail=1; fi
 [ "$fail" = 0 ] && echo "WICKCTL TEST PASSED" || { echo "WICKCTL TEST FAILED"; exit 1; }

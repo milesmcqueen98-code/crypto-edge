@@ -24,7 +24,11 @@ case "${1:-help}" in
   flatten)    sudo systemctl stop wickbot && py cancel-all --flatten ;;
   cancel-all) sudo systemctl stop wickbot && py cancel-all ;;
   reset-halt) py reset-halt ;;
-  order-check) py order-check --print-plan   # README, "Order path"
+  order-check) if systemctl is-active --quiet wickbot >/dev/null 2>&1; then   # README, "Order path": not next to a
+                                                                             # running bot
+                echo "The bot is running: stop it first (wickctl stop), then run wickctl order-check."; exit 1
+              fi
+              py order-check --print-plan
               read -r -p "Type yes to place and cancel the three test orders (else: the read-only parts only): " ans
               if [ "$ans" = "yes" ]; then py order-check --place-test-orders; else py order-check; fi ;;
   restart)    sudo systemctl restart wickbot ;;

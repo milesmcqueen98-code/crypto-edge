@@ -34,7 +34,8 @@ PLAN = """order check: the batch order path's requests against Coinbase (bot/spo
   e. the rate-limit headers seen, the median time by kind of request, and a final line PASSED or FAILED; the whole
      result as one JSON file next to the live state
   The test orders carry the bot's client order id tag ({tag}-): a running bot's reconcile sweep would cancel them
-  too, and its requests share the account's rate limit. Stop the bot first (wickctl stop) to keep the check clean."""
+  too, and its requests share the account's rate limit. wickctl order-check refuses to start while the bot's
+  service runs (stop it with wickctl stop); run.py order-check run by hand does not check that."""
 
 
 def plan(cfg):
