@@ -352,6 +352,46 @@ final candles. Live, the candles it reads are often not final:
 no decision. `step_s` gives the median and the maximum seconds after the minute at which the data step, the cancel
 pass and the place pass of the 4-sigma bids finished. `tb_err` is the last trades error, when there was one.
 
+**Candle requests between steps (`"candles_at_s"`; absent in the code's defaults: everything as above).** Every
+second of the data step is a second in which the bot's bids do not rest. For a coin whose newest minute is built from
+trades (on `"trades_coins"`, or BTC and every coin when there is no list), the decision does not need the candle
+request: it serves only the rows behind the newest one.
+- **What it does.** With `"candles_at_s": 45`, those coins' candle requests leave the step. A candle pass runs once
+  per minute, between steps, from second 45 of the minute. For the minute M open then, it makes for each such coin
+  exactly the request the step would make with end M (the same 6 minutes, the merge by provenance, the counters, the
+  window cut). An answer never holds a row for the open minute, so the pass never gives M a row. The coins not on the
+  list keep their candle request in the step, as before.
+- **Allowed values.** From `confirm_s` + 5 (30 s by default) to 50 s. Outside that range, not a number, or without
+  `"newest_bar": "trades"`, the engine stops at start-up (`ValueError`).
+- **Paper** runs the pass in one go. **Live**, the fast-poll loop spends its waiting time on the pass's requests, a
+  few coins per turn, so the fast polls keep their cadence. The pass starts no request unless it would end 3 s before
+  the next step (judged by the time of its own last request); the coins it does not reach are left to the step.
+- **In the step.** A coin the pass fetched for the minute that just closed gets no candle request. A coin the pass
+  did not reach, or whose request failed, is fetched in the step as before and counted as `pre_missing` (after every
+  start, all of them once).
+- **Fallbacks.** When such a coin's trades bar cannot be used (not verified, an error, the budget), the step fetches
+  that coin's candle then, on demand, with the request it would have made before, and goes on as without the setting
+  (the same counters, plus `pre_ondemand`). After a refusal or a rate limit in the trades pass there is no on-demand
+  request in that step: the coins left have no fresh row this minute, and the existing checks give them no new bid
+  (with the stale guard: `skip_old` for a coin, a `stale_input` minute for BTC).
+- **When the venue's candle replaces a trades row** (`"trades_rows": "candle_after"`). The rule is unchanged: an
+  answer made at least 60 + `confirm_s` seconds after the minute began. The pass's answer for M is made about 45 s
+  into M, so it confirms every row up to M - 1, as the step's answer made 6 to 10 s into M + 1 did; both come before
+  the decision on M. A cached copy of age a was made at 45 - a s into M: it confirms M - 1 only if a is 20 s or less
+  (the step's answer: about 41 s or less). The pass's request has the same address as the request a bot without the
+  setting makes 6 s into M, so a copy about 39 s old is to be expected when such a client asked first; M - 1 is then
+  confirmed one pass later. The age rule keeps such a copy from replacing anything early.
+- **Counters,** in the heartbeat, only with the setting: `pre_fetched` (coins the pass fetched), `pre_error` (pass
+  requests that failed), `pre_missing` (coins built from trades the step had to fetch), `pre_ondemand` (on-demand
+  requests after a trades bar that could not be used), `step_candles` (candle requests the step made; with every coin
+  on the list it is `pre_missing` plus `pre_ondemand`). `candle_old` and `btc_candle_old` leave out a coin whose row
+  for the minute is trades-built or a verified empty minute (its candle answer's age says nothing about that row);
+  every other case counts as before. `tb_insert` then counts nearly every trades bar of a covered coin (the step has
+  no candle row for the minute yet), and `tb_close_diff` cannot be measured for them.
+- **What stays.** The trades pass, its requests and pace, the verification rule, the fallbacks, the stale guard,
+  `trades_rows` and the provenance of every row. The fast poll does the same work. A pass request that hangs holds
+  up the fast polls for as long as it hangs (`bot/market.py`'s timeout and retries), as it held up the step before.
+
 **Paper.** `.github/workflows/paper-spot.yml` runs the trades book (`config.tb.json`, `paper_spot_tb/`) in its own
 job (`paper_tb`) on its own runner, so the two registered books keep their requests and rate unchanged.
 
@@ -447,6 +487,12 @@ Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
   candle replaced or dropped each of them. No network.
 - **Trades rows replaced by the candle:** `python bot/spot/candle_after_test.py` checks `"trades_rows"` on synthetic
   tables (replace, drop, counters, the key absent equal to `"keep"`) and on the stored Oct 10 2025 crash.
+- **Candle requests between steps:** `python bot/spot/candle_pass_test.py` checks `"candles_at_s"` on a fake clock
+  (the second of the pass, paper in one go, live in slices between fast polls at their cadence, the stop 3 s before
+  the step, the coins the step still fetches, `pre_missing`, on demand and not after a rate limit or a refusal,
+  `candle_old`, the configuration errors). `live_sim_inputs_test.py` also runs the inputs with and without the setting
+  (E), and five listed coins without and with it (F), compares their decisions with the candle run and prints a
+  modelled clock of the data step.
 - **wickctl update:** `bash bot/spot/deploy/wickctl_test.sh` runs the real `update` branch against stub `sudo`, `systemctl`, `git` and
   `install`. It checks the order of calls for a bot that was active, activating, inactive or failed, and for a failed pull.
   Only a bot that was active or activating is started again. No network, no sudo.

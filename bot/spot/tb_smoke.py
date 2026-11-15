@@ -5,14 +5,23 @@ command). Waits until the run will cover a heartbeat minute (:00 or :30), then r
 and prints the tail of its event log and every heartbeat. No keys, no orders.
 
 Usage: python bot/spot/tb_smoke.py [--minutes 10] [--state-dir /tmp/tb_smoke] [--config bot/spot/config.tb.json]
-       [--parity]
+       [--parity] [--set KEY=JSON ...] [--then KEY=JSON ...]
 
 --parity: the same paper run, in this process (Engine(mode="paper", ...).run(minutes), what run.py paper does), so
 the engine's table can be read when it ends. Then the venue's candles of the last 45 minutes are fetched once more
 (bot/market.py spot_candles; a refusal or rate limit stops the fetch at once, no retry, and is reported) and compared
 with the rows the engine holds, per coin, leaving out the newest three minutes: minutes compared, rows identical (all
 five values equal), rows that differ (and the largest close difference in bp), rows only the engine has, rows only
-the venue has, and engine rows in the range still marked trades-built.
+the venue has, and engine rows in the range still marked trades-built. It also prints, per step, when the step
+started and when its data part ended (seconds after the minute, wall clock), the candle and trades requests the step
+made, and the candle requests made between the step and the one before it (the candle pass of "candles_at_s"), then
+the medians.
+
+--set KEY=JSON: override a key of the config (null removes it), e.g. --set candles_at_s=45 or --set candles_at_s=null.
+--then KEY=JSON (with --parity; repeatable): after the first run and its parity check, a second run of the same
+length on the same runner, in a fresh state dir (<state-dir>_then), with these overrides on top of the first run's
+config, then its parity check and a line comparing the two runs' data step medians. No wait before the second run
+(any 30 minutes of steps cross one heartbeat minute).
 """
 import argparse
 import json
@@ -33,7 +42,75 @@ p.add_argument("--repair-probe", action="store_true",
                     "listed coins, run one trades pass and print its counts (shows the repair path on the real market)")
 p.add_argument("--parity", action="store_true", help="after the run, compare the engine's rows with a new fetch "
                                                       "of the venue's candles (last 45 minutes, newest three left out)")
+p.add_argument("--set", action="append", default=[], help="KEY=JSON: override a config key (null removes it)")
+p.add_argument("--then", action="append", default=[], help="KEY=JSON: with --parity, a second run with these overrides")
 a = p.parse_args()
+
+
+def overrides(cfg, items):
+    """cfg with KEY=JSON items applied (a JSON null removes the key)."""
+    out = dict(cfg)
+    for x in items:
+        k, v = x.split("=", 1)
+        v = json.loads(v)
+        if v is None:
+            out.pop(k, None)
+        else:
+            out[k] = v
+    return out
+
+
+def instrument(eng):
+    """Per step: start and data-end times (seconds after the minute, wall clock) and the requests it made; candle
+    requests between steps. Wraps the engine's and its market's methods on the instance; changes nothing else."""
+    rec, cur, between = [], {}, {"candles": 0}
+    step, mark, mkt = eng.step, eng._mark, eng.market
+    sc, tb, tbs = mkt.spot_candles, mkt.trades_bar, mkt.trades_bars
+
+    def w_step(t=None):
+        t0 = time.time()
+        cur.clear()
+        cur.update(on=True, t0=t0, data=None, candles=0, trades=0)
+        try:
+            return step(t)
+        finally:
+            m0 = int(t0 // 60) * 60
+            rec.append(dict(minute=time.strftime("%H:%M", time.gmtime(m0)), start_s=round(t0 - m0, 2),
+                            data_end_s=None if cur["data"] is None else round(cur["data"] - m0, 2),
+                            step_candles=cur["candles"], step_trades=cur["trades"], pass_candles=between["candles"]))
+            cur["on"], between["candles"] = False, 0
+
+    def w_mark(k, t):
+        if k == "data" and cur.get("on"):
+            cur["data"] = time.time()
+        return mark(k, t)
+
+    def count(kind, f):
+        def g(*x, **kw):
+            if cur.get("on"):
+                cur[kind] += 1
+            elif kind == "candles":
+                between["candles"] += 1
+            return f(*x, **kw)
+        return g
+    eng.step, eng._mark = w_step, w_mark
+    mkt.spot_candles, mkt.trades_bar, mkt.trades_bars = count("candles", sc), count("trades", tb), count("trades", tbs)
+    return rec
+
+
+def timing(rec, label):
+    import pandas as pd
+    print(f"\nstep timing ({label}; seconds after the minute, wall clock):", flush=True)
+    if not rec:
+        print("  no steps", flush=True)
+        return None
+    d = pd.DataFrame(rec)
+    print(d.to_string(index=False), flush=True)
+    med = d.median(numeric_only=True)
+    print(f"  median: step start {med['start_s']:.2f} s, data step end {med['data_end_s']:.2f} s (max "
+          f"{d.data_end_s.max():.2f} s); per step {med['step_candles']:g} candle and {med['step_trades']:g} trades "
+          f"requests; {med['pass_candles']:g} candle requests between steps", flush=True)
+    return float(med["data_end_s"])
 
 
 def parity(eng):
@@ -96,44 +173,65 @@ if a.repair_probe:
     print(f"repair probe at {m}: listed {listed}; counts", json.dumps(eng.counts), flush=True)
     sys.exit(0 if eng.counts.get("tb_rebuilt") == 4 * len(listed) else 1)
 
+def events(sd):
+    ev = [json.loads(x) for x in open(os.path.join(sd, "events.jsonl"))]
+    kinds = {}
+    for e in ev:
+        kinds[e["kind"]] = kinds.get(e["kind"], 0) + 1
+    print("event kinds:", kinds)
+    print("\nlast 25 events (adv lines shortened):")
+    for e in ev[-25:]:
+        s = json.dumps(e)
+        print(s if len(s) < 600 else s[:600] + " ...")
+    print("\nheartbeats:")
+    for e in ev:
+        if e["kind"] == "heartbeat":
+            print(json.dumps(e))
+    print("\nerrors and warnings:")
+    for e in ev:
+        if e["kind"] in ("error", "warning", "stale_input"):
+            print(json.dumps(e)[:600])
+
+
+def in_process(cfg, sd, label):
+    """One paper run in this process (what run.py paper does), its events, step timing and parity check."""
+    from bot.spot.engine import Engine
+    print(f"\n===== {label}: running in process: Engine(mode=paper, config={a.config}, overrides {label}, "
+          f"state_dir={sd}).run({a.minutes}); candles_at_s {cfg.get('candles_at_s')}", flush=True)
+    eng = Engine(mode="paper", cfg=cfg, state_dir=sd, echo=False)
+    rec = instrument(eng)
+    eng.run(a.minutes)
+    events(sd)
+    med = timing(rec, label)
+    return parity(eng), med
+
+
+if a.then and not a.parity:
+    sys.exit("--then needs --parity (the second run is in process)")
+cfg0 = overrides(json.load(open(os.path.join(ROOT, a.config))), a.set)
 # start at minute 20 or 50 of the hour: the backfill takes a few minutes and the steps then cross :30 or :00
 while int(time.time() // 60) % 30 != 20:
     time.sleep(5)
 refused = None
 if a.parity:
     sys.path.insert(0, ROOT)
-    from bot.spot.engine import Engine
-    cfg = json.load(open(os.path.join(ROOT, a.config)))
-    print(f"running in process: Engine(mode=paper, config={a.config}, state_dir={a.state_dir}).run({a.minutes})",
-          flush=True)
-    eng = Engine(mode="paper", cfg=cfg, state_dir=a.state_dir, echo=False)
-    eng.run(a.minutes)
-    rc = subprocess.CompletedProcess([], 0)
-else:
-    cmd = [sys.executable, os.path.join(HERE, "run.py"), "paper", "--minutes", str(a.minutes), "--config",
-           os.path.join(ROOT, a.config), "--state-dir", a.state_dir]
-    print("running:", " ".join(cmd), flush=True)
-    rc = subprocess.run(cmd, cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
-    print("exit code", rc.returncode)
-    if rc.stderr:
-        print("stderr tail:\n" + rc.stderr[-3000:])
-ev = [json.loads(x) for x in open(os.path.join(a.state_dir, "events.jsonl"))]
-kinds = {}
-for e in ev:
-    kinds[e["kind"]] = kinds.get(e["kind"], 0) + 1
-print("event kinds:", kinds)
-print("\nlast 25 events (adv lines shortened):")
-for e in ev[-25:]:
-    s = json.dumps(e)
-    print(s if len(s) < 600 else s[:600] + " ...")
-print("\nheartbeats:")
-for e in ev:
-    if e["kind"] == "heartbeat":
-        print(json.dumps(e))
-print("\nerrors and warnings:")
-for e in ev:
-    if e["kind"] in ("error", "warning", "stale_input"):
-        print(json.dumps(e)[:600])
-if a.parity:
-    refused = parity(eng)
-sys.exit(rc.returncode or (3 if refused else 0))
+    refused, m1 = in_process(cfg0, a.state_dir, " ".join(a.set) or "none")
+    if a.then:
+        r2, m2 = in_process(overrides(cfg0, a.then), a.state_dir + "_then", " ".join(a.set + a.then))
+        refused = refused or r2
+        print(f"\ndata step end, median seconds after the minute: first run {m1}, second run {m2}"
+              + (f" (second minus first: {m2 - m1:+.2f} s)" if m1 is not None and m2 is not None else ""), flush=True)
+    sys.exit(3 if refused else 0)
+cfg_path = os.path.join(ROOT, a.config)
+if a.set:                                                  # run.py takes a file: the overridden config next to state
+    cfg_path = a.state_dir.rstrip("/") + "_config.json"
+    json.dump(cfg0, open(cfg_path, "w"), indent=2)
+cmd = [sys.executable, os.path.join(HERE, "run.py"), "paper", "--minutes", str(a.minutes), "--config", cfg_path,
+       "--state-dir", a.state_dir]
+print("running:", " ".join(cmd), flush=True)
+rc = subprocess.run(cmd, cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+print("exit code", rc.returncode)
+if rc.stderr:
+    print("stderr tail:\n" + rc.stderr[-3000:])
+events(a.state_dir)
+sys.exit(rc.returncode)

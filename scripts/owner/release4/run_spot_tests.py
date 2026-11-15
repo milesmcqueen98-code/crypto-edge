@@ -5,8 +5,9 @@ workflow, sandbox-test.yml). trades_bar_check.py and tb_smoke.py are not run: th
 
   python scripts/owner/release4/run_spot_tests.py
 
-Release 4's list: release 3's (scripts/owner/release3/run_spot_tests.py) plus candle_after_test.py; the live-path
-inputs test now runs A, B, C1, C2 and, without the death, D (bot/spot/live_sim_inputs_test.py).
+Release 4's list: release 3's (scripts/owner/release3/run_spot_tests.py) plus candle_after_test.py and
+candle_pass_test.py; the live-path inputs test now runs A, B, C1, C2, E and, without the death, D, F0 and F1, and
+prints the modelled clock of the data step (bot/spot/live_sim_inputs_test.py).
 
 Reads bot, edge, scripts/owner, scripts/forward (input_checks.py, for test_bar_source.py), reports/cfm_products.csv,
 reports/wick1m/spot_ticks_wide.csv, data/minute and data/cfm.
@@ -21,7 +22,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.a
 WINDOW = ["2025-10-10 20:00", "2025-10-11 02:00"]
 DEATH = "--death=2025-10-10 21:10"
 PY = [("merge_test.py", []), ("trades_bar_test.py", []), ("usdc_test.py", []), ("newest_bar_test.py", []),
-      ("candle_after_test.py", []), ("release_inputs_test.py", []), ("replay_test.py", ["2025-10-10", "2025-10-12"]),
+      ("candle_after_test.py", []), ("candle_pass_test.py", []), ("release_inputs_test.py", []),
+      ("replay_test.py", ["2025-10-10", "2025-10-12"]),
       ("live_sim_test.py", WINDOW), ("live_sim_test.py", WINDOW + [DEATH]),
       ("live_sim_inputs_test.py", WINDOW), ("live_sim_inputs_test.py", WINDOW + [DEATH])]
 SH = ["paper_next_test.sh", "paper_commit_test.sh", "wickctl_test.sh"]
@@ -30,7 +32,7 @@ OTHER = ["bot/spot/deploy/watchdog_test.py",
 # the result lines each file prints (shown in full; the rest of the output is in the tail below)
 KEY = re.compile(r"^(engine:|PARITY|MISMATCHES|paper settings|\d+ minutes in|entries |bot equity|server dies|back at|"
                  r"switch at|inputs from|trades feed|  first difference|  C[12], whole log|  (B|C1|C2): heartbeats|"
-                 r"  D: |"
+                 r"  D: |  (B|E|F0|F1): candles_at_s|    (B|E|F0|F1): steps|  model |"
                  r"[A-Z ]+TEST (PASSED|FAILED)|.*: all passed)")
 
 
