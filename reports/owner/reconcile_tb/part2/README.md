@@ -29,8 +29,8 @@ once. Verdict reached at 02:36 ET on Nov 15.
 - **On the twelve the two books are nearly the same.** Measure 1 passes by two bids. The wrong-side bids fall on
   the same coins in both books (HBAR 6 and 5, BCH 4 and 4, ENA 3 and 3), and the four level errors are the same
   four bids in both, all at 15:43 UTC on Nov 13. A running book cannot tell the two ways apart on these coins in
-  three days. Part 1 measured the difference on every minute: about a third fewer disagreements on arming and a
-  fifth fewer score misses with the new way.
+  three days. Part 1 measured the difference on every minute: about 30% fewer disagreements on arming and about
+  a fifth fewer score misses with the new way.
 - **On the five coins the third book keeps on trades rows (ETH, SOL, XRP, LTC, ZEC) the new way is clearly
   better.** Wrong-side bids: 5 of 292 in the third book (LTC 2, ZEC 2, XRP 1), 1 of 281 in the fourth (ZEC). Level
   errors: 7 (ZEC 5, LTC 2) against 2 (ZEC 1, LTC 1). Replacing the trades row by the venue's candle removes most
