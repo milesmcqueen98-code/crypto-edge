@@ -353,13 +353,17 @@ class Engine:
         self.sd = state_dir
         os.makedirs(state_dir, exist_ok=True)
         self._w("init", mode=mode, newest_bar=cfg.get("newest_bar"), stale_guard=cfg.get("stale_guard"),
-                trades_coins=cfg.get("trades_coins"))
+                trades_coins=cfg.get("trades_coins"), order_path=cfg.get("order_path"))
 
     def _w(self, what, **kw):
         with open(os.path.join(self.sd, "calls.jsonl"), "a") as f:
             f.write(json.dumps(dict(what=what, **kw)) + "\\n")
 
     def log(self, kind, t=None, **kw):
+        if kind == "order_path":                        # the order-path event of every live start: its own file,
+            with open(os.path.join(self.sd, "order_path_events.jsonl"), "a") as f:   # so calls.jsonl is as before
+                f.write(json.dumps(dict(kind=kind, **kw)) + "\\n")
+            return
         self._w("log", kind=kind, **kw)
 
     def run(self, minutes):
