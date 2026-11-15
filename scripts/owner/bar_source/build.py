@@ -27,6 +27,10 @@ Runs on a GitHub runner (hunt2.yml): it fetches the venue's final candles. The c
         or not verified) takes the candle path's row: the first-seen candle if m = t-1, the final candle otherwise
         (counted). Minutes before the record began are final candles.
      C  trades then candles: row t-1 as in B; every older row final.
+     C2 trades then candles, two rows: rows t-1 and t-2 as in B (row t-1 the verified trades bar or the candle
+        path's row; row t-2 the row rule B has for that minute: the verified trades bar, no row for a verified empty
+        minute, the final candle for a minute with no verified trades bar or a minute before the record began);
+        every row older than t-2 final.
    Passes (the coin's rule inside each; a coin not named is R):
      A, B, C   the twelve (DOGE LINK BCH SUI XLM HBAR NEAR AAVE HYPE ENA PEPE ONDO) on that rule; BTC, ETH, SOL, XRP,
                LTC, ZEC as the third book has them (rule B: trades from the record's start, final candles before).
@@ -35,6 +39,8 @@ Runs on a GitHub runner (hunt2.yml): it fetches the venue's final candles. The c
                LTC and ZEC both on rule A (LA) or rule C (LC). Their rule B is pass A (the third book).
      C18       all 18 coins (BTC and the 17 traded coins) on rule C: the fourth paper book (engine option
                trades_rows "candle_after"). Reported for all 17 traded coins as way C18.
+     C2x18     all 18 coins on rule C2: the build that asks for the candles after the bids (plan: "Addition:
+               candles after the bids"). Reported for all 17 traded coins as way C2x18.
    A coin's score depends on the other traded coins' rows (edge/wick.py: alts_mean_z60 and alts_below_2sd are the
    mean and the count below -2 of every other coin's z_res60), so every pass is a book that could exist and LTC and
    ZEC get passes of their own.
@@ -46,9 +52,12 @@ Runs on a GitHub runner (hunt2.yml): it fetches the venue's final candles. The c
                          res_level, res_sig, res_valid
      record_sources.csv  per coin: the collector's minutes from the record's start to end-1 by kind (verified with
                          trades, verified empty, not verified, absent) and the first-seen candle at each decision
-                         minute (held, answer without the minute, no answer)
+                         minute (held, answer without the minute, no answer); and, for rule C2, the kind of minute
+                         t-2 at each decision minute (row2_trades, row2_empty, row2_fallback, row2_before_record:
+                         before_record is a minute before the collector's record began)
      fetch_answers.csv   one row per final-candle answer (as the reconciliation writes it)
-     run.json            fetch facts (answers, refused, dropped, errors, cache counts), threshold, counts, timings
+     run.json            fetch facts (answers, refused, dropped, errors, cache counts), threshold, counts, timings,
+                         second_row_counts ({coin: {trades, empty, fallback, before_record}}, as the row2 columns)
 """
 import argparse
 import datetime as dt
@@ -93,14 +102,15 @@ def passes():
     out["LA"] = {**tb, **{c: "A" for c in TWELVE}, **{c: "A" for c in REPORTED}}
     out["LC"] = {**tb, **{c: "A" for c in TWELVE}, **{c: "C" for c in REPORTED}}
     out["C18"] = {c: "C" for c in BOOK_TRADES + REPORTED + TWELVE}  # the fourth paper book: every coin on way C
+    out["C2x18"] = {c: "C2" for c in BOOK_TRADES + REPORTED + TWELVE}   # candles after the bids: every coin on C2
     return out
 
 
 def canonical_pass(coin, way):
-    """The pass whose rows give coin `coin` under way `way` (A, B, C, or C18 for any traded coin) in a book that
-    could exist."""
-    if way == "C18":
-        return "C18"
+    """The pass whose rows give coin `coin` under way `way` (A, B, C, or C18 or C2x18 for any traded coin) in a
+    book that could exist."""
+    if way in ("C18", "C2x18"):
+        return way
     if coin in TWELVE:
         return way
     if coin in REPORTED:
@@ -251,6 +261,14 @@ def old_b_frame(c, final, rec_start, last, tbar):
     return df[COLS].astype(float), {k: int(counts.get(k, 0)) for k in ("trades", "empty", "fallback")}
 
 
+def second_row_kinds(c, decisions, tbar, rec_start):
+    """Rule C2's row t-2 at each decision minute t, as a Series indexed by t-2: 'trades', 'empty', 'fallback'
+    (trades_kind) or 'before_record' (a minute before the collector's record began: the final candle)."""
+    ms = [t - 2 * MIN for t in decisions]
+    return pd.Series(["before_record" if m < rec_start else trades_kind(c, m, tbar) for m in ms],
+                     index=pd.DatetimeIndex(ms), dtype=object)
+
+
 def as_unit_of(df, ref):
     """Same index resolution as the final candles (so concatenated tables index alike)."""
     if not len(df):
@@ -271,7 +289,8 @@ def init_worker(candles, coins, tmp, frames, ways):
 
 def table_for(p, t):
     """The engine's table at decision minute t in pass p: for each coin, rows of [t - WINDOW_MIN, t - 2] from its
-    rule's older rows and row t - 1 from its rule's newest row (no row when the rule gives none)."""
+    rule's older rows and row t - 1 from its rule's newest row (no row when the rule gives none). Rule C2 takes
+    [t - WINDOW_MIN, t - 3] final, row t - 2 from rule B's older rows and row t - 1 from the trades newest row."""
     from bot.spot.engine import WINDOW_MIN
     lo = t - pd.Timedelta(minutes=WINDOW_MIN)
     out = {}
@@ -281,6 +300,14 @@ def table_for(p, t):
             out[c] = fin.loc[lo:t - MIN]
             continue
         fr = _W["frames"][c]
+        if way == "C2":                       # rows t-1 and t-2 as in B, every older row final
+            a = fin.loc[lo:t - 3 * MIN]
+            if (t - 2 * MIN) in fr["oldB"].index:
+                a = pd.concat([a, fr["oldB"].loc[[t - 2 * MIN]]])
+            if (t - MIN) in fr["newT"].index:
+                a = pd.concat([a, fr["newT"].loc[[t - MIN]]])
+            out[c] = a
+            continue
         old = fr["oldB"] if way == "B" else fin
         new = fr["newA"] if way == "A" else fr["newT"]
         a = old.loc[lo:t - 2 * MIN]
@@ -435,7 +462,7 @@ def main(argv=None):
 
     # 3. per-coin frames and the passes
     ways = passes()
-    frames, src_rows = {}, []
+    frames, src_rows, second = {}, [], {}
     for c in ["BTC"] + coins:
         fin = candles[c]
         nf = newest_frames(c, decisions, tbar, first, answers)
@@ -443,10 +470,13 @@ def main(argv=None):
         frames[c] = dict(oldB=as_unit_of(oldB, fin), newA=as_unit_of(nf["A"][0], fin), srcA=nf["A"][1],
                          newT=as_unit_of(nf["T"][0], fin), srcT=nf["T"][1])
         fa = nf["A"][1].value_counts().to_dict()
+        s2 = second_row_kinds(c, decisions, tbar, rec_start).value_counts().to_dict()
+        second[c] = {k: int(s2.get(k, 0)) for k in ("trades", "empty", "fallback", "before_record")}
         src_rows.append(dict(coin=c, record_minutes=sum(kinds.values()), tbar_verified_trades=kinds["trades"],
                              tbar_verified_empty=kinds["empty"], tbar_fallback=kinds["fallback"],
                              first_held=int(fa.get("first", 0)), first_answer_without_minute=int(fa.get("first_absent", 0)),
-                             first_no_answer=int(fa.get("no_answer", 0))))
+                             first_no_answer=int(fa.get("no_answer", 0)),
+                             **{"row2_" + k: v for k, v in second[c].items()}))
     pd.DataFrame(src_rows).to_csv(os.path.join(a.out, "record_sources.csv"), index=False)
     jobs = [(p, t) for t in decisions for p in ways]
     nw = a.workers or max(1, (os.cpu_count() or 2))
@@ -465,13 +495,13 @@ def main(argv=None):
                "res_score", "res_level", "res_sig", "res_valid"]].sort_values(["pass", "ts", "coin"])
     out["answer_old"] = out.answer_old.astype("boolean")
     out.reset_index(drop=True).to_parquet(os.path.join(a.out, "minutes.parquet"), index=False, compression="zstd")
-    fb = src[src.way.isin(["B", "C"])].groupby(["pass", "way"]).src.value_counts().rename("n").reset_index()
+    fb = src[src.way.isin(["B", "C", "C2"])].groupby(["pass", "way"]).src.value_counts().rename("n").reset_index()
     run.update(utc_finished=dt.datetime.now(dt.timezone.utc).isoformat(), fetch_s=round(t_fetch),
                compute_s=round(compute_s), steps=len(jobs), workers=nw,
                steps_per_s=round(len(jobs) / max(compute_s, 1e-9), 2), rows=len(out),
                inputs_missing=int((~out.inputs_ok).sum()),
                newest_src_counts={f"{r['pass']}/{r.way}/{r.src}": int(r.n) for _, r in fb.iterrows()},
-               record_sources=src_rows)
+               record_sources=src_rows, second_row_counts=second)
     json.dump(run, open(os.path.join(a.out, "run.json"), "w"), indent=1, default=str)
     print(json.dumps({k: v for k, v in run.items() if k not in ("record_sources", "passes")}, default=str), flush=True)
     print(pd.DataFrame(src_rows).to_string(index=False), flush=True)
