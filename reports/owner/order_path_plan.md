@@ -104,6 +104,21 @@
   - **The model of the clock after these additions** (0.1 s a request; a model): a median 23 requests a minute and
     2.3 s from the data step's end to the last new bid, against 50 requests and 7.8 s on today's path. The plan's
     "handful of calls" and "about 1 to 2.5 s" were written before the safety reads were added.
+- **Nov 15 2026, 02:21 ET (orchestrator), before any live order and before the release.** A gate at the start of
+  the live bot; nothing else changes.
+  - **What stood:** the release sets the batch path for the live bot, and the owner's check
+    (`wickctl order-check`) was a step in the release note. A server updated and started without that step would
+    have run requests that have never reached the real venue, with real ladders depending on them.
+  - **Fixed now:** at every start the live bot uses the batch path only if the newest order check that placed
+    test orders on that server passed, with the library version that is installed. Otherwise it runs today's
+    serial path, exactly as release 3 does, and prints the reason at start and in `wickctl status`. A library
+    upgrade asks for the check again. Every live start writes one `order_path` event naming the path in use.
+  - **The decision is made before the engine is built** (`bot/spot/run.py`), so the engine and the simulation
+    results are untouched. The offline suite is run again on the final commit before the release.
+  - **Rule B and the first live day** are counted from the first live minute on the batch path (the `order_path`
+    events and the heartbeats show it), not from the update.
+  - **The suite on the commit before this change** (d21317af, run 43673559075): 20 test files, none with a
+    failure; replay 156 rungs identical; the three-way simulation equal in both windows.
 
 ## Sources
 - Cancel Orders: https://docs.cdp.coinbase.com/api-reference/advanced-trade-api/rest-api/orders/cancel-order
