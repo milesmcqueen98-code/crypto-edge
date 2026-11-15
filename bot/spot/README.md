@@ -382,9 +382,12 @@ bot; a paper book ignores the key (its event log is equal to the byte with and w
    and fills are booked from it exactly as from single reads. An order with a recent fill, and an order the answer
    does not name, is read singly. If the fills request fails, every order is read singly that minute.
    - **A running check:** each minute one order the list answer covered (in turn) is also read singly, and the single
-     read is the one used. If the list shows more filled than the single read made after it, or the same fill with a
-     different status, price or fees, that is a mismatch (`snap_mismatch`, a `warning` with both answers). The second
-     mismatch switches the list read off for good (every order read singly), with one warning.
+     read is the one used. Only what cannot happen between two reads is a mismatch: the list shows more filled than
+     the single read made after it; or the same fill at another average price; or the same fill with more fees in
+     the list; or a final status in the list and not in the single read. A status that moved on (open, then
+     cancelled, expired or cancel-queued; pending, then open) is not. A mismatch is counted (`snap_mismatch`) and
+     logged as a `warning` with both answers; the second one switches the list read off for good (every order read
+     singly), with one warning.
 2. **Decide every coin, no request in between:** bids to drop (approval or cash lost), bids to keep (unchanged level
    and size, not about to expire), bids to re-price, new bids.
 3. **Best bids: one request** (best bid/ask) for every coin that may get a bid. A coin it does not cover is asked
@@ -434,12 +437,16 @@ no `rate_limit` field.
 **Check it against Coinbase before relying on it:** `wickctl order-check` (or `python bot/spot/run.py order-check
 --config bot/spot/config.live.json [--place-test-orders]`). It prints what it will do; `wickctl` asks for the word
 `yes` before it places anything. Without the flag it only reads best bids. With it (and the live switch), it places
-three post-only bids of about $25 at half the best bid (ETH, SOL, XRP when tradable), each previewed first, with the
-bot's own placing call; reads them with one list request and singly and compares; cancels them with the batch cancel
-and notes when each was seen cancelled; then cancels singly anything not confirmed and says loudly if a test order
-is still open (it expires by itself at its end time). It ends with `order check PASSED` or `FAILED` and the reasons,
-and writes the whole result as one JSON file in `live_spot/` (the path is printed). Stop the bot first: its sweep
-would cancel the test orders too (they carry the bot's tag), and both would share the account's rate limit.
+three post-only bids of about $25 (ETH, SOL, XRP when tradable) at half the lower of the batch best bid and the public
+book's, which must agree within 5% (otherwise that product is skipped and the check fails), each previewed first,
+with the bot's own placing call; reads them with one list request and singly and compares; cancels them with the
+batch cancel and notes when each was seen cancelled; then cancels singly anything not confirmed, sweeps the open
+orders once for a test bid whose placement came back as an error (the bot's tag, a test product, the test bid's
+price within a tick: a running bot's own bids are never at that price), and says loudly if a test order is still
+open (it expires by itself at its end time). It ends with `order check PASSED` or `FAILED` and the reasons,
+and writes the whole result as one JSON file in `live_spot/` (the path is printed). `wickctl order-check` refuses to start
+while the bot's service runs (stop it with `wickctl stop`): the bot's sweep would cancel the test orders too (they
+carry its tag), and both would share the account's rate limit. `run.py order-check` run by hand does not check.
 
 **Tests:** `python bot/spot/order_path_unit_test.py` (every new request and every fallback, against a scripted
 stand-in for Coinbase's library; no network, no real wait), `python bot/spot/order_check_test.py` (the check, on the

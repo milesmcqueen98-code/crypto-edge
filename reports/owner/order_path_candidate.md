@@ -1,7 +1,8 @@
 # Order path candidate: facts for the release note
 
 Branch `owner/order-path`. Built to the plan in `reports/owner/order_path_plan.md`, which is unchanged, and then
-changed by the owner's review of `cc70fa8a` (seven items, section "After the review"). This file states facts only. "Run here" means run in this container, offline, on a copy of the branch with `data/minute` and
+changed by the owner's review of `cc70fa8a` (seven items, section "After the review") and second review of
+`483133fd` (four items, section "After the second review"). This file states facts only. "Run here" means run in this container, offline, on a copy of the branch with `data/minute` and
 `data/cfm` linked read-only from the main clone. Nothing here touched the network except `git push`.
 
 ## After the review (commits after `cc70fa8a`)
@@ -22,8 +23,9 @@ changed by the owner's review of `cc70fa8a` (seven items, section "After the rev
   Orders it names are left out of the snapshot request and read singly. If it raises: no snapshot that minute, every
   order read singly, `snap_miss` for each, and the window's start stays where it was.
 - **4. A running check.** Each batch settle, one order the snapshot covers (in rotation) is also read singly after
-  it (`LiveBroker.read_one`, paced), and the single read is the dict used. A mismatch (snapshot more filled than the
-  single read, or equal fills with a different status, average price or fees, floats to 1e-9 relative) is counted
+  it (`LiveBroker.read_one`, paced), and the single read is the dict used. A mismatch (narrowed by the second review:
+  the snapshot more filled than the single read; equal fills and another average price; equal fills and more fees in
+  the snapshot; a final status in the snapshot and not in the single read; floats to 1e-9 relative) is counted
   (`snap_mismatch`) and logged as a `warning` with both dicts. The second mismatch of the process switches the
   snapshot off (`LiveBroker.switch_off`, reported once, `batch_fallback`) and that minute's orders are read singly.
   A single read that raises: no check that minute.
@@ -36,6 +38,20 @@ changed by the owner's review of `cc70fa8a` (seven items, section "After the rev
 - **6. `order-check`.** `bot/spot/order_check.py`, `python bot/spot/run.py order-check [--place-test-orders]
   [--print-plan]`, `wickctl order-check`. Section "The order check" below.
 - **7.** README "Order path" and this file.
+
+## After the second review (commits after `483133fd`)
+- **1. The running check flags only contradictions.** `_snap_differs(list, single read after it)` is a mismatch only
+  when the list shows more filled; or equal fills and another average price; or equal fills and more fees in the
+  list; or a final status in the list and not in the single read. Other status changes with equal fills (open then
+  cancelled, expired or cancel-queued; pending then open) count nothing.
+- **2. Test bids priced from two agreeing bids.** `order-check` reads the public book's best bid besides the batch
+  answer; both finite and positive and within 5% of each other, or the product is skipped, the reason printed, and
+  the check fails for it. The bid is at half the lower of the two.
+- **3. A sweep for a lost test order.** At the end of the clean-up, one `open_orders()` read: an open order with the
+  bot's tag, on a product a test bid was sent for, at that bid's price within a tick, not among the placed ones, is
+  cancelled singly, read again and reported (loudly if still open). If the read fails, the output says the sweep
+  could not run.
+- **4. `wickctl order-check` refuses while the service runs**: one line, exit 1, before the plan.
 
 ## What changed, file by file
 - **`bot/spot/engine.py`, `LiveBroker`: new methods (used only by the batch path).**
@@ -135,6 +151,10 @@ after `LiveBroker.fee_tier` and after `Engine._arm`.
 ## Tests run here
 Baseline: the untouched branch (`7c4973a1`), run before any change. After: the state after the review (`73d0f7e9`;
 the final replay on the same code), one test at a time. Where a number did not change with the review it says so.
+After the second review (`40491b20`) these were rerun: `order_path_unit_test.py`, `order_check_test.py`, the three
+shell tests and `order_path_test.py` both ways. The replay, the live-path simulations, the inputs test and the small
+tests were not rerun: the second review changed in `engine.py` only `_snap_differs`, which runs only on the batch path
+(not in those tests), and otherwise `order_check.py`, `wickctl` and tests.
 
 - **Parity replay** `python bot/spot/replay_test.py 2025-10-10 2025-10-12`: 156 rungs, 88 parents on both sides, "PARITY OK", before and after (also after the review); the paper part (it reads `config.json`, with `"order_path": "batch"`, which the paper broker ignores) 72 ladders, 135 entries, P&L $11,017. Both event logs (1021 and 1304 lines) equal to the baseline's line for line, order ids masked.
 - **Live-path simulation** `python bot/spot/live_sim_test.py "2025-10-10 20:00" "2025-10-11 02:00"`: 540 minutes,
@@ -145,9 +165,9 @@ the final replay on the same code), one test at a time. Where a number did not c
   PASSED, before and after; event log (1334 lines) equal to the baseline's.
 - **`merge_test.py`, `trades_bar_test.py`, `usdc_test.py`, `newest_bar_test.py`, `deploy/watchdog_test.py`**:
   21 of 21, 37 of 37, 11 ok, 73 of 73, 31 of 31, passed before and after.
-- **Deploy shell tests** `paper_next_test.sh` 11, `paper_commit_test.sh` 38, `wickctl_test.sh` 7: passed after (not
-  in the brief's baseline list; not run before). `wickctl` now has the `order-check` case; its syntax is checked
-  (`bash -n`); the case itself is not run by any test (it is interactive).
+- **Deploy shell tests** `paper_next_test.sh` 11, `paper_commit_test.sh` 38, `wickctl_test.sh` 8 (7 before the
+  second review): passed after (not in the brief's baseline list; not run before). `wickctl`'s `order-check` case:
+  its refusal while the service is active is check 8 (stub `systemctl`); the interactive part is run by no test.
 - **`release_inputs_test.py`**: 66 of 66 before; 73 of 73 after. After step G one old check failed (73 passed, 1
   failed): it expected the inputs line to end with `stale guard on (from bot/spot/config.json)`, which the new clause
   now follows. The check was changed to look for `; stale guard on` in the line and the marker at its end (commit
@@ -158,10 +178,12 @@ the final replay on the same code), one test at a time. Where a number did not c
   without the death 1487 lines equal, 2410 bars built from trades, the switch run 245 entry and exit lines equal, 15
   ladders kept, PASSED (before: the same); with the death 1317 lines equal, 2270 bars, 244 lines, PASSED (with the
   death: not run before).
-- **New, `python bot/spot/order_path_unit_test.py`**: 94 of 94 (70 before the review; the new cases: items 1 to 5).
-- **New, `python bot/spot/order_check_test.py`**: 14 of 14 (item 6).
+- **New, `python bot/spot/order_path_unit_test.py`**: 106 of 106 (70 before the review, 94 after it; the second
+  review's rule cases added).
+- **New, `python bot/spot/order_check_test.py`**: 18 of 18 (14 after the first review; the second review's pricing
+  and sweep cases added).
 - **New, `python bot/spot/order_path_test.py "2025-10-10 20:00" "2025-10-11 02:00"`** (and with the death): 23 of 23
-  each, PASSED, after the review as before it.
+  each, PASSED, after both reviews as before them (the same numbers below).
   - Without the death: (ii) and (iii) each equal (i): 111 entries, 134 exits, 45 ladders, final equity
     261723.35068834695 and the exchange's USD 261723.35053729406 identical, the same injected faults (178 unconfirmed
     cancels, 8 half sells, 3 unreadable sells, 12 take-profit errors), every event line (1454) equal, heartbeats
@@ -268,8 +290,8 @@ request; per minute = the step and the fast poll after it. Serial (ii) did not c
   2.50 / 3.90 / 10.80); requests a minute serial median 61 (max 92), batch 23 (max 54; before 21, 43).
 - The batch path's long minutes are those where exits, renewals or market sells (with their 0.4 s reads, on today's
   path) come before the allocation, or a cancel stays unconfirmed for the full 2 s.
-- The per-phase counts above come from the breakdown run (`order_path_phases`); in that run the fast poll's requests
-  were labelled "data" by a labelling bug in the test (fixed in `73d0f7e9`, labels only).
+- The per-phase counts above are those printed by `order_path_test.py` (rerun after the second review, the same
+  counts; the fast poll's `get_fills` are now labelled `fast_poll`, after a labelling fix in `73d0f7e9`).
 
 ## The order check (for the account owner, before the bot relies on the batch path)
 - **Command:** `wickctl order-check` (prints the plan and asks for the word `yes`; anything else runs the read-only
@@ -277,19 +299,28 @@ request; per minute = the step and the fast poll after it. Serial (ii) did not c
   flag it also needs `I_UNDERSTAND_LIVE_TRADING=yes` (as `usdc-check` does).
 - **What it does:** (a) builds the batch broker as the engine does and prints the library version; (b) `best_bids`
   for every coin's product five times (how many came back, median time, three products against the public book in
-  basis points); (c, flag only) three post-only good-til-date bids, ETH, SOL, XRP when tradable, at half the best bid
+  basis points); (c, flag only) three post-only good-til-date bids, ETH, SOL, XRP when tradable, at half the lower of
+  the batch and the public best bid (they must agree within 5%, else that product is skipped and the check fails),
   floored to the tick, about $25 (raised to the product's minimum order in dollars if that is higher), previewed first
   (errors: skipped), lifetime `bid_ttl_s`, one `place_many`; (d, flag only) one snapshot and single reads compared
   field by field, `cancel_many` with the round each was seen final, then a single cancel and a read for any test order
-  not confirmed, loudly if one stays open; (e) the rate-limit headers, the median time by kind of request, `order
+  not confirmed, then one read of the open orders to sweep for a test bid whose placement came back as an error (the
+  bot's tag, a test product, the test bid's price within a tick), loudly if one stays open; (e) the rate-limit headers, the median time by kind of request, `order
   check PASSED` or `FAILED` with the reasons, one JSON file `live_spot/order_check_<UTC time>.json`.
-- **It fails** when a best-bid answer is empty or lacks one of the three products, a placement is rejected or none is
-  placed, the snapshot misses a test order or differs from its single read, `cancel_many` does not confirm one, a test
+- **It fails** when a best-bid answer is empty or lacks one of the three products, a picked product's batch and
+  public best bids are missing or differ by more than 5%, a placement is rejected or none is placed, a lost test
+  order was found resting (or the sweep could not run after a failed placement), the snapshot misses a test order or differs from its single read, `cancel_many` does not confirm one, a test
   order filled, one is still open after the clean-up, or a piece switched itself off. A skipped preview is a note.
 - **It says** in its plan that the orders carry the bot's tag (a running bot's sweep would cancel them) and share the
-  account's rate limit, and asks to stop the bot first; it does not check whether the bot is running.
+  account's rate limit. `wickctl order-check` refuses to start while `systemctl is-active wickbot` succeeds (one
+  line: stop the bot first with `wickctl stop`; exit 1). `run.py order-check` run by hand does not check.
+- **The sweep's price condition** (the test bid's price within one tick) keeps a running bot's own bids out of it:
+  the bot's bids rest at their 4, 6 and 8 sigma levels, not at half the best bid.
 - **Tested** only against the scripted venue (`order_check_test.py`): every part, the read-only path, a preview with
-  errors, an order left open by `cancel_many` and cleaned up, a clean-up that fails, `--print-plan`, the live switch.
+  errors, batch and public bids that disagree or a missing batch bid, a lost placement found by the sweep (and a bot
+  bid at another price left alone), the sweep's read failing, an order left open by `cancel_many` and cleaned up, a
+  clean-up that fails, `--print-plan`, the live switch. `wickctl_test.sh` check 8 covers the refusal with a stub
+  `systemctl`.
 
 ## Not tested: the real venue
 No test reached Coinbase. The code relies on these readings of the venue and the library; what happens if each is
@@ -365,11 +396,11 @@ wrong:
   reported as an error if not found; such an order, if it does rest, is a bot-tagged good-til-date bid unknown to
   the state, which the sweep at :07, :22, :37 and :52 cancels (or it expires). If `place_many` raised all the same,
   the sweep runs at once.
-- **A false mismatch is possible:** an order that expires or is cancelled by the venue between the list read and the
-  single read shows equal fills and a different status, which counts as a mismatch. Two in one process switch the
-  list read off until a restart (every order then read singly: slower, not wrong).
-- **The order check has not been run.** It places three real bids when given the flag; it does not refuse to run
-  while the bot is running (it says to stop it).
+- **The running check, after the second review,** counts only what two reads in order cannot show: a status that
+  moved on (an expiry, a cancel) between the list read and the single read is not counted. Two counted mismatches in
+  one process switch the list read off until a restart (every order then read singly: slower, not wrong).
+- **The order check has not been run.** It places three real bids when given the flag. Through `wickctl` it refuses
+  to start while the bot's service is active; by hand (`run.py order-check`) it does not check.
 - **The library probe** builds one extra client at start on the batch path (no request is sent by building it).
 - **A typo in `order_path`** in `config.json` stops every engine at start, the paper books' too.
 - **`http_429`** counts only the batch path's requests; the serial requests' 429s are not counted, as before.
