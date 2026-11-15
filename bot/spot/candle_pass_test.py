@@ -134,11 +134,11 @@ def paper():
     eng.fast_poll = lambda: sl.append(("poll", F[0]))
     eng._wait_step(nxt, 0.0, now=lambda: F[0], sleep=sleeper(F, sl))
     rq = eng.market.req[n:]
-    check("paper: one request per coin built from trades (BTC, ETH, SOL)", [r["coin"] for r in rq] == ["BTC", "ETH", "SOL"],
-          str([r["coin"] for r in rq]))
+    check("paper: one request per coin built from trades (BTC, ETH, SOL)",
+          [r["coin"] for r in rq] == ["BTC", "ETH", "SOL"], str([r["coin"] for r in rq]))
+    gap = all(abs(rq[i + 1]["at"] - rq[i]["at"] - 0.31) < 1e-6 for i in range(len(rq) - 1))
     check("paper: the pass starts at the set second (T + 45 s) and runs in one go",
-          abs(rq[0]["at"] - (ep(T) + 45)) < 1e-6 and all(abs(rq[i + 1]["at"] - rq[i]["at"] - 0.31) < 1e-6
-                                                         for i in range(len(rq) - 1)), str([r["at"] - ep(T) for r in rq]))
+          abs(rq[0]["at"] - (ep(T) + 45)) < 1e-6 and gap, str([r["at"] - ep(T) for r in rq]))
     check("paper: every request ends at the open minute T (as update_spot(T))", all(r["end"] == T for r in rq))
     check("paper: no row for the open minute", all(T not in eng.spot[c].index for c in ["BTC", "ETH", "SOL"]))
     check("paper: then sleeps to the step (6 s after the minute); no fast poll in paper",
@@ -230,8 +230,8 @@ def step_coins():
     eng.counts = {}
     rq = step(eng, F, T + MIN)
     check("listed: the step fetches only the coin not on the trades list (SOL), no pre_missing",
-          [r["coin"] for r in rq] == ["SOL"] and "pre_missing" not in eng.counts and eng.counts.get("step_candles") == 1,
-          f"{[r['coin'] for r in rq]} {eng.counts}")
+          [r["coin"] for r in rq] == ["SOL"] and "pre_missing" not in eng.counts
+          and eng.counts.get("step_candles") == 1, f"{[r['coin'] for r in rq]} {eng.counts}")
     eng.counts = {}
     rq = step(eng, F, T + 2 * MIN)                          # no pass for the minute T + 1
     check("no pass this minute: the step fetches every coin, pre_missing for the two built from trades",
@@ -298,8 +298,8 @@ def on_demand():
         check(f"no on demand ({tag}): the stale guard skips them (no new bid)", eng._skip_old == {"ETH", "SOL"}
               and eng.counts.get("skip_old") == 2, str(eng._skip_old))
         check(f"no on demand ({tag}): candle_old counted for them (their answers were made before T ended), "
-              "not for BTC's trades-built row", eng.counts.get("candle_old") == 2 and "btc_candle_old" not in eng.counts,
-              str(eng.counts))
+              "not for BTC's trades-built row",
+              eng.counts.get("candle_old") == 2 and "btc_candle_old" not in eng.counts, str(eng.counts))
         shutil.rmtree(sd)
 
 
@@ -322,8 +322,8 @@ def candle_old():
         tag = "with the setting" if at else "without the setting"
         want = {} if at else {"candle_old": 2, "btc_candle_old": 1}
         got = {k: eng.counts[k] for k in ("candle_old", "btc_candle_old") if k in eng.counts}
-        check(f"candle_old ({tag}): answers made before the minute ended, rows trades-built: counted {want}", got == want,
-              str(eng.counts))
+        check(f"candle_old ({tag}): answers made before the minute ended, rows trades-built: counted {want}",
+              got == want, str(eng.counts))
         shutil.rmtree(sd)
 
 

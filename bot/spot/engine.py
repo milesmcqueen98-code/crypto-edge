@@ -575,10 +575,10 @@ class Engine:
         now (M its start), each exactly as update_spot(M) makes it for that coin (same request, provenance merge,
         counters and bookkeeping). The request ends before M, so it never gives M a row. Resumable: a later call for
         the same M goes on with the coins left; a new M starts again. now() is in epoch seconds (read only with a
-        limit); with stop, no request
-        starts unless it would end before stop (judged by the pass's last request); with turn_end, after the first
-        request of this call none starts unless it would end before turn_end. A coin not reached, or whose request
-        failed (pre_error), is left for the step (pre_missing there). Returns the number of coins left. Never raises."""
+        limit); with stop, no request starts unless it would end before stop (judged by the pass's last request); with
+        turn_end, after the first request of this call none starts unless it would end before turn_end. A coin not
+        reached, or whose request failed (pre_error), is left for the step (pre_missing there). Returns the number of
+        coins left. Never raises."""
         M = pd.Timestamp(M).floor("min")
         if self._cp_min != M:
             self._cp_min, self._cp_todo, self._cp_d = M, [c for c in ["BTC"] + self.coins if self._tb_listed(c)], 0.0

@@ -13,15 +13,26 @@ Runs bot/spot/live_sim_test.py on the same window, in one process, against the s
      release 3);
   D  only without --death, and only when the inputs have "trades_rows": "candle_after": B's inputs with a feed in
      which some trades bars differ from their candles (every 37th traded minute of ETH and SOL has a trades close
-     three ticks above the candle's, and one traded minute of XRP has a trades bar but no candle in any answer).
+     three ticks above the candle's, and one traded minute of XRP has a trades bar but no candle in any answer);
+  E  B's inputs with the setting "candles_at_s" the other way round: 45 when the inputs do not set it, absent when
+     they do (the candle pass between steps, bot/spot/README.md);
+  F  only without --death: B's inputs with release 3's five coins on the trades list, without and with the setting
+     (for the modelled clock below).
 Checks: every run passes live_sim_test's own checks; B, C1, C2 and D asked the trades feed; the event log of B equals
 A's line for line, heartbeats aside, with order ids masked (they are random), and its heartbeats equal A's apart
 from the counters and step timing; the entries and exits of C1 and C2 equal A's, and both kept their open ladders
 across the switch. With "candle_after": B's candle replaced trades rows, none of them differed and none was dropped.
 D: after the run the engine's table holds the candle's values for every altered minute at least three minutes old,
 the candle-less minute has no row, and tb_replaced_diff and tb_dropped count exactly the altered and candle-less
-minutes the feed handed out. D need not equal A. On a difference it prints the first differing line and adjusts
+minutes the feed handed out. D need not equal A. E and F: the same checks as B (their decisions equal A's, so
+the setting changes no decision), and in the runs with the setting no candle request for a coin built from trades
+in a step whose minute before had a candle pass. On a difference it prints the first differing line and adjusts
 nothing.
+Modelled clock (a model, not a measurement): for B, E and F, the second after the minute at which each step's data
+part would end if it started at 6 s and its requests ran one after another at a runner's medians today: 0.19 s per
+candle request, 0.58 s for BTC's trades request, 0.15 s for every other coin's (the fake feed records each request;
+the cash request and the day's volume requests are left out). Printed as the median and the largest over the steps,
+with the median number of candle and trades requests per step.
 
 Usage: python bot/spot/live_sim_inputs_test.py "2025-10-10 20:00" "2025-10-11 02:00" "--death=2025-10-10 21:10"
        [--inputs=bot/spot/config.json] [--switch=2025-10-10 21:00]
@@ -39,6 +50,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, ROOT)
 from bot.spot import live_sim_test as L  # noqa: E402
+from bot.spot import release_inputs as RI  # noqa: E402
 
 FAILS = []
 HEX = re.compile(r"[0-9a-f]{12,}")
@@ -46,7 +58,10 @@ COLS = ["open", "high", "low", "close", "volume"]
 # release 3's input settings (bot/spot/config.json on main at release 3, commit 39f7c56a), written out by hand so the
 # test needs no git: trades kept for good (no "trades_rows"), five listed coins, stale guard on
 RELEASE3 = {"newest_bar": "trades", "stale_guard": True, "trades_coins": ["BTC", "ETH", "SOL", "XRP", "ZEC"]}
-COUNTERS = ("tb_built", "tb_replaced", "tb_replaced_diff", "tb_dropped", "tb_pending", "btc_stale", "skip_old")
+COUNTERS = ("tb_built", "tb_replaced", "tb_replaced_diff", "tb_dropped", "tb_pending", "btc_stale", "skip_old",
+            "pre_fetched", "pre_missing", "pre_ondemand", "step_candles")
+AT_S = 45                                                  # E and F: the candle pass at second 45
+MODEL = {"candles": 0.19, "BTC": 0.58, "trades": 0.15, "start": 6.0}   # seconds; a runner's medians today
 
 
 def check(name, ok, extra=""):
@@ -144,6 +159,31 @@ def case_d(start, end, inputs):
     return sdD
 
 
+def steps(mkt):
+    """The requests the feed saw inside each step: {minute: {"candle_coins": [...], "trades_coins": [...]}}."""
+    out = {}
+    for ph, m, kind, c in mkt.calls:
+        if ph == "step":
+            r = out.setdefault(m, {"candle_coins": [], "trades_coins": []})
+            r["candle_coins" if kind == "candles" else "trades_coins"].append(c)
+    return out
+
+
+def model(st):
+    """Modelled end of each step's data part (seconds after the minute) and its request counts (MODEL above)."""
+    e, nc, nt = [], [], []
+    for r in st.values():
+        tr = sum(MODEL["BTC"] if c == "BTC" else MODEL["trades"] for c in r["trades_coins"])
+        e.append(MODEL["start"] + MODEL["candles"] * len(r["candle_coins"]) + tr)
+        nc.append(len(r["candle_coins"]))
+        nt.append(len(r["trades_coins"]))
+    return e, nc, nt
+
+
+def med(x):
+    return float(pd.Series(x).median()) if len(x) else float("nan")
+
+
 def main():
     a = [x for x in sys.argv[1:] if not x.startswith("--")]
     start, end = a[0], a[1]
@@ -165,6 +205,7 @@ def main():
     sdA, okA = L.main(start, end, death=death)
     print(f"\n=== B: inputs of {inputs} from the start", flush=True)
     sdB, okB = L.main(start, end, death=death, inputs=inputs)
+    mB = L.LAST["mkt"]
     print(f"\n=== C1: candle mode until {switch}, then the inputs of {inputs}", flush=True)
     sdC1, okC1 = L.main(start, end, death=death, inputs=inputs, switch=switch)
     sw1 = dict(L.SWITCH_SEEN)
@@ -202,6 +243,61 @@ def main():
     hA = [{k: v for k, v in h.items() if k != "counts" and k != "step_s"} for h in heartbeats(sdA)]
     hB = [{k: v for k, v in h.items() if k != "counts" and k != "step_s"} for h in heartbeats(sdB)]
     check("B: heartbeats equal A's apart from the counters and step timing", hA == hB)
+    on = RI.apply({}, src)[0].get("candles_at_s") is not None   # B has the setting (as the live bot takes it)
+    runs = [("B", sdB, mB, on, src.get("trades_coins"))]
+    print(f"\n=== E: the inputs of {inputs} " + ("without candles_at_s" if on else f"with candles_at_s {AT_S}"),
+          flush=True)
+    sdE, okE = L.main(start, end, death=death, inputs=inputs, over={"candles_at_s": None if on else AT_S})
+    runs.append(("E", sdE, L.LAST["mkt"], not on, src.get("trades_coins")))
+    if death is None:
+        for k, at in (("F0", False), ("F1", True)):
+            print(f"\n=== {k}: the inputs of {inputs} with release 3's five coins on the trades list, "
+                  + (f"candles_at_s {AT_S}" if at else "without candles_at_s"), flush=True)
+            sdF, okF = L.main(start, end, inputs=inputs, over={"trades_coins": RELEASE3["trades_coins"],
+                                                               "candles_at_s": AT_S if at else None})
+            check(f"{k}: live-path checks pass", okF)
+            runs.append((k, sdF, L.LAST["mkt"], at, RELEASE3["trades_coins"]))
+    else:
+        print("  F: not run with --death (run without it)", flush=True)
+    check("E: live-path checks pass", okE)
+    for tag, sd, mkt, at, tl in runs[1:]:
+        compare(tag, A, lines(sd))
+        h = [{k: v for k, v in x.items() if k != "counts" and k != "step_s"} for x in heartbeats(sd)]
+        check(f"{tag}: heartbeats equal A's apart from the counters and step timing", hA == h)
+    print(flush=True)
+    every = ["BTC"] + list(L.LAST["eng"].coins)
+    for tag, sd, mkt, at, tl in runs:
+        n, t = totals(sd)
+        print(f"  {tag}: candles_at_s {'on' if at else 'off'}; heartbeats {n}; bars built from trades {t['tb_built']}, "
+              f"replaced by the candle {t['tb_replaced']} (differed {t['tb_replaced_diff']}), dropped "
+              f"{t['tb_dropped']}, still waiting {t['tb_pending']}, fallbacks {t['fallbacks']}; candle pass: coins "
+              f"fetched {t['pre_fetched']}, pre_missing {t['pre_missing']}, on demand {t['pre_ondemand']}; candle "
+              f"requests in the step (counter) {t['step_candles']}", flush=True)
+        st = steps(mkt)
+        ps = {m for ph, m, kind, c in mkt.calls if ph == "pass"}
+        tbc = every if tl is None else [c for c in every if c in tl]
+        aft = [r for m, r in st.items() if m - pd.Timedelta(minutes=1) in ps]
+        bad = sum(1 for r in aft for c in r["candle_coins"] if c in tbc)
+        print(f"    {tag}: steps {len(st)}, after a candle pass {len(aft)}; candle requests in those steps for "
+              f"coins built from trades: {bad}; in all steps: {sum(len(r['candle_coins']) for r in st.values())}",
+              flush=True)
+        if at:
+            check(f"{tag}: no candle request for a coin built from trades in a step after a candle pass",
+                  bad == 0 and len(aft) > 0, f"{bad} in {len(aft)} steps")
+            check(f"{tag}: the candle pass ran and fetched coins", t["pre_fetched"] > 0)
+        else:
+            check(f"{tag}: without the setting no candle pass and no new counter",
+                  not ps and not any(t[k] for k in ("pre_fetched", "pre_missing", "pre_ondemand", "step_candles")))
+    print("\n  modelled clock (a model, not a measurement: the data step starts at 6 s; 0.19 s per candle request, "
+          "0.58 s for BTC's trades request, 0.15 s for every other coin's, one after another):", flush=True)
+    for tag, sd, mkt, at, tl in runs:
+        e, nc, nt = model(steps(mkt))
+        print(f"  model {tag}: {len(every) if tl is None else len(tl)} coins on the trades list, candles_at_s "
+              f"{'on' if at else 'off'}: data step ends at {med(e):.2f} s median, {max(e):.2f} s at most; per "
+              f"step {med(nc):g} candle and {med(nt):g} trades requests (median)", flush=True)
+    for sd in [x[1] for x in runs[1:]]:
+        if not FAILS:
+            shutil.rmtree(sd, ignore_errors=True)
     sdD = None
     if not after:
         print(f"  D: not run ({inputs} does not set \"trades_rows\": \"candle_after\")", flush=True)
