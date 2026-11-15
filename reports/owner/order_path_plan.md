@@ -81,7 +81,29 @@
 - If either fails, the cause is found before rule B's count goes on. No P&L is read for this.
 
 ## Deviation log
-(none yet)
+- **Nov 14 2026, 22:42 ET (orchestrator), before any live order.** Additions made in four reviews of the build
+  (branch owner/order-path). None changes which bids are placed; each makes the new path lean less on what the
+  venue's answers are assumed to be.
+  - **The status read costs two more requests a minute.** Before the batch read, one request lists the orders
+    that had a fill since the last read; those are read singly, as today. And every minute one order of the batch
+    read is also read singly and compared. The list is switched off after two contradictions (the list showing
+    more filled than a later single read, a different average price or more fees at equal fills, or a final
+    status the single read does not confirm).
+  - **Cancels.** If the batch cancel request fails, its orders are cancelled singly at once. From 0.6 s after the
+    cancel, an order the list still shows as open is also read singly, and that read decides.
+  - **Placements.** One unreadable answer no longer costs the record of the other bids of the minute. If the
+    placing call fails as a whole, the sweep for unknown bot orders runs at once.
+  - **An older library** on the server does not stop the bot (it then runs without the venue's limit headers).
+  - **A check the account owner runs once** (`wickctl order-check`): three bids of about $25 at half the market
+    price are placed, read and cancelled through the batch requests, with the bot stopped. It reports whether the
+    venue's answers are what the code assumes and how long they take. The sandbox cannot show that (it does not
+    serve the best-bid request or the limit headers; 26 of its 28 checks pass, runs 43667375643 and 43670119883).
+  - **The first-day figure is now measurable as written.** The heartbeat counts the minutes in which any batch
+    request fell back to single requests (`fallback_min`), and `wickctl status` prints the share and the median
+    time from the data step's end to the last new bid.
+  - **The model of the clock after these additions** (0.1 s a request; a model): a median 23 requests a minute and
+    2.3 s from the data step's end to the last new bid, against 50 requests and 7.8 s on today's path. The plan's
+    "handful of calls" and "about 1 to 2.5 s" were written before the safety reads were added.
 
 ## Sources
 - Cancel Orders: https://docs.cdp.coinbase.com/api-reference/advanced-trade-api/rest-api/orders/cancel-order
