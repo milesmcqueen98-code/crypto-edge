@@ -161,6 +161,40 @@ book's log. Tables: reports/owner/bar_source/ (summary.md has every coin and day
     disagreements on arming. Whether that shows in a running book is Part 2's question.
 - **What it decides:** the single-coin clause only. If Part 2 passes, all twelve go to way C and none is held back.
 
+## Result of Part 2 (read Nov 15 2026, 02:37 ET)
+Run as "How the reads are run" says, steps 1 to 4. The record is reports/owner/reconcile_tb/part2/README.md.
+
+- **The count came first, from the two logs alone:** at 22:29 UTC on Nov 14 the third book had 452 new bids on the
+  twelve and the fourth 435, on 4,187 common decision minutes. Both are over 300, so the period is the planned one
+  (22:30 UTC on Nov 11 to 22:29 UTC on Nov 14) and was not extended.
+- **Research:** runner job 43689324147 on branch owner/read-part2, 1,224 answers, nothing refused or dropped.
+- **The fourth book's items 1 to 5,** on its log cut at the period's end: all five meet. 73,068 of 73,170 trades
+  bars verified (99.86%); no refusal and no rate-limit stop; data step median 13.5 s (bar 15 s), half-hour maximum
+  20 s or less in 97.2% of 141 heartbeats; no error event; no unconfirmed row. Engine commit 58eba8b throughout.
+- **The rule, on the twelve:**
+
+  | Measure | Third book | Fourth book | Verdict |
+  |---|---|---|---|
+  | New bids the research would not have placed | 20 of 452 (4.42%) | 18 of 435 (4.14%) | pass (strictly lower) |
+  | Research's new bids with a bot bid within a minute | 414 of 448 (92.41%) | 404 of 434 (93.09%) | pass (not lower) |
+  | New bids more than 5 bp from the research level | 4 of 452 (0.88%) | 4 of 435 (0.92%) | pass (under 5%) |
+
+- **Part 2: pass.** Trades for the newest minute with the venue's candle afterwards, for all 18 coins, is the
+  proposal for the next input release. By Part 1's single-coin clause no coin is held back.
+- **How strong it is.**
+  - On the twelve the two books are nearly the same: the first measure passes by two bids, the wrong-side bids
+    fall on the same coins in both books, and the four level errors are the same four bids (one minute, 15:43 UTC
+    on Nov 13). Three days of bids cannot tell the two ways apart on these coins. Part 1 is the measure of the
+    difference: about 30% fewer disagreements on arming and about a fifth fewer score misses.
+  - The clear gains are outside the rule. On ETH, SOL, XRP, LTC and ZEC, which the third book keeps on trades
+    rows: wrong-side bids 5 of 292 against 1 of 281, level errors 7 against 2 (ZEC 5 against 1). And minutes with
+    no new bid because an answer was old: 763 coin-minutes in the third book, 4 in the fourth.
+- **What it does not settle:** the step. The fourth book's data step ended a median 13.5 s after the minute. The
+  release is built so that its bids rest no later than release 3's, and runs as a paper book first (deviation log,
+  Nov 14 and Nov 15).
+- **The third and fourth books have done their work.** They keep running unchanged for now; the plan for the
+  paper test of the build will name its control.
+
 ## Addition: candles after the bids (plan fixed Nov 15 2026, 02:07 ET, before any evaluation)
 - **Why.**
   - The fourth book's way asks for 18 candles and then 18 coins' trades before it decides. Its data step ends a

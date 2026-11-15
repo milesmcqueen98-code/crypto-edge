@@ -870,3 +870,38 @@ FORWARD_TESTS.md.
     of trades-built coins into a pass between steps. It also corrects the inputs line where it said "candles for
     the other coins" with no other coin left.
   - **Tomorrow, 08:40 ET:** Part 2's read. Its period ended at 22:29 UTC today.
+
+## Nov 15 2026 (times ET; UTC is five hours later)
+- **02:37. Night: Part 2 read (pass), a gate on the new order path, the data-step build's floor under measurement,
+  timing Part 3 started.**
+  - **Part 2 of the bar-source plan, read as planned** (plan, "Result of Part 2"; record in
+    reports/owner/reconcile_tb/part2/). The logs reached the period's end hours ago, so the read did not wait for
+    the 08:40 check. Count first: 452 and 435 new bids on the twelve, no extension. Research job 43689324147.
+    Verdict: **pass**. Wrong-side bids on the twelve 18 of 435 against 20 of 452, matched 404 of 434 against 414
+    of 448, level errors 4 and 4, items 1 to 5 all met. On the twelve the books are nearly the same; the clear
+    gains are on the five coins the third book keeps on trades rows and in minutes skipped for an old answer (4
+    against 763).
+  - **Order path.** The full offline suite passed on the reviewed commit (d21317af, run 43673559075: 20 test
+    files, none with a failure, replay 156 rungs identical, the three-way simulation equal in both windows). Then
+    one more change, logged in the plan before the work: **a gate**. The live bot uses the batch path only after
+    `wickctl order-check` has passed on that server with the installed library; until then it runs release 3's
+    path. Reason: the batch requests have never reached the real venue, and a server updated and started without
+    the check would have traded on them. Built by a Sonnet agent (decision in `run.py`, engine untouched; 62
+    status and gate checks, 20 for the check command), reviewed, pushed as e3bd62d1. The suite is running on that
+    commit (run 43690044333). Release 4 follows if it is clean.
+  - **Data step.** The builder of the request-at-second-45 design found that its answers can be copies made at
+    the start of the minute by other clients of the same address, which leaves two trades rows instead of one.
+    The collector's record agrees (BTC's candle answer is a copy in 96% of minutes, a median 65 s old). An
+    addition to the bar-source plan was fixed at 02:07, before any output: an emulation pass with two trades rows
+    for all 18 coins, to pass if it is no worse than release 3's inputs on arming and on scores. At 02:26, still
+    before any output, a correction: the later request is never worse than one right after the bids, so the pass
+    measures the built design's floor. Tool extended by a Sonnet agent (50 new offline checks), reviewed; runner
+    job 43689717933.
+  - **Timing study, Part 3.** Two policies added and the way the new paths are derived logged at 02:29, before
+    any evaluation. An Opus agent is on phase 1 (regression of the six policies on file, a runner script that
+    re-derives the paths from the first fetch's print artifacts, the evaluator for twelve policies). The
+    artifacts expire on Dec 1.
+  - **Test A's start is on file:** the main book's first decision minute on release 3 was 17:27 UTC on Nov 14.
+    Its heartbeats carry the trades counters (150 bars per half hour, five coins); 15 fallbacks in about 3,400
+    coin-minutes so far. Its data step ended a median of about 10 to 12 s after the minute, by runner; between
+    21:00 and 23:00 UTC on Nov 14 all three books were slow (13 to 17 s).

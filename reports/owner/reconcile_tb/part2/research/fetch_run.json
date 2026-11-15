@@ -1,0 +1,198 @@
+{
+ "utc_finished": "2026-11-15T07:33:15.695883+00:00",
+ "coins": [
+  "ETH",
+  "SOL",
+  "XRP",
+  "DOGE",
+  "LTC",
+  "LINK",
+  "BCH",
+  "SUI",
+  "XLM",
+  "HBAR",
+  "NEAR",
+  "AAVE",
+  "HYPE",
+  "ENA",
+  "PEPE",
+  "ONDO",
+  "ZEC"
+ ],
+ "coins_fetched": [
+  "BTC",
+  "ETH",
+  "SOL",
+  "XRP",
+  "DOGE",
+  "LTC",
+  "LINK",
+  "BCH",
+  "SUI",
+  "XLM",
+  "HBAR",
+  "NEAR",
+  "AAVE",
+  "HYPE",
+  "ENA",
+  "PEPE",
+  "ONDO",
+  "ZEC"
+ ],
+ "refused": null,
+ "dropped": [],
+ "errors": [],
+ "answers": 1224,
+ "books": [
+  "paper_spot",
+  "paper_spot_tb",
+  "paper_spot_t18"
+ ],
+ "period_start": "2026-11-11 22:25:00",
+ "period_end": "2026-11-14 22:29:00",
+ "min_age_min": 60.0,
+ "checked_at_utc": "2026-11-15 07:18:37.289938",
+ "live_minutes": 4326,
+ "fetch_from": "2026-10-31 22:19:00",
+ "fetch_to": "2026-11-14 22:29:00",
+ "cache_counts": {
+  "MISS": 1131,
+  "REVALIDATED": 48,
+  "EXPIRED": 45
+ },
+ "newest_window": {
+  "BTC": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:18:50 GMT",
+   "generated": "2026-11-15 07:18:50"
+  },
+  "ETH": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:19:04 GMT",
+   "generated": "2026-11-15 07:19:04"
+  },
+  "SOL": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:19:18 GMT",
+   "generated": "2026-11-15 07:19:18"
+  },
+  "XRP": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:19:31 GMT",
+   "generated": "2026-11-15 07:19:31"
+  },
+  "DOGE": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:19:45 GMT",
+   "generated": "2026-11-15 07:19:45"
+  },
+  "LTC": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:19:58 GMT",
+   "generated": "2026-11-15 07:19:58"
+  },
+  "LINK": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:20:12 GMT",
+   "generated": "2026-11-15 07:20:12"
+  },
+  "BCH": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:20:26 GMT",
+   "generated": "2026-11-15 07:20:26"
+  },
+  "SUI": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:20:39 GMT",
+   "generated": "2026-11-15 07:20:39"
+  },
+  "XLM": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:20:53 GMT",
+   "generated": "2026-11-15 07:20:53"
+  },
+  "HBAR": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:21:06 GMT",
+   "generated": "2026-11-15 07:21:06"
+  },
+  "NEAR": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:21:20 GMT",
+   "generated": "2026-11-15 07:21:20"
+  },
+  "AAVE": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:21:34 GMT",
+   "generated": "2026-11-15 07:21:34"
+  },
+  "HYPE": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:21:47 GMT",
+   "generated": "2026-11-15 07:21:47"
+  },
+  "ENA": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:22:01 GMT",
+   "generated": "2026-11-15 07:22:01"
+  },
+  "PEPE": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:22:14 GMT",
+   "generated": "2026-11-15 07:22:14"
+  },
+  "ONDO": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:22:28 GMT",
+   "generated": "2026-11-15 07:22:28"
+  },
+  "ZEC": {
+   "end": "2026-11-14 22:29:00",
+   "cache": "MISS",
+   "age": null,
+   "date": "Sun, 15 Nov 2026 07:22:42 GMT",
+   "generated": "2026-11-15 07:22:42"
+  }
+ },
+ "fetch_s": 245,
+ "compute_s": 633,
+ "rows": 73542,
+ "late_rows": 4676,
+ "valid_share": 1.0,
+ "workers": 4,
+ "above_thr": 65110
+}
