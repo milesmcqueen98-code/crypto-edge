@@ -200,12 +200,13 @@ Both use the generic runner `hunt2.yml` on this branch; `commit` stays empty, no
   `run.py` imports that changed (`release_inputs.py`, `engine.py`).
 
 ## Data step with 18 coins on trades, as the documents record it
-- **The fourth paper book** (18 coins on trades, the same inputs; reports/owner/PAPER_STATUS.md, report of 14:13 UTC
-  on Nov 14): data step median 13.5 s after the minute over 114 heartbeats, half-hour maximum 20 s or less in 98.2%
-  of them, largest 20.9 s. Its registered bar is a median of 15 s or less (bar_source_prereg.md, deviation log
-  Nov 11, 11:13 ET). Also from that report: 59,268 of 59,292 attempted coin-minutes verified (99.96%; 23 budget
-  fallbacks, 1 unverified, no rate limit); `tb_replaced` 56,583, `tb_replaced_diff` 8,942, `tb_dropped` 1,572;
-  `tb_pending` 126 of 61,110 coin-minutes; no error event.
+- **The fourth paper book** (18 coins on trades, the same inputs; reports/owner/PAPER_STATUS.md as on `main` in the
+  report of 22:42 UTC on Nov 14, which this branch does not carry): data step median 13.4 s after the minute over
+  138 heartbeats, half-hour maximum 20 s or less in 97.8% of them, largest 23.4 s; by day the medians were 13.8,
+  13.5, 13.4 and 12.5 s. Its registered bar is a median of 15 s or less (bar_source_prereg.md, deviation log Nov 11,
+  11:13 ET). The report of 14:13 UTC, on this branch, had 13.5 s over 114 heartbeats. Also from the 22:42 report:
+  71,588 of 71,622 attempted coin-minutes verified (99.95%; 32 budget fallbacks, 2 unverified, no rate limit);
+  `tb_replaced` 68,429, `tb_replaced_diff` 10,533, `tb_dropped` 1,813; `tb_pending` 143 of 74,070 coin-minutes.
 - **Smoke run 43044140767** (45 minutes, 18 coins): data step median 13.3 to 13.5 s, maximum 17.7 s.
 - **For comparison,** the third book (six coins): median 10.1 s over its three days; release 3's runner smoke (five
   coins): median 11.1 s. Eighteen trade requests in a row take about 3.5 s more than six (LOG.md, Nov 11).
@@ -224,10 +225,10 @@ Both use the generic runner `hunt2.yml` on this branch; `commit` stays empty, no
   and no `trades_rows` (or `"keep"`) in the live file. Not tested as such; the rule (`apply`, `inputs_local`) is.
 - **The start-up warning still names release 3** ("without the release 3 inputs (trades with the stale guard)"). It
   is not shown with these inputs. Left unchanged (a safety check).
-- **The decision row differs from the final candle in about one minute in six.** In the fourth book 8,942 of 56,583
-  replaced rows (15.8%) had a candle close more than a tick from the trades bar the decision had used. The row is
-  corrected one minute later; the decision of that minute is not. This is the late cut that bar_source_prereg.md
-  describes; Part 2's read measures its effect.
+- **The decision row differs from the candle that replaces it in about one replaced row in seven.** In the fourth
+  book 10,533 of 68,429 replaced rows (15.4%, report of 22:42 UTC on Nov 14) had a candle close more than a tick from
+  the trades bar the decision had used. The row is corrected one minute later; the decision of that minute is not.
+  This is the late cut that bar_source_prereg.md describes; Part 2's read measures its effect.
 - **No coin is left on the candle path.** Every coin's newest minute depends on the trades list. On Nov 13 the third
   book skipped 316 coin-minutes for an old candle answer in 12 hours while the fourth book, reading no newest bar
   from candles, skipped none for this (LOG.md, Nov 13, 08:46). A failing trades feed shows as fallbacks
@@ -240,8 +241,11 @@ Both use the generic runner `hunt2.yml` on this branch; `commit` stays empty, no
 - **README.** The engine-c text says the option is the fourth book's (`config.t18.json`); this branch's README now
   also says `config.json` uses it from release 4. The release note and the other owner files are not touched.
 - **Branch state.** No conflict came up in the cherry-pick: `main`'s README changes and the option's README lines
-  merged by themselves at the place the brief named. Commits since `main`: the two picked commits (messages kept, the
-  two trailer lines added), step B, a work-in-progress commit of step D's code (pushed at the coordinator's request
-  before its runs), step C, then the results and these files.
+  merged by themselves at the place the brief named. Commits since `main`: the two picked commits (messages kept,
+  the two trailer lines added), step B, a work-in-progress commit of step D's code (pushed at the coordinator's
+  request before its runs), step C, then the results and these files. `main` moved on while this was prepared (to
+  cfba1f0a at the time of writing) in `reports/` and the paper books' folders only; nothing under `bot/`,
+  `scripts/`, `edge/` or `.github/` differs from the branch's base, and the engine and `tb_smoke.py` diffs against
+  today's `main` are still the engine-c diffs line for line.
 - **Test conditions here.** Another agent ran replay tests in the same two-core container for most of this work, so
   the times above are longer than they would be alone.
