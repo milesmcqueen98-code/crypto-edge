@@ -1119,16 +1119,15 @@ def t_engine_snap_check():
     m = Mini()
     try:
         m.allocate()
-        for oid in m.v.orders:
-            m.v.orders[oid]["status"] = "QUEUED"
-        other = lambda kw: {"orders": [dict(m.v.view(i), status="OPEN") for i in kw["order_ids"]]}  # noqa: E731
+        other = lambda kw: {"orders": [dict(m.v.view(i), average_filled_price="2.0")  # noqa: E731
+                                       for i in kw["order_ids"]]}       # equal fills (none), another average price
         m.v.script["list_orders"] = [other, other]
         m.next()
         m.settle()
         w = [x for x in m.ev("warning") if "differs from the single read" in x.get("msg", "")]
-        check("engine, running check: a different status with equal fills -> a mismatch, counted and logged with both "
-              "dicts", m.e.counts.get("snap_mismatch") == 1 and len(w) == 1 and w[0]["snapshot"]["status"] == "OPEN"
-              and w[0]["single"]["status"] == "QUEUED", str(w))
+        check("engine, running check: equal fills with another average price -> a mismatch, counted and logged with "
+              "both dicts", m.e.counts.get("snap_mismatch") == 1 and len(w) == 1 and w[0]["snapshot"]["avg"] == 2.0
+              and w[0]["single"]["avg"] == 0.0, str(w))
         m.next()
         m.settle()
         off = [x for x in m.ev("warning") if "snapshot switched off" in x.get("msg", "")]
@@ -1139,6 +1138,39 @@ def t_engine_snap_check():
         m.settle()
         check("engine, running check: snapshot off -> settle reads every order singly (no fills or list request)",
               methods(m.v) == ["get_order", "get_order"], str(methods(m.v)))
+    finally:
+        m.close()
+
+
+def t_snap_rule():
+    d = lambda f, avg, fees, st: dict(filled=f, avg=avg, fees=fees, status=st, last_fill=None)  # noqa: E731
+    D = E.Engine._snap_differs
+    cases = [("list more filled than the single read", d(0.5, 100.0, 0.03, "OPEN"), d(0.4, 100.0, 0.024, "OPEN"), True),
+             ("equal fills, another average price", d(0.5, 100.0, 0.03, "OPEN"), d(0.5, 100.5, 0.03, "OPEN"), True),
+             ("equal fills, list more fees", d(0.5, 100.0, 0.04, "OPEN"), d(0.5, 100.0, 0.03, "OPEN"), True),
+             ("list final, single read not final", d(0.0, 0.0, 0.0, "CANCELLED"), d(0.0, 0.0, 0.0, "OPEN"), True),
+             ("single read more filled", d(0.4, 100.0, 0.024, "OPEN"), d(0.5, 100.2, 0.03, "OPEN"), False),
+             ("list OPEN, then CANCELLED", d(0.0, 0.0, 0.0, "OPEN"), d(0.0, 0.0, 0.0, "CANCELLED"), False),
+             ("list OPEN, then EXPIRED", d(0.0, 0.0, 0.0, "OPEN"), d(0.0, 0.0, 0.0, "EXPIRED"), False),
+             ("list OPEN, then CANCEL_QUEUED", d(0.0, 0.0, 0.0, "OPEN"), d(0.0, 0.0, 0.0, "CANCEL_QUEUED"), False),
+             ("list PENDING, then OPEN", d(0.0, 0.0, 0.0, "PENDING"), d(0.0, 0.0, 0.0, "OPEN"), False),
+             ("equal fills, fees larger in the single read", d(0.5, 100.0, 0.03, "OPEN"), d(0.5, 100.0, 0.04, "OPEN"),
+              False),
+             ("equal within 1e-9 relative", d(0.5, 100.0, 0.03, "OPEN"), d(0.5 * (1 + 1e-12), 100.0, 0.03, "OPEN"),
+              False)]
+    for name, a, b, want in cases:
+        check(f"running check rule: {name} -> {'a mismatch' if want else 'nothing'}", D(a, b) is want)
+    m = Mini()
+    try:
+        m.allocate()
+        for oid in m.v.orders:
+            m.v.orders[oid]["status"] = "CANCELLED"
+        opened = lambda kw: {"orders": [dict(m.v.view(i), status="OPEN") for i in kw["order_ids"]]}  # noqa: E731
+        m.v.script["list_orders"] = [opened]
+        m.next()
+        m.settle()
+        check("engine, running check: the list shows OPEN, the single read after it CANCELLED -> nothing counted",
+              "snap_mismatch" not in m.e.counts and not [x for x in m.ev("warning") if "differs" in x.get("msg", "")])
     finally:
         m.close()
 
@@ -1314,6 +1346,7 @@ def part2():
     t_engine_settle()
     t_engine_settle_recent_fill()
     t_engine_snap_check()
+    t_snap_rule()
     t_engine_setting()
     t_engine_place_guard()
     t_old_library()

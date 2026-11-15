@@ -1828,15 +1828,20 @@ class Engine:
         return {"snap": snap}
 
     def _snap_differs(a, b):
-        """A snapshot dict a against a single read b made after it: a mismatch when a shows more filled, or when the
-        fills are equal and the status, average price or fees differ (floats to 1e-9 relative)."""
+        """A snapshot dict a against a single read b made after it: a mismatch only for what cannot happen between two
+        reads: a shows more filled than b; or equal fills and a different average price; or equal fills and a shows
+        more fees; or a's status final and b's not (floats to 1e-9 relative). Any other status change (OPEN then
+        CANCEL_QUEUED, CANCELLED or EXPIRED, PENDING then OPEN) is a change between the reads, not a mismatch."""
         def eq(x, y):
             return abs(x - y) <= 1e-9 * max(abs(x), abs(y))
         if a["filled"] > b["filled"] and not eq(a["filled"], b["filled"]):
             return True
         if eq(a["filled"], b["filled"]):
-            return a["status"] != b["status"] or not eq(a["avg"], b["avg"]) or not eq(a["fees"], b["fees"])
-        return False
+            if not eq(a["avg"], b["avg"]):
+                return True
+            if a["fees"] > b["fees"] and not eq(a["fees"], b["fees"]):
+                return True
+        return a["status"] in LiveBroker.TERMINAL and b["status"] not in LiveBroker.TERMINAL
     _snap_differs = staticmethod(_snap_differs)
 
     def _cancel_answer(self, lad, key, t, minute, ans):
