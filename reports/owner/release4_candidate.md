@@ -81,7 +81,7 @@ masked). Commands from the repository root of the copy.
 
 - **Parity replay** `python bot/spot/replay_test.py 2025-10-10 2025-10-12`: 156 rungs, 88 parents on both sides,
   "PARITY OK"; paper part 72 ladders, 135 entries, P&L $11,017. Baseline and after step A: stdout and both event logs
-  (1021 and 1304 lines) identical. After step C: still running when this line was written.
+  (1021 and 1304 lines) identical. After step C (`c1e4ab57`): identical as well.
 - **Live-path simulation** `python bot/spot/live_sim_test.py "2025-10-10 20:00" "2025-10-11 02:00"`: 540 minutes,
   111 entries, 134 exits, P&L $11,723.34, bot equity equal to the exchange's to $0.000151, PASSED. Baseline, after
   step A and after step C: stdout and event log (1504 lines) identical.
@@ -106,7 +106,9 @@ masked). Commands from the repository root of the copy.
     line as before; file unchanged.
 - **`live_sim_inputs_test.py "2025-10-10 20:00" "2025-10-11 02:00"`** on the step C config: PASSED, 22 checks. On the
   baseline and after step A (the old file, release 3's inputs): PASSED, 9 checks, stdout identical, and the kept
-  event logs of A, B and C identical, heartbeats included.
+  event logs of A, B and C identical, heartbeats included. To keep the event logs for these comparisons each run was
+  repeated through a small wrapper that only turns off the test's clean-up of its temp folders; the plain command
+  gave the same result lines.
   - B (the release inputs from the start, trades feed made from the candles): every log line equal to the candle
     run's, heartbeats aside (1487 lines; 111 entries, P&L $11,723.34); heartbeats equal apart from the counters and
     step timing. From the heartbeats: 8,187 bars built from trades, 8,153 trades rows replaced by the candle, 0 of
