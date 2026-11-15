@@ -84,16 +84,20 @@ if a.cmd in ("paper", "live"):
         if os.environ.get("I_UNDERSTAND_LIVE_TRADING") != "yes":
             sys.exit("Live mode places real orders. Set I_UNDERSTAND_LIVE_TRADING=yes after reading bot/spot/README.md.")
     print_inputs()
+    in_use, gate_line = "serial", None
     if a.cmd == "live":                                    # the installed library (README, "Order path")
         v = library_version()
         print("library: coinbase-advanced-py " + (v or "version not found"), flush=True)
-        if cfg.get("order_path") == "batch":               # a printed line only: no event, no page at every start
-            try:
-                from bot.spot import order_status
-                if not order_status.check_passed(sd):
-                    print(order_status.NOT_PASSED, flush=True)
-            except Exception as err:
-                print(f"order check: could not be read ({repr(err)[:80]})", flush=True)
+        try:                                               # the order path is decided here, before the engine is built
+            from bot.spot import order_status
+            in_use, gate_line = order_status.apply_gate(cfg, sd, v)
+        except Exception as err:
+            if cfg.get("order_path") == "batch":
+                cfg["order_path"] = "serial"
+            in_use = "serial"
+            gate_line = f"order path in use: serial: the order check could not be read ({repr(err)[:80]})"
+        if gate_line:
+            print(gate_line, flush=True)
     warn = None
     if a.cmd == "live" and not (cfg.get("newest_bar", "candles") == "trades" and cfg.get("stale_guard", False)):
         warn = ("live trading is starting without the release 3 inputs (trades with the stale guard); "
@@ -101,6 +105,8 @@ if a.cmd in ("paper", "live"):
         print("WARNING: " + warn, flush=True)
     mins = a.minutes if a.minutes is not None else (345 if a.cmd == "paper" else 1e9)
     eng = Engine(mode=a.cmd, cfg=cfg, state_dir=sd)
+    if a.cmd == "live":                                    # one event at every live start; the watchdog ignores it
+        eng.log("order_path", in_use=in_use, why=gate_line or "set in the config")
     if warn:
         eng.log("warning", msg=warn)                       # events.jsonl: the watchdog alerts on warning events
     eng.run(mins)

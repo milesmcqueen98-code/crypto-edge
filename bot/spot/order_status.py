@@ -2,7 +2,8 @@
 
 Pure functions, standard library only (Python 3.8 and later). summarize() reads event-log lines (text, one JSON event
 per line; a malformed line is skipped) and the current time, and returns the numbers; latest_check() and
-check_passed() read the order-check result files in a state folder; block() puts the lines together.
+check_passed() read the order-check result files in a state folder; gate() and apply_gate() decide which order path
+a live bot starts on; block() puts the lines together.
 """
 import glob
 import json
@@ -13,7 +14,6 @@ from datetime import datetime, timedelta
 COUNTERS = ("reprice", "arm", "cancel_unconfirmed", "snap_miss", "snap_mismatch", "bbo_miss", "batch_fallback",
             "http_429", "cancel_single", "fallback_min")
 HB_MIN = 30                                            # minutes between heartbeats (Engine._heartbeat)
-NOT_PASSED = "order check: not yet passed on this server (wickctl order-check)"
 
 
 def _ts(s):
@@ -98,6 +98,45 @@ def check_passed(state_dir):
     return any(r and r.get("passed") is True and r.get("place_test_orders") is True for _, r in _checks(state_dir))
 
 
+def gate(state_dir, library):
+    """(use_batch, line): the batch path is used only when the newest order check that placed test orders passed
+    with the installed library version (`library`, None when not found). Read-only runs are ignored, unless the newest
+    file of all cannot be read. Never raises."""
+    try:
+        files = _checks(state_dir)
+        if files and files[-1][1] is None:
+            return False, (f"order path in use: serial: {os.path.basename(files[-1][0])} cannot be read; "
+                           "run wickctl order-check again")
+        placed = [(p, r) for p, r in files if isinstance(r, dict) and r.get("place_test_orders") is True]
+        if not placed:
+            return False, ("order path in use: serial, until the order check has passed on this server "
+                           "(wickctl order-check)")
+        path, r = placed[-1]
+        if r.get("passed") is not True:
+            return False, ("order path in use: serial: the last order check with test orders failed "
+                           f"({os.path.basename(path)}); run wickctl order-check again")
+        lib = r.get("library")
+        if not (isinstance(lib, str) and lib) or lib != library:
+            return False, (f"order path in use: serial: the order check passed with coinbase-advanced-py "
+                           f"{lib if isinstance(lib, str) and lib else 'unknown'}, the installed version is "
+                           f"{library or 'not found'}; run wickctl order-check again")
+        return True, (f"order path in use: batch (order check passed {r.get('started')} with "
+                      f"coinbase-advanced-py {lib})")
+    except Exception as err:
+        return False, f"order path in use: serial: the order check could not be read ({repr(err)[:80]})"
+
+
+def apply_gate(cfg, state_dir, library):
+    """For a config on the batch path: ask gate(); when it says no, set cfg["order_path"] to "serial". Returns
+    (in_use, line), in_use "batch" or "serial". A config not on the batch path is left alone: ("serial", None)."""
+    if cfg.get("order_path") != "batch":
+        return "serial", None
+    use, line = gate(state_dir, library)
+    if not use:
+        cfg["order_path"] = "serial"
+    return ("batch" if use else "serial"), line
+
+
 def _r(x):
     return "-" if x is None else f"{x:.2f}"
 
@@ -105,7 +144,8 @@ def _r(x):
 def block(cfg, state_dir, lines, now, library):
     """The order-path lines of `status` for a config on the batch path."""
     out = [f"order path: batch ({cfg.get('orders_rate', 10)} requests a second, {cfg.get('place_workers', 1)} placing "
-           "threads)", f"  library: coinbase-advanced-py {library or 'not found'}"]
+           "threads)", "  " + gate(state_dir, library)[1],
+           f"  library: coinbase-advanced-py {library or 'not found'}"]
     lc = latest_check(state_dir)
     if lc is None:
         out.append("  order check: none on this server yet (wickctl order-check)")

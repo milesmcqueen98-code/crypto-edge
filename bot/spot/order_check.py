@@ -163,6 +163,12 @@ def run(broker, market, coins, cfg, place, out_dir, say=print, clock=time.monoto
         json.dump(res, fh, indent=1, default=str)
     say(f"result written to {path}")
     say("order check PASSED" if not reasons else "order check FAILED: " + "; ".join(reasons))
+    if reasons:
+        say("The bot keeps the serial path.")
+    elif place:
+        say("The bot uses the batch order path from its next start (wickctl start).")
+    else:
+        say("Read-only run: the bot keeps the serial path until a run with test orders passes.")
     return res
 
 

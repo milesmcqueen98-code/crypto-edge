@@ -74,7 +74,9 @@ def main():
         r, out = go(True, v, b, ck, d)
         k = methods(v)
         pl = r.get("placed", [])
-        check("all parts: PASSED, the final line says so", r["passed"] and out[-1] == "order check PASSED", out[-1])
+        check("all parts: PASSED, then the closing line: the batch path from the next start",
+              r["passed"] and out[-2] == "order check PASSED"
+              and out[-1] == "The bot uses the batch order path from its next start (wickctl start).", str(out[-2:]))
         check("all parts: the plan printed first, naming the flag and the bot's tag",
               "ONLY WITH --place-test-orders" in out[0] and "wk1m-" in out[0])
         check("all parts: best_bids five times, every product with a bid; the public book 1 bp off for ETH, SOL, XRP",
@@ -107,6 +109,9 @@ def main():
         check("no flag: the plan and the read-only parts only (best bids), nothing previewed, placed or cancelled",
               r["passed"] and set(k) == {"get_best_bid_ask"} and "placed" not in r
               and any("skipped: no --place-test-orders" in x for x in out), str(set(k)))
+        check("no flag: PASSED, then the closing line: read-only, the serial path stays",
+              out[-2] == "order check PASSED" and out[-1] == "Read-only run: the bot keeps the serial path until a "
+              "run with test orders passes.", str(out[-2:]))
 
         # a product whose preview has errors
         ck, v, b = setup()
@@ -127,6 +132,9 @@ def main():
               and any("SOL-USD: skipped" in x and "differ by more than 5%" in x for x in r["reasons"])
               and any("XRP-USD: skipped, no batch best bid" in x for x in r["reasons"])
               and [p["product"] for p in r["placed"]] == ["ETH-USD"], str(r["reasons"]))
+        check("FAILED: the final line says so, then the closing line: the serial path stays",
+              out[-2].startswith("order check FAILED: ") and out[-1] == "The bot keeps the serial path.",
+              str(out[-2:]))
 
         # a placement reported as failed whose order rests at the venue: found by the sweep; a bot bid left alone
         ck, v, b = setup()
