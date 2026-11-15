@@ -38,7 +38,7 @@ case "${1:-help}" in
                         echo "From its next start the bot uses the serial order path. A running bot keeps the path it started with: wickctl restart applies it now." ;;
                 batch)  sudo -u wick rm -f $H || exit 1
                         echo "The hold is removed. From its next start the bot uses the batch order path if the order check has passed on this server (wickctl status says which)." ;;
-                *)      if [ -e "$H" ]; then echo "held on the serial order path by hand"
+                *)      if sudo -u wick test -e "$H"; then echo "held on the serial order path by hand"
                         else echo "no hold: the order check decides (wickctl status says which)"; fi
                         echo "usage: wickctl order-path serial|batch" ;;
               esac ;;

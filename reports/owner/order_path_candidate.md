@@ -43,15 +43,15 @@ No change to `engine.py`, `market.py`, `config.json`, `release_inputs.py` or any
   all apply at the next start. One help line next to `order-check`. Tests: `order_status_test.py` (gate with the hold
   over a placed pass and over an unreadable newest file, removed again, `status` block, `live` start with the
   stand-in engine) and `wickctl_test.sh` checks 9 to 15 (the first eight unchanged; the stub `systemctl` sees no
-  call). Counts after this addition: `order_status_test.py` 70, `wickctl_test.sh` 15, others as above.
+  call). The final counts are in the "Tests" bullet above.
 - **Removed:** the constant `NOT_PASSED` and the old start-up line `order check: not yet passed on this server`.
   `check_passed` stays (nothing calls it now).
-- **Tests** (all run here, passed): `order_status_test.py` 62 checks (part 1b new: `gate` and `apply_gate` on temp
+- **Tests** (all run here, passed): `order_status_test.py` 70 checks (62 with the gate work, 8 added with the hold) (part 1b new: `gate` and `apply_gate` on temp
   state folders, every case of the rule; part 2: the block's second line in each case; part 3: the engine's path,
   the printed line and the one `order_path` event, batch without a check, with a failed one and a read-only one, with
   a pass, with a pass of another library, with the library not found, serial config, no key, and paper mode),
   `order_check_test.py` 20 (the three closing lines), `order_path_unit_test.py` 116, `release_inputs_test.py` 74,
-  `wickctl_test.sh` 8, `watchdog_test.py` 31. The installed library in these tests is a stand-in dist-info folder
+  `wickctl_test.sh` 15 (8 before, checks 9 to 15 added with the hold), `watchdog_test.py` 31. The installed library in these tests is a stand-in dist-info folder
   for 1.8.4 on the child process's `PYTHONPATH`; one case runs without it. `release_inputs_test.FAKE_ENGINE` now also
   records the config's `order_path` at construction and keeps `order_path` events in their own file, so that test's
   checks are unchanged. The long tests (`replay_test.py`, `live_sim_test.py`, `live_sim_inputs_test.py`,
