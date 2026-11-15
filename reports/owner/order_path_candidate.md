@@ -3,8 +3,48 @@
 Branch `owner/order-path`. Built to the plan in `reports/owner/order_path_plan.md`, which is unchanged, and then
 changed by the owner's review of `cc70fa8a` (seven items, section "After the review") and second review of
 `483133fd` (four items, section "After the second review") and third review of `544921be` (section "After the
-third review") and fourth review of `af6565f2` (section "After the fourth review"). This file states facts only. "Run here" means run in this container, offline, on a copy of the branch with `data/minute` and
+third review") and fourth review of `af6565f2` (section "After the fourth review") and fifth review of `d21317af`
+(section "After the fifth review"). This file states facts only. "Run here" means run in this container, offline, on a copy of the branch with `data/minute` and
 `data/cfm` linked read-only from the main clone. Nothing here touched the network except `git push`.
+
+## After the fifth review (commits after `d21317af`)
+No change to `engine.py`, `market.py`, `config.json`, `release_inputs.py` or any safety check.
+- **What changed.** A live bot on `"order_path": "batch"` now uses the batch path only when `wickctl order-check` has
+  passed on this server with test orders placed, with the library version installed now. Otherwise it runs the serial
+  path, as today's code does, and says so. The decision is made in `run.py live` before the engine is built (the
+  engine gets `"serial"` in its config); the engine is the same code.
+- **The rule** (`order_status.gate(state_dir, library)`, returns `(use_batch, line)`; never raises):
+  1. The newest `order_check_*.json` (names sort by UTC time) cannot be read: serial.
+  2. Else the newest readable file with `place_test_orders` true is taken (files of read-only runs are ignored,
+     passed or failed). None: serial.
+  3. That file must have `passed` true, else serial.
+  4. Its `library` must be a non-empty string equal to the installed version (`library_version()` in `run.py`, None
+     when not found), else serial.
+  5. Otherwise batch. Any exception inside gives serial with `the order check could not be read (<short repr>)`.
+  `apply_gate(cfg, state_dir, library)`: for `"order_path": "batch"` it calls `gate` and sets `cfg["order_path"] =
+  "serial"` when the answer is no; it returns `("batch" or "serial", line)`. A config that is not on the batch path is
+  not changed and gives `("serial", None)`.
+- **What is printed and logged.** `run.py live`, after the `library:` line: `order path in use: batch (order check
+  passed <time> with coinbase-advanced-py <version>)`, or `order path in use: serial: ...` with the reason (five
+  texts, in the README). No line when the config says serial or has no key. After the engine is built, one event
+  `order_path` with `in_use` and `why` (the line, or `set in the config`). It is not a `warning`; `deploy/watchdog.py`
+  alerts on halt, error, warning and reject only. Paper mode: nothing printed, logged or changed.
+- **`wickctl status`**, batch config: the block's second line is the gate's line (before the `library:` line).
+- **`order-check`** does what it did; after its final line it prints one more: `The bot uses the batch order path
+  from its next start (wickctl start).` (pass with test orders), `Read-only run: the bot keeps the serial path until
+  a run with test orders passes.` (pass, read-only), `The bot keeps the serial path.` (failed).
+- **Removed:** the constant `NOT_PASSED` and the old start-up line `order check: not yet passed on this server`.
+  `check_passed` stays (nothing calls it now).
+- **Tests** (all run here, passed): `order_status_test.py` 62 checks (part 1b new: `gate` and `apply_gate` on temp
+  state folders, every case of the rule; part 2: the block's second line in each case; part 3: the engine's path,
+  the printed line and the one `order_path` event, batch without a check, with a failed one and a read-only one, with
+  a pass, with a pass of another library, with the library not found, serial config, no key, and paper mode),
+  `order_check_test.py` 20 (the three closing lines), `order_path_unit_test.py` 116, `release_inputs_test.py` 74,
+  `wickctl_test.sh` 8, `watchdog_test.py` 31. The installed library in these tests is a stand-in dist-info folder
+  for 1.8.4 on the child process's `PYTHONPATH`; one case runs without it. `release_inputs_test.FAKE_ENGINE` now also
+  records the config's `order_path` at construction and keeps `order_path` events in their own file, so that test's
+  checks are unchanged. The long tests (`replay_test.py`, `live_sim_test.py`, `live_sim_inputs_test.py`,
+  `newest_bar_test.py`, `order_path_test.py`) were not run here; none of them calls `run.py live`.
 
 ## After the review (commits after `cc70fa8a`)
 - **1. A placement never loses the others.** `_place_on`: an answer it cannot read (not a dict, success without an
@@ -84,9 +124,9 @@ No change to `engine.py`, the brokers or the order check's behaviour.
   cannot be had from them; the block says so in a line under it.
 - **Minutes covered**: each heartbeat counts the minutes since the heartbeat before it in the log, at most 30; the
   first one seen counts 30.
-- **`run.py live` on the batch path** prints `order check: not yet passed on this server (wickctl order-check)`
-  after the library line when no order-check file in the state folder passed with test orders placed. A printed line
-  only: no event, no warning.
+- **`run.py live` on the batch path** printed `order check: not yet passed on this server (wickctl order-check)`
+  after the library line when no order-check file passed with test orders placed. A printed line only. (Replaced in
+  the fifth review: it now prints `order path in use: ...` and the bot runs the serial path in that case.)
 - **Code:** `bot/spot/order_status.py` (new, standard library only, Python 3.8: `summarize`, `latest_check`,
   `check_passed`, `block`); `bot/spot/run.py` (the block after `status`'s lines; the start-up line; a small
   `library_version()` used by both). Tests: `bot/spot/order_status_test.py` (new); `release_inputs_test.py`, three
@@ -439,8 +479,11 @@ wrong:
 ## A server that takes this release, at `wickctl update`
 - `wickctl update` stops the service, pulls, and starts the bot again only if it was running (unchanged). At start,
   `run.py` takes `order_path`, `orders_rate`, `place_workers` from `config.json` for `config.live.json` (unless
-  `"inputs_local": true`), so the live bot runs the batch path with 10 requests a second and 3 placing threads. The
-  live file is not rewritten.
+  `"inputs_local": true`), so the live config asks for the batch path with 10 requests a second and 3 placing
+  threads. The live file is not rewritten. Since the fifth review the bot runs the batch path only after
+  `wickctl order-check` (with test orders) has passed on this server with the installed library; until then it runs
+  the serial path, as before the update, and prints why at start and in `wickctl status`. One `order_path` event is
+  written at every live start.
 - The engine builds its broker with limit headers on and a client factory; nothing is sent at construction. The
   start-up (backfill, reconcile, catch-up) uses today's requests; the batch path begins at the first minute step.
 - **`wickctl status`, first line:** `inputs: newest minute from trades for BTC, ETH, SOL, XRP, ZEC; candles for the
@@ -451,9 +494,11 @@ wrong:
   library too old for `rate_limit_headers`, one `warning` event at start (your phone gets it) and no `rate_limit`
   field; the bot runs.
 - **`wickctl order-check`** is new; by the review's design it is run by the account owner before the bot relies on
-  the batch path (section "The order check"). Nothing runs it automatically.
-- **To go back to the serial path on one server:** `"inputs_local": true` with `"order_path": "serial"` in
-  `config.live.json` (the file must then also state its input settings, as the inputs section says).
+  the batch path (section "The order check"). Nothing runs it automatically. After a pass the bot takes the batch
+  path at its next start; a library upgrade asks for the check again.
+- **To keep the serial path on one server:** do not run the order check with test orders there (the bot then stays
+  serial by itself), or set `"inputs_local": true` with `"order_path": "serial"` in `config.live.json` (the file must
+  then also state its input settings, as the inputs section says).
 - `wickctl paper-test`, `cancel-all` and `flatten` run with the same keys: the paper test ignores them; `cancel-all`
   and `flatten` use today's cancel and sell requests (on a client with limit headers on).
 
@@ -478,7 +523,9 @@ wrong:
   moved on (an expiry, a cancel) between the list read and the single read is not counted. Two counted mismatches in
   one process switch the list read off until a restart (every order then read singly: slower, not wrong).
 - **The order check has not been run.** It places three real bids when given the flag. Through `wickctl` it refuses
-  to start while the bot's service is active; by hand (`run.py order-check`) it does not check.
+  to start while the bot's service is active; by hand (`run.py order-check`) it does not check. Until it has passed
+  on a server, that server's live bot does not send any batch request to the venue (fifth review): the first batch
+  requests the venue sees are the order check's own.
 - **The library probe** builds one extra client at start on the batch path (no request is sent by building it).
 - **A typo in `order_path`** in `config.json` stops every engine at start, the paper books' too.
 - **`http_429`** counts only the batch path's requests; the serial requests' 429s are not counted, as before.

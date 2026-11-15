@@ -370,7 +370,21 @@ a code update also moves the live bot to the release's inputs:
   is written as a `stale_input` event. The watchdog sends one alert when three or more occur within one of its
   five-minute runs, at most once every 30 minutes.
 
-## Order path (`"order_path"`: `"serial"`, the code's default, or `"batch"`; `config.json` says what the live bot uses)
+## Order path (`"order_path"`: `"serial"`, the code's default, or `"batch"`; `config.json` asks for one, the order check decides for the live bot)
+**When the live bot uses the batch path.** `"order_path": "batch"` in the config is a request, not a switch. At every
+start the live bot uses the batch path only when `wickctl order-check` has passed on this server, with test orders
+placed (`--place-test-orders`), with the library version that is installed now. Exactly: the newest
+`order_check_*.json` in `live_spot/` must be readable; the newest one of those that placed test orders must have
+passed; and its `library` must be the installed `coinbase-advanced-py` version. Read-only runs are ignored (passed or
+failed), unless the newest file of all cannot be read. Otherwise the bot runs exactly as before, on the serial path,
+and prints the reason at start (`order path in use: serial: ...`, in `live_spot/stdout.log`) and as the second line of
+the order-path block of `wickctl status`. A library upgrade asks for the check again: the old pass names the old
+version. After a pass the bot takes the batch path from its next start (`wickctl start`); a bot that is running keeps
+the path it started with. Every live start writes one `order_path` event to `events.jsonl` (`in_use`: `batch` or
+`serial`, and `why`: the line printed, or `set in the config` when the config itself says serial or has no key). It is
+not a `warning`, so the watchdog does not page you for it. The paper book is not touched by any of this. The decision
+is made in `run.py` before the engine is built; the engine is the same.
+
 **What changes.** Only how many requests carry the same orders to Coinbase each minute, and how soon the new bids
 rest. Which bids are placed, their prices, sizes, lifetimes and type (post-only, good-til-date) do not change, nor
 does any check. `"serial"` (or no key) is the code as it was, request for request. `"batch"` runs only on the live
@@ -445,14 +459,17 @@ with the bot's own placing call; reads them with one list request and singly and
 batch cancel and notes when each was seen cancelled; then cancels singly anything not confirmed, sweeps the open
 orders once for a test bid whose placement came back as an error (the bot's tag, a test product, the test bid's
 price within a tick: a running bot's own bids are never at that price), and says loudly if a test order is still
-open (it expires by itself at its end time). It ends with `order check PASSED` or `FAILED` and the reasons,
-and writes the whole result as one JSON file in `live_spot/` (the path is printed). `wickctl order-check` refuses to start
+open (it expires by itself at its end time). It ends with `order check PASSED` or `FAILED` and the reasons, then one
+more line: after a pass with test orders `The bot uses the batch order path from its next start (wickctl start).`,
+after a read-only pass `Read-only run: the bot keeps the serial path until a run with test orders passes.`, after a
+failure `The bot keeps the serial path.` It writes the whole result as one JSON file in `live_spot/` (the path is printed). `wickctl order-check` refuses to start
 while the bot's service runs (stop it with `wickctl stop`): the bot's sweep would cancel the test orders too (they
 carry its tag), and both would share the account's rate limit. `run.py order-check` run by hand does not check.
 
 **What `wickctl status` shows on the batch path** (after the lines it always prints; nothing more on the serial path):
 ```
 order path: batch (10 requests a second, 3 placing threads)
+  order path in use: batch (order check passed 2026-11-15 10:00:00 with coinbase-advanced-py 1.8.4)
   library: coinbase-advanced-py 1.8.4
   order check: 2026-11-15 10:00:00 PASSED, test orders placed (order_check_20261115T100000Z.json)
   rate limit headers, newest (2026-11-15 14:30): {'limit': '30', 'remaining': '28', 'reset': '1'}
@@ -463,7 +480,8 @@ order path: batch (10 requests a second, 3 placing threads)
   place minus data: median 2.50 s (the plan's first-day figure is 3 s or less)
   single-request fallbacks: in 2 of 1440 minutes, 0.1% (the plan's figure is fewer than 5% of minutes)
 ```
-(the numbers here are an example, not a result). It reads `live_spot/events.jsonl` line by line
+(the numbers here are an example, not a result). The second line is the gate's answer for the bot's next start (the
+same line `live` prints; it says `serial` and why when the check has not passed here, or with another library). It reads `live_spot/events.jsonl` line by line
 (`bot/spot/order_status.py`; a malformed line is skipped):
 - **heartbeats** of the last 24 hours, and the **minutes covered**: each heartbeat covers the minutes since the
   heartbeat before it, at most 30 (the first one seen counts 30);
@@ -484,13 +502,15 @@ order path: batch (10 requests a second, 3 placing threads)
   reasons on one line, test orders placed or read-only), or `order check: none on this server yet (wickctl
   order-check)`.
 - With no heartbeat in the last 24 hours: `last 24 h: no heartbeat`.
-- **At start**, `live` on the batch path prints `order check: not yet passed on this server (wickctl order-check)`
-  after the library line when no order-check file in `live_spot/` passed with test orders placed. It is a printed
-  line only (in `live_spot/stdout.log`), not an event, so it does not page you at every start.
+- **At start**, `live` with `"order_path": "batch"` prints one line after the library line: `order path in use: batch
+  (order check passed <time> with coinbase-advanced-py <version>)`, or `order path in use: serial: ...` with the
+  reason (no check with test orders yet, the last one failed, the newest file cannot be read, another library), and
+  writes the `order_path` event described above. A config that says serial, or has no key, prints no line (the event
+  says `set in the config`). The line is in `live_spot/stdout.log`; the event is not a `warning`.
 
 **Tests:** `python bot/spot/order_path_unit_test.py` (every new request and every fallback, against a scripted
 stand-in for Coinbase's library; no network, no real wait), `python bot/spot/order_check_test.py` (the check, on the
-same stand-in), `python bot/spot/order_status_test.py` (the status block and the start-up line) and `python bot/spot/order_path_test.py "2025-10-10 20:00" "2025-10-11 02:00"` (with and without
+same stand-in), `python bot/spot/order_status_test.py` (the gate, the status block and the start-up decision) and `python bot/spot/order_path_test.py "2025-10-10 20:00" "2025-10-11 02:00"` (with and without
 `"--death=2025-10-10 21:10"`): the live-path simulation three ways, the fake exchange as broker, the real broker on
 the serial path and on the batch path, over a stand-in for the library; all three must agree exactly. It also
 counts requests per minute and prints a modelled clock (0.1 s a request). `bot/spot/sandbox_test.py` checks the new
