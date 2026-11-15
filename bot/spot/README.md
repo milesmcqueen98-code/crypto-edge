@@ -352,7 +352,8 @@ final candles. Live, the candles it reads are often not final:
 no decision. `step_s` gives the median and the maximum seconds after the minute at which the data step, the cancel
 pass and the place pass of the 4-sigma bids finished. `tb_err` is the last trades error, when there was one.
 
-**Candle requests between steps (`"candles_at_s"`; absent in the code's defaults: everything as above).** Every
+**Candle requests between steps (`"candles_at_s"`; absent in the code's defaults: everything as above; `config.json`
+and `config.w2.json` set 45).** Every
 second of the data step is a second in which the bot's bids do not rest. For a coin whose newest minute is built from
 trades (on `"trades_coins"`, or BTC and every coin when there is no list), the decision does not need the candle
 request: it serves only the rows behind the newest one.
@@ -399,17 +400,17 @@ job (`paper_tb`) on its own runner, so the two registered books keep their reque
 The live bot runs with `bot/spot/config.live.json`. That file is not in the repository: setup made it once as a copy
 of `config.json`, and `configure` and `preflight` change only the capital, `coins_disabled` and `bid_ttl_s`. So that
 a code update also moves the live bot to the release's inputs:
-- At every start, `run.py` takes these six keys from `bot/spot/config.json` for a file named `config.live.json`:
-  `newest_bar`, `trades_coins`, `stale_guard`, `trades_rows`, `trades_budget_s`, `confirm_s`
+- At every start, `run.py` takes these seven keys from `bot/spot/config.json` for a file named `config.live.json`:
+  `newest_bar`, `trades_coins`, `stale_guard`, `trades_rows`, `trades_budget_s`, `confirm_s`, `candles_at_s`
   (`bot/spot/release_inputs.py`). A key that `config.json` does not set is dropped, so the code's default applies.
   Every other key (capital, coins, fees, risk limits, quote) stays as the live file has it. This holds for every
   command given that file, `wickctl paper-test` included.
 - The file itself is not changed. `preflight` writes back only `coins_disabled` and `bid_ttl_s`.
 - **To see it:** `wickctl status` prints the inputs line first, for example
-  `inputs: newest minute from trades for BTC, ETH, SOL, XRP, DOGE, LTC, LINK, BCH, SUI, XLM, HBAR, NEAR, AAVE, HYPE,
-  ENA, PEPE, ONDO, ZEC; candles for the other coins; stale guard on; the venue's candle replaces each trades row
-  afterwards (from bot/spot/config.json)`, then one line for each setting of the live file that was replaced or
-  dropped.
+  `inputs: newest minute from trades for BTC and every coin, their candles fetched between steps from second 45;
+  stale guard on; the venue's candle replaces each trades row afterwards (from bot/spot/config.json)` (a list that
+  holds BTC and every coin of the book reads as no list does), then one line for each setting of the live file that
+  was replaced or dropped.
   `live` and `paper` print the same line at start (in `live_spot/stdout.log` for the service).
 - `live` also warns when it starts without trades and the stale guard (for example on candles, the mode before
   release 3): a printed line and a `warning` event in `live_spot/events.jsonl`, so the watchdog sends it to your phone.
@@ -418,8 +419,9 @@ a code update also moves the live bot to the release's inputs:
   one line saying so; the kill switches (`pause`, `resume`, `cancel-all`, `flatten`) never depend on it.
 - **Emergency switch:** `"inputs_local": true` in `config.live.json` keeps the file's own input settings, and they no
   longer follow releases. The file must then state the mode itself (for the mode before release 3:
-  `"newest_bar": "candles"` and `"stale_guard": false`), because a key it leaves out takes the code's default. Remove
-  the key to follow the release again.
+  `"newest_bar": "candles"` and `"stale_guard": false`), because a key it leaves out takes the code's default. A live
+  file copied from `config.json` from release 4 on also holds `"candles_at_s"`: with `"newest_bar": "candles"` remove
+  that key too, or the engine refuses to start. Remove `"inputs_local"` to follow the release again.
 - Paper configs (`config.json`, `config.w2.json`, `config.tb.json`, any other name) run exactly what their own file
   says.
 - A minute skipped by the stale guard (no new bids because BTC's newest price row was missing or old; exits still run)

@@ -9,7 +9,8 @@ Part 1, the pure functions:
   - applies: true only for the base name config.live.json;
   - describe: trades mode with and without a list, candle mode, guard on and off, trades_rows (candle_after in plain
     words, keep adds nothing, any other value named; nothing in candle mode); a list that holds BTC and every coin of
-    the book reads as no list does when the book's coins are given, and as before when they are not;
+    the book reads as no list does when the book's coins are given, and as before when they are not; candles_at_s in
+    a few words, only when set and only in trades mode;
   - preflight_file: the file as read plus coins_disabled and bid_ttl_s, nothing taken from the release;
   - release_inputs.py and run.py parse as Python 3.8, and importing release_inputs loads no pandas or numpy.
 Part 2, run.py status end to end (a subprocess, temp folder, no network):
@@ -65,8 +66,10 @@ def expected_line(cfg, coins=None):
     if trades:
         tc = cfg.get("trades_coins")
         every = tc is None or (coins is not None and bool(tc) and all(c in tc for c in ["BTC"] + list(coins)))
-        src = ("newest minute from trades for BTC and every coin" if every else
-               "newest minute from trades for " + ", ".join(tc) + "; candles for the other coins")
+        at = "" if cfg.get("candles_at_s") is None else ", their candles fetched between steps from second " + str(
+            cfg["candles_at_s"])
+        src = ("newest minute from trades for BTC and every coin" + at if every else
+               "newest minute from trades for " + ", ".join(tc) + at + "; candles for the other coins")
     else:
         src = "candles for every coin"
     rows = {"candle_after": "; the venue's candle replaces each trades row afterwards", None: "", "keep": ""}
@@ -185,6 +188,15 @@ def part1():
     nob = dict(full, trades_coins=list(COINS))
     check("describe: every coin but BTC: the list, then the other coins", "candles for the other coins"
           in R.describe(nob, COINS))
+    d11 = R.describe(dict(full, candles_at_s=45), COINS)
+    check("describe: candles_at_s in a few words", d11 == "inputs: newest minute from trades for BTC and every coin, "
+          "their candles fetched between steps from second 45; stale guard on", d11)
+    d12 = R.describe(dict(full, trades_coins=["BTC", "ETH"], candles_at_s=45), COINS)
+    check("describe: candles_at_s with a list: the words follow the list", d12 == "inputs: newest minute from trades "
+          "for BTC, ETH, their candles fetched between steps from second 45; candles for the other coins; stale guard "
+          "on", d12)
+    check("describe: candles_at_s not mentioned when absent, nor in candle mode", "between steps" not in
+          d1 + d2 + d8 + R.describe({"newest_bar": "candles", "candles_at_s": 45}))
     d9 = R.describe({"newest_bar": "candles", "stale_guard": False, "trades_rows": "candle_after"})
     d10 = R.describe({"capital": 1, "trades_rows": "later"})
     check("describe: trades_rows is not mentioned in candle mode (the engine reads it only with trades)",

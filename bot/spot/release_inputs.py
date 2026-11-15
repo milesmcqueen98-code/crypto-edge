@@ -10,7 +10,8 @@ Pure functions, standard library only (Python 3.8 and later); the caller loads t
 import copy
 import os
 
-INPUT_KEYS = ("newest_bar", "trades_coins", "stale_guard", "trades_rows", "trades_budget_s", "confirm_s")
+INPUT_KEYS = ("newest_bar", "trades_coins", "stale_guard", "trades_rows", "trades_budget_s", "confirm_s",
+              "candles_at_s")
 LOCAL_SWITCH = "inputs_local"
 LIVE_NAME = "config.live.json"
 
@@ -58,12 +59,14 @@ def describe(cfg, coins=None):
     holds BTC and every one of them reads as no list does)."""
     if cfg.get("newest_bar", "candles") == "trades":
         tc = cfg.get("trades_coins")
+        at = cfg.get("candles_at_s")                       # their candles fetched between steps (engine.candle_pass)
+        pre = "" if at is None else ", their candles fetched between steps from second %s" % at
         if tc is None or (tc and coins is not None and set(["BTC"] + list(coins)) <= set(tc)):
-            src = "newest minute from trades for BTC and every coin"
+            src = "newest minute from trades for BTC and every coin" + pre
         elif not tc:
             src = "newest minute from trades for no coin (empty list); candles for every coin"
         else:
-            src = "newest minute from trades for %s; candles for the other coins" % _names(tc)
+            src = "newest minute from trades for %s%s; candles for the other coins" % (_names(tc), pre)
     else:
         src = "candles for every coin"
     line = "inputs: %s; stale guard %s" % (src, "on" if cfg.get("stale_guard", False) else "off")
