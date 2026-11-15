@@ -7,22 +7,22 @@
    "id": "PEPE-656",
    "coin": "PEPE",
    "status": "armed",
-   "sig": 0.0113595148300748,
-   "pred": 68.85506725513741,
+   "sig": 0.011261018147033695,
+   "pred": 62.97860888656353,
    "S": 16547.69174396975,
    "orders": {
     "e4": {
-     "id": "paper-fce7a103cb7d",
+     "id": "paper-c96df008720a",
      "side": "BUY",
-     "px": 3.77e-06,
-     "size": 1463102717.0,
+     "px": 3.72e-06,
+     "size": 1482768076.0,
      "filled": 0.0,
      "value": 0.0,
      "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
+     "active_from": "2026-11-15T08:11:00",
      "first_fill": null,
      "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363173"
+     "expires": "2026-11-15T08:16:12.761589"
     }
    },
    "tranches": {},
@@ -33,100 +33,22 @@
    "id": "AAVE-686",
    "coin": "AAVE",
    "status": "armed",
-   "sig": 0.007307680002366576,
-   "pred": 62.126861524718095,
+   "sig": 0.00764643975211021,
+   "pred": 51.52095247641303,
    "S": 8594.88069383,
    "orders": {
     "e4": {
-     "id": "paper-546bdafdc6e0",
+     "id": "paper-9557cd8d0e0f",
      "side": "BUY",
-     "px": 98.0,
-     "size": 29.233,
+     "px": 101.7,
+     "size": 28.169,
      "filled": 0.0,
      "value": 0.0,
      "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
+     "active_from": "2026-11-15T08:11:00",
      "first_fill": null,
      "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363238"
-    }
-   },
-   "tranches": {},
-   "pending": [],
-   "pnl": 0.0
-  },
-  "ZEC-705": {
-   "id": "ZEC-705",
-   "coin": "ZEC",
-   "status": "armed",
-   "sig": 0.012534451520450225,
-   "pred": 35.035985787441135,
-   "S": 62442.627465705096,
-   "orders": {
-    "e4": {
-     "id": "paper-ffe4b68bb5dc",
-     "side": "BUY",
-     "px": 847.25,
-     "size": 24.56678565,
-     "filled": 0.0,
-     "value": 0.0,
-     "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
-     "first_fill": null,
-     "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363369"
-    }
-   },
-   "tranches": {},
-   "pending": [],
-   "pnl": 0.0
-  },
-  "XLM-708": {
-   "id": "XLM-708",
-   "coin": "XLM",
-   "status": "armed",
-   "sig": 0.006355146020945677,
-   "pred": 55.63191916693624,
-   "S": 19787.12932626419,
-   "orders": {
-    "e4": {
-     "id": "paper-710cd15ccbd5",
-     "side": "BUY",
-     "px": 0.13450099999999998,
-     "size": 49038.3697921,
-     "filled": 0.0,
-     "value": 0.0,
-     "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
-     "first_fill": null,
-     "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363271"
-    }
-   },
-   "tranches": {},
-   "pending": [],
-   "pnl": 0.0
-  },
-  "XRP-709": {
-   "id": "XRP-709",
-   "coin": "XRP",
-   "status": "armed",
-   "sig": 0.006163958512888178,
-   "pred": 63.68451668053565,
-   "S": 62442.627465705096,
-   "orders": {
-    "e4": {
-     "id": "paper-6a3f9f005908",
-     "side": "BUY",
-     "px": 0.9205000000000001,
-     "size": 22611.851335,
-     "filled": 0.0,
-     "value": 0.0,
-     "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
-     "first_fill": null,
-     "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363222"
+     "expires": "2026-11-15T08:16:12.761732"
     }
    },
    "tranches": {},
@@ -137,22 +59,22 @@
    "id": "NEAR-711",
    "coin": "NEAR",
    "status": "armed",
-   "sig": 0.01059278725557234,
-   "pred": 70.53898480644644,
+   "sig": 0.0106368384174998,
+   "pred": 71.18717879393219,
    "S": 62442.627465705096,
    "orders": {
     "e4": {
-     "id": "paper-0417f7291d3d",
+     "id": "paper-18b853cea114",
      "side": "BUY",
-     "px": 2.9912,
-     "size": 6958.4800000000005,
+     "px": 2.9718,
+     "size": 7003.905,
      "filled": 0.0,
      "value": 0.0,
      "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
+     "active_from": "2026-11-15T08:11:00",
      "first_fill": null,
      "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363135"
+     "expires": "2026-11-15T08:16:12.761460"
     }
    },
    "tranches": {},
@@ -163,22 +85,22 @@
    "id": "ENA-712",
    "coin": "ENA",
    "status": "armed",
-   "sig": 0.008851877577508377,
-   "pred": 55.08189152936389,
+   "sig": 0.00900949460981263,
+   "pred": 46.89771619490641,
    "S": 15431.819099033,
    "orders": {
     "e4": {
-     "id": "paper-122d39a9c71a",
+     "id": "paper-08302d30e21d",
      "side": "BUY",
-     "px": 0.11349000000000001,
-     "size": 45324.9,
+     "px": 0.11323000000000001,
+     "size": 45429.0,
      "filled": 0.0,
      "value": 0.0,
      "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
+     "active_from": "2026-11-15T08:11:00",
      "first_fill": null,
      "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363303"
+     "expires": "2026-11-15T08:16:12.761795"
     }
    },
    "tranches": {},
@@ -189,22 +111,22 @@
    "id": "HYPE-713",
    "coin": "HYPE",
    "status": "armed",
-   "sig": 0.008685698429056784,
-   "pred": 63.72668322666776,
+   "sig": 0.00869620541627925,
+   "pred": 61.98372586312814,
    "S": 59289.946515560005,
    "orders": {
     "e4": {
-     "id": "paper-9833f2f146d8",
+     "id": "paper-b16b37d3ac33",
      "side": "BUY",
-     "px": 63.11,
-     "size": 313.15500000000003,
+     "px": 62.65,
+     "size": 315.454,
      "filled": 0.0,
      "value": 0.0,
      "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
+     "active_from": "2026-11-15T08:11:00",
      "first_fill": null,
      "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363205"
+     "expires": "2026-11-15T08:16:12.761610"
     }
    },
    "tranches": {},
@@ -215,22 +137,22 @@
    "id": "ONDO-714",
    "coin": "ONDO",
    "status": "armed",
-   "sig": 0.0067384171576177895,
-   "pred": 66.91218696086426,
+   "sig": 0.006935916173275618,
+   "pred": 59.16674468669341,
    "S": 13916.298012988602,
    "orders": {
     "e4": {
-     "id": "paper-279ac20b4137",
+     "id": "paper-5d6dc2896b1e",
      "side": "BUY",
-     "px": 0.29509,
-     "size": 15719.82,
+     "px": 0.29128000000000004,
+     "size": 15925.44,
      "filled": 0.0,
      "value": 0.0,
      "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
+     "active_from": "2026-11-15T08:11:00",
      "first_fill": null,
      "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363189"
+     "expires": "2026-11-15T08:16:12.761644"
     }
    },
    "tranches": {},
@@ -241,22 +163,22 @@
    "id": "SUI-715",
    "coin": "SUI",
    "status": "armed",
-   "sig": 0.00639043558876297,
-   "pred": 75.69999591363657,
+   "sig": 0.006424296459834885,
+   "pred": 69.1515959635726,
    "S": 29341.931403970004,
    "orders": {
     "e4": {
-     "id": "paper-e4685421b6a4",
+     "id": "paper-6fc0cdd02275",
      "side": "BUY",
-     "px": 0.6947,
-     "size": 14078.800000000001,
+     "px": 0.6926,
+     "size": 14121.5,
      "filled": 0.0,
      "value": 0.0,
      "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
+     "active_from": "2026-11-15T08:11:00",
      "first_fill": null,
      "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363060"
+     "expires": "2026-11-15T08:16:12.761516"
     }
    },
    "tranches": {},
@@ -267,74 +189,22 @@
    "id": "SOL-716",
    "coin": "SOL",
    "status": "armed",
-   "sig": 0.0046463389954724986,
-   "pred": 71.85875532059606,
+   "sig": 0.004756591979209997,
+   "pred": 65.2000361132439,
    "S": 62442.627465705096,
    "orders": {
     "e4": {
-     "id": "paper-e3b3d16fe89e",
+     "id": "paper-5210a9d20775",
      "side": "BUY",
-     "px": 69.77,
-     "size": 298.32605925,
+     "px": 68.47,
+     "size": 303.99020234,
      "filled": 0.0,
      "value": 0.0,
      "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
+     "active_from": "2026-11-15T08:11:00",
      "first_fill": null,
      "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363114"
-    }
-   },
-   "tranches": {},
-   "pending": [],
-   "pnl": 0.0
-  },
-  "LINK-717": {
-   "id": "LINK-717",
-   "coin": "LINK",
-   "status": "armed",
-   "sig": 0.005383130108504708,
-   "pred": 58.43059887400396,
-   "S": 17894.098896520005,
-   "orders": {
-    "e4": {
-     "id": "paper-0cb175fd7f14",
-     "side": "BUY",
-     "px": 8.857,
-     "size": 673.4300000000001,
-     "filled": 0.0,
-     "value": 0.0,
-     "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
-     "first_fill": null,
-     "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363254"
-    }
-   },
-   "tranches": {},
-   "pending": [],
-   "pnl": 0.0
-  },
-  "HBAR-718": {
-   "id": "HBAR-718",
-   "coin": "HBAR",
-   "status": "armed",
-   "sig": 0.005456419044333713,
-   "pred": 55.324798106230574,
-   "S": 12527.750779047,
-   "orders": {
-    "e4": {
-     "id": "paper-bfdafff7bbba",
-     "side": "BUY",
-     "px": 0.056130000000000006,
-     "size": 74397.1,
-     "filled": 0.0,
-     "value": 0.0,
-     "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
-     "first_fill": null,
-     "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363287"
+     "expires": "2026-11-15T08:16:12.761543"
     }
    },
    "tranches": {},
@@ -345,74 +215,22 @@
    "id": "BCH-719",
    "coin": "BCH",
    "status": "armed",
-   "sig": 0.005736191699918792,
-   "pred": 54.74242855817015,
+   "sig": 0.005806572416471806,
+   "pred": 48.82772657348797,
    "S": 6491.647045858501,
    "orders": {
     "e4": {
-     "id": "paper-51dd5c1cdaf0",
+     "id": "paper-f4c83e065ca8",
      "side": "BUY",
-     "px": 198.82,
-     "size": 10.88362512,
+     "px": 197.97,
+     "size": 10.93035483,
      "filled": 0.0,
      "value": 0.0,
      "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
+     "active_from": "2026-11-15T08:11:00",
      "first_fill": null,
      "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363319"
-    }
-   },
-   "tranches": {},
-   "pending": [],
-   "pnl": 0.0
-  },
-  "LTC-720": {
-   "id": "LTC-720",
-   "coin": "LTC",
-   "status": "armed",
-   "sig": 0.005030671991197518,
-   "pred": 53.52177512751822,
-   "S": 14413.207456033764,
-   "orders": {
-    "e4": {
-     "id": "paper-ce467305002f",
-     "side": "BUY",
-     "px": 43.753,
-     "size": 109.80738429,
-     "filled": 0.0,
-     "value": 0.0,
-     "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
-     "first_fill": null,
-     "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363335"
-    }
-   },
-   "tranches": {},
-   "pending": [],
-   "pnl": 0.0
-  },
-  "ETH-722": {
-   "id": "ETH-722",
-   "coin": "ETH",
-   "status": "armed",
-   "sig": 0.0032148075565667012,
-   "pred": 37.85128270509116,
-   "S": 62442.627465705096,
-   "orders": {
-    "e4": {
-     "id": "paper-faf39b74d6a5",
-     "side": "BUY",
-     "px": 1763.29,
-     "size": 11.8041894,
-     "filled": 0.0,
-     "value": 0.0,
-     "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
-     "first_fill": null,
-     "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363351"
+     "expires": "2026-11-15T08:16:12.761774"
     }
    },
    "tranches": {},
@@ -423,22 +241,204 @@
    "id": "DOGE-723",
    "coin": "DOGE",
    "status": "armed",
-   "sig": 0.0051405795622065185,
-   "pred": 70.1340025027018,
+   "sig": 0.005251732840261005,
+   "pred": 64.03764131638762,
    "S": 14897.451240833,
    "orders": {
     "e4": {
-     "id": "paper-de64efccf1e9",
+     "id": "paper-663beb168a92",
      "side": "BUY",
-     "px": 0.05688000000000001,
-     "size": 87303.20000000001,
+     "px": 0.056170000000000005,
+     "size": 88406.8,
      "filled": 0.0,
      "value": 0.0,
      "fees": 0.0,
-     "active_from": "2026-11-15T02:21:00",
+     "active_from": "2026-11-15T08:11:00",
      "first_fill": null,
      "open_rule": true,
-     "expires": "2026-11-15T02:26:15.363153"
+     "expires": "2026-11-15T08:16:12.761566"
+    }
+   },
+   "tranches": {},
+   "pending": [],
+   "pnl": 0.0
+  },
+  "HBAR-727": {
+   "id": "HBAR-727",
+   "coin": "HBAR",
+   "status": "armed",
+   "sig": 0.0054688132314266,
+   "pred": 51.16028505086512,
+   "S": 12527.750779047,
+   "orders": {
+    "e4": {
+     "id": "paper-f0a8548faf4e",
+     "side": "BUY",
+     "px": 0.055510000000000004,
+     "size": 75228.0,
+     "filled": 0.0,
+     "value": 0.0,
+     "fees": 0.0,
+     "active_from": "2026-11-15T08:11:00",
+     "first_fill": null,
+     "open_rule": true,
+     "expires": "2026-11-15T08:16:12.761753"
+    }
+   },
+   "tranches": {},
+   "pending": [],
+   "pnl": 0.0
+  },
+  "XLM-730": {
+   "id": "XLM-730",
+   "coin": "XLM",
+   "status": "armed",
+   "sig": 0.006402438413249276,
+   "pred": 52.57242505111405,
+   "S": 19787.12932626419,
+   "orders": {
+    "e4": {
+     "id": "paper-7a12181a91b4",
+     "side": "BUY",
+     "px": 0.132785,
+     "size": 49672.09982609,
+     "filled": 0.0,
+     "value": 0.0,
+     "fees": 0.0,
+     "active_from": "2026-11-15T08:11:00",
+     "first_fill": null,
+     "open_rule": true,
+     "expires": "2026-11-15T08:16:12.761710"
+    }
+   },
+   "tranches": {},
+   "pending": [],
+   "pnl": 0.0
+  },
+  "LTC-744": {
+   "id": "LTC-744",
+   "coin": "LTC",
+   "status": "armed",
+   "sig": 0.0051386693477480615,
+   "pred": 44.73875677258629,
+   "S": 14413.207456033764,
+   "orders": {
+    "e4": {
+     "id": "paper-5fd0c6186694",
+     "side": "BUY",
+     "px": 43.582,
+     "size": 110.23822873,
+     "filled": 0.0,
+     "value": 0.0,
+     "fees": 0.0,
+     "active_from": "2026-11-15T08:11:00",
+     "first_fill": null,
+     "open_rule": true,
+     "expires": "2026-11-15T08:16:12.761817"
+    }
+   },
+   "tranches": {},
+   "pending": [],
+   "pnl": 0.0
+  },
+  "LINK-745": {
+   "id": "LINK-745",
+   "coin": "LINK",
+   "status": "armed",
+   "sig": 0.005444897638870885,
+   "pred": 53.18418388754467,
+   "S": 17894.098896520005,
+   "orders": {
+    "e4": {
+     "id": "paper-9faa55bc37c7",
+     "side": "BUY",
+     "px": 8.82,
+     "size": 676.25,
+     "filled": 0.0,
+     "value": 0.0,
+     "fees": 0.0,
+     "active_from": "2026-11-15T08:11:00",
+     "first_fill": null,
+     "open_rule": true,
+     "expires": "2026-11-15T08:16:12.761689"
+    }
+   },
+   "tranches": {},
+   "pending": [],
+   "pnl": 0.0
+  },
+  "XRP-752": {
+   "id": "XRP-752",
+   "coin": "XRP",
+   "status": "armed",
+   "sig": 0.006501921757106588,
+   "pred": 55.125366332256284,
+   "S": 62442.627465705096,
+   "orders": {
+    "e4": {
+     "id": "paper-422a72663a74",
+     "side": "BUY",
+     "px": 0.9239,
+     "size": 22528.638547,
+     "filled": 0.0,
+     "value": 0.0,
+     "fees": 0.0,
+     "active_from": "2026-11-15T08:11:00",
+     "first_fill": null,
+     "open_rule": true,
+     "expires": "2026-11-15T08:16:12.761667"
+    }
+   },
+   "tranches": {},
+   "pending": [],
+   "pnl": 0.0
+  },
+  "ETH-764": {
+   "id": "ETH-764",
+   "coin": "ETH",
+   "status": "armed",
+   "sig": 0.003351183650315227,
+   "pred": 35.06480064963511,
+   "S": 62442.627465705096,
+   "orders": {
+    "e4": {
+     "id": "paper-9ec98ae2146a",
+     "side": "BUY",
+     "px": 1755.18,
+     "size": 11.85873194,
+     "filled": 0.0,
+     "value": 0.0,
+     "fees": 0.0,
+     "active_from": "2026-11-15T08:11:00",
+     "first_fill": null,
+     "open_rule": true,
+     "expires": "2026-11-15T08:16:12.761838"
+    }
+   },
+   "tranches": {},
+   "pending": [],
+   "pnl": 0.0
+  },
+  "ZEC-765": {
+   "id": "ZEC-765",
+   "coin": "ZEC",
+   "status": "armed",
+   "sig": 0.012564923457644539,
+   "pred": 33.48590462429182,
+   "S": 62442.627465705096,
+   "orders": {
+    "e4": {
+     "id": "paper-c565cd942c54",
+     "side": "BUY",
+     "px": 843.09,
+     "size": 24.688003820000002,
+     "filled": 0.0,
+     "value": 0.0,
+     "fees": 0.0,
+     "active_from": "2026-11-15T08:11:00",
+     "first_fill": null,
+     "open_rule": true,
+     "expires": "2026-11-15T08:16:12.761859"
     }
    },
    "tranches": {},
@@ -446,12 +446,12 @@
    "pnl": 0.0
   }
  },
- "seq": 723,
+ "seq": 765,
  "day": "2026-11-15",
  "day_start_equity": 249770.50986282039,
  "halted_day": null,
  "dd_halt": false,
- "last_minute": "2026-11-15T02:21:00",
+ "last_minute": "2026-11-15T08:11:00",
  "adv": {
   "ETH": 318547230.9149076,
   "SOL": 75107290.14242981,
