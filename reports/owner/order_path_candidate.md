@@ -43,7 +43,7 @@ No change to `engine.py`, `market.py`, `config.json`, `release_inputs.py` or any
   all apply at the next start. One help line next to `order-check`. Tests: `order_status_test.py` (gate with the hold
   over a placed pass and over an unreadable newest file, removed again, `status` block, `live` start with the
   stand-in engine) and `wickctl_test.sh` checks 9 to 15 (the first eight unchanged; the stub `systemctl` sees no
-  call). The final counts are in the "Tests" bullet above.
+  call). The final counts are in the "Tests" bullet below.
 - **Removed:** the constant `NOT_PASSED` and the old start-up line `order check: not yet passed on this server`.
   `check_passed` stays (nothing calls it now).
 - **Tests** (all run here, passed): `order_status_test.py` 70 checks (62 with the gate work, 8 added with the hold) (part 1b new: `gate` and `apply_gate` on temp
