@@ -2,7 +2,8 @@
 
 Branch `owner/order-path`. Built to the plan in `reports/owner/order_path_plan.md`, which is unchanged, and then
 changed by the owner's review of `cc70fa8a` (seven items, section "After the review") and second review of
-`483133fd` (four items, section "After the second review"). This file states facts only. "Run here" means run in this container, offline, on a copy of the branch with `data/minute` and
+`483133fd` (four items, section "After the second review") and third review of `544921be` (section "After the
+third review"). This file states facts only. "Run here" means run in this container, offline, on a copy of the branch with `data/minute` and
 `data/cfm` linked read-only from the main clone. Nothing here touched the network except `git push`.
 
 ## After the review (commits after `cc70fa8a`)
@@ -38,6 +39,54 @@ changed by the owner's review of `cc70fa8a` (seven items, section "After the rev
 - **6. `order-check`.** `bot/spot/order_check.py`, `python bot/spot/run.py order-check [--place-test-orders]
   [--print-plan]`, `wickctl order-check`. Section "The order check" below.
 - **7.** README "Order path" and this file.
+
+## After the third review (commits after `544921be`)
+No change to `engine.py`, the brokers or the order check's behaviour.
+- **`wickctl status` (`run.py status`) on the batch path** prints, after the lines it always prints, an order-path
+  block: the installed library version; the newest order-check file (time, PASSED or FAILED with the reasons on one
+  line, test orders placed or read-only) or `order check: none on this server yet (wickctl order-check)`; from the
+  heartbeats of the last 24 hours: how many, the minutes covered, the median and largest of the data mark and of
+  place minus data, the sums of `reprice`, `arm`, `cancel_unconfirmed`, `snap_miss`, `snap_mismatch`, `bbo_miss`,
+  `batch_fallback`, `http_429`; the newest `rate_limit` and `library` in the log; and two closing lines with the
+  plan's first-day figures. With no heartbeat in the last 24 hours, one line saying so. On the serial path (or with no
+  key) the output is today's, line for line (tested).
+- **The fallback line is a sum, not a share.** `single-request fallbacks: N in M minutes` gives N = `snap_miss` +
+  `bbo_miss` + `batch_fallback` summed over the heartbeats: orders read singly because a list answer did not name
+  them (or every order of a minute whose fills request failed), coins asked singly for their best bid, and pieces
+  switched off. The heartbeats keep sums per half hour, not which minutes had a fallback, so a per-minute count
+  cannot be had from them; the block says so in a line under it.
+- **Minutes covered**: each heartbeat counts the minutes since the heartbeat before it in the log, at most 30; the
+  first one seen counts 30.
+- **`run.py live` on the batch path** prints `order check: not yet passed on this server (wickctl order-check)`
+  after the library line when no order-check file in the state folder passed with test orders placed. A printed line
+  only: no event, no warning.
+- **Code:** `bot/spot/order_status.py` (new, standard library only, Python 3.8: `summarize`, `latest_check`,
+  `check_passed`, `block`); `bot/spot/run.py` (the block after `status`'s lines; the start-up line; a small
+  `library_version()` used by both). Tests: `bot/spot/order_status_test.py` (new); `release_inputs_test.py`, three
+  `status` checks now compare the lines before the block, and one checks that the block follows when the release is
+  on the batch path.
+- **Example, as printed by the test** (`order_status_test.py`, a temp state folder with four hand-made heartbeats,
+  no order-check file, the library not installed in this container):
+
+  ```
+  order path: batch (10 requests a second, 3 placing threads)
+    library: coinbase-advanced-py not found
+    order check: none on this server yet (wickctl order-check)
+    last 24 h: 4 heartbeats, 120 minutes covered (2026-11-15 01:29 .. 2026-11-15 02:59 UTC)
+    data step ended: median 9.50 s after the minute (largest 11.00)
+    place minus data: median 2.50 s (largest 3.50)
+    counters: reprice 40, arm 0, cancel_unconfirmed 0, snap_miss 2, snap_mismatch 0, bbo_miss 0, batch_fallback 0,
+      http_429 0
+    place minus data: median 2.50 s (the plan's first-day figure is 3 s or less)
+    single-request fallbacks: 2 in 120 minutes (the plan's figure is fewer than 5% of minutes)
+    (that count is snap_miss + bbo_miss + batch_fallback: orders and coins read singly, and pieces switched off; the
+      heartbeats do not say in how many minutes a fallback happened)
+  ```
+  (the counters line and the last line are one line each on the screen; wrapped here.)
+- **Rerun for this item:** `order_status_test.py` 23 of 23, `order_path_unit_test.py` 106 of 106,
+  `order_check_test.py` 18 of 18, `release_inputs_test.py` 74 of 74 (73 before), `paper_next_test.sh` 11,
+  `paper_commit_test.sh` 38, `wickctl_test.sh` 8: all passed. No heavy test was rerun: none of them calls `run.py
+  status` or `run.py live`, and nothing they run changed.
 
 ## After the second review (commits after `483133fd`)
 - **1. The running check flags only contradictions.** `_snap_differs(list, single read after it)` is a mismatch only
@@ -226,7 +275,7 @@ venue (it is for the account owner, below).
   - The workflow installs `coinbase-advanced-py` unpinned; the code was read against 1.8.4. Its log prints the
     installed version (`pip show`).
 - **Every offline spot test, one at a time** (`scripts/owner/order_path/run_spot_tests.py`), as release 3's suite
-  plus `order_path_unit_test.py`, `order_check_test.py` and `order_path_test.py` with and without the death:
+  plus `order_path_unit_test.py`, `order_check_test.py`, `order_status_test.py` and `order_path_test.py` with and without the death:
 
   ```
   gh workflow run hunt2.yml -R milesmcqueen98-code/crypto-edge --ref owner/order-path \

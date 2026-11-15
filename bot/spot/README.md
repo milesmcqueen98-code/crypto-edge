@@ -448,9 +448,45 @@ and writes the whole result as one JSON file in `live_spot/` (the path is printe
 while the bot's service runs (stop it with `wickctl stop`): the bot's sweep would cancel the test orders too (they
 carry its tag), and both would share the account's rate limit. `run.py order-check` run by hand does not check.
 
+**What `wickctl status` shows on the batch path** (after the lines it always prints; nothing more on the serial path):
+```
+order path: batch (10 requests a second, 3 placing threads)
+  library: coinbase-advanced-py 1.8.4
+  order check: 2026-11-15 10:00:00 PASSED, test orders placed (order_check_20261115T100000Z.json)
+  rate limit headers, newest (2026-11-15 14:30): {'limit': '30', 'remaining': '28', 'reset': '1'}
+  last 24 h: 48 heartbeats, 1440 minutes covered (2026-11-14 15:00 .. 2026-11-15 14:30 UTC)
+  data step ended: median 9.50 s after the minute (largest 11.00)
+  place minus data: median 2.50 s (largest 3.50)
+  counters: reprice 4100, arm 380, cancel_unconfirmed 2, snap_miss 3, snap_mismatch 0, bbo_miss 0, batch_fallback 0, http_429 0
+  place minus data: median 2.50 s (the plan's first-day figure is 3 s or less)
+  single-request fallbacks: 3 in 1440 minutes (the plan's figure is fewer than 5% of minutes)
+  (that count is snap_miss + bbo_miss + batch_fallback: orders and coins read singly, and pieces switched off; the heartbeats do not say in how many minutes a fallback happened)
+```
+(the numbers here are an example, not a result). It reads `live_spot/events.jsonl` line by line
+(`bot/spot/order_status.py`; a malformed line is skipped):
+- **heartbeats** of the last 24 hours, and the **minutes covered**: each heartbeat covers the minutes since the
+  heartbeat before it, at most 30 (the first one seen counts 30);
+- **data step ended**: the median, over those heartbeats, of each heartbeat's median `step_s` data mark (seconds
+  after the minute at which the data step ended), and its largest value; **place minus data**: the same for each
+  heartbeat's place mark minus its data mark;
+- **counters**: the sums of the heartbeats' `counts`;
+- the **newest** `rate_limit` and `library` fields anywhere in the log;
+- **single-request fallbacks**: `snap_miss` + `bbo_miss` + `batch_fallback` summed over the heartbeats. These count
+  orders read singly because a list answer did not name them (or every order of a minute whose fills request
+  failed), coins whose best bid was asked singly, and pieces switched off. They are not minutes: the heartbeats
+  hold sums per half hour, not which minutes had a fallback, so the line gives the sum and the minutes covered, not a
+  share.
+- the **order check**: the newest `order_check_*.json` in the state folder (its time, PASSED or FAILED with the
+  reasons on one line, test orders placed or read-only), or `order check: none on this server yet (wickctl
+  order-check)`.
+- With no heartbeat in the last 24 hours: `last 24 h: no heartbeat`.
+- **At start**, `live` on the batch path prints `order check: not yet passed on this server (wickctl order-check)`
+  after the library line when no order-check file in `live_spot/` passed with test orders placed. It is a printed
+  line only (in `live_spot/stdout.log`), not an event, so it does not page you at every start.
+
 **Tests:** `python bot/spot/order_path_unit_test.py` (every new request and every fallback, against a scripted
 stand-in for Coinbase's library; no network, no real wait), `python bot/spot/order_check_test.py` (the check, on the
-same stand-in) and `python bot/spot/order_path_test.py "2025-10-10 20:00" "2025-10-11 02:00"` (with and without
+same stand-in), `python bot/spot/order_status_test.py` (the status block and the start-up line) and `python bot/spot/order_path_test.py "2025-10-10 20:00" "2025-10-11 02:00"` (with and without
 `"--death=2025-10-10 21:10"`): the live-path simulation three ways, the fake exchange as broker, the real broker on
 the serial path and on the batch path, over a stand-in for the library; all three must agree exactly. It also
 counts requests per minute and prints a modelled clock (0.1 s a request). `bot/spot/sandbox_test.py` checks the new
