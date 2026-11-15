@@ -30,7 +30,8 @@ PLAN = """order check: the batch order path's requests against Coinbase (bot/spo
      bid_ttl_s ({ttl} s), sent with one place_many
   d. ONLY WITH --place-test-orders: read them with one snapshot and singly, compare; cancel them with cancel_many
      and record when each was seen cancelled; then cancel singly any test order not confirmed cancelled and read it
-     again (an order still open expires by itself at its end time)
+     again; then one read of the open orders, to cancel a test bid whose placement came back as an error (the bot's
+     tag, a test product, the test bid's price; an order still open expires by itself at its end time)
   e. the rate-limit headers seen, the median time by kind of request, and a final line PASSED or FAILED; the whole
      result as one JSON file next to the live state
   The test orders carry the bot's client order id tag ({tag}-): a running bot's reconcile sweep would cancel them
