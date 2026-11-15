@@ -180,6 +180,7 @@ class Client:
             self.v.n += 1
             oid = f"o{self.v.n}"
         self.v.add(oid, product=kw["product_id"], cid=kw["client_order_id"], side=kw.get("side", "BUY"))
+        self.v.orders[oid]["order_configuration"] = kw.get("order_configuration")
         return {"success": True, "success_response": {"order_id": oid}}
 
     def create_order(self, **kw):

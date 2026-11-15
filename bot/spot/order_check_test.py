@@ -128,6 +128,36 @@ def main():
               and any("XRP-USD: skipped, no batch best bid" in x for x in r["reasons"])
               and [p["product"] for p in r["placed"]] == ["ETH-USD"], str(r["reasons"]))
 
+        # a placement reported as failed whose order rests at the venue: found by the sweep; a bot bid left alone
+        ck, v, b = setup()
+        v.add("botbid", product="SOL-USD", cid="wk1m-livebot")     # a running bot's bid, at its own level
+        v.orders["botbid"]["order_configuration"] = {"limit_limit_gtd": {"limit_price": "180.00"}}
+        orig = Client._new
+
+        def lost(self, kw, m):                         # SOL: the venue keeps the order, the answer is lost
+            if kw.get("product_id") == "SOL-USD" and m == "create_order":
+                orig(self, dict(kw, client_order_id="wk1m-under-another-id"), m)
+                raise RuntimeError("read timed out")
+            return orig(self, kw, m)
+        Client._new = lost
+        try:
+            r, out = go(True, v, b, ck, d)
+        finally:
+            Client._new = orig
+        lost_ids = [i for i, o in v.orders.items() if o["client_order_id"] == "wk1m-under-another-id"]
+        check("sweep: a placement reported as failed whose order rests at the venue -> found by the one open-orders "
+              "read, cancelled singly, read again, reported; FAILED",
+              not r["passed"] and r["sweep"]["found"] == lost_ids and v.orders[lost_ids[0]]["status"] == "CANCELLED"
+              and any("d. sweep: a lost test order" in x for x in out), str(r.get("sweep")))
+        check("sweep: a bot bid at another price on the same product is left alone",
+              v.orders["botbid"]["status"] == "OPEN" and "botbid" not in r["sweep"]["found"])
+        ck, v, b = setup()
+        b.open_orders = lambda: (_ for _ in ()).throw(RuntimeError("503"))
+        r, out = go(True, v, b, ck, d)
+        check("sweep: the open-orders read fails -> said so (the sweep could not run)",
+              str(r.get("sweep", "")).startswith("could not run") and any("sweep for lost test orders could not run"
+                                                                          in x for x in out), str(r.get("sweep")))
+
         # an order that stays open after cancel_many: cancelled singly in the clean-up
         ck, v, b = setup()
         noop = lambda kw: {"results": [dict(success=True, order_id=i) for i in kw["order_ids"]]}  # noqa: E731

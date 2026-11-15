@@ -199,7 +199,7 @@ def _place(broker, market, pick, bids, cfg, res, say, now):
             say(f"c. {p}: skipped, preview errors {errs}"[:300])
             continue
         reqs.append((sp, "BUY", px, size, True, end))
-        meta.append(dict(product=p, px=px, size=size, end=str(end)))
+        meta.append(dict(product=p, px=px, size=size, end=str(end), tick=sp.tick))
     out = broker.place_many(reqs) if reqs else []
     placed = []
     for m, (oid, err) in zip(meta, out):
@@ -273,6 +273,67 @@ def _clean(broker, placed, res, say):
             left.append(o)
             say(f"!!!!! TEST ORDER STILL OPEN: {o['id']} on {o['product']}, {o['size']} at {o['px']}. It expires "
                 f"by itself at {o['end']} UTC; cancel it in the Coinbase app to be sure.")
+    left += _sweep(broker, placed, res, say)
     res["still_open"] = [o["id"] for o in left]
     if left:
         res["reasons"].append("test orders still open: " + ", ".join(res["still_open"]))
+
+
+def _limit_price(od):
+    """The limit price of an order in a list answer (any order configuration with a limit_price), or None."""
+    for v in (od.get("order_configuration") or {}).values():
+        if isinstance(v, dict) and v.get("limit_price") is not None:
+            return float(v["limit_price"])
+    return None
+
+
+def _sweep(broker, placed, res, say):
+    """A test bid whose placement came back as an error may still rest at the venue: one read of the open orders, and
+    any open order with the bot's tag, on a product a test bid was sent for, at that test bid's price (within one
+    tick), that is not one of the placed ones, is cancelled singly and read again. The price condition keeps a
+    running bot's own bids out of the sweep: they rest at their levels, never at half the best bid."""
+    sent = res.get("placed") or []
+    if not sent:
+        return []
+    known = {o["id"] for o in placed}
+    try:
+        opened = broker.open_orders()
+    except Exception as err:
+        res["sweep"] = f"could not run: {err!r}"[:200]
+        say(f"!! the sweep for lost test orders could not run (the open orders could not be read: {err!r})"[:300])
+        if any(not m.get("order_id") for m in sent):
+            res["reasons"].append("a placement failed and the sweep for lost test orders could not run")
+        return []
+    found, left = [], []
+    for od in opened:
+        oid, px = od.get("order_id"), _limit_price(od)
+        if oid in known or not str(od.get("client_order_id", "")).startswith(E.ORDER_TAG) or px is None:
+            continue
+        m = next((m for m in sent if broker._p(m["product"]) == od.get("product_id")
+                  and abs(px - m["px"]) <= m["tick"] * (1 + 1e-9)), None)
+        if m is None:
+            continue
+        o = dict(id=oid, px=m["px"], size=m["size"], filled=0.0, value=0.0, fees=0.0, side="BUY",
+                 product=m["product"], end=m["end"])
+        found.append(oid)
+        try:
+            inc, ok = broker.cancel(o)
+        except Exception as err:
+            inc, ok = None, False
+            res["notes"].append(f"single cancel of lost {oid}: {err!r}"[:200])
+        try:
+            st = broker.status(oid)["status"]
+        except Exception as err:
+            st = f"unreadable ({err!r})"[:100]
+        say(f"d. sweep: a lost test order {oid} on {m['product']} at {px} (its placement came back as an error): "
+            f"cancelled singly: confirmed {ok}; status now {st}")
+        if inc:
+            res["reasons"].append(f"lost test order {oid} filled: {inc}")
+        if st not in broker.TERMINAL:
+            left.append(o)
+            say(f"!!!!! TEST ORDER STILL OPEN: {oid} on {m['product']} at {px}. It expires by itself at {m['end']} "
+                "UTC; cancel it in the Coinbase app to be sure.")
+    res["sweep"] = dict(found=found)
+    if found:
+        res["reasons"].append("a test order lost by its placement was found resting: " + ", ".join(found))
+    return left
