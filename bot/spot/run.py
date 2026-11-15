@@ -60,6 +60,14 @@ def need_keys():
         sys.exit("Set COINBASE_API_KEY and COINBASE_API_SECRET (see bot/spot/README.md, step 3).")
 
 
+def library_version():
+    try:
+        from importlib import metadata
+        return metadata.version("coinbase-advanced-py")
+    except Exception:
+        return None
+
+
 def print_inputs():
     """The input settings in use (README, "Inputs of the live bot"), and where they came from."""
     print(release_inputs.describe(cfg) + (" (from bot/spot/config.json)" if inputs_from_release else ""), flush=True)
@@ -77,11 +85,15 @@ if a.cmd in ("paper", "live"):
             sys.exit("Live mode places real orders. Set I_UNDERSTAND_LIVE_TRADING=yes after reading bot/spot/README.md.")
     print_inputs()
     if a.cmd == "live":                                    # the installed library (README, "Order path")
-        try:
-            from importlib import metadata
-            print("library: coinbase-advanced-py " + metadata.version("coinbase-advanced-py"), flush=True)
-        except Exception as err:
-            print(f"library: coinbase-advanced-py version not found ({repr(err)[:80]})", flush=True)
+        v = library_version()
+        print("library: coinbase-advanced-py " + (v or "version not found"), flush=True)
+        if cfg.get("order_path") == "batch":               # a printed line only: no event, no page at every start
+            try:
+                from bot.spot import order_status
+                if not order_status.check_passed(sd):
+                    print(order_status.NOT_PASSED, flush=True)
+            except Exception as err:
+                print(f"order check: could not be read ({repr(err)[:80]})", flush=True)
     warn = None
     if a.cmd == "live" and not (cfg.get("newest_bar", "candles") == "trades" and cfg.get("stale_guard", False)):
         warn = ("live trading is starting without the release 3 inputs (trades with the stale guard); "
@@ -204,6 +216,17 @@ elif a.cmd == "status":
               for k, v in lad["tranches"].items()}
         od = {k: f"{o['side']} {o['size'] - o['filled']:.6g} @ {o['px']}" for k, o in lad["orders"].items()}
         print(f"  {lad['id']:10s} {lad['status']:5s} rungs {tr or '-'} orders {od or '-'}")
+    if cfg.get("order_path") == "batch":                   # README, "Order path": what the first live days show
+        try:
+            from datetime import datetime, timezone
+            from bot.spot import order_status
+            ev = os.path.join(sd, "events.jsonl")
+            with (open(ev, errors="replace") if os.path.exists(ev) else open(os.devnull)) as fh:
+                for line in order_status.block(cfg, sd, fh, datetime.now(timezone.utc).replace(tzinfo=None),
+                                              library_version()):
+                    print(line)
+        except Exception as err:
+            print(f"order path: the block could not be made ({repr(err)[:120]})")
 
 elif a.cmd == "report":
     import numpy as np

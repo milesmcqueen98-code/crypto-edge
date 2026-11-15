@@ -245,6 +245,15 @@ def old_lines(sd, capital):
             .replace(" AT ", " " + chr(64) + " ")]                 # status prints an at sign; none in this file
 
 
+def before_block(out):
+    """status's lines before the order-path block (README, "Order path"), which a batch config adds at the end."""
+    return out[:out.index(BLOCK)] if BLOCK in out else out
+
+
+BLOCK = "order path: batch (%s requests a second, %s placing threads)" % (BASE.get("orders_rate", 10),
+                                                                          BASE.get("place_workers", 1))
+
+
 def status(config, sd):
     r = subprocess.run([sys.executable, os.path.join(HERE, "run.py"), "status", "--config", config, "--state-dir", sd],
                        cwd=ROOT, capture_output=True, text=True, env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"))
@@ -279,9 +288,11 @@ def part2():
         print("  [pre-release-3 live file]\n    " + "\n    ".join(out), flush=True)
         check("old live file: exit 0", rc == 0, err[-500:])
         check("old live file: the inputs line of config.json with the marker, first", out[:1] == [want], str(out[:1]))
-        check("old live file: no note (the file had no input keys)", len(out) == 5, str(out))
+        check("old live file: no note (the file had no input keys)", len(before_block(out)) == 5, str(out))
         check("old live file: every line status printed before, unchanged and in order",
-              out[1:] == old_lines(sd, 10000), str(out[1:]))
+              before_block(out)[1:] == old_lines(sd, 10000), str(out[1:]))
+        check("old live file: the order-path block after them exactly when the release's order_path is batch",
+              (BLOCK in out) == (BASE.get("order_path") == "batch"), str(out[5:7]))
         if BASE.get("newest_bar") == "trades":
             check("old live file: trades mode for config.json's list, stale guard on",
                   "newest minute from trades for " + ", ".join(BASE.get("trades_coins") or []) in out[0]
@@ -302,7 +313,7 @@ def part2():
         check("own list: one note per differing key, naming both lists",
               len(notes) == want_notes and any("trades_coins" in x and "['BTC', 'ETH']" in x for x in notes),
               str(notes))
-        check("own list: then every line status printed before", out[1 + len(notes):] == old_lines(sd, 0),
+        check("own list: then every line status printed before", before_block(out)[1 + len(notes):] == old_lines(sd, 0),
               str(out[1 + len(notes):]))
         check("own list: unchanged byte for byte", open(p, "rb").read() == b)
 

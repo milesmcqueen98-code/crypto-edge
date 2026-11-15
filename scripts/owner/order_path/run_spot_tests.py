@@ -1,8 +1,8 @@
 """Runs every offline spot test on a runner (whole repository checked out, so data/minute and data/cfm are there) and
 prints each file's tally: exit code, PASS/ok lines, FAIL lines, the result lines, the time taken. One test at a time
 (memory). Modelled on scripts/owner/release3/run_spot_tests.py, with the order path's tests added
-(bot/spot/order_path_unit_test.py, bot/spot/order_check_test.py, bot/spot/order_path_test.py with and
-without the server's death).
+(bot/spot/order_path_unit_test.py, bot/spot/order_check_test.py, bot/spot/order_status_test.py,
+bot/spot/order_path_test.py with and without the server's death).
 sandbox_test.py is not run: it needs Coinbase's sandbox (its own workflow, sandbox-test.yml). trades_bar_check.py and
 tb_smoke.py are not run: they need the network.
 
@@ -22,7 +22,7 @@ WINDOW = ["2025-10-10 20:00", "2025-10-11 02:00"]
 DEATH = "--death=2025-10-10 21:10"
 PY = [("merge_test.py", []), ("trades_bar_test.py", []), ("usdc_test.py", []), ("newest_bar_test.py", []),
       ("release_inputs_test.py", []), ("order_path_unit_test.py", []),
-      ("order_check_test.py", []), ("replay_test.py", ["2025-10-10", "2025-10-12"]),
+      ("order_check_test.py", []), ("order_status_test.py", []), ("replay_test.py", ["2025-10-10", "2025-10-12"]),
       ("live_sim_test.py", WINDOW), ("live_sim_test.py", WINDOW + [DEATH]),
       ("live_sim_inputs_test.py", WINDOW), ("live_sim_inputs_test.py", WINDOW + [DEATH]),
       ("order_path_test.py", WINDOW), ("order_path_test.py", WINDOW + [DEATH])]
