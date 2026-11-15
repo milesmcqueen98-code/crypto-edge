@@ -847,3 +847,26 @@ FORWARD_TESTS.md.
     before today; the score now says so.
   - **Still running:** the release candidate with the new bar source (tests are slow on two cores). The data-step
     build waits for it. Part 3 of the timing study waits for a free core.
+- **21:45. Evening: order path second review, sandbox run, the bar-source candidate reviewed, the data-step build
+  started.**
+  - **Order path, second review.** The seven changes are in as asked (94 unit checks, 14 for the new check command;
+    the three-way run still agrees to the dollar; modelled median from the data step's end to the last new bid 2.3 s
+    with the added safety reads, against 7.8 s on today's path). Four smaller changes went back: the running check
+    flags only contradictions, the check command prices its test bids from the public book and sweeps for a lost
+    test order, and `wickctl order-check` refuses while the bot runs.
+  - **Sandbox run** (run 43667375643, the venue's library 1.8.4): 26 of 28 checks pass. The two that fail are limits
+    of the sandbox: it does not serve the best-bid request (404) and sends no rate-limit headers. The batch read,
+    the batch cancel and placing on three threads answer in the expected shapes. Canned answers only: shapes, not
+    behaviour.
+  - **Bar-source candidate** (branch owner/release-4, built by an Opus agent over the day): the engine option is
+    carried over from owner/engine-c unchanged (checked here: the two diffs are the same and three files are the
+    same to the byte), the main book's and W2's configs carry the fourth book's four input settings, every test
+    equal to the baseline with the option absent, and the live-path simulation on the new inputs gives the same
+    entries, exits and P&L as candle mode (8,153 of 8,187 trades rows replaced by their candle, none differing in
+    the made-up feed). One fact from the fourth book's own counters: 10,533 of 68,429 replaced rows (15.4%) had a
+    candle close more than a tick from the trades bar that the decision used. Not merged: it waits for Part 2's
+    read, the step-time condition and its own paper book.
+  - **Data-step build started** on the same branch (Opus): one setting, `candles_at_s`, moves the candle requests
+    of trades-built coins into a pass between steps. It also corrects the inputs line where it said "candles for
+    the other coins" with no other coin left.
+  - **Tomorrow, 08:40 ET:** Part 2's read. Its period ended at 22:29 UTC today.
