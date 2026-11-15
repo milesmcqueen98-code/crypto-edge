@@ -161,6 +161,43 @@ book's log. Tables: reports/owner/bar_source/ (summary.md has every coin and day
     disagreements on arming. Whether that shows in a running book is Part 2's question.
 - **What it decides:** the single-coin clause only. If Part 2 passes, all twelve go to way C and none is held back.
 
+## Addition: candles after the bids (plan fixed Nov 15 2026, 02:07 ET, before any evaluation)
+- **Why.**
+  - The fourth book's way asks for 18 candles and then 18 coins' trades before it decides. Its data step ends a
+    median 13.4 s after the minute, against 10.3 s for release 3's way. The live bot's bids would rest three seconds
+    later (FORWARD_TESTS.md, the note of Nov 14).
+  - A build that moves the candle requests to second 45 of the minute exists (branch owner/release-4). Its builder
+    found the flaw in that design: the request at second 45 has the same address as the request every other client
+    of this engine makes at the start of the minute, and the venue's cache hands out a copy for a minute or more
+    (collector's record of Nov 14: BTC's candle answer was a cached copy in 96% of minutes with a median age of
+    65 s; copies up to 184 s old). A copy made at second 8 cannot confirm the minute that just closed, by the
+    engine's own rule. So the pass would often leave the row behind the newest one unconfirmed, and whether it does
+    would depend on who else is asking.
+  - The robust alternative: ask for the candles after the bids are placed. The decision then reads trades bars for
+    its two newest rows and the venue's candles from the third row on, every minute, whoever else is asking.
+- **The question.** What does the second trades row cost in decisions?
+- **Method: Part 1's tool, period and record, with one more rule.**
+  - **C2:** rows t-1 and t-2 as in B (the verified trades bar; a minute without one takes the candle path's row);
+    every older row the final candle. Way C has only row t-1 from trades.
+  - One more pass, **C2x18:** all 18 coins on C2. It is the book the build would run.
+  - Period 2026-11-11 02:00 to 2026-11-14 01:59 UTC, as Part 1. The earlier passes must reproduce Part 1's
+    published counts exactly; if they do not, nothing is read until the difference is explained.
+- **Measures,** as in Part 1, for the 17 traded coins together and by coin and day: the share of coin-minutes that
+  disagree with the research on arming, the share with a score more than 1.0 point off, the share with a level more
+  than 5 bp off.
+- **Rule (fixed now).** The candle requests move behind the bids if, over the three days and the 17 coins together:
+  1. C2x18's disagreement on arming is no higher than the third book's inputs give (pass A: the twelve on first-seen
+     candles, the listed coins on kept trades rows);
+  2. C2x18's share of scores more than 1.0 point off is no higher than pass A's;
+  3. C2x18's share of levels more than 5 bp off is no more than 0.5 points above C18's.
+  - **Why pass A is the bar:** the build is faster than release 3's way by about a second. If its decisions are no
+    worse than release 3's as well, it is the better of the two on both counts. Against the fourth book's way it
+    gives up some agreement to gain about four seconds; C2 against C18 is reported so that this price is on record.
+  - **If it fails:** the candle requests stay ahead of the decision, the data step is not shortened this way, and a
+    release with all 18 coins from trades waits for another way to meet the step-time condition.
+- **Limits:** those of Part 1 (the collector's record; its BTC fallbacks; one period of three days). The paper book
+  that runs the build is the forward test, on a rule fixed before it starts.
+
 ## Deviation log
 - **Nov 11 2026, 09:17 ET (orchestrator).** Made after the tool's development run and before any minute of either
   registered window was read for this plan.
