@@ -57,7 +57,7 @@ M=$T/repo/live_spot/order_path_serial
 S1="From its next start the bot uses the serial order path. A running bot keeps the path it started with: wickctl restart applies it now."
 B1="The hold is removed. From its next start the bot uses the batch order path if the order check has passed on this server (wickctl status says which)."
 U1="usage: wickctl order-path serial|batch"
-op() { export LOG=$T/log WAS=active WICK_DIR=$T/repo; : > "$LOG"; out=$(PATH=$T/bin:$PATH bash "$W" order-path "$@" 2>&1); rc=$?; }
+op() { export LOG=$T/log WAS=active WICK_DIR=$T/repo; : > "$LOG"; out=$(PATH=$T/bin:$PATH bash "$W" order-path $* 2>&1); rc=$?; }
 rm -rf "$T/repo"
 op serial
 if [ "$rc" = 0 ] && [ -e "$M" ] && [ "$out" = "$S1" ] && [ ! -s "$LOG" ]; then echo "PASS  9 order-path serial: made the folder and the file, printed its line"
