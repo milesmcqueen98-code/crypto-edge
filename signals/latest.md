@@ -1,6 +1,6 @@
-# Signal for 2026-11-13 (daily close, UTC)
+# Signal for 2026-11-14 (daily close, UTC)
 
-BTC $68,237 is 12.2% below its 100-day average ($77,731) → **RISK OFF**.
+BTC $64,119 is 17.5% below its 100-day average ($77,730) → **RISK OFF**.
 
 No trade today. Hold **cash** (USD or USDC). (unchanged since 2026-11-05)
 
