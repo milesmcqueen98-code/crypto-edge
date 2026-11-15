@@ -385,6 +385,16 @@ the path it started with. Every live start writes one `order_path` event to `eve
 not a `warning`, so the watchdog does not page you for it. The paper book is not touched by any of this. The decision
 is made in `run.py` before the engine is built; the engine is the same.
 
+**Holding a server on the serial path by hand.** `wickctl order-path serial` creates the file `order_path_serial` in
+`live_spot/` (as the wick user, making the folder if it is missing). While it is there the live bot uses the serial
+path whatever the config and the order check say; the start-up line, `wickctl status` and the `order_path` event say
+`order path in use: serial: held by hand (file order_path_serial in the state folder; wickctl order-path batch removes
+it)`. `wickctl order-path batch` removes the file (no error when it is not there); from the next start the order check
+decides again. `wickctl order-path` alone says whether the hold is in place and prints the usage. The commands neither
+stop nor start the service and apply at the next start: a running bot keeps the path it started with (`wickctl
+restart` applies the change now). This is the way back to the serial path on one server. The other way is a config
+edit: `"inputs_local": true` with `"order_path": "serial"` in `config.live.json` (section "Inputs of the live bot").
+
 **What changes.** Only how many requests carry the same orders to Coinbase each minute, and how soon the new bids
 rest. Which bids are placed, their prices, sizes, lifetimes and type (post-only, good-til-date) do not change, nor
 does any check. `"serial"` (or no key) is the code as it was, request for request. `"batch"` runs only on the live
@@ -504,7 +514,7 @@ same line `live` prints; it says `serial` and why when the check has not passed 
 - With no heartbeat in the last 24 hours: `last 24 h: no heartbeat`.
 - **At start**, `live` with `"order_path": "batch"` prints one line after the library line: `order path in use: batch
   (order check passed <time> with coinbase-advanced-py <version>)`, or `order path in use: serial: ...` with the
-  reason (no check with test orders yet, the last one failed, the newest file cannot be read, another library), and
+  reason (no check with test orders yet, the last one failed, the newest file cannot be read, another library, held by hand), and
   writes the `order_path` event described above. A config that says serial, or has no key, prints no line (the event
   says `set in the config`). The line is in `live_spot/stdout.log`; the event is not a `warning`.
 

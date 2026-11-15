@@ -5,7 +5,7 @@ No network, no keys.
 Part 1, summarize() on hand-made lines: the medians of the data mark and of place minus data, their largest values,
 the counter sums, the 24-hour cut, the minutes covered, a heartbeat without step_s, a malformed line, the newest
 rate_limit and library; no heartbeat at all; the fallback line from fallback_min (and K 0 without the field).
-Part 1b, gate() and apply_gate() on temp state folders (every case of the rule, no exception ever).
+Part 1b, gate() and apply_gate() on temp state folders (every case of the rule, the hand hold file, no exception ever).
 Part 2, `run.py status` end to end on a temp state folder: a serial config and one without the key print exactly
 the lines of today; a batch config prints them, then the block, with no order-check file, a passed one with test
 orders, a failed one, a read-only one; an event log with no recent heartbeat.
@@ -205,6 +205,29 @@ def part1b():
         r = S.apply_gate(cfg, sd, "9.9.9")
         check("apply_gate: batch config, another installed library -> 'serial' set",
               r[0] == "serial" and cfg["order_path"] == "serial" and "9.9.9" in r[1], str((cfg, r)))
+        # the hand hold
+        held = "order path in use: serial: held by hand (file order_path_serial in the state folder; wickctl order-path batch removes it)"
+        sd = os.path.join(d, "hold")
+        os.makedirs(sd)
+        put(sd, A, rec())
+        put(sd, S.HOLD_FILE, "")
+        u, line = S.gate(sd, "1.8.4")
+        check("gate: the hold file present, a placed pass of the same library -> serial, exactly the hold line",
+              u is False and line == held and S.HOLD_FILE == "order_path_serial", line)
+        put(sd, B, "{not json")
+        u, line = S.gate(sd, "1.8.4")
+        check("gate: the hold file present, the newest file unreadable -> the hold line first", u is False
+              and line == held, line)
+        cfg = {"order_path": "batch"}
+        r = S.apply_gate(cfg, sd, "1.8.4")
+        check("apply_gate: the hold -> 'serial' set, the hold line returned", r == ("serial", held)
+              and cfg["order_path"] == "serial", str((cfg, r)))
+        os.remove(os.path.join(sd, B))
+        os.remove(os.path.join(sd, S.HOLD_FILE))
+        u, line = S.gate(sd, "1.8.4")
+        check("gate: the hold file removed -> batch again", u is True, line)
+        u, line = S.gate(os.path.join(d, "no", "such"), "1.8.4")
+        check("gate: no state folder and no hold file -> not the hold line", "held by hand" not in line, line)
     finally:
         shutil.rmtree(d, ignore_errors=True)
 
@@ -295,6 +318,13 @@ def part2():
             check(f"status, batch, the newest check {label}: the block's second line is the gate's, before the "
                   "library line", out[6] == "  " + gline and out[7].startswith("  library: coinbase-advanced-py ")
                   and out[5].startswith("order path: batch ("), str(out[5:8]))
+        sd = write_state(os.path.join(d, "hold"), lines, [("order_check_20261115T100000Z.json", dict(
+            started="2026-11-15 10:00:00", passed=True, place_test_orders=True, reasons=[], library=lib))])
+        put(sd, S.HOLD_FILE, "")
+        rc, out, err = status(p, sd, libdir)
+        check("status, batch, the hold file with a passed check: the block's second line is the hold line",
+              rc == 0 and out[6] == "  " + "order path in use: serial: held by hand (file order_path_serial in the state folder; wickctl order-path batch removes it)" and out[7].startswith("  library: coinbase-advanced-py "),
+              str(out[5:8]) + err[-200:])
         sd = write_state(os.path.join(d, "old"), [hb(now - timedelta(hours=30), 9.0, 11.0)])
         rc, out, err = status(p, sd, libdir)
         check("status, batch, no heartbeat in the last 24 hours: one line saying so",
@@ -332,6 +362,9 @@ def part3():
         placed = dict(started="2026-11-15 10:00:00", passed=True, place_test_orders=True, library=lib)
         serial_until = ("order path in use: serial, until the order check has passed on this server "
                         "(wickctl order-check)")
+        HOLD = S.HOLD_FILE
+        HELD = ("order path in use: serial: held by hand (file order_path_serial in the state folder; "
+                "wickctl order-path batch removes it)")
         cases = [
             ("batch, no order-check file", dict(base, order_path="batch"), [], "serial", serial_until),
             ("batch, a failed check and a read-only pass", dict(base, order_path="batch"),
@@ -350,6 +383,8 @@ def part3():
              f"order path in use: serial: the order check passed with coinbase-advanced-py {lib}, the installed "
              "version is not found; run wickctl order-check again", True),
             ("serial", base, [], "serial", None),                  # no key at all: the config is passed on as it is
+            ("batch, a pass with test orders and the hold file", dict(base, order_path="batch"),
+             [("order_check_1.json", placed), (HOLD, "")], "serial", HELD),
             ("order_path serial, a pass with test orders", dict(base, order_path="serial"),
              [("order_check_1.json", placed)], "serial", None)]
         for case in cases:
@@ -360,7 +395,10 @@ def part3():
             sd = os.path.join(t, "live_" + str(abs(hash(label))))
             os.makedirs(sd)
             for name, r in checks:
-                json.dump(r, open(os.path.join(sd, name), "w"))
+                if name == HOLD:
+                    open(os.path.join(sd, name), "w").close()
+                else:
+                    json.dump(r, open(os.path.join(sd, name), "w"))
             r = subprocess.run([sys.executable, "-B", os.path.join(t, "bot", "spot", "run.py"), "live", "--config", p,
                                 "--state-dir", sd, "--minutes", "0"], cwd=t, capture_output=True, text=True,
                                env=dict(env, PYTHONPATH="" if nolib else libdir))

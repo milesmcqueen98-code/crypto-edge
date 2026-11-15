@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 
 COUNTERS = ("reprice", "arm", "cancel_unconfirmed", "snap_miss", "snap_mismatch", "bbo_miss", "batch_fallback",
             "http_429", "cancel_single", "fallback_min")
+HOLD_FILE = "order_path_serial"                        # a hand hold on the serial path (wickctl order-path serial)
 HB_MIN = 30                                            # minutes between heartbeats (Engine._heartbeat)
 
 
@@ -103,6 +104,9 @@ def gate(state_dir, library):
     with the installed library version (`library`, None when not found). Read-only runs are ignored, unless the newest
     file of all cannot be read. Never raises."""
     try:
+        if os.path.exists(os.path.join(state_dir, HOLD_FILE)):
+            return False, ("order path in use: serial: held by hand (file order_path_serial in the state folder; "
+                           "wickctl order-path batch removes it)")
         files = _checks(state_dir)
         if files and files[-1][1] is None:
             return False, (f"order path in use: serial: {os.path.basename(files[-1][0])} cannot be read; "

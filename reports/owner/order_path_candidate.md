@@ -33,6 +33,17 @@ No change to `engine.py`, `market.py`, `config.json`, `release_inputs.py` or any
 - **`order-check`** does what it did; after its final line it prints one more: `The bot uses the batch order path
   from its next start (wickctl start).` (pass with test orders), `Read-only run: the bot keeps the serial path until
   a run with test orders passes.` (pass, read-only), `The bot keeps the serial path.` (failed).
+- **The hand hold (added after the review's first commits).** `order_status.HOLD_FILE = "order_path_serial"`. If that
+  file exists in the state folder, `gate` returns `(False, "order path in use: serial: held by hand (file
+  order_path_serial in the state folder; wickctl order-path batch removes it)")` before every other rule, the
+  unreadable-newest-file rule included. `apply_gate` and `run.py` are unchanged: the printed line, the status block's
+  second line and the `order_path` event's `why` carry that line. `wickctl order-path serial` creates the file as the
+  wick user (making `live_spot` first), `wickctl order-path batch` removes it (no error if absent), `wickctl
+  order-path` alone prints the state and `usage: wickctl order-path serial|batch` (exit 0); none touches the service;
+  all apply at the next start. One help line next to `order-check`. Tests: `order_status_test.py` (gate with the hold
+  over a placed pass and over an unreadable newest file, removed again, `status` block, `live` start with the
+  stand-in engine) and `wickctl_test.sh` checks 9 to 15 (the first eight unchanged; the stub `systemctl` sees no
+  call). Counts after this addition: `order_status_test.py` 70, `wickctl_test.sh` 15, others as above.
 - **Removed:** the constant `NOT_PASSED` and the old start-up line `order check: not yet passed on this server`.
   `check_passed` stays (nothing calls it now).
 - **Tests** (all run here, passed): `order_status_test.py` 62 checks (part 1b new: `gate` and `apply_gate` on temp
@@ -496,8 +507,9 @@ wrong:
 - **`wickctl order-check`** is new; by the review's design it is run by the account owner before the bot relies on
   the batch path (section "The order check"). Nothing runs it automatically. After a pass the bot takes the batch
   path at its next start; a library upgrade asks for the check again.
-- **To keep the serial path on one server:** do not run the order check with test orders there (the bot then stays
-  serial by itself), or set `"inputs_local": true` with `"order_path": "serial"` in `config.live.json` (the file must
+- **To keep or put a server on the serial path:** `wickctl order-path serial` (a hold file in `live_spot/`; applies at
+  the next start, `wickctl restart` applies it now; `wickctl order-path batch` removes it). Or do not run the order
+  check with test orders there (the bot then stays serial by itself). Or set `"inputs_local": true` with `"order_path": "serial"` in `config.live.json` (the file must
   then also state its input settings, as the inputs section says).
 - `wickctl paper-test`, `cancel-all` and `flatten` run with the same keys: the paper test ignores them; `cancel-all`
   and `flatten` use today's cancel and sell requests (on a client with limit headers on).

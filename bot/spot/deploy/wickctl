@@ -31,6 +31,17 @@ case "${1:-help}" in
               py order-check --print-plan
               read -r -p "Type yes to place and cancel the three test orders (else: the read-only parts only): " ans
               if [ "$ans" = "yes" ]; then py order-check --place-test-orders; else py order-check; fi ;;
+  order-path) # README, "Order path": a hand hold on the serial path; the marker file is read by run.py at the next start
+              H=$D/live_spot/order_path_serial   # neither stops nor starts the service
+              case "${2:-}" in
+                serial) sudo -u wick mkdir -p $D/live_spot && sudo -u wick touch $H || exit 1
+                        echo "From its next start the bot uses the serial order path. A running bot keeps the path it started with: wickctl restart applies it now." ;;
+                batch)  sudo -u wick rm -f $H || exit 1
+                        echo "The hold is removed. From its next start the bot uses the batch order path if the order check has passed on this server (wickctl status says which)." ;;
+                *)      if [ -e "$H" ]; then echo "held on the serial order path by hand"
+                        else echo "no hold: the order check decides (wickctl status says which)"; fi
+                        echo "usage: wickctl order-path serial|batch" ;;
+              esac ;;
   restart)    sudo systemctl restart wickbot ;;
   stop)       sudo systemctl stop wickbot; echo "Service stopped. Resting bids expire on their own within minutes;" \
                 "take-profits stay. To also sell everything: wickctl flatten" ;;
@@ -59,6 +70,7 @@ wickctl flatten          stop the bot, cancel every bot order and sell every ope
 wickctl cancel-all       stop the bot and cancel every bot order (positions stay)
 wickctl reset-halt       clear the 25% drawdown stop after you've looked at why it fired
 wickctl order-check      check the batch order path against Coinbase (asks before placing three tiny test bids)
+wickctl order-path serial|batch   hold the bot on the serial order path, or remove the hold (applies at the next start)
 wickctl update           pull the latest code; restart the bot only if it was running
 EOF
   ;;
