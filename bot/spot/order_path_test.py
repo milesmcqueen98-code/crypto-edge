@@ -430,9 +430,9 @@ def run(start, end, death, path, tag):
                     t = pd.Timestamp(a[0] if a else eng.clock()).floor("min")
                     sh.minute, sh.phase = t, "data"
                     sh.model.T = max(sh.model.T, (t - EPOCH).total_seconds() + 6)
-                elif name == "fast_poll" and isinstance(sh.minute, pd.Timestamp):
-                    sh.model.T = max(sh.model.T, (sh.minute - EPOCH).total_seconds() + 30)
                 elif phase is not None:
+                    if name == "fast_poll" and isinstance(sh.minute, pd.Timestamp):
+                        sh.model.T = max(sh.model.T, (sh.minute - EPOCH).total_seconds() + 30)
                     if phase == "settle" and sh.phase == "data":
                         sh.data_end = sh.model.T          # the data step ended: cash read, settle begins
                         sh.log.append(dict(minute=sh.minute, phase="mark", kind="data_end", start=sh.model.T,
