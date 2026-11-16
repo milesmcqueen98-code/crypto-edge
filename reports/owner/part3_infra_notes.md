@@ -14,10 +14,44 @@ Plain words. Nothing here changes a trading decision. The plan is Part 3 of `rep
 - `scripts/owner/paper_status.py`: the fifth book appears in every table. The third book can be marked ended. A new
   section "Rule progress for the fifth book" (measures 1, 3 and 4 as progress) and "Fifth book against the fourth book".
 - `scripts/owner/bar_source/part3_rule.py`: the rule of Part 3 as code, for the one read.
-- Tests: `scripts/owner/test_paper_status.py` and `scripts/owner/bar_source/test_part3_rule.py`.
+- `.github/workflows/step-pairs.yml` and `scripts/owner/step_pairs/run_pair.py`: the same-machine step pairs (below).
+- Tests: `scripts/owner/test_paper_status.py`, `scripts/owner/bar_source/test_part3_rule.py` and
+  `scripts/owner/step_pairs/test_run_pair.py`.
 
 In the fifth book's data quality table, two counters are left out, `tb_insert` and `tb_close_diff`. With candle requests
 between steps they do not mean what they mean in the fourth book, so they cannot be compared. A note in the report says so.
+
+## Measure 1 (a): the same-machine pairs (change of Nov 16, 12:04 ET)
+
+Measure 1 no longer compares the fifth book with a fixed 10.3 s. Part (a) is now a median over same-machine pairs, and
+part (b) (the fifth book against the main book over the same half hours) is as before. The fifth book's own median
+against 10.3 s is still printed, marked as reported only.
+
+- What runs: `.github/workflows/step-pairs.yml`, four times a day at 00:05, 06:05, 12:05 and 18:05 UTC. Each job runs, on
+  one runner and on the fifth book's pinned commit, 30 minutes of paper steps with release 3's inputs and 30 minutes with
+  the build's, one straight after the other. No orders, public data only, about 40 requests a minute for about an hour.
+- Why :05: the step tool waits until the clock is at minute 20 or 50 of the hour. Set-up takes two to four minutes, so a
+  job that starts at :05 idles about ten minutes at most, and a start up to about ten minutes late still catches :20. A
+  later one waits for :50 and the 150-minute limit still holds.
+- The pinned commit: read only from `paper_spot_r5/CODE` (the line `code_commit`). If that file does not exist yet, the
+  job says the fifth book has not run and ends without a pair.
+- The order alternates: `ab` (release 3 first) when the UTC hour of the job's start is 00 to 05 or 12 to 17, `ba`
+  otherwise. So the four scheduled jobs of a day run ab, ba, ab, ba.
+- Which settings are swapped: the input settings of the pinned code (`INPUT_KEYS` of `bot/spot/release_inputs.py`, without
+  the order-path keys). Both runs use the build's own `bot/spot/config.json` as the base, so everything else is equal.
+  Release 3's values are those of `bot/spot/config.json` on `main`. If the two files differ in any other key the pair
+  does not run and its file says why.
+- Where results land: `reports/owner/step_pairs/pair_<UTC start>Z.json`, committed to `main` by the job. A pair counts if
+  both halves have at least 20 timed steps and neither met a refusal or a rate limit; otherwise the file says
+  `"counts": false` and why.
+- How the read uses them: `part3_rule.py` takes the pairs that count and start inside the period (`--pairs`, default
+  `reports/owner/step_pairs`), computes the median of the build's median data step minus release 3's exactly from the
+  printed medians, and needs at least 8 pairs and a median at or below zero. The status report lists every pair so far
+  and the same count and median.
+- To start a pair by hand: run the workflow `step-pairs` (Run workflow on `main`); the input `order` (ab or ba) is
+  optional and empty means automatic from the hour; `minutes` stays 30.
+- The result files must be on `main` (or on the read branch) when the read is run; copy `reports/owner/step_pairs` in
+  with the logs.
 
 ## What you must set before the merge
 
@@ -48,7 +82,7 @@ both included (for example START 2026-11-19T01:30 and END 2026-11-22T01:29).
    `python scripts/owner/paper_status.py SCRATCH_ROOT --now END_PLUS_ONE_MINUTE`, then read the section "Rule progress for
    the fifth book", items 1 to 5. Item 3 there is only its second half; its median is measure 1. Say pass if all five
    items meet, else fail.
-5. The rule:
+5. The rule (it also reads the pair files, `--pairs reports/owner/step_pairs` by default):
    `python scripts/owner/bar_source/part3_rule.py --dir reports/owner/reconcile_tb/part3 --start START --end END --fifth paper_spot_r5 --fourth paper_spot_t18 --main paper_spot --items-1-5 pass`
    (or `fail`). It writes `part3_rule.md` and `part3_rule.json` into the folder and prints the markdown. If it prints
    "PERIOD NOT COMPLETE" it gives no verdict. After the third extension, add `--read-as-is`.
