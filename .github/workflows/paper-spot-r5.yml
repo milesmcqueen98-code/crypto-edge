@@ -24,7 +24,7 @@ on:
 
 # the pinned commit of branch owner/release-5: the only place it is written
 env:
-  CODE_REF: "PINNED_COMMIT_TO_BE_SET_BY_THE_OWNER"
+  CODE_REF: "9e6f53b3aca8c15307f22a357f19431bff053e4c"
 
 concurrency:
   group: paper-spot-r5

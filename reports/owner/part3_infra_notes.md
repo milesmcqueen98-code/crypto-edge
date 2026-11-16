@@ -54,14 +54,13 @@ against 10.3 s is still printed, marked as reported only.
 - The result files must be on `main` (or on the read branch) when the read is run; copy `reports/owner/step_pairs` in
   with the logs.
 
-## What you must set before the merge
+## What was set before the merge
 
-1. The pinned commit: one line, `CODE_REF: "PINNED_COMMIT_TO_BE_SET_BY_THE_OWNER"` near the top of
+1. The pinned commit: one line, `CODE_REF: "9e6f53b3aca8c15307f22a357f19431bff053e4c"` near the top of
    `.github/workflows/paper-spot-r5.yml`. It is written nowhere else. The checkout, the CODE file and the manual-run
-   input (empty means this commit) all read it. Replace the text with the full 40-character commit hash. A different
-   commit restarts the three days.
-2. The date the third book ended: `ENDED = {"tb": "2026-11-16"}` in `scripts/owner/paper_status.py`. Set the real date.
-   A book counts as ended from the start of that day (UTC). Before then the report treats it like any other book.
+   input (empty means this commit) all read it. A different commit restarts the three days.
+2. The date the third book ended: `ENDED = {"tb": "2026-11-16"}` in `scripts/owner/paper_status.py`. A book counts as
+   ended from the start of that day (UTC).
 
 ## How the read is run, step by step
 
