@@ -1,0 +1,98 @@
+===== candles_at_s=null: running in process: Engine(mode=paper, config=bot/spot/config.json, overrides candles_at_s=null, state_dir=/tmp/ds_smoke).run(30.0); candles_at_s None
+event kinds: {'backfill': 1, 'adv': 1, 'arm': 19, 'heartbeat': 1}
+
+heartbeats:
+{"ts": "2026-11-16T14:30:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 138177, "free": 111823, "armed": ["AAVE", "BCH", "DOGE", "ENA", "HBAR", "HYPE", "LINK", "LTC", "NEAR", "ONDO", "PEPE", "SOL", "SUI", "XLM", "XRP"], "open": [], "counts": {"tb_built": 125, "tb_close_diff": 9, "tb_rebuilt": 8, "tb_insert": 11, "tb_replaced": 107, "tb_replaced_diff": 16, "tb_dropped": 6, "candle_old": 5, "tb_pending": 2, "arm": 15, "reprice": 71, "tb_empty": 1, "newest_absent": 1}, "step_s": {"data": [14.345, 17.79], "cancel": [14.620000000000001, 18.08], "place": [14.620000000000 ...
+
+errors and warnings:
+
+step timing (candles_at_s=null; seconds after the minute, wall clock):
+minute  start_s  data_end_s  step_candles  step_trades  pass_candles
+ 14:25      6.0       17.79            18           18            18
+ 14:26      6.0       14.31            18           18             0
+ 14:27      6.0       13.11            18           18             0
+ 14:28      6.0       13.47            18           18             0
+ 14:29      6.0       16.81            18           18             0
+ 14:30      6.0       14.38            18           18             0
+ 14:31      6.0       18.64            18           18             0
+ 14:32      6.0       16.19            18           18             0
+ 14:33      6.0       14.50            18           18             0
+ 14:34      6.0       16.76            18           18             0
+ 14:35      6.0       14.27            18           18             0
+ 14:36      6.0       14.58            18           18             0
+ 14:37      6.0       16.81            18           18             0
+ 14:38      6.0       15.37            18           18             0
+ 14:39      6.0       15.01            18           18             0
+ 14:40      6.0       14.69            18           18             0
+ 14:41      6.0       14.39            18           18             0
+ 14:42      6.0       14.05            18           18             0
+ 14:43      6.0       14.16            18           18             0
+ 14:44      6.0       18.54            18           16             0
+ 14:45      6.0       14.64            18           18             0
+ 14:46      6.0       15.99            18           18             0
+ 14:47      6.0       18.02            18           18             0
+ 14:48      6.0       13.80            18           18             0
+ 14:49      6.0       15.91            18           18             0
+ 14:50      6.0       17.56            18           18             0
+ 14:51      6.0       14.07            18           18             0
+ 14:52      6.0       17.59            18           18             0
+ 14:53      6.0       15.66            18           18             0
+ 14:54      6.0       13.76            18           18             0
+ 14:55      6.0       14.88            18           18             0
+  median: step start 6.00 s, data step end 14.88 s (max 18.64 s); per step 18 candle and 18 trades requests; 0 candle requests between steps
+
+parity: venue candles 2026-11-16 14:10:00 .. 2026-11-16 14:54:00 fetched at 2026-11-16 14:55:15.155219+00:00; compared 2026-11-16 14:10:00 .. 2026-11-16 14:51:00 (newest three minutes left out)
+coin  minutes  identical  differ  max_close_diff_bp  engine_only  venue_only  trades_built          answer_gen cache
+ BTC       42         42       0                0.0            0           0             0 2026-11-16 14:55:15  MISS
+ ETH       42         42       0                0.0            0           0             0 2026-11-16 14:55:15  MISS
+ SOL       42         42       0                0.0            0           0             0 2026-11-16 14:55:15  MISS
+
+===== candles_at_s=null candles_at_s=45: running in process: Engine(mode=paper, config=bot/spot/config.json, overrides candles_at_s=null candles_at_s=45, state_dir=/tmp/ds_smoke_then).run(30.0); candles_at_s 45
+event kinds: {'backfill': 1, 'adv': 1, 'arm': 35, 'heartbeat': 1}
+
+heartbeats:
+{"ts": "2026-11-16T15:30:00", "kind": "heartbeat", "equity": 250000.0, "mtm": 250000.0, "committed": 104921, "free": 145079, "armed": ["AAVE", "DOGE", "ENA", "HYPE", "LTC", "NEAR", "ONDO", "PEPE", "SUI", "XLM", "XRP"], "open": [], "counts": {"tb_built": 539, "tb_fb_budget": 17, "tb_replaced": 513, "pre_fetched": 540, "step_candles": 0, "tb_rebuilt": 14, "tb_insert": 538, "tb_pending": 7, "arm": 35, "tb_replaced_diff": 45, "disarm": 24, "reprice": 265, "tb_dropped": 3, "tb_empty": 2, "newest_absent": 2}, "step_s": {"data": [9.695, 17.02], "cancel": [9.965, 17.28], "place": [9.965, 17.28]}}
+
+errors and warnings:
+
+step timing (candles_at_s=null candles_at_s=45; seconds after the minute, wall clock):
+minute  start_s  data_end_s  step_candles  step_trades  pass_candles
+ 15:01      6.0       17.02             0           18            36
+ 15:02      6.0        9.46             0           18            18
+ 15:03      6.0       11.96             0           18            18
+ 15:04      6.0       11.08             0           18            18
+ 15:05      6.0        9.34             0           18            18
+ 15:06      6.0       10.55             0           18            18
+ 15:07      6.0       10.64             0           18            18
+ 15:08      6.0        9.24             0           18            18
+ 15:09      6.0        9.72             0           18            18
+ 15:10      6.0        9.00             0           18            18
+ 15:11      6.0       11.10             0           18            18
+ 15:12      6.0        9.00             0           18            18
+ 15:13      6.0       11.32             0           18            18
+ 15:14      6.0       11.74             0           18            18
+ 15:15      6.0       10.57             0           18            18
+ 15:16      6.0       10.18             0           18            18
+ 15:17      6.0       12.35             0           18            18
+ 15:18      6.0        9.67             0           18            18
+ 15:19      6.0       11.87             0           18            18
+ 15:20      6.0        9.49             0           18            18
+ 15:21      6.0        9.84             0           18            18
+ 15:22      6.0        8.77             0           18            18
+ 15:23      6.0        9.26             0           18            18
+ 15:24      6.0       10.67             0           18            18
+ 15:25      6.0        9.24             0           18            18
+ 15:26      6.0        9.48             0           18            18
+ 15:27      6.0        9.14             0           18            18
+ 15:28      6.0        9.03             0           18            18
+ 15:29      6.0        9.03             0           18            18
+ 15:30      6.0        8.92             0           18            18
+  median: step start 6.00 s, data step end 9.70 s (max 17.02 s); per step 0 candle and 18 trades requests; 18 candle requests between steps
+
+parity: venue candles 2026-11-16 14:45:00 .. 2026-11-16 15:29:00 fetched at 2026-11-16 15:30:09.195432+00:00; compared 2026-11-16 14:45:00 .. 2026-11-16 15:26:00 (newest three minutes left out)
+coin  minutes  identical  differ  max_close_diff_bp  engine_only  venue_only  trades_built          answer_gen cache
+ BTC       42         42       0                0.0            0           0             0 2026-11-16 15:30:09  MISS
+ ETH       42         42       0                0.0            0           0             0 2026-11-16 15:30:09  MISS
+ SOL       42         42       0                0.0            0           0             0 2026-11-16 15:30:10  MISS
+
+data step end, median seconds after the minute: first run 14.88, second run 9.695 (second minus first: -5.19 s)

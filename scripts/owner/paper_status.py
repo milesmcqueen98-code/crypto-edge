@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Status report for the paper-trading logs (four books, five when paper_spot_tb exists, six when paper_spot_t18 exists).
+"""Status report for the paper-trading logs (four books, five when paper_spot_tb exists, six when paper_spot_t18 exists,
+seven when paper_spot_r5 exists).
 
 Usage: python scripts/owner/paper_status.py [REPO_ROOT] [--now ISO_TIME]
 
-Reads paper_spot/, paper_spot_w2/, paper/, paper_v2/ and, when their folders exist, paper_spot_tb/ and paper_spot_t18/ (events.jsonl and state.json; the latter also a small CODE text file) under REPO_ROOT (default: the
+Reads paper_spot/, paper_spot_w2/, paper/, paper_v2/ and, when their folders exist, paper_spot_tb/, paper_spot_t18/ and paper_spot_r5/ (events.jsonl and state.json; the latter also a small CODE text file) under REPO_ROOT (default: the
 repo this file lives in) and writes reports/owner/PAPER_STATUS.md. Reads reports/owner/explained_errors.json for errors the owner has explained (a missing or bad file means none are). Standard library only, no network. A missing
 folder, an empty log, a truncated last line or an event kind it has not seen never stops the report.
 """
@@ -14,6 +15,7 @@ import re
 import statistics
 import sys
 from collections import Counter, defaultdict
+from fractions import Fraction
 from datetime import datetime, timedelta, timezone
 
 STALE_HOURS = 8.0
@@ -36,10 +38,18 @@ BOOKS = [
 
 TB_BOOK = ("tb", "paper_spot_tb", "Spot TB (trades input)", 250000.0, True)
 T18_BOOK = ("t18", "paper_spot_t18", "Spot T18 (all coins on trades)", 250000.0, True)
+R5_BOOK = ("r5", "paper_spot_r5", "Spot R5 (release 5 build)", 250000.0, True)
+ENDED = {"tb": "2026-11-16"}                                   # books that ended, with the date (the owner sets it): never STALE
 T18_COINS = ["BTC", "ETH", "SOL", "XRP", "DOGE", "LTC", "LINK", "BCH", "SUI", "XLM", "HBAR", "NEAR", "AAVE", "HYPE",
              "ENA", "PEPE", "ONDO", "ZEC"]                     # its listed coins (no config file on main to read them from)
 T18_MEDIAN_BAR = 15.0                                          # item 3's median bar for the fourth book (the third book's is 13)
 TB_MEDIAN_BAR = 13.0
+R5_STEP_BAR = 10.3                                             # measure 1 (a): the fifth book's median data step, seconds
+R5_FAILED_BAR_PCT = 1                                          # measure 4: failed candle requests, at most this percent of requests
+R5_INSTEP_BAR_PCT = 2                                          # measure 4: requests made inside a step, at most this percent of coin-minutes
+R5_COINS_N = 18                                                # coins of the fifth book (coin-minutes = 18 times the minutes run)
+R5_FIRST_STEP_COINS = 18                                       # at most this many in-step requests are left out per start
+WARMUP_MAX_MIN = 6                                             # longest start-up (backfill to first step) seen, minutes
 TB_CONFIG = os.path.join("bot", "spot", "config.tb.json")
 TB_DEFAULT_COINS = ["BTC", "ETH", "SOL", "XRP", "LTC", "ZEC"]   # the coins the forward rule names
 TB_ALL_COINS = 18                                               # coins in the book (rule item 5)
@@ -57,6 +67,8 @@ DQ_COUNTERS = (
     "tb_empty", "tb_insert", "tb_rebuilt", "tb_close_diff", "tb_fb_unverified", "tb_fb_error", "tb_fb_budget",
     "tb_fb_limited", "tb_replaced", "tb_replaced_diff", "tb_dropped", "tb_pending",
 )
+# The candle-request counters of the release-5 build (Part 3, measure 4); also read from the heartbeat's counts dict.
+PRE_COUNTERS = ("pre_fetched", "pre_error", "pre_missing", "pre_ondemand", "step_candles")
 NOT_REPORTED = "not reported by this book's code yet"
 NOT_DERIVABLE = "not derivable from this log"
 
@@ -431,13 +443,17 @@ def period_view(sp, rt, parts, entries, start):
 
 # ---------------------------------------------------------------- running time
 def active_books(root):
-    """The four registered books, plus the third and fourth spot books when their folders exist."""
-    books = list(BOOKS)
-    if os.path.isdir(os.path.join(root, TB_BOOK[1])):
-        books.insert(2, TB_BOOK)
-    if os.path.isdir(os.path.join(root, T18_BOOK[1])):
-        books.insert(3 if os.path.isdir(os.path.join(root, TB_BOOK[1])) else 2, T18_BOOK)
-    return books
+    """The four registered books, plus the third, fourth and fifth spot books when their folders exist."""
+    extra = [b for b in (TB_BOOK, T18_BOOK, R5_BOOK) if os.path.isdir(os.path.join(root, b[1]))]
+    return list(BOOKS[:2]) + extra + list(BOOKS[2:])
+
+
+def ended_on(key, now):
+    """The date text (from ENDED) of a book that has ended by `now`, else None. A book ends at the start of its date (UTC);
+    before that it is read as any other book."""
+    d = ENDED.get(key)
+    t = parse_ts(d) if d else None
+    return d if t is not None and now >= t else None
 
 
 def merge_intervals(iv):
@@ -557,7 +573,7 @@ def data_quality(events, rt):
         if isinstance(counts, dict):
             for k, v in counts.items():
                 x = num(v)
-                if isinstance(k, str) and (k in DQ_COUNTERS or k.startswith("tb_")) and x is not None:
+                if isinstance(k, str) and (k in DQ_COUNTERS or k in PRE_COUNTERS or k.startswith("tb_")) and x is not None:
                     found[k] = x
         data = None
         if isinstance(step, dict) and isinstance(step.get("data"), (list, tuple)) and len(step["data"]) >= 2:
@@ -600,17 +616,28 @@ def num_s(x):
     return "n/a" if x is None else f"{x:.1f}"
 
 
-def dq_section(label, dq):
+# Counters whose meaning differs in the fifth book: with candles_at_s the step has no candle row for the newest minute of a
+# trades-built coin, so tb_insert counts nearly every trades bar and tb_close_diff is not measured for those coins.
+R5_NOT_COMPARABLE = ("tb_insert", "tb_close_diff")
+
+
+def dq_section(label, dq, leave_out=()):
     out = [f"### {label}", ""]
     if not dq or dq["total"] is None:
         return out + [NOT_REPORTED + ".", ""]
     rows = []
     for d, v in list(dq["days"].items()) + [("Total", dq["total"])]:
         rows.append([d.isoformat() if not isinstance(d, str) else d, f"{v['minutes']:,.0f}", str(v["beats"]),
-                     num_s(v["data_median"]), num_s(v["data_max"]), count_text(v["counts"])])
+                     num_s(v["data_median"]), num_s(v["data_max"]),
+                     count_text({k: x for k, x in v["counts"].items() if k not in leave_out})])
     out += [table(["Day (UTC)", "Minutes run", "Heartbeats", "Data step median (s)", "Data step largest max (s)",
                    "Counters (sum)"], rows), ""]
     t = dq["total"]
+    if leave_out:
+        out += [f"Left out for this book: {', '.join(leave_out)}. With candle requests between steps (candles_at_s) the "
+                "step has no candle row for the newest minute of a trades-built coin, so tb_insert counts nearly every "
+                "trades bar and tb_close_diff is not measured for those coins; the counters are not comparable with the "
+                "fourth book's and are not shown.", ""]
     skipped = dq["all_beats"] - t["beats"]
     if skipped:
         out += [f"{skipped} earlier heartbeat(s) carry none of these fields and are not counted.", ""]
@@ -646,17 +673,21 @@ def mentions_refusal(events):
     return n
 
 
-def tb_rule_rows(dq, st, events, coins, rt, median_bar=TB_MEDIAN_BAR, rule_coins=TB_DEFAULT_COINS):
+def tb_rule_rows(dq, st, events, coins, rt, median_bar=TB_MEDIAN_BAR, rule_coins=TB_DEFAULT_COINS, item3_median=True):
     """Items 1 to 5 of the FORWARD_TESTS row. Returns (minutes_in_real_time, rows) with rows [item, value, verdict].
 
     Item 1 is computed from the engine's counters: every attempted listed coin-minute is counted in exactly one of
     tb_built, tb_empty (both verified), tb_fb_unverified, tb_fb_error, tb_fb_budget, tb_fb_limited. Share = verified
     over attempted; it meets at 99% or more, compared on exact counts. Items 2 to 5 still use minutes run where noted.
-    Item 3's median bar is median_bar seconds (13 for the third book, 15 for the fourth). The note that the listed coins
+    Item 3's median bar is median_bar seconds (13 for the third book, 15 for the fourth); with item3_median False (the
+    fifth book) only its second half is judged here, the median being measure 1 of Part 3. The note that the listed coins
     differ from the rule's six is added only when they differ from rule_coins (the fourth book passes its own 18).
     """
     bar = f"{median_bar:g}"
     item3 = f"Data step median {bar} s or less; 30-minute maximum 20 s or less in 95% or more of heartbeats"
+    if not item3_median:
+        item3 = ("Data step 30-minute maximum 20 s or less in 95% or more of heartbeats (the median is measure 1, "
+                 "see below)")
     t = dq["total"] if dq else None
     run_min = (rt["run_h"] * 60.0) if rt and rt["ok"] else None
     no = "does not meet yet"
@@ -696,8 +727,10 @@ def tb_rule_rows(dq, st, events, coins, rt, median_bar=TB_MEDIAN_BAR, rule_coins
     if t["data_n"]:
         med = t["data_median"]
         sh = 100.0 * t["data_le20"] / t["data_n"]
-        ok3 = med <= median_bar and sh >= 95.0
+        ok3 = (med <= median_bar or not item3_median) and sh >= 95.0
         v3 = f"median {med:.1f} s of {t['data_n']} heartbeats; maximum 20 s or less in {sh:.1f}% (largest {t['data_max']:.1f} s)"
+        if not item3_median:
+            v3 += "; the median is judged as measure 1"
     else:
         ok3, v3 = False, "no heartbeat has a data step time yet"
     rows.append(["3. " + item3, v3,
@@ -762,10 +795,11 @@ def summary_row(label, s, spot_style):
             exits, lad, str(s["errors"])]
 
 
-def compare_section(heading, ka, kb, cols, only, closing, st, loaded, rts):
+def compare_section(heading, ka, kb, cols, only, closing, st, loaded, rts, lead=None):
     """Book kb against book ka: the period both ran, the same measures, and the first-bid overlap table.
-    cols is the three column names (book a, book b, difference); only the two 'only in' row labels; closing the last sentence."""
-    L = [heading, ""]
+    cols is the three column names (book a, book b, difference); only the two 'only in' row labels; closing the last sentence;
+    lead an optional line placed under the heading (the note that a book has ended)."""
+    L = [heading, ""] + ([lead, ""] if lead else [])
     sa, sb = st.get(ka), st.get(kb)
     if sa is None or sb is None or sb["status"] != "ok" or sa["status"] != "ok":
         L += ["Both logs are needed for this comparison; one is missing or empty.", ""]
@@ -856,14 +890,22 @@ def t18_rule_section(st, loaded, rts, dqs, root):
     return L
 
 
-def tb_sections(st, loaded, rts, dqs, labels, root):
+def ended_line(key, now):
+    """The first line of each section of an ended book, or None."""
+    d = ended_on(key, now)
+    return f"The third book ended on {d}; this section is the final record." if d and key == "tb" else None
+
+
+def tb_sections(st, loaded, rts, dqs, labels, root, now=None):
     """The third spot book against the main book, and its progress on the three-day rule (items 1 to 5)."""
+    end_line = ended_line("tb", now) if now is not None else None
     L = compare_section("## Third book against the main book", "spot", "tb",
                         ("Spot (main)", "Spot TB", "TB minus main"), ("Only in the main book", "Only in the third book"),
-                        "This comparison is for the record. It is not the pass rule; the rule is below.", st, loaded, rts)
+                        "This comparison is for the record. It is not the pass rule; the rule is below.", st, loaded, rts,
+                        lead=end_line)
     tb = st["tb"]
     coins, src = load_tb_coins(root)
-    L += ["## Three-day rule progress for the third book", "",
+    L += ["## Three-day rule progress for the third book", ""] + ([end_line, ""] if end_line else []) + [
           "> Verified inputs (release 2): after the first three full days of real-time running (at least 4,000 minutes), "
           "items 1 to 7 below must all hold. The rule is in reports/owner/FORWARD_TESTS.md. Items 1 to 5 are computed here "
           "from the heartbeats; the values are provisional until the minutes are reached.", ""]
@@ -881,6 +923,264 @@ def tb_sections(st, loaded, rts, dqs, labels, root):
     rows.append(["7. On the reconciliation of both books over the minutes both were live: the share of new bids more than 5 bp from the research level, and the share whose research score is on the other side of the threshold, are each lower in the third book than in the main book, or below 5% in both",
                  "from the reconciliation (scripts/owner/reconcile); not computed here", "not computed here"])
     L += [table(["Item", "Current value", "Verdict"], rows), ""]
+    return L
+
+
+# ---------------------------------------------------------------- fifth book (Part 3 of reports/owner/bar_source_prereg.md)
+# The measures below are shared with scripts/owner/bar_source/part3_rule.py, which imports them from here, so the status
+# report and the rule give the same numbers on the same log. Medians and shares are compared exactly (Fractions).
+def exact(x):
+    """x (a float read from the log, or an int) as an exact decimal fraction."""
+    return Fraction(repr(x)) if isinstance(x, float) else Fraction(x)
+
+
+def median_exact(values):
+    """The median of numbers as an exact Fraction, or None when there are none."""
+    v = sorted(exact(x) for x in values)
+    n = len(v)
+    if not n:
+        return None
+    return v[n // 2] if n % 2 else (v[n // 2 - 1] + v[n // 2]) / 2
+
+
+def step_medians(rows):
+    """{heartbeat time: data step median} from data-quality rows (dq['rep']); a later heartbeat at the same time wins."""
+    return {r["t"]: r["data"][0] for r in rows if r["data"]}
+
+
+def measure1(rows5, rows_other):
+    """Measure 1: the fifth book's median of heartbeat data-step medians, and the paired medians (same heartbeat time)
+    against another book's. Returns a dict with exact medians (Fractions or None) and counts."""
+    v5 = [r["data"][0] for r in rows5 if r["data"]]
+    a, b = step_medians(rows5), step_medians(rows_other)
+    common = sorted(set(a) & set(b))
+    return {"n": len(v5), "median": median_exact(v5), "pairs": len(common),
+            "paired_fifth": median_exact([a[t] for t in common]), "paired_other": median_exact([b[t] for t in common])}
+
+
+PAIRS_DIR = os.path.join("reports", "owner", "step_pairs")
+MIN_PAIRS = 8                                                  # measure 1 (a): pairs that count, at least
+
+
+def load_pairs(directory):
+    """The same-machine pairs written by scripts/owner/step_pairs/run_pair.py: every *.json in the folder, oldest start
+    first. Each is {file, start (datetime or None), order, counts (the file says true and both printed medians can be
+    read), why (text when it does not count), release3 and build (the printed median texts), diff (build minus release 3,
+    an exact Fraction from the printed texts, or None)}. A missing folder means no pairs; an unreadable file is a pair
+    that does not count. Shared with scripts/owner/bar_source/part3_rule.py."""
+    out = []
+    try:
+        names = sorted(n for n in os.listdir(directory) if n.endswith(".json"))
+    except OSError:
+        return out
+    for n in names:
+        p = {"file": n, "start": None, "order": None, "counts": False, "why": None, "release3": None, "build": None,
+             "diff": None}
+        try:
+            with open(os.path.join(directory, n), encoding="utf-8") as f:
+                o = json.load(f)
+            p["start"] = parse_ts(o.get("utc_start"))
+            p["order"] = o.get("order")
+            runs = {r.get("inputs"): r for r in o.get("runs", []) if isinstance(r, dict)}
+            for k in ("release3", "build"):
+                t = (runs.get(k) or {}).get("data_end_median_text")
+                p[k] = t if isinstance(t, str) else None
+            if p["release3"] is not None and p["build"] is not None:
+                p["diff"] = Fraction(p["build"]) - Fraction(p["release3"])
+            p["counts"] = o.get("counts") is True and p["diff"] is not None and p["start"] is not None
+            p["why"] = None if p["counts"] else (clean(o.get("why_not") or "unreadable or incomplete")[:ERR_CHARS])
+        except (OSError, ValueError, TypeError, ArithmeticError):
+            p["why"] = "file could not be read"
+        out.append(p)
+    out.sort(key=lambda p: (p["start"] is None, p["start"] or datetime.min.replace(tzinfo=timezone.utc), p["file"]))
+    return out
+
+
+def pairs_measure(pairs, start=None, end=None, now=None, min_pairs=MIN_PAIRS, extend=False):
+    """Measure 1 (a): the pairs that count whose start is in [start, end + 1 minute) (None: no limit; now: not after it),
+    their number, and the median of build minus release 3 as an exact Fraction (None without pairs). Met when there are
+    at least min_pairs and the median is at or below zero.
+    With extend=True and an end given: if fewer than min_pairs count in the period, the pairs that count and start at or
+    after end + 1 minute (the boundary above, so no pair is in both groups) are added oldest first, one at a time, until the
+    count reaches min_pairs; later pairs are not used. With min_pairs or more in the period nothing is added. The now limit
+    applies to the added pairs too. Extra keys: in_period (used pairs that started in the period), added (used pairs after
+    it), complete (the used pairs are at least min_pairs) and last_start (the start of the last used pair when pairs were
+    added, else None). With extend=False no pair after the period is used."""
+    use, later = [], []
+    stop = None if end is None else end + timedelta(minutes=1)
+    for p in pairs:
+        if not p["counts"]:
+            continue
+        if start is not None and p["start"] < start:
+            continue
+        if now is not None and p["start"] > now:
+            continue
+        if stop is not None and p["start"] >= stop:
+            later.append(p)
+            continue
+        use.append(p)
+    in_period = len(use)
+    added = 0
+    if extend and stop is not None and in_period < min_pairs:
+        later.sort(key=lambda p: (p["start"], p["file"]))
+        for p in later:
+            if len(use) >= min_pairs:
+                break
+            use.append(p)
+            added += 1
+    med = median_exact([p["diff"] for p in use])
+    return {"n": len(use), "needed": min_pairs, "enough": len(use) >= min_pairs, "median": med,
+            "met": len(use) >= min_pairs and med is not None and med <= 0, "used": use,
+            "in_period": in_period, "added": added, "complete": len(use) >= min_pairs,
+            "last_start": use[-1]["start"] if added else None}
+
+
+def startup_steps(events):
+    """The first stepped minute after each start (a backfill event), as common.startups in scripts/owner/reconcile finds it:
+    the minute of the first later event that is neither a catch_up nor a backfill, or the backfill minute plus
+    WARMUP_MAX_MIN when there is none or it is later than that."""
+    out = []
+    for i, e in enumerate(events):
+        if e.get("kind") != "backfill" or e.get("_t") is None:
+            continue
+        b = e["_t"].replace(second=0, microsecond=0)
+        s = None
+        for x in events[i + 1:]:
+            if x.get("kind") in ("catch_up", "backfill") or x.get("_t") is None:
+                continue
+            s = x["_t"].replace(second=0, microsecond=0)
+            break
+        if s is None or s - b > timedelta(minutes=WARMUP_MAX_MIN):
+            s = b + timedelta(minutes=WARMUP_MAX_MIN)
+        out.append(s)
+    return out
+
+
+def measure4(rows, starts):
+    """Measure 4 from data-quality rows (dq['rep']: t, counts, minutes) and the first stepped minutes of the starts.
+    Failed share: pre_error over pre_fetched plus pre_error, bar 1%. In-step share: (pre_missing plus pre_ondemand), with
+    pre_missing of each heartbeat reduced by at most 18 for each start whose first stepped minute is in that heartbeat's
+    half hour (the 30 minutes up to and including it) and never below zero, over 18 times the minutes run, bar 2%.
+    Counters a heartbeat does not carry are 0; `present` lists the counters carried by at least one heartbeat, and with
+    none present neither bar is met."""
+    tot = Counter()
+    present = set()
+    left_out = 0
+    missing_adj = 0
+    for r in rows:
+        c = r["counts"]
+        present |= {k for k in PRE_COUNTERS if k in c}
+        for k in PRE_COUNTERS:
+            tot[k] += c.get(k, 0)
+        k_starts = sum(1 for s in starts if r["t"] - timedelta(minutes=HEARTBEAT_MIN) < s <= r["t"])
+        miss = c.get("pre_missing", 0)
+        cut = min(miss, R5_FIRST_STEP_COINS * k_starts)
+        left_out += cut
+        missing_adj += miss - cut
+    minutes = sum((Fraction(repr(round(r["minutes"], 6))) for r in rows), Fraction(0))
+    coin_min = R5_COINS_N * minutes
+    requests = tot["pre_fetched"] + tot["pre_error"]
+    in_step = missing_adj + tot["pre_ondemand"]
+    return {"beats": len(rows), "present": sorted(present), "counters": dict(tot), "left_out": left_out,
+            "requests": requests, "failed": tot["pre_error"], "in_step": in_step, "coin_minutes": coin_min,
+            "failed_ok": bool(present) and requests > 0 and Fraction(tot["pre_error"]) * 100 <= R5_FAILED_BAR_PCT * Fraction(requests),
+            "in_step_ok": bool(present) and coin_min > 0 and Fraction(in_step) * 100 <= R5_INSTEP_BAR_PCT * coin_min}
+
+
+def sec(x):
+    return "n/a" if x is None else f"{float(x):.2f} s"
+
+
+def share_text(k, n, nd=3):
+    n = float(n)
+    return "n/a" if n <= 0 else f"{100.0 * float(k) / n:.{nd}f}%"
+
+
+def r5_rule_section(st, loaded, rts, dqs, root, now=None):
+    """The fifth book's progress on the four measures of Part 3. Progress only: the read is made once, by part3_rule.py."""
+    L = ["## Rule progress for the fifth book", ""]
+    code = code_lines(root, R5_BOOK[1])
+    commit = (code or {}).get("code_commit", "")
+    if commit:
+        L += [f"Engine commit: {clean(commit[:7])} (full hash {clean(commit)})"
+              + (f", recorded {clean(code['utc'])} UTC." if code.get("utc") else "."), ""]
+    else:
+        L += ["Engine commit: not recorded (no readable CODE file with a code_commit line).", ""]
+    L += ["> The four measures of Part 3 of reports/owner/bar_source_prereg.md, read here on the whole log so far. This is "
+          "progress only: the read is made once, on the period the plan defines, by scripts/owner/bar_source/part3_rule.py. "
+          "Measure 2 (decisions against the research) is not computed here.", ""]
+    t5 = st["r5"]
+    if t5["status"] != "ok":
+        L += [f"No fifth-book log to judge ({t5['status']}).", ""]
+        return L
+    d5 = dqs.get("r5")
+    rows5 = d5["rep"] if d5 else []
+    no = "does not meet yet"
+    L += ["### Measure 1, the step", ""]
+    m_main = measure1(rows5, dqs["spot"]["rep"] if dqs.get("spot") else [])
+    m_t18 = measure1(rows5, dqs["t18"]["rep"] if dqs.get("t18") else []) if "t18" in st else None
+    bar = exact(R5_STEP_BAR)
+    pairs = load_pairs(os.path.join(root, PAIRS_DIR))
+    pm = pairs_measure(pairs, now=now)
+    L += ["(a) Same-machine pairs: on one runner and the pinned commit, 30 minutes with release 3's inputs and 30 minutes "
+          "with the build's, one after the other, the order alternating (scripts/owner/step_pairs/run_pair.py, "
+          "step-pairs.yml). The measure is the median of the build's median data step minus release 3's over the pairs "
+          "that count: at or below zero, at least 8 pairs. If fewer than 8 count in the period, the read also takes the later "
+          "pairs, oldest first, up to the one that makes 8.", ""]
+    if not pairs:
+        L += ["No pairs yet.", ""]
+    else:
+        prow = [[fmt_t(p["start"]) if p["start"] else p["file"], p["order"] or "n/a",
+                 f"{p['release3']} s" if p["release3"] else "n/a", f"{p['build']} s" if p["build"] else "n/a",
+                 sec(p["diff"]) if p["diff"] is not None else "n/a",
+                 "counts" if p["counts"] else "does not count: " + (p["why"] or "")] for p in pairs]
+        L += [table(["Start", "Order", "Release 3 median", "Build median", "Build minus release 3", "Counts"], prow), ""]
+    L += [table(["Part", "Current value", "Verdict"],
+                [["(a) Pairs that count, and the median of build minus release 3",
+                  f"{pm['n']} pairs (8 needed); median {sec(pm['median'])}; must be at or below 0.00 s",
+                  "meets" if pm["met"] else no]]), ""]
+    ok_b = m_main["pairs"] > 0 and m_main["paired_fifth"] <= m_main["paired_other"]
+    mrows = [["(b) Against the main book, over the half hours both have a heartbeat (same heartbeat time)",
+              f"fifth {sec(m_main['paired_fifth'])}, main {sec(m_main['paired_other'])}, {m_main['pairs']} half hours; "
+              "the fifth's must be no higher", "meets" if ok_b else no],
+             ["Reported, decides nothing: the fifth book's own median of its half-hour data-step medians",
+              f"{sec(m_main['median'])} over {m_main['n']} heartbeats; for comparison {R5_STEP_BAR:g} s (release 3's "
+              "figure of Nov 11 to 14, which moves with the period and the runner)", "reported only"]]
+    if m_t18 is not None:
+        mrows.append(["For information: against the fourth book, same way",
+                      f"fifth {sec(m_t18['paired_fifth'])}, fourth {sec(m_t18['paired_other'])}, {m_t18['pairs']} half hours",
+                      "not part of the rule"])
+    L += [table(["Part", "Current value", "Verdict"], mrows), "",
+          "The read needs at least 100 heartbeats of the fifth book and at least 100 paired half hours with the main book "
+          "for (b).", ""]
+
+    L += ["### Items 1 to 5 (measure 3)", ""]
+    run_min, rows = tb_rule_rows(d5, t5, loaded["r5"]["events"], T18_COINS, rts["r5"], T18_MEDIAN_BAR, T18_COINS,
+                                 item3_median=False)
+    L += ["Real-time minutes run so far: " + (f"{run_min:,.0f}." if run_min is not None else NOT_DERIVABLE + "."), "",
+          f"Listed coins for item 1: {', '.join(T18_COINS)} (fixed list for this book).", "",
+          table(["Item", "Current value", "Verdict"], rows), ""]
+
+    L += ["### Measure 4, the candle requests between steps", ""]
+    m4 = measure4(rows5, startup_steps(loaded["r5"]["events"]))
+    if not m4["present"]:
+        L += ["No heartbeat carries the counters pre_fetched, pre_error, pre_missing, pre_ondemand or step_candles yet "
+              "(not reported by this book's code, or no heartbeat yet).", ""]
+        return L
+    c = m4["counters"]
+    cm = m4["coin_minutes"]
+    r4 = [["Counters, summed over the log", ", ".join(f"{k} {c[k]:,.0f}" if float(c[k]).is_integer() else f"{k} {c[k]:,.2f}"
+                                                     for k in PRE_COUNTERS), ""],
+          ["Failed requests (pre_error) against requests made (pre_fetched plus pre_error)",
+           f"{m4['failed']:,.0f} of {m4['requests']:,.0f} = {share_text(m4['failed'], m4['requests'])}; bar {R5_FAILED_BAR_PCT}% or less",
+           "meets" if m4["failed_ok"] else no],
+          ["Requests made inside a step (pre_missing plus pre_ondemand, first step after each start left out) against "
+           "coin-minutes (18 times the minutes run)",
+           f"{m4['in_step']:,.0f} of {float(cm):,.0f} = {share_text(m4['in_step'], cm)}; bar {R5_INSTEP_BAR_PCT}% or less",
+           "meets" if m4["in_step_ok"] else no],
+          ["Left out: pre_missing of the first step after each start (at most 18 per start)",
+           f"{m4['left_out']:,.0f} left out, over {len(startup_steps(loaded['r5']['events']))} starts in the log", ""]]
+    L += [table(["Part", "Current value", "Verdict"], r4), ""]
     return L
 
 
@@ -926,10 +1226,12 @@ def build_report(root, now):
             rows.append([label, "none", "-", "NO DATA (" + ("folder missing" if s["status"] == "missing" else "empty log") + ")"])
             continue
         age = (now - s["newest"]).total_seconds() / 3600
-        flag = "STALE" if age > STALE_HOURS else "ok"
+        flag = "ended" if ended_on(key, now) else ("STALE" if age > STALE_HOURS else "ok")
         rows.append([label, fmt_t(s["newest"]), f"{age:.1f} h ago", flag])
     L += [table(["Book", "Newest event", "Age", "Flag"], rows), "",
-          f"A book is flagged STALE when its newest event is more than {STALE_HOURS:g} hours old.", ""]
+          f"A book is flagged STALE when its newest event is more than {STALE_HOURS:g} hours old."
+          + (" A book marked ended (" + ", ".join(f"{labels[k]}: {ended_on(k, now)}" for k in st if ended_on(k, now))
+             + ") is never flagged STALE." if any(ended_on(k, now) for k in st) else ""), ""]
 
     # running time
     L += ["## Running time", "",
@@ -952,7 +1254,7 @@ def build_report(root, now):
     if gt:
         L += ["The five longest gaps of each book (a gap is the time the book was not running before a restart):", "", gt, ""]
     since = [f"{labels[k]} {(now - st[k]['newest']).total_seconds() / 3600:.1f} h" for k in st
-             if st[k]["newest"] is not None]
+             if st[k]["newest"] is not None and not ended_on(k, now)]
     L += ["Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records "
           "(each restart logs a catch_up event with the minutes the book was not running). A run whose log was never "
           "saved would show as a gap, so the share can read too low. Time since the last event, not counted above: "
@@ -1108,19 +1410,29 @@ def build_report(root, now):
           "heartbeat medians, and the largest heartbeat maximum.", ""]
     for key, _, label, _, spot_style in books:
         if spot_style:
-            L += dq_section(label, dqs.get(key))
+            L += dq_section(label, dqs.get(key), R5_NOT_COMPARABLE if key == "r5" else ())
 
     # third book
     if "tb" in st:
-        L += tb_sections(st, loaded, rts, dqs, labels, root)
+        L += tb_sections(st, loaded, rts, dqs, labels, root, now)
 
     # fourth book
     if "t18" in st:
         L += compare_section("## Fourth book against the third book", "tb", "t18",
                              ("Spot TB", "Spot T18", "T18 minus TB"), ("Only in the third book", "Only in the fourth book"),
                              "This comparison is for the record. The registered read is in reports/owner/bar_source_prereg.md.",
-                             st, loaded, rts)
+                             st, loaded, rts, lead=ended_line("tb", now) if "tb" in st else None)
         L += t18_rule_section(st, loaded, rts, dqs, root)
+
+    # fifth book
+    if "r5" in st:
+        if "t18" in st:
+            L += compare_section("## Fifth book against the fourth book", "t18", "r5",
+                                 ("Spot T18", "Spot R5", "R5 minus T18"),
+                                 ("Only in the fourth book", "Only in the fifth book"),
+                                 "This comparison is for the record. The registered read is Part 3 of "
+                                 "reports/owner/bar_source_prereg.md.", st, loaded, rts)
+        L += r5_rule_section(st, loaded, rts, dqs, root, now)
 
     # perps
     L += ["## Perp books", ""]
