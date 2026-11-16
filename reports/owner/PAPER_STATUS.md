@@ -1,16 +1,16 @@
 # Paper trading status
 
-Report made 2026-11-16 19:24 UTC.
+Report made 2026-11-16 21:00 UTC.
 
 | Book | Newest event | Age | Flag |
 |---|---|---|---|
-| Spot (main) | 2026-11-16 16:00 UTC | 3.4 h ago | ok |
-| Spot W2 | 2026-11-16 16:00 UTC | 3.4 h ago | ok |
-| Spot TB (trades input) | 2026-11-16 16:00 UTC | 3.4 h ago | ended |
-| Spot T18 (all coins on trades) | 2026-11-16 19:00 UTC | 0.4 h ago | ok |
-| Spot R5 (release 5 build) | 2026-11-16 19:24 UTC | 0.0 h ago | ok |
-| Perp v1 (control) | 2026-11-16 16:31 UTC | 2.9 h ago | ok |
-| Perp R2-08 | 2026-11-16 16:31 UTC | 2.9 h ago | ok |
+| Spot (main) | 2026-11-16 16:00 UTC | 5.0 h ago | ok |
+| Spot W2 | 2026-11-16 16:00 UTC | 5.0 h ago | ok |
+| Spot TB (trades input) | 2026-11-16 16:00 UTC | 5.0 h ago | ended |
+| Spot T18 (all coins on trades) | 2026-11-16 19:00 UTC | 2.0 h ago | ok |
+| Spot R5 (release 5 build) | 2026-11-16 19:24 UTC | 1.6 h ago | ok |
+| Perp v1 (control) | 2026-11-16 16:31 UTC | 4.5 h ago | ok |
+| Perp R2-08 | 2026-11-16 16:31 UTC | 4.5 h ago | ok |
 
 A book is flagged STALE when its newest event is more than 8 hours old. A book marked ended (Spot TB (trades input): 2026-11-16) is never flagged STALE.
 
@@ -58,7 +58,7 @@ The five longest gaps of each book (a gap is the time the book was not running b
 | Perp R2-08 | 2026-11-09 10:03 UTC | 5.0 |
 | Perp R2-08 | 2026-11-09 20:47 UTC | 4.4 |
 
-Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 3.4 h; Spot W2 3.4 h; Spot T18 (all coins on trades) 0.4 h; Spot R5 (release 5 build) 0.0 h; Perp v1 (control) 2.9 h; Perp R2-08 2.9 h.
+Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 5.0 h; Spot W2 5.0 h; Spot T18 (all coins on trades) 2.0 h; Spot R5 (release 5 build) 1.6 h; Perp v1 (control) 4.5 h; Perp R2-08 4.5 h.
 
 ## Summary
 
@@ -365,11 +365,13 @@ Engine commit: 9e6f53b (full hash 9e6f53b3aca8c15307f22a357f19431bff053e4c), rec
 
 (a) Same-machine pairs: on one runner and the pinned commit, 30 minutes with release 3's inputs and 30 minutes with the build's, one after the other, the order alternating (scripts/owner/step_pairs/run_pair.py, step-pairs.yml). The measure is the median of the build's median data step minus release 3's over the pairs that count: at or below zero, at least 8 pairs. If fewer than 8 count in the period, the read also takes the later pairs, oldest first, up to the one that makes 8.
 
-No pairs yet.
+| Start | Order | Release 3 median | Build median | Build minus release 3 | Counts |
+|---|---|---|---|---|---|
+| 2026-11-16 19:27 UTC | ba | 11.24 s | 8.55 s | -2.69 s | counts |
 
 | Part | Current value | Verdict |
 |---|---|---|
-| (a) Pairs that count, and the median of build minus release 3 | 0 pairs (8 needed); median n/a; must be at or below 0.00 s | does not meet yet |
+| (a) Pairs that count, and the median of build minus release 3 | 1 pairs (8 needed); median -2.69 s; must be at or below 0.00 s | does not meet yet |
 
 | Part | Current value | Verdict |
 |---|---|---|
