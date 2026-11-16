@@ -253,3 +253,56 @@ For each minute q, with c = seconds after q when the stale bid is cancelled and 
 - **An earlier step by requests is off the table** (step probe, first run, interim look: the venue's trades list
   held the closed minute in 74% of requests made one second after it and 96% at three seconds). B3 therefore
   stands for a stream-fed step, like B4, and is kept for information.
+
+### Result of Part 3 (read Nov 16 2026, 08:48 ET)
+Facts: reports/owner/timing/part3_facts.md and part3_summary.csv (the tables are on branch owner/timing, commit
+66b21ef1). What follows is the owner's reading.
+
+- **Checks.** The paths for the nine new placement times were derived on a runner from the stored prints (job
+  43876543675, no request to the venue). The six old times came out equal to the rows on file in all 29,686 rows.
+  Run from the new rows, the six policies on file reproduce every table of parts 1 and 2 exactly.
+- **Fills: the share of the research's first-bid fills that a timing catches** (selection / check / early era).
+
+  | Stage | New bid rests from | In the same minute | Within two minutes |
+  |---|---|---|---|
+  | As built, slow | 24.0 s | 75% / 74% / 69% | 82% / 81% / 79% |
+  | As built | 17.25 s | 81% / 84% / 75% | 87% / 90% / 84% |
+  | As built, fast | 13.9 s | 84% / 85% / 79% | 90% / 90% / 87% |
+  | Release 4 (order path) | 12.15 s | 85% / 87% / 81% | 90% / 90% / 87% |
+  | Release 4 and the data step | 11.08 s | 86% / 88% / 81% | 91% / 92% / 87% |
+  | A stream-fed step starting at 1 s | 5.2 s | 92% / 90% / 88% | 94% / 94% / 93% |
+  | A stream, deciding at the minute | 2.0 s | 96% / 95% / 93% | 97% / 97% / 96% |
+
+  Over the twelve carried-bid timings the same-minute share falls by 0.8 to 1.0 points for each second of delay
+  (a fitted line per era; descriptive).
+- **Money: P&L against the research's fills from the start of the minute, three eras pooled.**
+
+  | Stage | Whole ladder (S2) | First rung alone (S1) |
+  |---|---|---|
+  | As built, slow | -9.2% | -2.9% |
+  | As built | -8.2% | -7.2% |
+  | As built, fast | -3.8% | -6.4% |
+  | Release 4 | -5.2% | -7.1% |
+  | Release 4 and the data step | -2.8% | -6.4% |
+  | Stream, start at 1 s | -1.2% | -4.7% |
+  | Stream, at the minute | -2.6% | -5.3% |
+
+  By era the differences change sign. Release 4 against the timing as built, whole ladder: +5.0%, -2.4% and +3.0%
+  of P&L in the three eras.
+- **Reading.**
+  1. **Release 4 is worth 3 to 6 points of same-minute fills** (81 / 84 / 75% to 85 / 87 / 81%).
+  2. **The data step adds up to one point by timing.** Its case rests on the inputs (Part 2 of the bar-source plan),
+     not on the clock.
+  3. **A stream-fed step would add about 8 to 12 points more,** to 93 to 96%.
+  4. **In money the stages cannot be ranked.** The pooled differences are a few percent of P&L, the two valuations
+     disagree on their order, and the eras disagree on their sign. As built, the timing costs at most about 8% of
+     the research's P&L by this study; with release 4 about 5%.
+  5. **Without a carried bid** (N1 to N3) there is no steady gain: about +25% in the check era, -4% to -8% in the
+     selection era. The carried bid stays.
+- **Rule B's expected capture, restated for release 4.** Within two minutes the timing catches 87 to 90% of the
+  research's fills; prints confirm 93 to 96.5% of candle fills. A pilot with perfect execution would be expected
+  at about 81 to 87% (same minute: 75 to 84%). The 70% bar stays.
+- **What follows.** The order of builds does not change. A stream-fed step stays a later lever: it would bring the
+  bot's fills close to the research's, and this study gives no P&L case for or against it.
+- **Limits, as before:** levels from final candles; one pair of times for all coins of a minute; the times are
+  models until the pilot's heartbeats record the real ones; no significance test.

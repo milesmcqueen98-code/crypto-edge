@@ -126,6 +126,11 @@ them.
   `wickctl order-check` has passed there, so Rule B's count starts with the first live minute on the new path
   (the `order_path` event at each start and the heartbeats show it). Live days on release 3's path are
   reported apart.
+- **Added Nov 16 2026, after part 3 of the timing study, before any pilot data.** With release 4's modelled
+  timing (new bid from about 12 s) the bot catches 85%, 87% and 81% of the research's first-bid fills in the
+  same minute by era, and 90%, 90% and 87% within two minutes. With 93 to 96.5% of candle fills confirmed by
+  prints, a pilot with perfect execution would be expected at about 81 to 87% within two minutes and 75 to
+  84% in the same minute. As built before release 4 the two-minute figure is 78 to 87%. The 70% bar stays.
 
 ## Challengers running or registered
 

@@ -931,3 +931,25 @@ FORWARD_TESTS.md.
     book ran short of cash, and most of those rungs left by time an hour later at lower prices. The third and
     fourth books show the same (exits since then -$604 and -$895 against -$536 here). No fault and no error
     event; no new fill since 22:10 UTC on Nov 14. The rule reads at three weeks and 60 rungs.
+- **08:48. Timing study, Part 3 read; the input build merged onto main and hardened; the fifth book's test fixed.**
+  - **Part 3 of the timing study** (timing_prereg.md, "Result of Part 3"; facts in reports/owner/timing/). Paths
+    re-derived from the stored prints equal the rows on file (29,686 rows); the six policies on file reproduce
+    exactly. Same-minute share of the research's first-bid fills by era: as built (new bid from 17.25 s) 81 / 84 /
+    75%, release 4 (12.15 s) 85 / 87 / 81%, with the data step 86 / 88 / 81%, a stream-fed step deciding at the minute 93 to 96%. About
+    0.8 to 1.0 points a second. In money no order: pooled against the research's zero-delay fills, whole ladder,
+    -8.2% as built, -5.2% release 4, -2.8% with the data step, -1.2% to -2.6% by stream; the first-rung valuation
+    gives no such order and the eras change sign. No steady gain without a carried bid. Rule B's expected capture
+    restated (81 to 87% within two minutes).
+  - **The input build is on today's `main`,** branch owner/release-5 (Opus agent). The merged engine equals both
+    sides' changes line for line (160 changed lines from the input build, 746 from the order path); 14 light test
+    files pass (inputs 90 checks). Two hardening changes sent back before the commit is pinned: the candle
+    requests between steps fail fast (one try, 4 s; a hanging request could block the fast polls and the step for
+    about 83 s), and a `candles_at_s` key outside trades mode is ignored with a warning instead of stopping the
+    bot at start.
+  - **Part 3 of the bar-source plan fixed at 08:38, before the book exists:** the fifth paper book runs the
+    build's own release config at a pinned commit for three days. Four measures: the data step's end at or below
+    10.3 s and no later than the main book's; decisions against the research within fixed tolerances of the fourth
+    book's; items 1 to 5; the candle requests between steps. The third book ends when the fifth starts. A Sonnet
+    agent is building the workflow, the status report's sections and the rule script (branch owner/r5-infra).
+  - **A short live paper run of the new `main`** (job 43878173310) was started to see release 4's code on live
+    data before the books pick it up.
