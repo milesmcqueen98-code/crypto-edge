@@ -1,0 +1,99 @@
+name: step-pairs-tw
+
+# Same-machine pairs for Part 3 of reports/owner/trades_workers_plan.md: on one runner and on the sixth book's pinned
+# commit, 30 minutes of paper steps with trades_workers 1 and 30 minutes with trades_workers 3 (both from that commit's
+# bot/spot/config.tw.json), one straight after the other, the order alternating from job to job.
+# scripts/owner/step_pairs/run_pair_workers.py drives bot/spot/tb_smoke.py (no orders, public data only) and writes
+# reports/owner/step_pairs_tw/pair_<UTC start>Z.json, which this job commits to main.
+# The pinned commit is read only from paper_spot_tw/CODE (code_commit), the sixth book's own record; this file names no
+# commit. Until that file exists (the sixth book has not run) the job says so and ends without a pair.
+# Schedule: four times a day, at 03:05, 09:05, 15:05 and 21:05 UTC, for the three days of Part 4. tb_smoke waits until the
+# clock is at minute 20 or 50 of the hour before it starts (so its steps cross a heartbeat minute), and set-up (checkout,
+# pip) takes two to four minutes, so a job that starts at :05 idles about ten minutes at most; a start up to about ten
+# minutes late still catches :20, and a later one waits for :50. A pair takes about 75 minutes after that; the 150-minute
+# limit survives one missed alignment. The order is ab (one worker first) when the UTC hour of the job's start is 03 or
+# 15 and ba (three workers first) when it is 09 or 21; in general ab when the hour is in the first or third quarter of the
+# day (00 to 05, 12 to 17) and ba otherwise, so the scheduled jobs alternate.
+on:
+  schedule:
+    - cron: "5 3,9,15,21 * * *"
+  workflow_dispatch:
+    inputs:
+      order:
+        description: "ab (one worker first) or ba (three workers first); empty means automatic from the UTC hour"
+        default: ""
+      minutes:
+        default: "30"
+
+concurrency:
+  group: step-pairs-tw
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  pair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      # the pair script, the commit script and the sixth book's CODE file, from main
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: |
+            scripts/owner/step_pairs
+            bot/spot/deploy
+            paper_spot_tw/CODE
+            reports/owner/step_pairs_tw
+      - name: Read the pinned commit
+        id: pin
+        run: |
+          commit=""
+          if [ -f paper_spot_tw/CODE ]; then
+            commit=$(sed -n 's/^code_commit:[[:space:]]*//p' paper_spot_tw/CODE | head -n 1 | tr -d '[:space:]')
+          fi
+          if ! printf '%s' "$commit" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "The sixth book has not run yet (no paper_spot_tw/CODE with a code_commit): no pair this time."
+            echo "commit=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "pinned commit from paper_spot_tw/CODE: $commit"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+      # the engine code at that commit, in code/ (a separate repository inside the workspace, never committed)
+      - if: steps.pin.outputs.commit != ''
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pin.outputs.commit }}
+          path: code
+          sparse-checkout: |
+            bot
+            edge
+            reports
+      - if: steps.pin.outputs.commit != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - if: steps.pin.outputs.commit != ''
+        run: pip install pandas numpy lightgbm requests pyarrow
+      - name: Run the pair
+        if: steps.pin.outputs.commit != ''
+        env:
+          INPUT_ORDER: ${{ inputs.order }}
+          INPUT_MINUTES: ${{ inputs.minutes }}
+        run: |
+          echo "code/" >> .git/info/exclude
+          order="$INPUT_ORDER"
+          if [ -z "$order" ]; then
+            h=$((10#$(date -u +%H)))
+            if [ "$h" -lt 6 ] || { [ "$h" -ge 12 ] && [ "$h" -lt 18 ]; }; then order=ab; else order=ba; fi
+          fi
+          case "$order" in ab|ba) ;; *) echo "order must be ab or ba, not $order"; exit 1 ;; esac
+          echo "order $order (UTC hour $(date -u +%H))"
+          python scripts/owner/step_pairs/run_pair_workers.py --code "$GITHUB_WORKSPACE/code" --order "$order" --minutes "${INPUT_MINUTES:-30}" --out reports/owner/step_pairs_tw
+      - name: Commit the pair
+        if: ${{ !cancelled() && steps.pin.outputs.commit != '' }}
+        run: |
+          git config user.name "crypto-edge-bot"
+          git config user.email "crypto-edge-bot.users.noreply.github.com"
+          bash bot/spot/deploy/paper_commit.sh "Step pair (workers) $(date -u +%Y-%m-%dT%H:%MZ)" reports/owner/step_pairs_tw

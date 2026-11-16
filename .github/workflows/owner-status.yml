@@ -1,10 +1,10 @@
 name: owner-status
 
 # Refreshes reports/owner/PAPER_STATUS.md from the paper logs (main, W2, the ended third book's record, the fourth and
-# the fifth book and its same-machine step pairs, the old books) and commits it to main when it changed.
+# the fifth and the sixth book and their same-machine step pairs, the old books) and commits it to main when it changed.
 on:
   workflow_run:
-    workflows: ["paper-spot", "paper-trade", "paper-spot-t18", "paper-spot-r5", "step-pairs"]
+    workflows: ["paper-spot", "paper-trade", "paper-spot-t18", "paper-spot-r5", "step-pairs", "paper-spot-tw", "step-pairs-tw"]
     types: [completed]
   schedule:
     - cron: "17 7 * * *"
@@ -34,7 +34,9 @@ jobs:
             paper_spot_tb
             paper_spot_t18
             paper_spot_r5
+            paper_spot_tw
             reports/owner/step_pairs
+            reports/owner/step_pairs_tw
             paper
             paper_v2
       - uses: actions/setup-python@v5
