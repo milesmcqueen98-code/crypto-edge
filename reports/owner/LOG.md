@@ -953,3 +953,35 @@ FORWARD_TESTS.md.
     agent is building the workflow, the status report's sections and the rule script (branch owner/r5-infra).
   - **A short live paper run of the new `main`** (job 43878173310) was started to see release 4's code on live
     data before the books pick it up.
+- **13:36. The fifth paper book starts: the input build at a pinned commit.**
+  - **Commit** `9e6f53b3` of owner/release-5 (plan, deviation log).
+    - Full offline suite on it (job 43898459890): 22 test files, none with a failure, 830 passing checks; the
+      replay equals the research rung for rung.
+    - Live A/B of the data step on one runner (job 43898466756): a median of 15.35 s without the between-step
+      requests and 11.37 s with them; 540 requests between steps, none failed; 8 candle requests were made inside
+      a step; none of 1,512 compared rows differs.
+  - **What the first suite run caught** (job 43880224505, commit 7ae96c9e): my fail-fast change for the candle
+    requests between steps treated any answer without rows as a failure. HYPE has no data in the simulation's
+    October 2025 window, so its valid empty answer went to the step in every minute (465 of 465 steps) and one test
+    failed. Corrected by the agent (only a request with no answer fails), confirmed by running that test, then
+    the whole suite again. The first live A/B, on the superseded commit (job 43880261551): data step 14.88 s with
+    the candle requests in the step, 9.70 s with them between steps, 540 requests between steps and none failed,
+    no row different from the venue's candles.
+  - **The suite took two hours this time** (66 minutes on the first run): the runner was about 1.8 times slower in
+    every file. Not knowing that, I started the same suite again on the same commit at 18:16 UTC (job
+    43927028467) so that a hang could be told from a slow machine. It is still running and decides nothing now.
+  - **Release 4's code on live data:** a short paper run of the new `main` (job 43878173310) ended clean: 16 new
+    bids, one heartbeat with the trades counters, no error and no warning event.
+  - **Measure 1 was changed before the book existed** (plan, deviation log, 12:04): the second live A/B showed
+    the build at 11.37 s on a slower runner, and the books show release 3's own way at 11.5 s since yesterday
+    noon UTC against 10.26 s last week. A fixed 10.3 s bar measures the week, not the build. It is replaced by
+    same-machine pairs against release 3's inputs, four times a day; the comparison with the main book stays.
+  - **Infrastructure merged to `main`** (branch owner/r5-infra, Sonnet agent, reviewed): the fifth book's workflow
+    with the commit in one place, the pairs' workflow and runner script, the third book out of the main paper
+    workflow (the main book's job is byte-identical), the status report (the third book shown as ended, the fifth
+    book's sections, 283 checks) and the rule script (110 checks).
+  - **Two points on the pairs, logged in the plan before any pair exists:** today's 18:05 pair is started by hand
+    once the book has written its `CODE` file (at 18:05 neither the workflow nor the file existed); and if fewer than 8 pairs count in
+    the period, the pairs go on and the reading of part (a) waits for the eighth. It can delay the read, not choose
+    pairs. The rule script does this (Sonnet agent, branch owner/r5-pairs-ext, reviewed; 110 checks).
+  - **First run:** 40 minutes, for an early look at the counters; then the normal hand-over.

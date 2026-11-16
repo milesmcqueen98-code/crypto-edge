@@ -458,3 +458,45 @@ The run finished at 08:58 UTC on Nov 15 (job 43689717933, branch owner/read-c2).
     fails (a) whatever the week is like.
   - **Cost:** the pairs' paper steps place no orders and add about 40 public requests a minute from their own
     runner for an hour, four times a day.
+- **Nov 16 2026, 13:36 ET (orchestrator), before the fifth book's first run.** Part 3: the pinned commit, two
+  changes to the build made before it, and the points the plan left open, as the rule's code settles them.
+  - **The commit:** `9e6f53b3aca8c15307f22a357f19431bff053e4c` on branch owner/release-5 (`main` at release 4
+    with the input build merged in). The merged engine equals both sides' changes line for line.
+  - **Two changes after the merge, both before the pin:**
+    - the candle requests between steps make one try with a 4 s limit, and a request that gets no answer leaves
+      the coin to the step. Before, a hanging request could hold the live bot's fast polls and the next step for
+      about 83 s. The first form of this change also failed every answer without rows; the suite caught it (job
+      43880224505: one coin of the simulation has no data in its window, so its valid empty answer was sent to the
+      step every minute) and it was corrected before the pin: an empty answer is an answer;
+    - a `candles_at_s` key outside trades mode is ignored with one warning at start. Before, the engine refused to
+      start, which would have stopped a server switched back to candles by the emergency switch.
+  - **Tests on that commit:**
+    - the full offline suite, runner job 43898459890: 22 test files, none with a failure, 830 passing checks; the
+      replay equals the research rung for rung;
+    - on real market data, one runner, 30 minutes without the between-step requests and then 30 with them, each
+      checked against the venue's candles (job 43898466756): the data step ended at a median of 15.35 s without
+      them and 11.37 s with them; 540 requests between steps, none failed; 8 candle requests were made inside a
+      step; none of 1,512 compared rows differs.
+  - **The rule as code** (`scripts/owner/bar_source/part3_rule.py`, `scripts/owner/paper_status.py`,
+    `scripts/owner/step_pairs/run_pair.py`; 110, 283 and 57 offline checks), with the points the plan left open:
+    - the shares of measure 2 are taken as Part 2 took them: wrong-side bids over the bids that have a research
+      score, level errors over the bids that have a research level, matched bids over the research's new bids that
+      were not blocked. The 300-bid condition counts all new bids on the 17 coins;
+    - measure 4's leaving out of the first step after a start: at most 18 in-step requests are left out for each
+      start, from the half hour in which its first step falls;
+    - the same-machine pairs of measure 1(a) run at 00:05, 06:05, 12:05 and 18:05 UTC (workflow `step-pairs`),
+      on the commit the fifth book's own `CODE` file names. Both halves use the build's config file with only the
+      input settings swapped (`trades_coins`, `trades_rows`, `candles_at_s`). A pair belongs to the period by the
+      time its job started. Its medians are read to the hundredth of a second, as the tool prints them.
+  - **Two points on the pairs, fixed before any pair exists:**
+    - today's 18:05 pair could not run on schedule: at that time neither the workflow nor the book's `CODE` file
+      existed. It is started by hand once the file exists, with the order that job would have had (the build
+      first). No other pair is started by hand;
+    - GitHub starts scheduled jobs late and sometimes drops them. If fewer than 8 pairs count among the jobs
+      started in the period, the jobs go on at the same times after it, and part (a) is read on all pairs that
+      count from the period's start up to the one that brings the count to 8. Part (b) and measures 2 to 4 are
+      read on the period itself, and Part 3's verdict waits for part (a). This can delay the read; it cannot
+      choose pairs. The rule script does exactly this and gives no verdict until 8 count.
+  - **The first run is a short one** (40 minutes), so the counters can be looked at for a fault within the hour;
+    the hand-over then starts the normal runs. Such a look can stop the test, cannot pass it, and changes no rule.
+  - **The third book** is taken out of the main paper workflow in the same change; its last run ends by itself.
