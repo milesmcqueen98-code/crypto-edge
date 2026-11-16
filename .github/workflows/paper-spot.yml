@@ -2,7 +2,8 @@ name: paper-spot
 
 # Forward paper test of the spot bot with the $1M rules (bot/spot/, $250K paper capital, capture 0.5, VIP-1 fees) on
 # live public Coinbase data: no keys, no money. Each job runs ~5h45m; the schedule restarts it every 6 hours, and the
-# bot settles the gap from the candles (catch_up). State carries over through paper_spot/state.json.
+# bot settles the gap from the candles (catch_up). State carries over through paper_spot/state.json. The trades book
+# (paper_spot_tb) ended on the fifth book's start; its folder and log stay on main as the record.
 on:
   schedule:
     - cron: "33 */6 * * *"
@@ -55,41 +56,10 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           bash bot/spot/deploy/paper_commit.sh "Spot paper log $(date -u +%Y-%m-%dT%H:%MZ)" paper_spot paper_spot_w2
 
-  # newest minute from the venue's trades for the coins in trades_coins, with the stale-input guard (bot/spot/README.md,
-  # "Newest minute from trades"). Its own runner, so the two books above keep their requests and rate as before.
-  paper_tb:
-    runs-on: ubuntu-latest
-    timeout-minutes: 358
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-          sparse-checkout: |
-            bot
-            edge
-            reports
-            paper_spot_tb
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install pandas numpy lightgbm requests pyarrow
-      - name: Paper trade the trades book
-        run: |
-          M=${{ inputs.minutes || '345' }}
-          python bot/spot/run.py paper --minutes $M --config bot/spot/config.tb.json --state-dir paper_spot_tb > tb.out 2>&1 || echo "paper run exited with code $?"
-          grep -E '"kind": "(fill_entry|fill_exit|halt|error|warning|catch_up|heartbeat)"' tb.out | tail -n 30 || true
-          python bot/spot/run.py report --state-dir paper_spot_tb | tail -n 30
-      - name: Commit paper log
-        if: always()
-        run: |
-          git config user.name "crypto-edge-bot"
-          git config user.email "crypto-edge-bot.users.noreply.github.com"
-          bash bot/spot/deploy/paper_commit.sh "Spot paper log (trades book) $(date -u +%Y-%m-%dT%H:%MZ)" paper_spot_tb
-
   # hand-over: start the next run on main when this one ran at least 30 minutes (bot/spot/deploy/paper_next.sh), so the
-  # books do not depend on GitHub's dropped schedules. The cron line above stays as the backstop.
+  # book does not depend on GitHub's dropped schedules. The cron line above stays as the backstop.
   next:
-    needs: [paper, paper_tb]
+    needs: [paper]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
