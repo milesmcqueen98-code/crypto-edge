@@ -1188,15 +1188,21 @@ def r5_rule_section(st, loaded, rts, dqs, root, now=None):
 # ---------------------------------------------------------------- sixth book (Parts 3 and 4 of reports/owner/trades_workers_plan.md)
 # New functions only: nothing above is changed. The measures are shared with scripts/owner/trades_workers/rule.py, which
 # imports them from here, so the status report and the rule give the same numbers on the same files and logs.
-TW_PAIRS_DIR = os.path.join("reports", "owner", "step_pairs_tw")
-TW_STEP_BAR = Fraction(-1, 5)                                  # Part 3, measure 1: median of three minus one, seconds, at most
-TW_PEAK_MAX = 8                                                # Part 3, measure 3: trades requests in one second, at most
-TW_PAIR_NAME_RX = re.compile(r"^pair_(\d{8})T(\d{4})Z\.json$")
+TW_ALT_DIR = os.path.join("reports", "owner", "workers_alt")
+ALT_NAME_RX = re.compile(r"^alt_(\d{8})T(\d{4})Z\.json$")
+ALT_MIN_JOBS = 8                                               # Part 3: jobs that count, at least
+ALT_MIN_SLOW = 30                                              # Part 3, measure 2: slow one-worker passes, at least
+ALT_MAX_DAYS = 14                                              # jobs go on for at most this many days from the first job
+ALT_SLOW_S = Fraction(6)                                       # a slow pass is strictly longer than this
+ALT_GAIN_MARGIN = Fraction(1, 20)                              # measure 1: three's median at most one's plus 0.05 s
+ALT_ROWS_MARGIN = Fraction(1, 100)                             # measure 4: three's differing share at most one's plus one point
+TW_PEAK_MAX = 8                                                # measure 3: trades requests in one second, at most
+ALT_MIN_STEPS = 20                                             # a job counts with at least this many timed steps in each arm
 
 
-def tw_name_start(name):
-    """The start (UTC) a pair file's name says (pair_YYYYMMDDTHHMMZ.json), or None."""
-    m = TW_PAIR_NAME_RX.match(name)
+def alt_name_start(name):
+    """The start (UTC) an alt file's name says (alt_YYYYMMDDTHHMMZ.json), or None."""
+    m = ALT_NAME_RX.match(name)
     if not m:
         return None
     try:
@@ -1205,124 +1211,145 @@ def tw_name_start(name):
         return None
 
 
-def tw_run_figures(r):
-    """The figures of one run entry of a workers pair file; each is None when it cannot be read. The texts are kept as
-    printed (exact decimals), the counts are whole numbers."""
-    def text(k):
-        t = r.get(k)
-        if not isinstance(t, str):
-            return None
-        try:
-            Fraction(t)
-        except (ValueError, ZeroDivisionError):
-            return None
-        return t
-
-    def whole(k):
-        v = r.get(k)
-        return v if isinstance(v, int) and not isinstance(v, bool) and v >= 0 else None
-    return {"median": text("data_end_median_text"), "longest": text("trades_pass_longest_text"),
-            "pass_median": text("trades_pass_median_text"), "fb": whole("fb_budget"), "peak": whole("peak_per_second"),
-            "compared": whole("rows_compared"), "differ": whole("rows_differ"),
-            "refused": r.get("refused") is True, "limited": r.get("limited") is True}
-
-
-TW_NEEDED = ("median", "longest", "pass_median", "fb", "peak", "compared", "differ")
-
-
-def load_workers_pairs(directory):
-    """The same-machine pairs written by scripts/owner/step_pairs/run_pair_workers.py: every *.json in the folder, oldest
-    start first (a new loader beside load_pairs, which is not changed). Each is {file, start (the file's utc_start, else
-    the start in the file's name, else None), order, readable (a JSON object), one and three (the figures of the two runs,
-    tw_run_figures, or None), diff (three's data-step median minus one's, exact Fraction from the printed texts, or None),
-    longest_diff (the same for the trades pass's longest duration), counts (the file says true, both runs are there with
-    every figure read, neither run refused or limited, and the start is known), why (text when it does not count),
-    three_peak, three_refused, three_limited (of the three-worker run, whether or not the pair counts)}. A missing folder
-    means no pairs; an unreadable file is a pair that does not count and is not readable. Shared with
-    scripts/owner/trades_workers/rule.py."""
+def load_alt_jobs(directory):
+    """The alternating-minute jobs written by scripts/owner/workers_alt/run_alt.py: every alt_*.json in the folder, oldest
+    start first. Each is {file, start (the file's utc_start, else the one in its name, else None), first, readable (a JSON
+    object), steps (list of {workers 1 or 3, pass (the printed pass_s text or None), peak (int or None), limited, refused,
+    fb (tb_fb_budget increase, int)}), arms ({1: {...}, 3: {...}} as in the file: steps_timed, rows_compared, rows_differ),
+    rows_complete, counts (the file says true, the start is known, both arms have at least 20 timed steps by the steps
+    themselves, every timed step's pass text is a number), why}. A missing folder means no jobs; an unreadable file is a job
+    that does not count and is not readable. Shared with scripts/owner/trades_workers/rule.py."""
     out = []
     try:
         names = sorted(n for n in os.listdir(directory) if n.endswith(".json"))
     except OSError:
         return out
     for n in names:
-        p = {"file": n, "start": tw_name_start(n), "order": None, "readable": False, "one": None, "three": None,
-             "diff": None, "longest_diff": None, "counts": False, "why": None, "three_peak": None,
-             "three_refused": False, "three_limited": False}
+        j = {"file": n, "start": alt_name_start(n), "first": None, "readable": False, "steps": [], "arms": {}, "rows_complete": False,
+             "counts": False, "why": None}
         try:
             with open(os.path.join(directory, n), encoding="utf-8") as f:
                 o = json.load(f)
             if not isinstance(o, dict):
                 raise ValueError("not an object")
-            p["readable"] = True
-            p["start"] = parse_ts(o.get("utc_start")) or p["start"]
-            p["order"] = o.get("order") if isinstance(o.get("order"), str) else None
-            runs = {}
-            for r in o.get("runs") if isinstance(o.get("runs"), list) else []:
-                if isinstance(r, dict) and r.get("label") in ("one", "three"):
-                    runs[r["label"]] = tw_run_figures(r)
-            p["one"], p["three"] = runs.get("one"), runs.get("three")
-            if p["three"]:
-                p["three_peak"], p["three_refused"], p["three_limited"] = (
-                    p["three"]["peak"], p["three"]["refused"], p["three"]["limited"])
-            full = bool(p["one"] and p["three"]) and all(
-                x is not None for r in (p["one"], p["three"]) for k, x in r.items() if k in TW_NEEDED)
-            if full:
-                p["diff"] = Fraction(p["three"]["median"]) - Fraction(p["one"]["median"])
-                p["longest_diff"] = Fraction(p["three"]["longest"]) - Fraction(p["one"]["longest"])
-            clear = full and not any(p[k]["refused"] or p[k]["limited"] for k in ("one", "three"))
-            p["counts"] = o.get("counts") is True and clear and p["start"] is not None
-            if not p["counts"]:
-                p["why"] = clean(o.get("why_not") or ("a figure could not be read" if o.get("counts") is True
+            j["readable"] = True
+            j["start"] = parse_ts(o.get("utc_start")) or j["start"]
+            j["first"] = o.get("first") if isinstance(o.get("first"), str) else None
+            j["rows_complete"] = o.get("rows_complete") is True
+            arms = o.get("arms") if isinstance(o.get("arms"), dict) else {}
+            for k in ("1", "3"):
+                a = arms.get(k) if isinstance(arms.get(k), dict) else {}
+                j["arms"][k] = {x: (a.get(x) if isinstance(a.get(x), int) and not isinstance(a.get(x), bool) and a.get(x) >= 0 else None)
+                                for x in ("steps_timed", "rows_compared", "rows_differ")}
+            bad = 0
+            for s in o.get("steps") if isinstance(o.get("steps"), list) else []:
+                if not isinstance(s, dict) or s.get("workers") not in (1, 3):
+                    continue
+                t = s.get("pass_text")
+                try:
+                    Fraction(t) if t is not None else None
+                except (ValueError, TypeError, ZeroDivisionError):
+                    t, bad = None, bad + 1
+                if t is not None and not isinstance(t, str):
+                    t, bad = None, bad + 1
+                peak = s.get("peak")
+                fb = s.get("tb_fb_budget")
+                j["steps"].append({"workers": s["workers"], "pass": t, "peak": peak if isinstance(peak, int) and not isinstance(peak, bool) else None,
+                                   "limited": s.get("limited") is True, "refused": s.get("refused") is True,
+                                   "fb": fb if isinstance(fb, int) and not isinstance(fb, bool) else 0})
+            timed = {w: sum(1 for s in j["steps"] if s["workers"] == w and s["pass"] is not None) for w in (1, 3)}
+            j["timed"] = timed
+            j["counts"] = (o.get("counts") is True and j["start"] is not None and not bad
+                           and timed[1] >= ALT_MIN_STEPS and timed[3] >= ALT_MIN_STEPS)
+            if not j["counts"]:
+                j["why"] = clean(o.get("why_not") or ("a figure could not be read" if o.get("counts") is True
                                                       else "unreadable or incomplete"))[:ERR_CHARS]
         except (OSError, ValueError, TypeError, ArithmeticError):
-            p["why"] = "file could not be read"
-        out.append(p)
-    out.sort(key=lambda p: (p["start"] is None, p["start"] or datetime.min.replace(tzinfo=timezone.utc), p["file"]))
+            j["why"] = "file could not be read"
+        j.setdefault("timed", {1: 0, 3: 0})
+        out.append(j)
+    out.sort(key=lambda j: (j["start"] is None, j["start"] or datetime.min.replace(tzinfo=timezone.utc), j["file"]))
     return out
 
 
-def workers_pairs_measure(pairs, start=None, end=None, now=None, min_pairs=MIN_PAIRS, extend=False):
-    """Part 3 of the trades-workers plan on the pairs of load_workers_pairs. The pairs used are chosen by pairs_measure
-    (the same rule as the fifth book's pairs: those that count and start in [start, end + 1 minute); with extend=True and
-    fewer than min_pairs, later counting pairs are added oldest first up to min_pairs; now limits both). Its result is
-    returned with four clauses (each met is a bool):
-      1 step: at least min_pairs pairs used and the median of (three's data-step median minus one's) at or below -1/5 s;
-      2 slow minutes: at least min_pairs, budget fallbacks of the three-worker runs (fb3) no more than of the one-worker
-        runs (fb1), and the median of (longest pass with three minus longest pass with one) at or below 0;
-      3 pace: over ALL pair files that started in the period (counting or not; a file with no known start is taken as in
-        the period), no three-worker run has peak_per_second above TW_PEAK_MAX and none is refused or limited, and every
-        file can be read (a null peak is not above the bar);
-      4 rows: at least min_pairs, and rows_differ / rows_compared summed over the three-worker runs no higher than over
-        the one-worker runs (cross-multiplied on integers; a zero denominator on either side means not met)."""
-    pm = pairs_measure(pairs, start, end, now, min_pairs, extend)
-    use = pm["used"]
-    enough = pm["enough"]
-    fb3, fb1 = sum(p["three"]["fb"] for p in use), sum(p["one"]["fb"] for p in use)
-    c3, d3 = sum(p["three"]["compared"] for p in use), sum(p["three"]["differ"] for p in use)
-    c1, d1 = sum(p["one"]["compared"] for p in use), sum(p["one"]["differ"] for p in use)
-    long_med = median_exact([p["longest_diff"] for p in use])
+def slow_count(job, workers):
+    return sum(1 for s in job["steps"] if s["workers"] == workers and s["pass"] is not None and Fraction(s["pass"]) > ALT_SLOW_S)
+
+
+def alt_select(jobs, end=None, now=None, min_jobs=ALT_MIN_JOBS, min_slow=ALT_MIN_SLOW, max_days=ALT_MAX_DAYS):
+    """Which jobs are used (mechanical). The jobs that count, oldest first. Every one that started from the first job on up to
+    end (end minute included; None: all of them) is taken. Then, while fewer than min_jobs are used OR the one-worker steps
+    of the used jobs hold fewer than min_slow slow passes, the next counting job is added if it started no later than max_days
+    days after the first job's start; adding stops as soon as both conditions hold.
+    Returns {used, in_period, added, slow1, holds (both conditions), first_start, deadline, wait (they do not hold and the
+    days have not passed at now, so a later job could still come), complete (holds, or the days have passed), gain_not_shown
+    (they do not hold and the days have passed), last_start}."""
+    good = [j for j in jobs if j["counts"]]
+    first = good[0]["start"] if good else None
     stop = None if end is None else end + timedelta(minutes=1)
-    files = [p for p in pairs if p["start"] is None or (
-        (start is None or p["start"] >= start) and (stop is None or p["start"] < stop)
-        and (now is None or p["start"] <= now))]
-    over = [p for p in files if p["three_peak"] is not None and p["three_peak"] > TW_PEAK_MAX]
-    stopped = [p for p in files if p["three_refused"] or p["three_limited"]]
-    unreadable = [p for p in files if not p["readable"]]
-    peaks = [p["three_peak"] for p in files if p["three_peak"] is not None]
-    pass1 = median_exact([Fraction(p["one"]["pass_median"]) for p in use])
-    pass3 = median_exact([Fraction(p["three"]["pass_median"]) for p in use])
-    return {"pm": pm, "used": use, "n": len(use), "needed": min_pairs, "enough": enough, "complete": pm["complete"],
-            "in_period": pm["in_period"], "added": pm["added"], "last_start": pm["last_start"],
-            "median": pm["median"], "step_met": enough and pm["median"] is not None and pm["median"] <= TW_STEP_BAR,
-            "fb3": fb3, "fb1": fb1, "long_median": long_med,
-            "slow_met": enough and fb3 <= fb1 and long_med is not None and long_med <= 0,
-            "files": files, "peak_over": over, "stopped": stopped, "unreadable": unreadable,
-            "peak_max": max(peaks) if peaks else None,
-            "pace_met": not over and not stopped and not unreadable,
-            "rows3": (d3, c3), "rows1": (d1, c1),
-            "rows_met": enough and c3 > 0 and c1 > 0 and d3 * c1 <= d1 * c3,
-            "pass_median_one": pass1, "pass_median_three": pass3}
+    use = [j for j in good if stop is None or j["start"] < stop]
+    later = [j for j in good if stop is not None and j["start"] >= stop]
+    in_period = len(use)
+    deadline = None if first is None else first + timedelta(days=max_days)
+
+    def holds():
+        return len(use) >= min_jobs and sum(slow_count(j, 1) for j in use) >= min_slow
+    for j in later:
+        if holds() or j["start"] > deadline:
+            break
+        use.append(j)
+    slow1 = sum(slow_count(j, 1) for j in use)
+    h = holds()
+    over = deadline is not None and (now if now is not None else datetime.now(timezone.utc)) > deadline
+    return {"used": use, "in_period": in_period, "added": len(use) - in_period, "slow1": slow1, "holds": h, "first_start": first,
+            "deadline": deadline, "wait": (not h) and not over, "complete": h or over, "gain_not_shown": (not h) and over,
+            "last_start": use[-1]["start"] if use else None}
+
+
+def alt_median(texts):
+    v = sorted(Fraction(t) for t in texts)
+    n = len(v)
+    if not n:
+        return None
+    return v[n // 2] if n % 2 else (v[n // 2 - 1] + v[n // 2]) / 2
+
+
+def alt_measure(jobs, sel):
+    """Part 3 on the selection sel of alt_select, over all steps of the used jobs. Clauses (each `met` a bool):
+      1 no harm: median pass with three at most the median with one plus 1/20 s (texts exact, even count: mean of the middle two);
+      2 gain: the one-worker steps hold at least 30 slow passes (pass strictly above 6.0 s), slow3 / steps3 at most
+        (slow1 / steps1) / 2 (cross-multiplied), budget fallbacks with three no more than with one, and not gain_not_shown;
+      3 pace: over ALL alt files that started from the first job on up to the last used job's start, counting or not: no
+        three-worker step with peak above 8, none limited, none refused, every file readable (a file with no known start is
+        taken as inside the range);
+      4 rows: over the used jobs whose rows_complete is true, differ3 / compared3 at most differ1 / compared1 + 1/100,
+        cross-multiplied on integers; a zero denominator on either side means not met."""
+    use = sel["used"]
+    st = {w: [s for j in use for s in j["steps"] if s["workers"] == w and s["pass"] is not None] for w in (1, 3)}
+    n1, n3 = len(st[1]), len(st[3])
+    m1, m3 = alt_median([s["pass"] for s in st[1]]), alt_median([s["pass"] for s in st[3]])
+    mean = {w: (sum(Fraction(s["pass"]) for s in st[w]) / len(st[w]) if st[w] else None) for w in (1, 3)}
+    slow = {w: sum(1 for s in st[w] if Fraction(s["pass"]) > ALT_SLOW_S) for w in (1, 3)}
+    fb = {w: sum(s["fb"] for s in st[w]) for w in (1, 3)}
+    first, last = sel["first_start"], sel["last_start"]
+    files = [j for j in jobs if first is not None and (j["start"] is None or (first <= j["start"] <= last))] if use else []
+    over = sorted({j["file"] for j in files for s in j["steps"] if s["workers"] == 3 and s["peak"] is not None and s["peak"] > TW_PEAK_MAX})
+    stopped = sorted({j["file"] for j in files for s in j["steps"] if s["workers"] == 3 and (s["limited"] or s["refused"])})
+    unreadable = [j["file"] for j in files if not j["readable"]]
+    peaks = [s["peak"] for j in files for s in j["steps"] if s["workers"] == 3 and s["peak"] is not None]
+    rj = [j for j in use if j["rows_complete"]]
+    c1, d1 = (sum(j["arms"]["1"][k] or 0 for j in rj) for k in ("rows_compared", "rows_differ"))
+    c3, d3 = (sum(j["arms"]["3"][k] or 0 for j in rj) for k in ("rows_compared", "rows_differ"))
+    step_met = bool(n1 and n3) and m3 <= m1 + ALT_GAIN_MARGIN
+    gain_met = (slow[1] >= ALT_MIN_SLOW and bool(n1 and n3) and 2 * slow[3] * n1 <= slow[1] * n3 and fb[3] <= fb[1]
+                and not sel["gain_not_shown"])
+    return {"jobs": len(use), "steps": {1: n1, 3: n3}, "median": {1: m1, 3: m3}, "mean": mean, "slow": slow, "fb": fb,
+            "diff_median": None if m1 is None or m3 is None else m3 - m1,
+            "diff_mean": None if mean[1] is None or mean[3] is None else mean[3] - mean[1],
+            "step_met": step_met, "gain_met": gain_met, "files": files, "peak_over": over, "stopped": stopped,
+            "unreadable": unreadable, "peak_max": max(peaks) if peaks else None,
+            "pace_met": not over and not stopped and not unreadable, "rows_jobs": len(rj), "rows1": (d1, c1), "rows3": (d3, c3),
+            "rows_met": c1 > 0 and c3 > 0 and 100 * d3 * c1 <= 100 * d1 * c3 + c1 * c3}
 
 
 def rows_by_time(rows):
@@ -1403,45 +1430,62 @@ def tw_rule_section(st, loaded, rts, dqs, root, now=None):
     rows5 = d5["rep"] if d5 else []
     starts6 = startup_steps(loaded["tw"]["events"])
     starts5 = startup_steps(loaded["r5"]["events"]) if "r5" in loaded else []
-    pairs = load_workers_pairs(os.path.join(root, TW_PAIRS_DIR))
-    wm = workers_pairs_measure(pairs, now=now)
+    jobs = load_alt_jobs(os.path.join(root, TW_ALT_DIR))
+    sel = alt_select([j for j in jobs if now is None or j["start"] is None or j["start"] <= now], None, now)
+    wm = alt_measure(jobs, sel)
 
-    L += ["### Part 3, same-machine pairs: one worker against three", ""]
-    L += ["On one runner and the pinned commit, 30 minutes with trades_workers 1 and 30 with 3, one after the other, the "
-          "order alternating (scripts/owner/step_pairs/run_pair_workers.py, step-pairs-tw.yml). At least 8 pairs must "
-          "count. If fewer than 8 count in the period, the read also takes the later pairs, oldest first, up to the one "
-          "that makes 8.", ""]
-    if not pairs:
-        L += ["No pairs yet.", ""]
+    L += ["### Part 3, alternating minutes: one worker against three", ""]
+    L += ["One paper run of 60 minutes on one runner and the pinned commit, the trades pass with one worker in one minute and "
+          "three in the next, the arm of the even minutes alternating from job to job (scripts/owner/workers_alt/run_alt.py, "
+          "workers-alt.yml). Progress on every job so far that counts; the read (scripts/owner/trades_workers/rule.py) takes the "
+          "jobs up to the period's end and adds later ones until there are 8 jobs and 30 slow one-worker passes, for at most 14 "
+          "days from the first job.", ""]
+    if not jobs:
+        L += ["No jobs yet.", ""]
     else:
-        def tx(r, k, unit=" s"):
-            return "n/a" if not r or r.get(k) is None else f"{r[k]}{unit}"
-        prow = [[fmt_t(p["start"]) if p["start"] else p["file"], p["order"] or "n/a", tx(p["one"], "median"),
-                 tx(p["three"], "median"), sec(p["diff"]) if p["diff"] is not None else "n/a",
-                 tx(p["one"], "longest"), tx(p["three"], "longest"), tx(p["one"], "fb", ""), tx(p["three"], "fb", ""),
-                 tx(p["one"], "peak", ""), tx(p["three"], "peak", ""),
-                 "counts" if p["counts"] else "does not count: " + (p["why"] or "")] for p in pairs]
-        L += [table(["Start", "Order", "Step one", "Step three", "Three minus one", "Longest pass one", "Longest pass three",
-                     "Fallbacks one", "Fallbacks three", "Peak one", "Peak three", "Counts"], prow), ""]
-    fb_ok = "meets" if wm["slow_met"] else no
+        def a_(j, k):
+            v = j["arms"].get(k, {}).get("steps_timed")
+            return "n/a" if v is None else str(v)
+
+        def med(j, w):
+            m = alt_median([s["pass"] for s in j["steps"] if s["workers"] == w and s["pass"] is not None])
+            return sec(m)
+
+        def rows_(j, k):
+            c, d = j["arms"].get(k, {}).get("rows_compared"), j["arms"].get(k, {}).get("rows_differ")
+            return "n/a" if c is None or d is None else f"{d} of {c}"
+        prow = [[fmt_t(j["start"]) if j["start"] else j["file"], j["first"] or "n/a", f"{a_(j, '1')} / {a_(j, '3')}",
+                 f"{med(j, 1)} / {med(j, 3)}", f"{slow_count(j, 1)} / {slow_count(j, 3)}",
+                 f"{sum(s['fb'] for s in j['steps'] if s['workers'] == 1)} / {sum(s['fb'] for s in j['steps'] if s['workers'] == 3)}",
+                 str(max([s["peak"] for s in j["steps"] if s["peak"] is not None], default="n/a")),
+                 f"{rows_(j, '1')} / {rows_(j, '3')}" + ("" if j["rows_complete"] else " (comparison incomplete)"),
+                 "counts" if j["counts"] else "does not count: " + (j["why"] or "")] for j in jobs]
+        L += [table(["Start", "First arm", "Timed steps one / three", "Median pass one / three", "Slow passes one / three",
+                     "Budget fallbacks one / three", "Largest peak", "Rows differing one / three", "Counts"], prow), ""]
+    no_ = no
     L += [table(["Part", "Current value", "Verdict"],
-                [["1. The step: pairs that count, and the median of three's data-step median minus one's",
-                  f"{wm['n']} pairs (8 needed); median {sec(wm['median'])}; must be at or below {sec(TW_STEP_BAR)}",
-                  "meets" if wm["step_met"] else no],
-                 ["2. The slow minutes: budget fallbacks, three against one, and the median of the longest pass, three "
-                  "minus one",
-                  f"fallbacks {wm['fb3']} with three, {wm['fb1']} with one (three no more); median of the longest pass, "
-                  f"three minus one, {sec(wm['long_median'])} (at most 0.00 s)", fb_ok],
-                 ["3. The pace: over every pair file so far, no three-worker run above 8 trades requests in one second, "
-                  "none refused or limited, every file readable",
+                [["Jobs that count, and the slow one-worker passes", f"{wm['jobs']} jobs (8 needed); {wm['slow'][1]} slow one-worker "
+                  f"passes (30 needed)" + ("; the days of the first job are over" if sel["gain_not_shown"] else ""),
+                  "enough" if sel["holds"] else "still waiting" if sel["wait"] else "the gain is not shown"],
+                 ["1. No harm: the median pass with three at most the median with one plus 0.05 s",
+                  f"three {sec(wm['median'][3])}, one {sec(wm['median'][1])}, over {wm['steps'][3]} and {wm['steps'][1]} steps",
+                  "meets" if wm["step_met"] else no_],
+                 ["2. A gain in slow minutes: at least 30 slow one-worker passes, the three-worker share of slow passes at most "
+                  "half the one-worker share, fallbacks with three no more",
+                  f"slow passes {wm['slow'][3]} of {wm['steps'][3]} with three, {wm['slow'][1]} of {wm['steps'][1]} with one; "
+                  f"fallbacks {wm['fb'][3]} with three, {wm['fb'][1]} with one", "meets" if wm["gain_met"] else no_],
+                 ["3. The pace: over every file from the first job on, no three-worker step above 8 trades requests in one "
+                  "second, none limited or refused, every file readable",
                   f"{len(wm['files'])} files; most in one second {wm['peak_max'] if wm['peak_max'] is not None else 'n/a'}; "
-                  f"{len(wm['peak_over'])} above 8; {len(wm['stopped'])} refused or limited; {len(wm['unreadable'])} unreadable",
-                  "meets" if wm["pace_met"] else no],
-                 ["4. The rows: share of compared rows that differ from the venue's candles, three no higher than one",
+                  f"{len(wm['peak_over'])} files above 8; {len(wm['stopped'])} with a limit or refusal; "
+                  f"{len(wm['unreadable'])} unreadable", "meets" if wm["pace_met"] else no_],
+                 ["4. The rows: share of built bars differing from the venue's candle, three at most one point above one "
+                  "(jobs with a complete comparison)",
                   f"three {wm['rows3'][0]} of {wm['rows3'][1]} = {share_text(*wm['rows3'])}; one {wm['rows1'][0]} of "
-                  f"{wm['rows1'][1]} = {share_text(*wm['rows1'])}", "meets" if wm["rows_met"] else no],
-                 ["Reported, decides nothing: the trades pass's own median duration, median over the pairs used",
-                  f"three {sec(wm['pass_median_three'])}, one {sec(wm['pass_median_one'])}", "reported only"]]), ""]
+                  f"{wm['rows1'][1]} = {share_text(*wm['rows1'])}; {wm['rows_jobs']} jobs", "meets" if wm["rows_met"] else no_],
+                 ["Reported, decides nothing: median and mean pass, three minus one",
+                  f"median {sec(wm['diff_median'])}, mean {sec(wm['diff_mean'])} (first version of the plan asked for a 0.2 s gain at the "
+                  "median over half-hour pairs)", "reported only"]]), ""]
 
     L += ["### Part 4, measure 2: items 1 to 5", ""]
     run_min, rows = tb_rule_rows(d6, t6, loaded["tw"]["events"], T18_COINS, rts["tw"], T18_MEDIAN_BAR, T18_COINS,

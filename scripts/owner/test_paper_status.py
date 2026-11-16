@@ -1154,41 +1154,50 @@ def tw_books(tmp, tw_counts=None, r5_counts=None, n=10, tw_data=10.0, r5_data=10
     write(tmp, "paper_spot_tw", book(tw_counts, tw_data, tw_trades, tw_extra))
 
 
-def wrun(median="10.00", longest="6.00", pass_median="4.00", fb=0, peak=7, compared=100, differ=1, refused=False, limited=False, **kw):
-    r = dict(data_end_median_text=median, trades_pass_longest_text=longest, trades_pass_median_text=pass_median, fb_budget=fb,
-             peak_per_second=peak, rows_compared=compared, rows_differ=differ, refused=refused, limited=limited, steps_timed=31)
-    r.update(kw)
-    return r
+def asteps(n1=20, n3=20, p1="1.000", p3="1.000", slow1=0, slow3=0, fb1=0, fb3=0, peak3=7, limited3=0, refused3=0):
+    """Steps of an alt file: n1 one-worker and n3 three-worker steps (alternating in the file), the first slow1 / slow3 of each arm
+    with a slow pass of 7.000 s, fb1 / fb3 budget fallbacks in the first step of an arm, peak3 the three-worker peak."""
+    out = []
+    for w, n, p, slow, fb in ((1, n1, p1, slow1, fb1), (3, n3, p3, slow3, fb3)):
+        for i in range(n):
+            out.append(dict(workers=w, pass_s=float(p), pass_text="7.000" if i < slow else p, tb_fb_budget=fb if i == 0 else 0,
+                            peak=peak3 if w == 3 else 5, limited=w == 3 and i < limited3, refused=w == 3 and i < refused3))
+    return out
 
 
-def wpair_file(tmp, name, start, one=None, three=None, order="ab", counts=True, why=None, folder="step_pairs_tw"):
+def afile(tmp, name, start, steps=None, first="one", counts=True, why=None, rows=((100, 1), (100, 1)), rows_complete=True, folder="workers_alt", **kw):
     d = os.path.join(tmp, "reports", "owner", folder)
     os.makedirs(d, exist_ok=True)
-    runs = [dict(workers=1, label="one", **(one or wrun())), dict(workers=3, label="three", **(three or wrun()))]
-    if order == "ba":
-        runs.reverse()
+    steps = asteps() if steps is None else steps
+    arms = {w: dict(steps_timed=sum(1 for s in steps if s["workers"] == int(w)), rows_compared=rows[k][0], rows_differ=rows[k][1])
+            for k, w in enumerate(("1", "3"))}
+    o = dict(utc_start=start, first=first, steps=steps, arms=arms, rows_complete=rows_complete, counts=counts, why_not=why)
+    o.update(kw)
     with open(os.path.join(d, name), "w") as f:
-        json.dump(dict(mode="workers", utc_start=start, order=order, counts=counts, why_not=why, runs=runs), f)
+        json.dump(o, f)
 
 
 TW_START = datetime(2026, 11, 20, 0, 30, tzinfo=timezone.utc)
 
 
-def wp(hours=1, one=None, three=None, counts=True, order="ab", name=None):
-    """A pair as ps.load_workers_pairs gives it, built through a file, starting `hours` hours after TW_START."""
-    with tempfile.TemporaryDirectory() as tmp:
-        t = TW_START + timedelta(hours=hours)
-        wpair_file(tmp, name or "pair_%s.json" % t.strftime("%Y%m%dT%H%MZ"), t.strftime("%Y-%m-%dT%H:%M:%SZ"), one, three, order, counts)
-        return ps.load_workers_pairs(os.path.join(tmp, "reports", "owner", "step_pairs_tw"))[0]
+def astamp(hours):
+    return (TW_START + timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def wps(specs, **kw):
-    """Pairs hour by hour; a spec is a (one, three) pair of run dicts or None for the defaults."""
-    out = []
+def afiles(tmp, specs, first_hour=1):
+    """One job per spec (a dict of afile keywords), hour by hour from first_hour."""
     for i, sp in enumerate(specs):
-        one, three = sp if sp else (None, None)
-        out.append(wp(hours=i + 1, one=one, three=three, **kw))
-    return out
+        h = first_hour + i
+        afile(tmp, "alt_%s.json" % (TW_START + timedelta(hours=h)).strftime("%Y%m%dT%H%MZ"), astamp(h), **sp)
+
+
+def ajobs(specs, first_hour=1, extra=()):
+    with tempfile.TemporaryDirectory() as tmp:
+        afiles(tmp, specs, first_hour)
+        d = os.path.join(tmp, "reports", "owner", "workers_alt")
+        for n, text in extra:
+            open(os.path.join(d, n), "w").write(text)
+        return ps.load_alt_jobs(d)
 
 
 def tw_tests():
@@ -1240,7 +1249,7 @@ def tw_tests():
         text = ps.build_report(tmp, NOW)
         sec = section(text, "Rule progress for the sixth book")
         check("tw alone: no comparison section, rule section shown with the fifth book's log needed",
-              "Sixth book against the fifth book" not in text and "The fifth book's log is needed" in sec and "No pairs yet." in sec)
+              "Sixth book against the fifth book" not in text and "The fifth book's log is needed" in sec and "No jobs yet." in sec, sec[:600])
     with tempfile.TemporaryDirectory() as tmp:
         write(tmp, "paper_spot", [{"ts": iso(T(0)), "kind": "backfill"}])
         write(tmp, "paper_spot_tw", [])
@@ -1248,110 +1257,121 @@ def tw_tests():
         check("tw empty log: report made, section says no log", "No sixth-book log to judge (empty)." in text)
     # ---- the loader
     with tempfile.TemporaryDirectory() as tmp:
-        wpair_file(tmp, "pair_20261120T0305Z.json", "2026-11-20T03:05:10Z", one=wrun(median="10.00", longest="6.60", fb=2, peak=6),
-                   three=wrun(median="9.33", longest="4.20", fb=0, peak=8, differ=0))
-        wpair_file(tmp, "pair_20261120T0905Z.json", "2026-11-20T09:05:10Z", order="ba", counts=False, why="the three run met a rate limit",
-                   three=wrun(limited=True, peak=9))
-        wpair_file(tmp, "pair_20261120T1505Z.json", "2026-11-20T15:05:10Z", three=wrun(fb_budget=None))                  # a figure missing
-        d = os.path.join(tmp, "reports", "owner", "step_pairs_tw")
-        open(os.path.join(d, "pair_20261120T2105Z.json"), "w").write("{not json")
-        open(os.path.join(d, "pair_20261121T0305Z.json"), "w").write("[1, 2]")
+        afile(tmp, "alt_20261120T0305Z.json", "2026-11-20T03:05:10Z", asteps(22, 21, "2.000", "1.500", slow1=3, fb1=2, peak3=8), first="three", rows=((50, 2), (60, 1)))
+        afile(tmp, "alt_20261120T0905Z.json", "2026-11-20T09:05:10Z", counts=False, why="the 3-worker arm has 5 timed steps")
+        afile(tmp, "alt_20261120T1505Z.json", "2026-11-20T15:05:10Z", asteps(19, 25))                       # file says true, 19 timed steps
+        afile(tmp, "alt_20261120T1605Z.json", "2026-11-20T16:05:10Z", asteps(20, 20), pass_extra=1)
+        d = os.path.join(tmp, "reports", "owner", "workers_alt")
+        open(os.path.join(d, "alt_20261120T2105Z.json"), "w").write("{not json")
+        open(os.path.join(d, "alt_20261121T0305Z.json"), "w").write("[1, 2]")
+        bad = asteps(20, 20)
+        bad[3]["pass_text"] = "NaN-ish"
+        afile(tmp, "alt_20261122T0305Z.json", "2026-11-22T03:05:10Z", bad)
         with open(os.path.join(d, "odd.json"), "w") as f:
-            json.dump(dict(counts=True, runs=[]), f)
-        ps_ = {p["file"]: p for p in ps.load_workers_pairs(d)}
-        a = ps_["pair_20261120T0305Z.json"]
-        check("loader: a counting pair, exact differences (three minus one) and the figures",
-              a["counts"] and a["diff"] == F("-0.67") and a["longest_diff"] == F("-2.4") and a["order"] == "ab" and a["start"] == datetime(2026, 11, 20, 3, 5, 10, tzinfo=timezone.utc)
-              and a["one"]["fb"] == 2 and a["three"]["peak"] == 8 and a["three_peak"] == 8 and a["one"]["pass_median"] == "4.00", a)
-        b = ps_["pair_20261120T0905Z.json"]
-        check("loader: a pair that does not count keeps its reason and the three-worker flags", not b["counts"] and b["why"] == "the three run met a rate limit"
-              and b["three_limited"] and b["three_peak"] == 9 and b["readable"] and b["order"] == "ba", b)
-        c = ps_["pair_20261120T1505Z.json"]
-        check("loader: counts true in the file but a figure unreadable does not count", not c["counts"] and c["why"] == "a figure could not be read" and c["diff"] is None, c)
-        e = ps_["pair_20261120T2105Z.json"]
-        check("loader: a file that is not JSON: not readable, the start comes from its name",
-              not e["readable"] and not e["counts"] and e["why"] == "file could not be read" and e["start"] == datetime(2026, 11, 20, 21, 5, tzinfo=timezone.utc), e)
-        check("loader: JSON that is not an object is unreadable too", not ps_["pair_20261121T0305Z.json"]["readable"])
-        o = ps_["odd.json"]
-        check("loader: counts true with no runs and no start does not count, start None", not o["counts"] and o["start"] is None and o["readable"], o)
-        check("loader: oldest start first, a file with no start last", [p["file"] for p in ps.load_workers_pairs(d)][-1] == "odd.json"
-              and [p["file"] for p in ps.load_workers_pairs(d)][0] == "pair_20261120T0305Z.json")
-        check("loader: a missing folder is no pairs", ps.load_workers_pairs(os.path.join(tmp, "nope")) == [])
-        wpair_file(tmp, "pair_20261122T0305Z.json", "2026-11-22T03:05:10Z", one=wrun(median="NaN"))
-        check("loader: a median that is not a number does not count", not [p for p in ps.load_workers_pairs(d) if p["file"] == "pair_20261122T0305Z.json"][0]["counts"])
-        wpair_file(tmp, "pair_20261122T0905Z.json", "2026-11-22T09:05:10Z", one=wrun(refused=True))
-        check("loader: a refused run in a file that says counts true does not count", not [p for p in ps.load_workers_pairs(d) if p["file"] == "pair_20261122T0905Z.json"][0]["counts"])
-    check("tw_name_start", ps.tw_name_start("pair_20261120T0305Z.json") == datetime(2026, 11, 20, 3, 5, tzinfo=timezone.utc)
-          and ps.tw_name_start("pair_x.json") is None and ps.tw_name_start("pair_20261399T0305Z.json") is None)
+            json.dump(dict(counts=True, steps=asteps()), f)
+        L = {j["file"]: j for j in ps.load_alt_jobs(d)}
+        a = L["alt_20261120T0305Z.json"]
+        check("loader: a counting job, its figures and the first arm", a["counts"] and a["first"] == "three" and a["start"] == datetime(2026, 11, 20, 3, 5, 10, tzinfo=timezone.utc)
+              and a["timed"] == {1: 22, 3: 21} and ps.slow_count(a, 1) == 3 and ps.slow_count(a, 3) == 0 and sum(s["fb"] for s in a["steps"] if s["workers"] == 1) == 2
+              and max(s["peak"] for s in a["steps"]) == 8 and a["arms"]["1"]["rows_compared"] == 50 and a["arms"]["3"]["rows_differ"] == 1, a["why"])
+        b = L["alt_20261120T0905Z.json"]
+        check("loader: a job that does not count keeps its reason", not b["counts"] and b["why"] == "the 3-worker arm has 5 timed steps" and b["readable"])
+        c = L["alt_20261120T1505Z.json"]
+        check("loader: counts true in the file but 19 timed steps by the steps themselves does not count", not c["counts"] and c["timed"][1] == 19)
+        check("loader: a pass text that is not a number does not count", not L["alt_20261122T0305Z.json"]["counts"] and L["alt_20261122T0305Z.json"]["why"] == "a figure could not be read")
+        e = L["alt_20261120T2105Z.json"]
+        check("loader: a file that is not JSON is not readable, the start comes from its name", not e["readable"] and not e["counts"] and e["why"] == "file could not be read"
+              and e["start"] == datetime(2026, 11, 20, 21, 5, tzinfo=timezone.utc))
+        check("loader: JSON that is not an object is unreadable", not L["alt_20261121T0305Z.json"]["readable"])
+        o = L["odd.json"]
+        check("loader: no start at all does not count, and sorts last", not o["counts"] and o["start"] is None and [j["file"] for j in ps.load_alt_jobs(d)][-1] == "odd.json")
+        check("loader: a missing folder is no jobs", ps.load_alt_jobs(os.path.join(tmp, "nope")) == [])
+    check("alt_name_start", ps.alt_name_start("alt_20261120T0305Z.json") == datetime(2026, 11, 20, 3, 5, tzinfo=timezone.utc) and ps.alt_name_start("pair_x.json") is None
+          and ps.alt_name_start("alt_20261399T0305Z.json") is None)
+    # ---- the selection and the clauses (the same functions rule.py uses)
+    def sel(specs, end=None, now=None, **kw):
+        jobs = ajobs(specs, **kw)
+        return jobs, ps.alt_select(jobs, end, now)
+    NOW0 = TW_START + timedelta(days=3)
+    ok8 = [dict(steps=asteps(20, 20, slow1=4))] * 8                      # 8 jobs x 4 slow = 32 slow one-worker passes
+    jobs, s = sel(ok8, now=NOW0)
+    check("selection: eight jobs and 32 slow one-worker passes hold, complete", s["holds"] and s["complete"] and not s["wait"] and len(s["used"]) == 8 and s["slow1"] == 32)
+    jobs, s = sel([dict(steps=asteps(20, 20, slow1=4))] * 7, now=NOW0)
+    check("selection: seven jobs: waiting", not s["holds"] and s["wait"] and not s["complete"])
+    jobs, s = sel([dict(steps=asteps(20, 20, slow1=3))] * 8, now=NOW0)
+    check("selection: eight jobs with 24 slow passes: waiting", not s["holds"] and s["wait"] and s["slow1"] == 24)
+    jobs, s = sel([dict(steps=asteps(20, 20, slow1=3))] * 8, now=TW_START + timedelta(days=15))
+    check("selection: the 14 days over (from the first job) and not holding: complete, the gain is not shown", s["complete"] and s["gain_not_shown"] and not s["wait"])
+    jobs, s = sel([dict(steps=asteps(20, 20, slow1=3))] * 8, now=TW_START + timedelta(hours=1) + timedelta(days=14))
+    check("selection: exactly 14 days after the first job's start is not yet over", s["wait"] and not s["gain_not_shown"], s["deadline"])
+    # end in the period; later jobs added for the eighth and for the thirtieth slow pass
+    specs = [dict(steps=asteps(20, 20, slow1=2))] * 6 + [dict(steps=asteps(20, 20, slow1=2))] * 10      # 16 jobs, 2 slow each
+    jobs, s = sel(specs, end=TW_START + timedelta(hours=6, minutes=29), now=NOW0)
+    check("selection: six in the period, added until 8 jobs AND 30 slow passes (15 jobs), oldest first", len(s["used"]) == 15 and s["in_period"] == 6 and s["added"] == 9
+          and s["slow1"] == 30 and s["holds"] and [j["file"] for j in s["used"]] == [j["file"] for j in jobs[:15]])
+    jobs, s = sel(ok8 + [dict(steps=asteps())] * 3, end=TW_START + timedelta(hours=8, minutes=29), now=NOW0)
+    check("selection: eight and 30 slow in the period: nothing added", len(s["used"]) == 8 and s["added"] == 0)
+    jobs, s = sel(ok8 + [dict(steps=asteps())] * 3, end=TW_START + timedelta(hours=8, minutes=29), now=NOW0)
+    check("selection: jobs after the period are not used when it already holds", all(j["start"] < TW_START + timedelta(hours=9) for j in s["used"]))
+    jobs, s = sel([dict(steps=asteps(20, 20, slow1=1))] * 6 + [dict(steps=asteps(20, 20, slow1=1))] * 3, end=TW_START + timedelta(hours=6, minutes=29), now=NOW0)
+    late = [dict(steps=asteps(20, 20, slow1=4))] * 7
+    jobs = ajobs(late) + ajobs([dict(steps=asteps(20, 20, slow1=4))], first_hour=24 * 14 + 2)
+    s = ps.alt_select(jobs, TW_START + timedelta(hours=7, minutes=29), NOW0 + timedelta(days=20))
+    check("selection: a job later than 14 days after the first job's start is not added for the eighth", len(s["used"]) == 7 and s["gain_not_shown"])
+    jobs = ajobs(late) + ajobs([dict(steps=asteps(20, 20, slow1=4))], first_hour=24 * 14 - 1)
+    s = ps.alt_select(jobs, TW_START + timedelta(hours=7, minutes=29), NOW0)
+    check("selection: a job within the 14 days is added", len(s["used"]) == 8 and s["holds"])
+    check("selection: no jobs: nothing used and waiting", ps.alt_select([], None, NOW0)["wait"] and ps.alt_select([], None, NOW0)["used"] == [])
+    def meas(specs, **kw):
+        jobs, s = sel(specs, now=NOW0, **kw)
+        return ps.alt_measure(jobs, s)
+    G = dict(steps=asteps(20, 20, slow1=4))
+    m = meas([G] * 8)
+    check("clauses: eight good jobs meet all four", m["step_met"] and m["gain_met"] and m["pace_met"] and m["rows_met"], m)
+    # 1: median three at most one plus 0.05 (exact)
+    check("clause 1: three's median exactly one's plus 0.05 meets", meas([dict(steps=asteps(20, 20, "1.000", "1.050", slow1=4))] * 8)["step_met"])
+    check("clause 1: plus 0.051 does not", not meas([dict(steps=asteps(20, 20, "1.000", "1.051", slow1=4))] * 8)["step_met"])
+    # 2
+    check("clause 2: exactly 30 slow one-worker passes meets, 29 does not", meas([dict(steps=asteps(20, 20, slow1=4))] * 7 + [dict(steps=asteps(20, 20, slow1=2))])["gain_met"]
+          and not meas([dict(steps=asteps(20, 20, slow1=4))] * 7 + [dict(steps=asteps(20, 20, slow1=1))])["gain_met"])
+    m = meas([dict(steps=asteps(20, 20, slow1=4, slow3=2))] * 8)
+    check("clause 2: three's slow share exactly half of one's meets (2/20 against 4/20 halved is 2/20... 4 of 20 and 2 of 20)", m["slow"] == {1: 32, 3: 16} and m["gain_met"])
+    check("clause 2: one more slow pass with three does not meet", not meas([dict(steps=asteps(20, 20, slow1=4, slow3=2))] * 7 + [dict(steps=asteps(20, 20, slow1=4, slow3=3))])["gain_met"])
+    check("clause 2: fewer than 30 slow one-worker passes does not meet", not meas([dict(steps=asteps(20, 20, slow1=2))] * 10)["gain_met"])
+    check("clause 2: fallbacks with three more than with one do not meet", not meas([dict(steps=asteps(20, 20, slow1=4, fb1=0, fb3=1))] * 8)["gain_met"])
+    check("clause 2: equal fallbacks meet", meas([dict(steps=asteps(20, 20, slow1=4, fb1=1, fb3=1))] * 8)["gain_met"])
+    check("clause 2: a slow pass is strictly above 6.0 (6.000 is not slow)", meas([dict(steps=asteps(20, 20, "6.000", "6.000"))] * 8)["slow"] == {1: 0, 3: 0}
+          and meas([dict(steps=asteps(20, 20, "6.001", "6.001"))] * 8)["slow"] == {1: 160, 3: 160})
+    # 3 over all files from the first job to the last used job's start
+    check("clause 3: a peak of exactly 8 meets", meas([dict(steps=asteps(20, 20, slow1=4, peak3=8))] * 8)["pace_met"])
+    check("clause 3: a peak of 9 in one file fails", not meas([G] * 7 + [dict(steps=asteps(20, 20, slow1=4, peak3=9))])["pace_met"])
+    check("clause 3: a limited three-worker step fails", not meas([G] * 7 + [dict(steps=asteps(20, 20, slow1=4, limited3=1))])["pace_met"])
+    check("clause 3: a refused three-worker step fails", not meas([G] * 7 + [dict(steps=asteps(20, 20, slow1=4, refused3=1))])["pace_met"])
+    mm = meas([dict(steps=asteps(20, 20, peak3=9), counts=False, why="x")] + [G] * 8, first_hour=1)
+    check("clause 3: a non-counting file before the first counting job is outside the range", mm["pace_met"])
+    jobs = ajobs([G] * 4 + [dict(steps=asteps(20, 20, peak3=9), counts=False, why="x")] + [G] * 4)
+    mm = ps.alt_measure(jobs, ps.alt_select(jobs, None, NOW0))
+    check("clause 3: a non-counting file between the first and the last used job fails it, by name", not mm["pace_met"] and mm["peak_over"] == ["alt_20261120T0530Z.json"], mm["peak_over"])
+    jobs = ajobs([G] * 8, extra=[("alt_20261120T0405Z.json", "{not json")])
+    mm = ps.alt_measure(jobs, ps.alt_select(jobs, None, NOW0))
+    check("clause 3: an unreadable file in the range fails it and is listed", not mm["pace_met"] and mm["unreadable"] == ["alt_20261120T0405Z.json"])
+    jobs = ajobs([G] * 8, extra=[("alt_20261201T0405Z.json", "{not json")])
+    check("clause 3: an unreadable file after the last used job is outside the range", ps.alt_measure(jobs, ps.alt_select(jobs, None, NOW0))["pace_met"])
+    # 4 rows
+    r = lambda a, b: dict(steps=asteps(20, 20, slow1=4), rows=a if b is None else (a, b))      # noqa: E731
+    def rows(c1, d1, c3, d3, n=8, complete=True):
+        return [dict(steps=asteps(20, 20, slow1=4), rows=((c1, d1), (c3, d3)), rows_complete=complete)] * n
+    check("clause 4: three's share exactly one point above one's meets (2 of 100 and 3 of 100)", meas(rows(100, 2, 100, 3))["rows_met"])
+    check("clause 4: more than a point above does not (2 of 100 and 4 of 100)", not meas(rows(100, 2, 100, 4))["rows_met"])
+    check("clause 4: cross-multiplied with different sizes (1 of 100 against 4 of 200 is exactly 1 point: yes; 5 of 200 is 1.5 points: no)",
+          not meas(rows(100, 1, 200, 5))["rows_met"] and meas(rows(100, 1, 200, 4))["rows_met"])
+    check("clause 4: a zero denominator on either side is not met", not meas(rows(0, 0, 100, 0))["rows_met"] and not meas(rows(100, 0, 0, 0))["rows_met"])
+    m = meas(rows(100, 0, 100, 0, n=7) + rows(100, 0, 100, 50, n=1, complete=False))
+    check("clause 4: a job with an incomplete comparison is left out", m["rows_met"] and m["rows_jobs"] == 7 and m["rows3"] == (0, 700))
+    check("clause 4: no job with a complete comparison is not met", not meas(rows(100, 0, 100, 0, complete=False))["rows_met"])
+    check("clause 2 is not met when the gain is not shown", not ps.alt_measure(jobs, dict(ps.alt_select(jobs, None, NOW0), gain_not_shown=True))["gain_met"])
+    check("reported: medians, means and differences are exact", meas([dict(steps=asteps(20, 20, "1.000", "0.900", slow1=4))] * 8)["diff_median"] == ps.Fraction(-1, 10))
 
-    # ---- Part 3, clause 1: the median of three minus one against -0.2 s
-    def wm(specs, **kw):
-        return ps.workers_pairs_measure(wps(specs), **kw)
-    def step(diffs):
-        return [(wrun(median="10.00"), wrun(median=str(F("10.00") + F(d)))) for d in diffs]
-    check("clause 1: eight pairs with the median exactly -0.20 meet", wm(step(["-0.20"] * 8))["step_met"] and wm(step(["-0.20"] * 8))["median"] == F(-1, 5))
-    check("clause 1: -0.19 does not meet", not wm(step(["-0.19"] * 8))["step_met"])
-    check("clause 1: seven pairs do not meet even at -1.00", not wm(step(["-1.00"] * 7))["step_met"] and wm(step(["-1.00"] * 7))["n"] == 7)
-    check("clause 1: the median of an even count is the mean of the middle two (-0.30 and -0.10 give exactly -0.20)",
-          wm(step(["-0.50"] * 2 + ["-0.30"] * 2 + ["-0.10"] * 2 + ["0.50"] * 2))["median"] == F(-1, 5))
-    check("clause 1: a pair that does not count is left out", wm([(wrun(), wrun(median="1.00"))] * 7 + [(wrun(), wrun(median="1.00"))])["n"] == 8
-          and ps.workers_pairs_measure(wps(step(["-1.00"] * 7)) + [wp(hours=9, counts=False)])["n"] == 7)
-    # ---- clause 2
-    def slow(fb1, fb3, l1="6.00", l3="6.00", n=8):
-        return [(wrun(fb=fb1, longest=l1), wrun(fb=fb3, longest=l3))] * n
-    m = wm(slow(1, 1))
-    check("clause 2: equal fallbacks and equal longest passes meet (no more; at most zero)", m["slow_met"] and m["fb1"] == 8 and m["fb3"] == 8 and m["long_median"] == 0, m["long_median"])
-    check("clause 2: one more fallback with three does not meet", not wm(slow(1, 1)[:7] + [(wrun(fb=1), wrun(fb=2))])["slow_met"])
-    check("clause 2: fewer fallbacks with three meet", wm(slow(2, 0))["slow_met"])
-    check("clause 2: a longest-pass median above zero (+0.01) does not meet", not wm(slow(1, 1, "6.00", "6.01"))["slow_met"])
-    check("clause 2: longest pass shorter with three meets", wm(slow(1, 1, "6.00", "5.00"))["slow_met"] and wm(slow(1, 1, "6.00", "5.00"))["long_median"] == F(-1))
-    check("clause 2: seven pairs do not meet", not wm(slow(1, 1, n=7))["slow_met"])
-    # ---- clause 3: over all files of the period, counting or not
-    base = wps([None] * 8)
-    check("clause 3: eight clean pairs meet, peak 7", ps.workers_pairs_measure(base)["pace_met"] and ps.workers_pairs_measure(base)["peak_max"] == 7)
-    check("clause 3: a three-worker peak of exactly 8 meets", ps.workers_pairs_measure(wps([(None, wrun(peak=8))] * 8))["pace_met"])
-    check("clause 3: a peak of 9 in one three-worker run does not", not ps.workers_pairs_measure(wps([(None, wrun(peak=9))] + [None] * 7))["pace_met"])
-    check("clause 3: a peak of 9 in a ONE-worker run does not matter", ps.workers_pairs_measure(wps([(wrun(peak=9), None)] * 8))["pace_met"])
-    check("clause 3: a refused three-worker run in a pair that does not count still fails it",
-          not ps.workers_pairs_measure(base + [wp(hours=20, three=wrun(refused=True), counts=False)])["pace_met"])
-    check("clause 3: a limited three-worker run in a counting-looking file fails it",
-          not ps.workers_pairs_measure(base + [wp(hours=20, three=wrun(limited=True))])["pace_met"])
-    check("clause 3: a refusal in the one-worker run only does not", ps.workers_pairs_measure(base + [wp(hours=20, one=wrun(refused=True), counts=False)])["pace_met"])
-    check("clause 3: a peak of 9 in a pair that does not count still fails it",
-          not ps.workers_pairs_measure(base + [wp(hours=20, three=wrun(peak=9), counts=False)])["pace_met"])
-    unread = {"file": "pair_20261120T0405Z.json", "start": TW_START + timedelta(hours=3, minutes=35), "readable": False, "counts": False, "why": "file could not be read",
-              "one": None, "three": None, "diff": None, "longest_diff": None, "three_peak": None, "three_refused": False, "three_limited": False, "order": None}
-    check("clause 3: a file that cannot be read makes it not met, and is in the period by its start",
-          not ps.workers_pairs_measure(base + [unread])["pace_met"] and len(ps.workers_pairs_measure(base + [unread])["unreadable"]) == 1)
-    check("clause 3: the same unreadable file outside the period is left out",
-          ps.workers_pairs_measure(base + [dict(unread, start=TW_START + timedelta(days=9))], TW_START, TW_START + timedelta(days=3))["pace_met"])
-    check("clause 3: a pair after the period (an added one) is not in the clause",
-          ps.workers_pairs_measure(base + [wp(hours=24 * 5, three=wrun(peak=12))], TW_START, TW_START + timedelta(days=3))["pace_met"])
-    check("clause 3: a file with no start at all is taken as in the period", not ps.workers_pairs_measure(base + [dict(unread, start=None)], TW_START, TW_START + timedelta(days=3))["pace_met"])
-    check("clause 3: no files is met (nothing broke it)", ps.workers_pairs_measure([])["pace_met"] and ps.workers_pairs_measure([])["peak_max"] is None)
-    # ---- clause 4: the rows, cross-multiplied
-    def rows(c1, d1, c3, d3, n=8):
-        return [(wrun(compared=c1, differ=d1), wrun(compared=c3, differ=d3))] * n
-    check("clause 4: equal shares meet (3 of 100 against 3 of 100; 6 of 200 against 3 of 100)", wm(rows(100, 3, 100, 3))["rows_met"] and wm(rows(100, 3, 200, 6))["rows_met"])
-    check("clause 4: a higher share with three does not (4 of 100 against 3 of 100; 7 of 200 against 3 of 100)",
-          not wm(rows(100, 3, 100, 4))["rows_met"] and not wm(rows(100, 3, 200, 7))["rows_met"])
-    check("clause 4: a lower share with three meets", wm(rows(100, 3, 100, 0))["rows_met"])
-    check("clause 4: zero compared rows on either side is not met", not wm(rows(0, 0, 100, 0))["rows_met"] and not wm(rows(100, 0, 0, 0))["rows_met"])
-    check("clause 4: sums are over the pairs used (summed, not averaged)", wm([(wrun(compared=100, differ=10), wrun(compared=100, differ=0))] + rows(100, 0, 100, 1, n=7))["rows_met"])
-    check("clause 4: seven pairs do not meet", not wm(rows(100, 3, 100, 0, n=7))["rows_met"])
-    # ---- the pairs used: the same as the fifth book's pairs_measure (extension, period, now)
-    p = wps(step(["-1.00"] * 6) + [None, None, None, None])      # 10 counting pairs, hours 1..10
-    pm_a = ps.workers_pairs_measure(p, TW_START, TW_START + timedelta(hours=4, minutes=29), extend=True)
-    pm_b = ps.pairs_measure(p, TW_START, TW_START + timedelta(hours=4, minutes=29), None, ps.MIN_PAIRS, extend=True)
-    check("pairs used: the extension is pairs_measure's (4 in the period, 4 added oldest first)", [x["file"] for x in pm_a["used"]] == [x["file"] for x in pm_b["used"]]
-          and pm_a["n"] == 8 and pm_a["in_period"] == 4 and pm_a["added"] == 4 and pm_a["complete"] and pm_a["last_start"] == p[7]["start"], pm_a["n"])
-    pm_c = ps.workers_pairs_measure(p, TW_START, TW_START + timedelta(hours=4, minutes=29))
-    check("pairs used: without extend only the period's pairs", pm_c["n"] == 4 and not pm_c["enough"] and not pm_c["step_met"])
-    pm_d = ps.workers_pairs_measure(p, TW_START, TW_START + timedelta(hours=4, minutes=29), now=TW_START + timedelta(hours=6), extend=True)
-    check("pairs used: now limits the added pairs too (only 6 exist by then)", pm_d["n"] == 6 and not pm_d["complete"])
-    pm_e = ps.workers_pairs_measure(p, TW_START, TW_START + timedelta(hours=8))
-    check("pairs used: the end minute is included (a pair starting at end + 59 s is in, one at end + 1 minute is not)",
-          pm_e["n"] == 8 and ps.workers_pairs_measure(p, TW_START, TW_START + timedelta(hours=8) - timedelta(minutes=1))["n"] == 7)
     # ---- Part 4, measure 3: the in-step share against the fifth book's, over the common half hours
     def irows(k_from, k_to, in_step, minutes=30.0):
         return [mrow(k, minutes, pre_fetched=1000, pre_error=0, pre_missing=in_step, pre_ondemand=0, step_candles=300) for k in range(k_from, k_to + 1)]
@@ -1402,35 +1422,28 @@ def tw_tests():
     s2 = ps.trades_step_stats(ev, T(0, 60), T(0, 90))
     check("step_s.trades: limited to [start, stop)", s2["n"] == 1 and s2["median"] == F(5), s2)
     check("step_s.trades: none gives n 0 and no medians", ps.trades_step_stats([]) == {"n": 0, "median": None, "max": None})
-    # ---- the section on pair files
+    # ---- the section on alternating jobs
     with tempfile.TemporaryDirectory() as tmp:
         tw_books(tmp)
-        wpair_file(tmp, "pair_20261108T0305Z.json", "2026-11-08T03:05:10Z", one=wrun(median="9.93", longest="6.60", fb=2, peak=7, differ=1),
-                   three=wrun(median="9.33", longest="4.20", fb=0, peak=8, differ=0))
-        wpair_file(tmp, "pair_20261108T0905Z.json", "2026-11-08T09:05:10Z", order="ba", counts=False, why="the three run met a refusal", three=wrun(refused=True))
-        wpair_file(tmp, "pair_20261115T0305Z.json", "2026-11-15T03:05:10Z")                      # after the report's time
-        open(os.path.join(tmp, "reports", "owner", "step_pairs_tw", "pair_20261108T1505Z.json"), "w").write("{not json")
+        afile(tmp, "alt_20261108T0305Z.json", "2026-11-08T03:05:10Z", asteps(22, 21, "2.000", "1.500", slow1=3, fb1=2, peak3=8), first="three", rows=((50, 2), (60, 1)))
+        afile(tmp, "alt_20261108T0905Z.json", "2026-11-08T09:05:10Z", counts=False, why="the 3-worker arm has 5 timed steps")
+        afile(tmp, "alt_20261108T2005Z.json", "2026-11-08T20:05:10Z", asteps(20, 20, slow1=2))     # a second counting job, after the unreadable file
+        open(os.path.join(tmp, "reports", "owner", "workers_alt", "alt_20261108T1505Z.json"), "w").write("{not json")
         sec = section(ps.build_report(tmp, NOW), "Rule progress for the sixth book")
-        check("tw pairs: one line per pair with start, order, both medians, three minus one, longest passes, fallbacks, peaks, counts",
-              "| 2026-11-08 03:05 UTC | ab | 9.93 s | 9.33 s | -0.60 s | 6.60 s | 4.20 s | 2 | 0 | 7 | 8 | counts |" in sec, sec[:3000])
-        check("tw pairs: a pair that does not count says why; an unreadable file is listed",
-              "does not count: the three run met a refusal |" in sec and "does not count: file could not be read |" in sec)
-        check("tw pairs: a pair after the report's time (--now) is not listed as counting or in the measures",
-              "2026-11-15" not in sec.split("### Part 4")[0].split("| Part | Current value | Verdict |")[0] or "2026-11-15 03:05" in sec)
-        row1 = [l for l in sec.splitlines() if l.startswith("| 1. The step")][0]
-        check("tw pairs: the count and the median against -0.20 s (1 pair counts by the report's time, 8 needed): does not meet",
-              "1 pairs (8 needed); median -0.60 s; must be at or below -0.20 s | does not meet yet |" in row1, row1)
+        check("tw jobs: one line per job: start, first arm, timed steps, medians, slow passes, fallbacks, peak, rows, counts",
+              "| 2026-11-08 03:05 UTC | three | 22 / 21 | 2.00 s / 1.50 s | 3 / 0 | 2 / 0 | 8 | 2 of 50 / 1 of 60 | counts |" in sec, sec[:3500])
+        check("tw jobs: a job that does not count says why; an unreadable file is listed",
+              "does not count: the 3-worker arm has 5 timed steps |" in sec and "does not count: file could not be read |" in sec)
+        check("tw jobs: the totals count the jobs that count", "2 jobs (8 needed); 5 slow one-worker passes (30 needed)" in sec, sec[-2500:])
         row3 = [l for l in sec.splitlines() if l.startswith("| 3. The pace")][0]
-        check("tw pairs: the pace row counts the refused run and the unreadable file", "1 refused or limited; 1 unreadable" in row3 and row3.endswith("| does not meet yet |"), row3)
+        check("tw jobs: the pace row counts the unreadable file", "1 unreadable" in row3 and row3.endswith("| does not meet yet |"), row3)
+        check("tw jobs: the reported row names the first version's 0.2 s", "first version of the plan asked for a 0.2 s gain at the median over half-hour pairs" in sec)
+        check("tw jobs: waiting, with fewer than 8 jobs", "still waiting" in sec)
     with tempfile.TemporaryDirectory() as tmp:
         tw_books(tmp)
-        for i in range(8):
-            wpair_file(tmp, "pair_%d.json" % i, "2026-11-08T%02d:05:10Z" % i, one=wrun(median="10.00"), three=wrun(median="9.80"))
+        afiles(tmp, [dict(steps=asteps(20, 20, "1.000", "1.000", slow1=4, slow3=1))] * 8, first_hour=-300)
         sec = section(ps.build_report(tmp, NOW), "Rule progress for the sixth book")
-        row1 = [l for l in sec.splitlines() if l.startswith("| 1. The step")][0]
-        check("tw pairs: eight pairs at exactly -0.20 s meet", "8 pairs (8 needed); median -0.20 s" in row1 and row1.endswith("| meets |"), row1)
-        check("tw pairs: rows 2, 3 and 4 meet on equal clean pairs",
-              all(l.endswith("| meets |") for l in sec.splitlines() if l.startswith(("| 2. The slow", "| 3. The pace", "| 4. The rows"))), sec[-2500:])
+        check("tw jobs: eight good jobs meet clauses 1 to 4", all(l.endswith("| meets |") for l in sec.splitlines() if l.startswith(("| 1. No harm", "| 2. A gain", "| 3. The pace", "| 4. The rows"))) and "| enough |" in sec, sec[-2800:])
     # ---- the sections on the heartbeats of both books
     with tempfile.TemporaryDirectory() as tmp:
         good = {"pre_fetched": 1000, "pre_error": 0, "pre_missing": 5, "pre_ondemand": 0, "step_candles": 300}
