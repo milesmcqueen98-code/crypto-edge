@@ -269,12 +269,22 @@ class FakeExchange:
 SWITCH_SEEN = {}                     # --switch: the ladders open before and after it (read by live_sim_inputs_test.py)
 
 
-def main(start, end, death=None, death_min=20, config=None, inputs=None, switch=None):
+def main(start, end, death=None, death_min=20, config=None, inputs=None, switch=None, make_broker=None, on_engine=None):
+    """make_broker(ex, mkt, now) -> the broker each process uses (default: the fake exchange itself);
+    on_engine(eng) is called on every engine made (bot/spot/order_path_test.py: the real LiveBroker over a stand-in
+    for the venue's library)."""
     clock = {"t": pd.Timestamp(start)}
     now = lambda: clock["t"] + pd.Timedelta(seconds=6)  # noqa: E731
     mkt = LiveReplayMarket(start, end, now) if inputs is None else TradesFeedMarket(start, end, now)
     cap = 250000.0
     ex = FakeExchange(mkt, now, cap)
+
+    def engine():
+        e = E.Engine(mode="live", cfg=cfg, state_dir=sd, market=mkt, echo=False, clock=now,
+                     broker=ex if make_broker is None else make_broker(ex, mkt, now))
+        if on_engine is not None:
+            on_engine(e)
+        return e
     import json
     cfg = json.load(open(config or os.path.join(HERE, "config.json")))
     cfg.update(capital=cap, usd_reserve=0.0)
@@ -290,7 +300,7 @@ def main(start, end, death=None, death_min=20, config=None, inputs=None, switch=
         if switch is None:
             cfg, mkt.on = cfg_in, True
     sd = tempfile.mkdtemp(prefix="spot_live_")
-    eng = E.Engine(mode="live", cfg=cfg, state_dir=sd, market=mkt, broker=ex, clock=now, echo=False)
+    eng = engine()
     t0 = time.time()
     eng.start()
     steps = pd.date_range(start, pd.Timestamp(end) + pd.Timedelta(minutes=3 * H), freq="min", inclusive="left")
@@ -301,7 +311,7 @@ def main(start, end, death=None, death_min=20, config=None, inputs=None, switch=
             ex._advance()                                  # the new inputs on the same state folder
             before = sorted(l["id"] for l in eng.ladders())
             cfg, mkt.on = cfg_in, True
-            eng = E.Engine(mode="live", cfg=cfg, state_dir=sd, market=mkt, broker=ex, clock=now, echo=False)
+            eng = engine()
             if t >= pd.Timestamp(end):
                 eng.tradable = []
             eng.start()
@@ -322,7 +332,7 @@ def main(start, end, death=None, death_min=20, config=None, inputs=None, switch=
             death_ok = not left
             print(f"back at {t}: {len(left)} bids still resting on the exchange (should be 0); "
                   f"{sum(1 for o in ex.orders.values() if o['status'] == 'OPEN')} take-profits resting")
-            eng = E.Engine(mode="live", cfg=cfg, state_dir=sd, market=mkt, broker=ex, clock=now, echo=False)
+            eng = engine()
             if t >= pd.Timestamp(end):
                 eng.tradable = []
             eng.start()                                    # a fresh process: reconcile, book fills, overdue exits

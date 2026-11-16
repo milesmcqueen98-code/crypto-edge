@@ -345,7 +345,9 @@ of `config.json`, and `configure` and `preflight` change only the capital, `coin
 a code update also moves the live bot to the release's inputs:
 - At every start, `run.py` takes these six keys from `bot/spot/config.json` for a file named `config.live.json`:
   `newest_bar`, `trades_coins`, `stale_guard`, `trades_rows`, `trades_budget_s`, `confirm_s`
-  (`bot/spot/release_inputs.py`). A key that `config.json` does not set is dropped, so the code's default applies.
+  (`bot/spot/release_inputs.py`), and the three keys of the order path: `order_path`, `orders_rate`,
+  `place_workers` (section "Order path"). A key that `config.json` does not set is dropped, so the code's default
+  applies.
   Every other key (capital, coins, fees, risk limits, quote) stays as the live file has it. This holds for every
   command given that file, `wickctl paper-test` included.
 - The file itself is not changed. `preflight` writes back only `coins_disabled` and `bid_ttl_s`.
@@ -367,6 +369,162 @@ a code update also moves the live bot to the release's inputs:
 - A minute skipped by the stale guard (no new bids because BTC's newest price row was missing or old; exits still run)
   is written as a `stale_input` event. The watchdog sends one alert when three or more occur within one of its
   five-minute runs, at most once every 30 minutes.
+
+## Order path (`"order_path"`: `"serial"`, the code's default, or `"batch"`; `config.json` asks for one, the order check decides for the live bot)
+**When the live bot uses the batch path.** `"order_path": "batch"` in the config is a request, not a switch. At every
+start the live bot uses the batch path only when `wickctl order-check` has passed on this server, with test orders
+placed (`--place-test-orders`), with the library version that is installed now. Exactly: the newest
+`order_check_*.json` in `live_spot/` must be readable; the newest one of those that placed test orders must have
+passed; and its `library` must be the installed `coinbase-advanced-py` version. Read-only runs are ignored (passed or
+failed), unless the newest file of all cannot be read. Otherwise the bot runs exactly as before, on the serial path,
+and prints the reason at start (`order path in use: serial: ...`, in `live_spot/stdout.log`) and as the second line of
+the order-path block of `wickctl status`. A library upgrade asks for the check again: the old pass names the old
+version. After a pass the bot takes the batch path from its next start (`wickctl start`); a bot that is running keeps
+the path it started with. Every live start writes one `order_path` event to `events.jsonl` (`in_use`: `batch` or
+`serial`, and `why`: the line printed, or `set in the config` when the config itself says serial or has no key). It is
+not a `warning`, so the watchdog does not page you for it. The paper book is not touched by any of this. The decision
+is made in `run.py` before the engine is built; the engine is the same.
+
+**Holding a server on the serial path by hand.** `wickctl order-path serial` creates the file `order_path_serial` in
+`live_spot/` (as the wick user, making the folder if it is missing). While it is there the live bot uses the serial
+path whatever the config and the order check say; the start-up line, `wickctl status` and the `order_path` event say
+`order path in use: serial: held by hand (file order_path_serial in the state folder; wickctl order-path batch removes
+it)`. `wickctl order-path batch` removes the file (no error when it is not there); from the next start the order check
+decides again. `wickctl order-path` alone says whether the hold is in place and prints the usage. The commands neither
+stop nor start the service and apply at the next start: a running bot keeps the path it started with (`wickctl
+restart` applies the change now). This is the way back to the serial path on one server. The other way is a config
+edit: `"inputs_local": true` with `"order_path": "serial"` in `config.live.json` (section "Inputs of the live bot").
+
+**What changes.** Only how many requests carry the same orders to Coinbase each minute, and how soon the new bids
+rest. Which bids are placed, their prices, sizes, lifetimes and type (post-only, good-til-date) do not change, nor
+does any check. `"serial"` (or no key) is the code as it was, request for request. `"batch"` runs only on the live
+bot; a paper book ignores the key (its event log is equal to the byte with and without it).
+
+**Each minute on the batch path:**
+1. **Fills.** One request for the fills since the previous minute's settle (minus 10 s; at start 3 minutes back).
+   Then **one request** (list orders by id, up to 50 ids a request) reads every other resting order of every ladder,
+   and fills are booked from it exactly as from single reads. An order with a recent fill, and an order the answer
+   does not name, is read singly. If the fills request fails, every order is read singly that minute.
+   - **A running check:** each minute one order the list answer covered (in turn) is also read singly, and the single
+     read is the one used. Only what cannot happen between two reads is a mismatch: the list shows more filled than
+     the single read made after it; or the same fill at another average price; or the same fill with more fees in
+     the list; or a final status in the list and not in the single read. A status that moved on (open, then
+     cancelled, expired or cancel-queued; pending, then open) is not. A mismatch is counted (`snap_mismatch`) and
+     logged as a `warning` with both answers; the second one switches the list read off for good (every order read
+     singly), with one warning.
+2. **Decide every coin, no request in between:** bids to drop (approval or cash lost), bids to keep (unchanged level
+   and size, not about to expire), bids to re-price, new bids.
+3. **Best bids: one request** (best bid/ask) for every coin that may get a bid. A coin it does not cover is asked
+   for singly from the public book, as before.
+4. **Cancel: one request** (batch cancel) for the dropped bids, then the re-priced ones.
+   - Each is confirmed by reading it (one list request for all of them) at 0, 0.15, 0.3, 0.6, 1.0, 1.5 and 2.0 s
+     after the cancel returned, until it is final; the serial path reads six times 0.4 s apart. From the 0.6 s read
+     on, an order the list still shows open is also read singly, and the single read decides.
+   - If the batch cancel fails for a group of orders (an exception, or an answer without results), those orders are
+     cancelled one by one at once with the serial path's cancel.
+   - A fill that came before the cancel is booked and that coin gets no new bid. A cancel not confirmed keeps its
+     order in the books with the usual warning, and is retried next minute.
+5. **Place** the new bids, highest score first, on `place_workers` threads, each with its own client. A bid Coinbase
+   refuses for its lifetime doubles the lifetime once (as before) and is sent again singly; a bid that was sent
+   before the lifetime went up is sent again at the new lifetime. Then the `arm` events, with their book depth.
+   - **No placement loses the others.** An answer that cannot be read (success without an order id, not an answer
+     at all) is searched by its client order id, as after a timeout; an error in one thread is that bid's error.
+   - If the placing call fails anyway, an `error` event, no new bid that minute, and the reconcile sweep runs at
+     once (it cancels any bot order missing from the state).
+- **Unchanged, on the serial requests:** deeper rungs, take-profits, exits, renewals of expiring bids, the 1-second
+  fill poll, the reconcile sweep, `cancel-all`, `flatten`.
+
+**Settings** (taken from the release for `config.live.json`, section "Inputs of the live bot"; `wickctl status`
+then ends its inputs line with `; order path batch (10 requests a second, 3 placing threads)`):
+- `order_path`: `"serial"` or `"batch"`. Any other value stops the bot at start.
+- `orders_rate` (default 10): at most this many requests a second on the batch path, across all its threads (each
+  request takes the next free slot). The serial requests are not paced, as before.
+- `place_workers` (default 1): threads for placing; 1 is a plain loop on the bot's own client.
+
+**What falls back to single requests, and when:**
+- An order or a coin a batch answer does not name: that order or coin, singly, every time (counted).
+- An order with a fill since the last minute: singly, every time.
+- A piece (the read of several orders, the batch cancel, the best bids) that fails three times in a row (an exception,
+  or an answer with nothing usable), or the read of several orders after two mismatches: switched off until the bot
+  restarts, with one `warning` event (your phone gets it). Its single requests are used from then on.
+- The batch cancel raising inside the bot: a `warning` event, and the single cancels for those orders that minute.
+
+**Counters** (in the heartbeat's `counts`, batch path only): `fallback_min` (minutes with a fallback to single
+requests, above), `cancel_single` (orders cancelled one by one because their batch cancel failed), `snap_miss`
+(orders a read of several did not name, or every order in a minute whose fills request failed), `snap_mismatch` (the
+running check), `bbo_miss` (coins the
+best-bid answer did not cover), `batch_fallback` (a piece switched off), `http_429` (requests Coinbase refused for the
+rate). The heartbeat also gets `rate_limit`, the last `x-ratelimit-limit`, `-remaining` and `-reset` Coinbase sent,
+once it has sent them (the batch path builds its clients with the library's `rate_limit_headers=True`), and, in its
+first heartbeat, `library`, the installed `coinbase-advanced-py` version (live only). `live` prints the same version
+at start. A library too old to know `rate_limit_headers`: the clients are built without it, one `warning` at start,
+no `rate_limit` field.
+
+**Check it against Coinbase before relying on it:** `wickctl order-check` (or `python bot/spot/run.py order-check
+--config bot/spot/config.live.json [--place-test-orders]`). It prints what it will do; `wickctl` asks for the word
+`yes` before it places anything. Without the flag it only reads best bids. With it (and the live switch), it places
+three post-only bids of about $25 (ETH, SOL, XRP when tradable) at half the lower of the batch best bid and the public
+book's, which must agree within 5% (otherwise that product is skipped and the check fails), each previewed first,
+with the bot's own placing call; reads them with one list request and singly and compares; cancels them with the
+batch cancel and notes when each was seen cancelled; then cancels singly anything not confirmed, sweeps the open
+orders once for a test bid whose placement came back as an error (the bot's tag, a test product, the test bid's
+price within a tick: a running bot's own bids are never at that price), and says loudly if a test order is still
+open (it expires by itself at its end time). It ends with `order check PASSED` or `FAILED` and the reasons, then one
+more line: after a pass with test orders `The bot uses the batch order path from its next start (wickctl start).`,
+after a read-only pass `Read-only run: the bot keeps the serial path until a run with test orders passes.`, after a
+failure `The bot keeps the serial path.` It writes the whole result as one JSON file in `live_spot/` (the path is printed). `wickctl order-check` refuses to start
+while the bot's service runs (stop it with `wickctl stop`): the bot's sweep would cancel the test orders too (they
+carry its tag), and both would share the account's rate limit. `run.py order-check` run by hand does not check.
+
+**What `wickctl status` shows on the batch path** (after the lines it always prints; nothing more on the serial path):
+```
+order path: batch (10 requests a second, 3 placing threads)
+  order path in use: batch (order check passed 2026-11-15 10:00:00 with coinbase-advanced-py 1.8.4)
+  library: coinbase-advanced-py 1.8.4
+  order check: 2026-11-15 10:00:00 PASSED, test orders placed (order_check_20261115T100000Z.json)
+  rate limit headers, newest (2026-11-15 14:30): {'limit': '30', 'remaining': '28', 'reset': '1'}
+  last 24 h: 48 heartbeats, 1440 minutes covered (2026-11-14 15:00 .. 2026-11-15 14:30 UTC)
+  data step ended: median 9.50 s after the minute (largest 11.00)
+  place minus data: median 2.50 s (largest 3.50)
+  counters: reprice 4100, arm 380, cancel_unconfirmed 2, snap_miss 3, snap_mismatch 0, bbo_miss 0, batch_fallback 0, http_429 0, cancel_single 0, fallback_min 2
+  place minus data: median 2.50 s (the plan's first-day figure is 3 s or less)
+  single-request fallbacks: in 2 of 1440 minutes, 0.1% (the plan's figure is fewer than 5% of minutes)
+```
+(the numbers here are an example, not a result). The second line is the gate's answer for the bot's next start (the
+same line `live` prints; it says `serial` and why when the check has not passed here, or with another library). It reads `live_spot/events.jsonl` line by line
+(`bot/spot/order_status.py`; a malformed line is skipped):
+- **heartbeats** of the last 24 hours, and the **minutes covered**: each heartbeat covers the minutes since the
+  heartbeat before it, at most 30 (the first one seen counts 30);
+- **data step ended**: the median, over those heartbeats, of each heartbeat's median `step_s` data mark (seconds
+  after the minute at which the data step ended), and its largest value; **place minus data**: the same for each
+  heartbeat's place mark minus its data mark;
+- **counters**: the sums of the heartbeats' `counts`;
+- the **newest** `rate_limit` and `library` fields anywhere in the log;
+- **single-request fallbacks**: K, the sum of `fallback_min` over the heartbeats, of M, the minutes covered, and
+  K / M. `fallback_min` goes up by one, at most once per minute, when anything in that minute fell back from a batch
+  request to the single requests: a list answer missed an order (`snap_miss`), the best-bid answer missed a coin
+  (`bbo_miss`), a piece was switched off (`batch_fallback`) or was used singly because it is off, the fills request
+  before the list read failed, a batch cancel group was cancelled order by order (`cancel_single`, one per order),
+  the batch cancel raised, or the placing call raised. The running check's single read, the single reads of orders
+  with a recent fill and the single reads from 0.6 s on inside the cancel are part of the design and do not count.
+  Heartbeats without `fallback_min` give K 0 (a counter is written only when it counted).
+- the **order check**: the newest `order_check_*.json` in the state folder (its time, PASSED or FAILED with the
+  reasons on one line, test orders placed or read-only), or `order check: none on this server yet (wickctl
+  order-check)`.
+- With no heartbeat in the last 24 hours: `last 24 h: no heartbeat`.
+- **At start**, `live` with `"order_path": "batch"` prints one line after the library line: `order path in use: batch
+  (order check passed <time> with coinbase-advanced-py <version>)`, or `order path in use: serial: ...` with the
+  reason (no check with test orders yet, the last one failed, the newest file cannot be read, another library, held by hand), and
+  writes the `order_path` event described above. A config that says serial, or has no key, prints no line (the event
+  says `set in the config`). The line is in `live_spot/stdout.log`; the event is not a `warning`.
+
+**Tests:** `python bot/spot/order_path_unit_test.py` (every new request and every fallback, against a scripted
+stand-in for Coinbase's library; no network, no real wait), `python bot/spot/order_check_test.py` (the check, on the
+same stand-in), `python bot/spot/order_status_test.py` (the gate, the status block and the start-up decision) and `python bot/spot/order_path_test.py "2025-10-10 20:00" "2025-10-11 02:00"` (with and without
+`"--death=2025-10-10 21:10"`): the live-path simulation three ways, the fake exchange as broker, the real broker on
+the serial path and on the batch path, over a stand-in for the library; all three must agree exactly. It also
+counts requests per minute and prints a modelled clock (0.1 s a request). `bot/spot/sandbox_test.py` checks the new
+requests' shapes against Coinbase's static sandbox on a runner.
 
 ## Paper run
 `.github/workflows/paper-spot.yml` runs three paper books for about 5h45m per run on GitHub Actions: the incumbent

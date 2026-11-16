@@ -28,9 +28,11 @@ or re-price 4-sigma bids. State: <state_dir>/state.json. Events: <state_dir>/eve
 import json
 import math
 import os
+import threading
 import time
 import uuid
 import warnings
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
 import lightgbm as lgb
@@ -48,6 +50,20 @@ ORDER_TAG = "wk1m"              # client_order_id prefix: lets reconcile() find 
 REFRESH_S = 150                 # re-place a good-til-date bid this many seconds before it would expire
 warnings.filterwarnings("ignore", message="Mean of empty slice")
 warnings.filterwarnings("ignore", category=RuntimeWarning, module="edge.wick")
+
+
+def library_version():
+    """The installed coinbase-advanced-py version, or None (it is not installed, or cannot be read)."""
+    try:
+        from importlib import metadata
+        return metadata.version("coinbase-advanced-py")
+    except Exception:
+        pass
+    try:
+        from coinbase.__version__ import __version__
+        return str(__version__)
+    except Exception:
+        return None
 
 
 def now_utc():
@@ -226,11 +242,32 @@ class LiveBroker:
     quote = "USD"                                          # class defaults: tests build brokers without __init__
     last_usdc = None
 
-    def __init__(self, count_usdc=False, quote="USD", client=None):
+    def __init__(self, count_usdc=False, quote="USD", client=None, client_factory=None, order_path="serial",
+                 orders_rate=10, place_workers=1):
+        if order_path not in ("serial", "batch"):
+            raise ValueError(f"order_path must be serial or batch, not {order_path}")
         if client is None:
             from coinbase.rest import RESTClient
             secret = os.environ["COINBASE_API_SECRET"].replace("\\n", "\n")     # accept the one-line (\\n) form
             client = RESTClient(api_key=os.environ["COINBASE_API_KEY"], api_secret=secret, timeout=10)   # no hung loop
+            if order_path == "batch":                       # the venue's limit headers on every answer; one client
+                kw = dict(api_key=os.environ["COINBASE_API_KEY"], api_secret=secret, timeout=10)   # per placing thread
+                try:                                        # (README, "Order path")
+                    RESTClient(rate_limit_headers=True, **kw)
+                    kw["rate_limit_headers"] = True
+                except TypeError:                           # an older library without the argument: no headers
+                    self.rate_headers_off = True
+
+                def make():
+                    return RESTClient(**kw)
+                client, client_factory = make(), client_factory or make
+        self.order_path, self.client_factory = order_path, client_factory
+        self.orders_rate, self.place_workers = float(orders_rate), int(place_workers)
+        if not self.orders_rate > 0 or self.place_workers < 1:
+            raise ValueError(f"orders_rate must be above 0 and place_workers at least 1, not {orders_rate}, "
+                             f"{place_workers}")
+        if self.place_workers > 1 and client_factory is None:
+            raise ValueError("place_workers above 1 needs a client factory (one client per thread)")
         self.c = client
         self.count_usdc = count_usdc
         self.quote = (quote or "USD").upper()             # ladder v5 C4: "USDC" trades the -USDC aliases
@@ -304,11 +341,11 @@ class LiveBroker:
         value = s["filled"] * s["avg"] - o["value"]
         return q, (value / q if value > 0 else o["px"]), max(0.0, s["fees"] - o["fees"])
 
-    def fills(self, coin, orders, bar, minute, tick):
+    def fills(self, coin, orders, bar, minute, tick, snap=None):
         out = []
         for r, o in orders:
             try:
-                s = self.status(o["id"])
+                s = snap[o["id"]] if snap is not None and o["id"] in snap else self.status(o["id"])
             except Exception:
                 continue
             inc = self.increment(o, s)
@@ -410,6 +447,349 @@ class LiveBroker:
         return dict(tier=ft.get("pricing_tier"), maker_bp=1e4 * float(ft.get("maker_fee_rate") or 0),
                     taker_bp=1e4 * float(ft.get("taker_fee_rate") or 0), volume_30d=r.get("advanced_trade_only_volume"))
 
+    # ---------- the batch order path (README, "Order path"). Used only by Engine._settle and Engine._allocate_batch
+    # when order_path is "batch"; the methods above are the serial path's and are not paced.
+    BATCH_N = 50                                       # order ids per batch cancel or list request
+    BATCH_PAGES = 5                                    # pages followed per list request
+    CANCEL_READS = (0.0, 0.15, 0.3, 0.6, 1.0, 1.5, 2.0)    # reads after a batch cancel, seconds after it returned
+    SINGLE_FROM = 0.6                                  # from this read on, an open order is also read singly
+    BREAK_AFTER = 3                                    # failed calls in a row that switch a piece off for good
+    PIECES = ("snapshot", "cancel_many", "best_bids")
+    order_path, orders_rate, place_workers, client_factory = "serial", 10.0, 1, None    # class defaults (see above)
+    sleep = None                                       # injectable wait for every wait of the new methods (None: sleep)
+    last_cancel_rounds = None                          # cancel_many: the read round each order was seen final
+    rate_headers_off = False                           # the installed library does not know rate_limit_headers
+    mono = None                                        # injectable clock for the pace (None: time.monotonic)
+    RL = (("limit", "x-ratelimit-limit", "rate_limit_limit"), ("remaining", "x-ratelimit-remaining",
+                                                                 "rate_limit_remaining"),
+          ("reset", "x-ratelimit-reset", "rate_limit_reset"))   # header, and the library's name for it in to_dict()
+
+    def _bs(self):
+        """State of the batch path, made on first use (single-threaded: every public method below calls it first)."""
+        st = getattr(self, "_batch_state", None)
+        if st is None:
+            st = dict(lock=threading.Lock(), next=None, fails={p: 0 for p in self.PIECES}, off=set(), trips=[],
+                      counts={}, rate_limit=None, local=threading.local(), pool=None)
+            self._batch_state = st
+        return st
+
+    def _wait(self, s):
+        if s > 0:
+            (self.sleep or time.sleep)(s)
+
+    def _now(self):
+        return (self.mono or time.monotonic)()
+
+    def _pace(self):
+        """Reserve the next send slot: no two requests of the batch path closer than 1 / orders_rate, across threads.
+        Waits until the slot and returns its time."""
+        st = self._bs()
+        with st["lock"]:
+            now = self._now()
+            at = now if st["next"] is None else max(now, st["next"])
+            st["next"] = at + 1.0 / self.orders_rate
+        self._wait(at - now)
+        return at
+
+    def _count(self, k, n=1):
+        st = self._bs()
+        with st["lock"]:
+            st["counts"][k] = st["counts"].get(k, 0) + n
+
+    def _see(self, r):
+        """Keep the last rate-limit headers seen (answers of clients built with rate_limit_headers=True)."""
+        if not isinstance(r, dict):
+            return
+        rl = {k: (r.get(h) if r.get(h) is not None else r.get(n)) for k, h, n in self.RL}
+        if any(v is not None for v in rl.values()):
+            st = self._bs()
+            with st["lock"]:
+                st["rate_limit"] = rl
+
+    def _req(self, fn, **kw):
+        """One request of the batch path: paced; its answer as a dict; a 429 counted (http_429), then re-raised."""
+        self._pace()
+        try:
+            r = self._d(fn(**kw))
+        except Exception as err:
+            resp = getattr(err, "response", None)
+            if getattr(resp, "status_code", None) == 429:
+                self._count("http_429")
+                self._see({h: (getattr(resp, "headers", None) or {}).get(h) for _, h, _ in self.RL})
+            raise
+        self._see(r)
+        return r
+
+    def _ok(self, piece, good):
+        """Breaker: BREAK_AFTER failed calls in a row switch the piece off for the rest of the process."""
+        st = self._bs()
+        with st["lock"]:
+            if good:
+                st["fails"][piece] = 0
+                return
+            st["fails"][piece] += 1
+            if st["fails"][piece] >= self.BREAK_AFTER and piece not in st["off"]:
+                st["off"].add(piece)
+                st["trips"].append(piece)
+
+    def batch_on(self, piece):
+        """False once the piece is switched off: its caller then uses today's single requests."""
+        return piece not in self._bs()["off"]
+
+    def take_trips(self):
+        """Pieces switched off since the last call (each reported once)."""
+        st = self._bs()
+        with st["lock"]:
+            out, st["trips"] = st["trips"], []
+        return out
+
+    def take_counts(self):
+        """Counters of the batch path since the last call: snap_miss, bbo_miss, cancel_single, http_429."""
+        st = self._bs()
+        with st["lock"]:
+            out, st["counts"] = st["counts"], {}
+        return out
+
+    def rate_limit(self):
+        """The last x-ratelimit-limit, -remaining and -reset seen, or None."""
+        return self._bs()["rate_limit"]
+
+    def _sd(od):
+        """The dict status() returns, from the same fields of an order in a list answer."""
+        return dict(filled=float(od.get("filled_size") or 0), avg=float(od.get("average_filled_price") or 0),
+                    fees=float(od.get("total_fees") or 0), status=od.get("status", ""),
+                    last_fill=od.get("last_fill_time"))
+    _sd = staticmethod(_sd)
+
+    def read_one(self, oid):
+        """status(oid), paced (the batch settle's running check of the snapshot). May raise."""
+        self._pace()
+        return self.status(oid)
+
+    def switch_off(self, piece):
+        """Switch a piece off as a tripped breaker does (reported once through take_trips)."""
+        st = self._bs()
+        with st["lock"]:
+            if piece not in st["off"]:
+                st["off"].add(piece)
+                st["trips"].append(piece)
+
+    def fills_since(self, since):
+        """filled_order_ids(since), paced (the batch settle's check for orders with a recent fill). May raise."""
+        self._pace()
+        return self.filled_order_ids(since)
+
+    def snapshot(self, ids):
+        """The state of several orders: one list request per group of BATCH_N ids, following the cursor while
+        has_next (at most BATCH_PAGES pages). {order id: status() dict} for the requested ids the answer names; an
+        id it does not name is absent. Never raises: on an exception, what it has so far."""
+        ids = list(dict.fromkeys(i for i in ids if i))
+        out = {}
+        if not ids or not self.batch_on("snapshot"):
+            return out
+        try:
+            for g in range(0, len(ids), self.BATCH_N):
+                group = ids[g:g + self.BATCH_N]
+                want, cursor = set(group), None
+                for _ in range(self.BATCH_PAGES):
+                    kw = dict(order_ids=group)
+                    if cursor:
+                        kw["cursor"] = cursor
+                    r = self._req(self.c.list_orders, **kw)
+                    for od in r.get("orders") or []:
+                        od = self._d(od)
+                        try:
+                            if od.get("order_id") in want:
+                                out[od["order_id"]] = self._sd(od)
+                        except Exception:
+                            continue                       # an unreadable order is absent: read singly
+                    nxt = r.get("cursor")
+                    if not r.get("has_next") or not nxt or nxt == cursor:
+                        break
+                    cursor = nxt
+        except Exception:
+            pass
+        self._ok("snapshot", bool(out))
+        if len(ids) > len(out):
+            self._count("snap_miss", len(ids) - len(out))
+        return out
+
+    def best_bids(self, products):
+        """Best bid of several products in one request: {product id: price} for the products whose answer holds a
+        readable bid. Never raises."""
+        prods = list(dict.fromkeys(products))
+        out = {}
+        if not prods or not self.batch_on("best_bids"):
+            return out
+        try:
+            r = self._req(self.c.get_best_bid_ask, product_ids=prods)
+            for pb in r.get("pricebooks") or []:
+                try:
+                    pb = self._d(pb)
+                    px = [float(self._d(b).get("price")) for b in pb.get("bids") or []]
+                    px = max(px) if px else np.nan
+                    if pb.get("product_id") in prods and np.isfinite(px) and px > 0:
+                        out[pb["product_id"]] = px
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        self._ok("best_bids", bool(out))
+        if len(prods) > len(out):
+            self._count("bbo_miss", len(prods) - len(out))
+        return out
+
+    def cancel_many(self, orders):
+        """Cancel several orders and wait for the venue to confirm: {order id: (fill not yet booked as (qty, px, fee)
+        or None, confirmed)}, the pair cancel() returns, for every order given.
+        - One batch cancel per BATCH_N ids. A group whose request raised or came back without a results list is
+          cancelled at once order by order with today's cancel(), whose answers are used (no read schedule for it).
+        - The other orders are read at CANCEL_READS seconds after the last batch cancel returned, until final: one
+          snapshot, and status() for an order it does not cover (an exception there: unknown this round). From the
+          read at SINGLE_FROM s on, an order the snapshot shows not final is also read with status(), which decides
+          for that round (if it raises, the snapshot's view stands). Final at the end: confirmed; otherwise not.
+        last_cancel_rounds: {order id: index of the read round it was seen final, or "single" for today's cancel}."""
+        orders = list(orders)
+        byid = {}
+        for o in orders:
+            byid.setdefault(o["id"], o)
+        ids = list(byid)
+        if not ids:
+            return {}
+        if not self.batch_on("cancel_many"):
+            raise RuntimeError("cancel_many is switched off")
+        single, rounds, t0 = {}, {}, None
+        for g in range(0, len(ids), self.BATCH_N):
+            group = ids[g:g + self.BATCH_N]
+            try:
+                r = self._req(self.c.cancel_orders, order_ids=group)
+                good = isinstance(r.get("results"), list)
+            except Exception:
+                good = False
+            self._ok("cancel_many", good)
+            if good:
+                t0 = self._now()
+                continue
+            self._count("cancel_single", len(group))      # a fallback to today's requests
+            for i in group:                                # today's cancel, at once, for this group
+                self._pace()
+                single[i] = self.cancel(byid[i])
+                rounds[i] = "single"
+        if t0 is None:
+            t0 = self._now()
+        last, final = {}, set(single)
+        for k, at in enumerate(self.CANCEL_READS):
+            todo = [i for i in ids if i not in final]
+            if not todo:
+                break
+            self._wait(t0 + at - self._now())
+            got = self.snapshot(todo)
+            for i in todo:
+                s = got.get(i)
+                if s is None:
+                    try:
+                        self._pace()
+                        s = self.status(i)
+                    except Exception:
+                        s = None
+                elif at >= self.SINGLE_FROM - 1e-9 and s["status"] not in self.TERMINAL:
+                    try:                                   # the list may lag the single read: it decides
+                        self._pace()
+                        s = self.status(i)
+                    except Exception:
+                        pass
+                last[i] = s
+                if s and s["status"] in self.TERMINAL:
+                    final.add(i)
+                    rounds[i] = k
+        self.last_cancel_rounds = rounds
+        out = {}
+        for o in orders:
+            i = o["id"]
+            if i in single:
+                out[i] = single[i]
+            else:
+                s = last.get(i)
+                out[i] = ((self.increment(o, s) if s else None), bool(s and s["status"] in self.TERMINAL))
+        return out
+
+    def _find_on(self, c, product, cid, tries=2):
+        """_find_by_client_id on client c, paced, waiting through the injectable sleep."""
+        for i in range(tries):
+            try:
+                r = self._req(c.list_orders, product_ids=[product], limit=50)
+                for od in r.get("orders", []) or []:
+                    od = self._d(od)
+                    if od.get("client_order_id") == cid:
+                        return od.get("order_id")
+            except Exception:
+                pass
+            if i + 1 < tries:
+                self._wait(0.5)
+        return None
+
+    def _place_on(self, c, spec, side, px, size, post_only=True, end_time=None):
+        """place() on client c, paced: the same request and the same answer; an answer it cannot read (not a dict,
+        success without an order id, ...) is searched by client order id as after an exception."""
+        cid = f"{ORDER_TAG}-{uuid.uuid4().hex[:20]}"
+        try:
+            if end_time is not None:
+                r = self._req(c.create_order, client_order_id=cid, product_id=self._p(spec.product), side=side,
+                              order_configuration=self._gtd(spec, px, size, end_time, post_only))
+            else:
+                args = dict(client_order_id=cid, product_id=self._p(spec.product), base_size=fmt(size, spec.lot),
+                            limit_price=fmt(px, spec.tick), post_only=post_only)
+                r = self._req(c.limit_order_gtc_buy if side == "BUY" else c.limit_order_gtc_sell, **args)
+        except Exception as err:
+            oid = self._find_on(c, self._p(spec.product), cid)  # a timed-out call may still have placed it
+            return (oid, None) if oid else (None, repr(err)[:300])
+        try:
+            if r.get("success"):
+                oid = (r.get("success_response") or {}).get("order_id")
+                if not oid:
+                    raise ValueError("success without an order id")
+                return oid, None
+            return None, json.dumps(r.get("error_response") or r, default=str)[:300]
+        except Exception:                                  # an answer it cannot read: the order may exist
+            oid = self._find_on(c, self._p(spec.product), cid)
+            return (oid, None) if oid else (None, ("unreadable answer: " + repr(r))[:300])
+
+    def _place_thread(self, q):
+        """One placement on this thread's own client (made by the factory on the thread's first use)."""
+        loc = self._bs()["local"]
+        c = getattr(loc, "c", None)
+        if c is None:
+            try:
+                c = loc.c = self.client_factory()
+            except Exception as err:                       # nothing was sent: a failed request
+                return None, repr(err)[:300]
+        return self._place_on(c, *q)
+
+    def place_many(self, reqs):
+        """reqs: [(spec, side, px, size, post_only, end_time)]. [(order id or None, error or None)] in request order,
+        each what place() returns for that request; an answer it cannot read is searched by client order id, and an
+        exception anywhere becomes that request's (None, error). Never raises. One worker or one request: a plain loop
+        on this broker's client. Otherwise place_workers threads, each on its own client."""
+        reqs = list(reqs)
+        st = self._bs()
+        out = []
+        if min(self.place_workers, len(reqs)) <= 1:
+            for q in reqs:
+                try:
+                    out.append(self._place_on(self.c, *q))
+                except Exception as err:                   # never lose the others
+                    out.append((None, repr(err)[:300]))
+            return out
+        if st["pool"] is None:
+            st["pool"] = ThreadPoolExecutor(max_workers=self.place_workers)
+        futs = [st["pool"].submit(self._place_thread, q) for q in reqs]
+        for f in futs:                                     # a result for every request, whatever a worker did
+            try:
+                out.append(f.result())
+            except Exception as err:
+                out.append((None, repr(err)[:300]))
+        return out
+
 
 # ------------------------------------------------------------------------------------------------ engine
 @dataclass
@@ -437,6 +817,18 @@ class Engine:
         self.state_path = os.path.join(self.state_dir, "state.json")
         self.log = Log(os.path.join(self.state_dir, "events.jsonl"), self.clock, echo=self.echo)
         self.state = self._load_state()
+        # order path (README, "Order path"): "serial" (default, today's requests) or "batch" (live only)
+        self.order_path = self.cfg.get("order_path", "serial")
+        if self.order_path not in ("serial", "batch"):
+            raise ValueError(f"order_path must be serial or batch, not {self.order_path}")
+        if self.broker is None and self.mode == "live" and self.order_path == "batch":
+            self.broker = LiveBroker(self.cfg.get("count_usdc_as_cash", False), self.cfg.get("quote", "USD"),
+                                     order_path="batch", orders_rate=self.cfg.get("orders_rate", 10),
+                                     place_workers=self.cfg.get("place_workers", 1))
+            if self.broker.rate_headers_off:
+                self.log("warning", msg=f"order path: the installed coinbase-advanced-py ({library_version()}) "
+                                        "does not know rate_limit_headers; its clients are built without it, so the "
+                                        "heartbeat has no rate_limit field")
         if self.broker is None:
             self.broker = (LiveBroker(self.cfg.get("count_usdc_as_cash", False), self.cfg.get("quote", "USD"))
                            if self.mode == "live" else PaperBroker(self.cfg.get("paper_capture", 0.5)))
@@ -1060,6 +1452,7 @@ class Engine:
                                              "usdc_hold": round(self.broker.last_usdc[1], 2)}
                                             if getattr(self.broker, "last_usdc", None) is not None else {}),
                      step_s=self._step_s(),
+                     **self._hb_live_fields(),
                      **({"tb_err": self._tb_err} if self._tb_err else {}))
             self.counts = {}
             self._tm = {k: [] for k in self._tm}
@@ -1081,6 +1474,7 @@ class Engine:
 
     def _settle(self, m, t):
         """Book fills for minute m (the one that just closed)."""
+        snap_kw = self._settle_snap(t) if self._batch_on() else {}     # batch path: one read of every order
         for c in self.coins:
             if not any(lad["orders"] for lad in self.ladders(c)):
                 continue
@@ -1093,7 +1487,7 @@ class Engine:
                        and not (side == "BUY" and key != "e4" and lad.get("tp4_touched") and not self.broker.live)]
                 if not sel:
                     continue
-                for (lid, key), q, px, fee, done in self.broker.fills(c, sel, bar, m, tick):
+                for (lid, key), q, px, fee, done in self.broker.fills(c, sel, bar, m, tick, **snap_kw):
                     lad = self.state["ladders"].get(lid)
                     o = lad["orders"].get(key) if lad else None
                     if o is None:
@@ -1240,6 +1634,8 @@ class Engine:
         return self.last_close(c, t)
 
     def _allocate(self, pn, t):
+        if self._batch_on():
+            return self._allocate_batch(pn, t)
         busy, armed = set(), {}
         for lad in self.ladders():
             if lad["status"] == "armed":
@@ -1345,6 +1741,348 @@ class Engine:
             self.count("arm")
             self.log("arm", t=t, coin=c, ladder=lad["id"], px=px, usd=round(size * px), pred=round(pred, 1),
                      sigma_bp=round(float(row["sig"]) * 1e4, 1), usd_bids_ahead=ahead)
+
+    # ---------- the batch order path (README, "Order path"): the same orders as _allocate, fewer requests
+    BATCH_METHODS = ("snapshot", "cancel_many", "best_bids", "place_many", "batch_on", "take_counts", "take_trips",
+                     "rate_limit", "fills_since", "read_one", "switch_off")
+    MISMATCH_OFF = 2                                       # mismatches of the snapshot that switch it off
+
+    def _batch_on(self):
+        """The batch path runs when the setting is "batch", the broker is live and has the batch methods (a paper
+        broker never does)."""
+        b = self.broker
+        return getattr(self, "order_path", "serial") == "batch" and bool(getattr(b, "live", False)) and all(
+            hasattr(b, m) for m in self.BATCH_METHODS)
+
+    FALLBACKS = ("snap_miss", "bbo_miss", "cancel_single")     # broker counters that mean a single-request fallback
+
+    def _fallback(self, t):
+        """fallback_min: at most once per minute step (keyed by the step's minute), when anything in it fell back from
+        a batch request to today's single requests."""
+        key = pd.Timestamp(t).floor("min")
+        if getattr(self, "_fb_minute", None) != key:
+            self._fb_minute = key
+            self.count("fallback_min")
+
+    def _broker_news(self, t):
+        """The broker's batch-path counters into this minute's counts; a warning for each piece it switched off."""
+        try:
+            for k, v in self.broker.take_counts().items():
+                self.count(k, v)
+                if k in self.FALLBACKS and v:
+                    self._fallback(t)
+            for p in self.broker.take_trips():
+                self.count("batch_fallback")
+                self._fallback(t)
+                self.log("warning", t=t, msg=f"order path: {p} switched off after {self.broker.BREAK_AFTER} failed "
+                                             "requests in a row; single requests until the bot restarts")
+        except Exception:
+            self.count("obs_error")
+
+    def _hb_live_fields(self):
+        """Heartbeat fields of the live broker: library, the installed coinbase-advanced-py version (first heartbeat
+        of the process, when it can be read); rate_limit, the venue's last limit headers (batch path, once seen).
+        Nothing for any other broker."""
+        out = {}
+        try:
+            if isinstance(self.broker, LiveBroker) and not getattr(self, "_lib_logged", False):
+                self._lib_logged = True
+                v = library_version()
+                if v:
+                    out["library"] = v
+            rl = self.broker.rate_limit() if self._batch_on() else None
+            if rl:
+                out["rate_limit"] = rl
+        except Exception:
+            self.count("obs_error")
+        return out
+
+    def _settle_snap(self, t):
+        """Batch path, before _settle's loop: one read of every resting order of every ladder ({} when the piece is
+        off: every order is then read singly, as on the serial path). Orders with a fill since the previous batch
+        settle (one fills request, from its wall time minus 10 s; the first time 3 minutes back) are left out of it
+        and read singly. If the fills request raises, no snapshot this minute (snap_miss for every order)."""
+        ids = [o["id"] for lad in self.ladders() for o in lad["orders"].values()]
+        if not self.broker.batch_on("snapshot"):
+            if ids:
+                self._fallback(t)                          # switched off: every order read singly this minute
+            return {}
+        if not ids:
+            return {}
+        now = pd.Timestamp(self.clock())
+        prev = getattr(self, "_snap_prev", None)
+        since = prev - pd.Timedelta(seconds=10) if prev is not None else now - pd.Timedelta(minutes=3)
+        try:
+            recent = set(self.broker.fills_since(since))
+        except Exception:
+            self.count("snap_miss", len(ids))
+            self._fallback(t)
+            return {}
+        self._snap_prev = now
+        ask = [i for i in ids if i not in recent]          # a recent fill: read singly, as today
+        snap = dict(self.broker.snapshot(ask)) if ask else {}
+        self._broker_news(t)
+        cov = [i for i in ask if i in snap]
+        if cov:                                            # running check: one covered order also read singly
+            n = getattr(self, "_snap_check_n", 0)
+            self._snap_check_n = n + 1
+            i = cov[n % len(cov)]
+            try:
+                one = self.broker.read_one(i)
+            except Exception:
+                one = None                                 # no check this minute; the snapshot's view stands
+            if one is not None:
+                if self._snap_differs(snap[i], one):
+                    self.count("snap_mismatch")
+                    self.log("warning", t=t, msg="order path: the order list differs from the single read",
+                             order=i, snapshot=snap[i], single=one)
+                    self._snap_mismatch = getattr(self, "_snap_mismatch", 0) + 1
+                    if self._snap_mismatch >= self.MISMATCH_OFF:
+                        self.broker.switch_off("snapshot")
+                        self._broker_news(t)
+                        return {}                          # read every order singly from this minute on
+                snap[i] = one
+        return {"snap": snap}
+
+    def _snap_differs(a, b):
+        """A snapshot dict a against a single read b made after it: a mismatch only for what cannot happen between two
+        reads: a shows more filled than b; or equal fills and a different average price; or equal fills and a shows
+        more fees; or a's status final and b's not (floats to 1e-9 relative). Any other status change (OPEN then
+        CANCEL_QUEUED, CANCELLED or EXPIRED, PENDING then OPEN) is a change between the reads, not a mismatch."""
+        def eq(x, y):
+            return abs(x - y) <= 1e-9 * max(abs(x), abs(y))
+        if a["filled"] > b["filled"] and not eq(a["filled"], b["filled"]):
+            return True
+        if eq(a["filled"], b["filled"]):
+            if not eq(a["avg"], b["avg"]):
+                return True
+            if a["fees"] > b["fees"] and not eq(a["fees"], b["fees"]):
+                return True
+        return a["status"] in LiveBroker.TERMINAL and b["status"] not in LiveBroker.TERMINAL
+    _snap_differs = staticmethod(_snap_differs)
+
+    def _cancel_answer(self, lad, key, t, minute, ans):
+        """_cancel with the broker's answer already in hand (inc, ok): the same bookkeeping, in the same order."""
+        o = lad["orders"].pop(key, None)
+        if o is None:
+            return True
+        o["cancel_req"] = True
+        inc, ok = ans.get(o["id"], (None, False))
+        if inc:                                            # it filled before the cancel took effect
+            q, px, fee = inc
+            o["filled"] += q
+            o["value"] += q * px
+            o["fees"] += fee
+            self._apply_fill(lad, key, o, q, px, fee, minute or t.floor("min"))
+        if not ok:
+            lad["orders"][key] = o
+            self.count("cancel_unconfirmed")
+            self.log("warning", t=t, coin=lad["coin"], ladder=lad["id"], key=key, msg="cancel not confirmed; retrying")
+            return False
+        if o["side"] == "BUY" and np.isfinite(self.cash_live):
+            self.cash_live += self.hold_usd(o)
+        return True
+
+    def _allocate_batch(self, pn, t):
+        """_allocate, _arm_plan, _arm and _place with today's outcome for every coin, on fewer requests: decide every
+        coin first; one best-bid request; one batch cancel of the dropped and re-priced bids (confirmed by reading);
+        one place_many of the new bids, highest score first."""
+        # a. candidates and cash: as _allocate
+        busy, armed = set(), {}
+        for lad in self.ladders():
+            if lad["status"] == "armed":
+                armed[lad["coin"]] = lad
+            elif "4" in lad["tranches"] or "e4" in lad["orders"]:
+                busy.add(lad["coin"])
+        halted = self._halted(t)
+        prev = t - pd.Timedelta(minutes=1)
+        cands, rows = [], {}
+        if not halted and self.fresh("BTC", t):
+            for c in self.tradable:
+                if c in busy or not self.fresh(c, t) or c in self._skip_old:
+                    continue
+                row = pn[c].iloc[-1]
+                if not all(np.isfinite(row[f]) for f in ("level", "sig", "z_res60", "bid_depth_bp")):
+                    continue
+                pred = float(np.mean([m.predict(row[wick.FEATS].to_numpy(np.float64)[None, :])[0] for m in self.models]))
+                if pred > self.thr:
+                    cands.append((pred, c))
+                    rows[c] = row
+        cands.sort(reverse=True)
+        free = self.free_cash() + sum(self.hold_usd(l["orders"]["e4"]) for l in armed.values() if "e4" in l["orders"]
+                                      and l["coin"] not in self._skip_old)   # a skipped coin's bid keeps resting
+        alloc = {}
+        for pred, c in cands:
+            want = self.signal_usd(c) * self.rung_w["4"]   # order notional; its hold adds the maker fee
+            if want <= 0:
+                self.count("no_adv")
+                continue
+            need = want * (1 + self.fee_m())
+            if need <= free:
+                alloc[c], free = want, free - need
+            elif free >= 0.5 * need:
+                alloc[c], free = 0.999 * free / (1 + self.fee_m()), 0.0
+            else:
+                self.count("cash_short")
+                self.log("cash_short", t=t, coin=c, pred=round(pred, 1), want=round(want), free=round(max(free, 0)))
+        # b. decide every coin, no request in between: drop (lost approval or cash), keep, re-price or new
+        drop = [lad for c, lad in armed.items() if c not in alloc and c not in self._skip_old]
+        dec = []
+        for pred, c in cands:
+            if c not in alloc:
+                continue
+            lad, sp = armed.get(c), self.spec(c)
+            px = floor_to(float(rows[c]["level"]), sp.tick)
+            size = floor_size(alloc[c] / px, sp.lot)
+            o = lad["orders"].get("e4") if lad is not None else None
+            if lad is not None:
+                fresh = not o or not o.get("expires") or \
+                    pd.Timestamp(o["expires"]) - self.clock() > pd.Timedelta(seconds=REFRESH_S)
+                if o and fresh and abs(o["px"] - px) < sp.tick / 2 and abs(o["size"] - size) <= 0.02 * size:
+                    lad.update(sig=float(rows[c]["sig"]), pred=pred)
+                    continue                               # unchanged: keep the queue position
+                if not o:
+                    lad.update(sig=float(rows[c]["sig"]), pred=pred)
+            dec.append(dict(c=c, pred=pred, row=rows[c], px=px, size=size, plan_size=size, lad=lad, o=o, go=True))
+        # c. best bids: one request for every coin that may get a bid; a coin it does not cover is asked singly
+        bids = {}
+        if dec and self.broker.batch_on("best_bids"):
+            bids = self.broker.best_bids([self.spec(d["c"]).product for d in dec])
+            self._broker_news(t)
+        elif dec:
+            self._fallback(t)                              # switched off: each coin's best bid asked singly
+        # d. cancel: the dropped bids, then the re-priced ones, in today's order; one request, confirmed by reading
+        todo = [(lad, None) for lad in drop] + [(d["lad"], d) for d in dec if d["o"]]
+        ans = None
+        live = [lad["orders"]["e4"] for lad, _ in todo if "e4" in lad["orders"]]
+        if live and not self.broker.batch_on("cancel_many"):
+            self._fallback(t)                              # switched off: today's single cancels
+        if live and self.broker.batch_on("cancel_many"):
+            for o in live:
+                o["cancel_req"] = True
+            try:
+                ans = self.broker.cancel_many(live)
+            except Exception as err:                       # today's single cancels instead
+                ans = None
+                self._fallback(t)
+                self.log("warning", t=t, msg=f"order path: batch cancel failed, single cancels used: {err!r}"[:300])
+            self._broker_news(t)
+        for lad, d in todo:
+            gone = self._cancel(lad, "e4", t, minute=prev) if ans is None else \
+                self._cancel_answer(lad, "e4", t, prev, ans)
+            if d is None:
+                if gone and lad["status"] == "armed":
+                    self.state["ladders"].pop(lad["id"], None)
+                    self.count("disarm")
+            elif not gone or lad["status"] != "armed":     # still resting (retry next minute), or it filled first
+                d["go"] = False
+            else:
+                self.count("reprice")
+                lad.update(sig=float(d["row"]["sig"]), pred=d["pred"])
+        # e. the market test of _arm_plan, with the bids of c
+        plans = []
+        for d in dec:
+            if not d["go"]:
+                continue
+            c, lad = d["c"], d["lad"]
+            prod = self.spec(c).product
+            bb = bids[prod] if prod in bids else self._market_px(c, t)
+            if not (np.isfinite(bb) and d["px"] < bb):     # market already at or below the level
+                if lad is not None and not lad["orders"]:
+                    self.state["ladders"].pop(lad["id"], None)
+                self.count("skip_market_below")
+                continue
+            plans.append(d)
+        self._mark("cancel", t)
+        # f. place: one place_many in today's order, then what _arm and _place do with each answer
+        for d in plans:
+            c, sp = d["c"], self.spec(d["c"])
+            lad = d["lad"]
+            if lad is not None and lad["id"] not in self.state["ladders"]:
+                lad = None
+            d["new"] = lad is None
+            if d["new"]:
+                self.state["seq"] += 1
+                lad = dict(id=f"{c}-{self.state['seq']}", coin=c, status="armed", sig=float(d["row"]["sig"]),
+                           pred=d["pred"], S=self.signal_usd(c), orders={}, tranches={}, pending=[], pnl=0.0)
+                self.state["ladders"][lad["id"]] = lad
+            lad["S"] = self.signal_usd(c)
+            d["lad"], d["sp"], d["notes"] = lad, sp, []
+            if self._no_buys:                              # _place's checks before its request
+                d["res"] = (False, "no new bids while market data or cash is unavailable")
+                continue
+            d["size"] = floor_size(d["size"], sp.lot)
+            if d["size"] <= 0 or d["size"] * d["px"] < sp.min_usd:
+                d["res"] = (False, "below minimum size")
+                continue
+            d["ttl"] = self.ttl
+            d["end"] = self.clock() + pd.Timedelta(seconds=self.ttl) if self.ttl else None
+        sent = [d for d in plans if "res" not in d]
+        try:
+            out = self.broker.place_many([(d["sp"], "BUY", d["px"], d["size"], True, d["end"]) for d in sent]) \
+                if sent else []
+        except Exception as err:                           # some bids may rest unknown to the state: sweep now
+            self._fallback(t)
+            self.log("error", t=t, error=f"order path: place_many failed, no new bid this minute: {err!r}"[:300])
+            for d in plans:
+                if not d["lad"]["orders"]:
+                    self.state["ladders"].pop(d["lad"]["id"], None)
+            self.reconcile(t)
+            self._mark("place", t)
+            return
+        self._broker_news(t)
+        for d, (oid, err) in zip(sent, out):
+            while oid is None and err and any(x in str(err).upper() for x in ("DURATION", "END_TIME", "EXPIR")):
+                if d["ttl"] < self.ttl:
+                    pass                                   # sent before an earlier bid raised the lifetime: send again
+                elif 0 < self.ttl < 3600:
+                    self.ttl = min(3600, 2 * self.ttl)     # Coinbase wants longer-lived bids: use its minimum
+                    self.state["gtd_ttl_s"] = self.ttl
+                    d["notes"].append(f"good-til-date bids now last {self.ttl} s (Coinbase minimum)")
+                else:
+                    break
+                d["ttl"] = self.ttl
+                d["end"] = self.clock() + pd.Timedelta(seconds=self.ttl) if self.ttl else None
+                try:
+                    oid, err = self.broker.place_many([(d["sp"], "BUY", d["px"], d["size"], True, d["end"])])[0]
+                except Exception as e:                     # never raises (place_many); kept for safety
+                    oid, err = None, repr(e)[:300]
+                self._broker_news(t)
+            if oid is None:
+                d["res"] = (False, err or "rejected")
+                d["err"] = err
+                continue
+            lad, end = d["lad"], d["end"]
+            lad["orders"]["e4"] = dict(id=oid, side="BUY", px=d["px"], size=d["size"], filled=0.0, value=0.0, fees=0.0,
+                                       active_from=t.isoformat(), first_fill=None, open_rule=True,
+                                       expires=None if end is None else end.isoformat())
+            if np.isfinite(self.cash_live):
+                self.cash_live -= self.hold_usd(lad["orders"]["e4"])
+            d["res"] = (True, None)
+        for d in plans:                                    # every bid is placed: the events, in today's order
+            lad = d["lad"]
+            for msg in d["notes"]:
+                self.log("warning", t=t, msg=msg)
+            if "err" in d:
+                self.log("reject", t=t, coin=lad["coin"], ladder=lad["id"], key="e4", px=d["px"], size=d["size"],
+                         error=d["err"])
+            if not d["res"][0]:
+                if not lad["orders"]:
+                    self.state["ladders"].pop(lad["id"], None)
+                continue
+            if d["new"]:
+                ahead = None
+                if self.cfg.get("log_book", True):
+                    try:
+                        a, reached = self.market.bids_ahead(d["sp"].product, d["px"])
+                        ahead = round(a) if reached else f">{round(a)}"
+                    except Exception:
+                        pass
+                self.count("arm")
+                self.log("arm", t=t, coin=d["c"], ladder=lad["id"], px=d["px"], usd=round(d["plan_size"] * d["px"]),
+                         pred=round(d["pred"], 1), sigma_bp=round(float(d["row"]["sig"]) * 1e4, 1),
+                         usd_bids_ahead=ahead)
+        self._mark("place", t)
 
     # ---------- risk
     def _new_day(self, t):

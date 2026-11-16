@@ -31,5 +31,8 @@
     "SOL",
     "XRP",
     "ZEC"
-  ]
+  ],
+  "order_path": "batch",
+  "orders_rate": 10,
+  "place_workers": 3
 }

@@ -7,6 +7,12 @@ date bid), limit GTC sell, get_order, batch cancel, list orders, list fills, acc
 checks the requests are accepted and the responses parse into what the engine expects. The X-Sandbox header simulates
 the documented errors (insufficient funds on create and preview, failed cancel).
 
+The batch order path's requests (README, "Order path") are checked the same way on a second broker whose clients are
+built as the batch path builds them (rate_limit_headers=True, a client factory, three placing threads): snapshot (list
+orders by ids), cancel_many (batch cancel, then reads), best_bids (best bid/ask), place_many on one and on three
+threads, the venue's limit headers. The sandbox's answers are static, so some of these checks may fail there for
+reasons that are not the bot's: see the comments at each one.
+
 Run where the sandbox is reachable (the sandbox-test workflow on GitHub Actions): python bot/spot/sandbox_test.py
 Exit code 0 = every check passed.
 """
@@ -49,6 +55,21 @@ def broker():
     return b
 
 
+def batch_broker():
+    """A broker with clients built as the batch path builds them: limit headers on, a factory, three threads."""
+    from coinbase.rest import RESTClient
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+    key = ec.generate_private_key(ec.SECP256R1())
+    pem = key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.TraditionalOpenSSL,
+                            serialization.NoEncryption()).decode()
+
+    def make():
+        return RESTClient(api_key="organizations/sandbox/apiKeys/sandbox", api_secret=pem,
+                          base_url="api-sandbox.coinbase.com", timeout=10, rate_limit_headers=True)
+    return LiveBroker(client=make(), client_factory=make, order_path="batch", orders_rate=10, place_workers=3)
+
+
 RESULTS = []
 
 
@@ -63,6 +84,47 @@ def check(name, fn, ok):
         RESULTS.append((name, False))
         print(f"FAIL  {name}: exception\n{traceback.format_exc()[-1500:]}")
         return None
+
+
+STATUS_KEYS = {"filled", "avg", "fees", "status", "last_fill"}
+
+
+def batch_checks(sp, end, order, known):
+    """The batch path's requests and the shapes of their answers (README, "Order path")."""
+    b = batch_broker()
+    # snapshot: one list request filtered by order ids. Its shape is the dict status() returns. The static sandbox
+    # may ignore the order_ids filter (any order it names but the bot did not ask for is dropped by the broker).
+    check("batch: snapshot (list orders by ids) -> {id: the dict status() returns}", lambda: b.snapshot([known]),
+          lambda o: isinstance(o, dict) and all(set(v) == STATUS_KEYS and isinstance(v["filled"], float)
+                                                and isinstance(v["status"], str) for v in o.values()))
+    # may fail on the sandbox if its static list answer does not name this static order
+    check("batch: snapshot names the order it was asked for", lambda: b.snapshot([known]), lambda o: known in o)
+    # cancel_many: one batch cancel, then reads until final or 2 s; the static order may never show a final status,
+    # so only the shape is checked
+    check("batch: cancel_many (batch cancel + reads) -> a (fill or None, confirmed) pair for the order",
+          lambda: b.cancel_many([order(known)]),
+          lambda o: isinstance(o, dict) and set(o) == {known} and isinstance(o[known], tuple) and len(o[known]) == 2
+          and isinstance(o[known][1], bool))
+    # best_bids: GET /best_bid_ask. The sandbox is documented for the Accounts and Orders endpoints only, so it may
+    # answer 404 here: the broker then returns {} (never raises), which the first check accepts
+    check("batch: best_bids (best bid/ask) -> {product: float}, never raises", lambda: b.best_bids(["BTC-USD"]),
+          lambda o: isinstance(o, dict) and all(isinstance(v, float) and v > 0 for v in o.values()))
+    check("batch: best_bids gives a bid for BTC-USD (may fail: the sandbox may not serve this endpoint)",
+          lambda: b.best_bids(["BTC-USD"]), lambda o: "BTC-USD" in o)
+    check("batch: place_many, one request -> [(order id, None)] as place() answers",
+          lambda: b.place_many([(sp, "BUY", 50000.0, 0.001, True, end)]),
+          lambda o: isinstance(o, list) and len(o) == 1 and o[0][0] is not None and o[0][1] is None)
+    check("batch: place_many on three threads, each on its own client -> three answers in request order",
+          lambda: b.place_many([(sp, "BUY", 50000.0 - k, 0.001, True, end) for k in range(3)]),
+          lambda o: isinstance(o, list) and len(o) == 3 and all(x[0] is not None and x[1] is None for x in o))
+    # may fail on the sandbox if it does not send the x-ratelimit headers (the production venue's documentation
+    # says its answers carry them; the library copies them when rate_limit_headers=True)
+    check("batch: the venue's rate-limit headers were seen", b.rate_limit,
+          lambda o: isinstance(o, dict) and any(v is not None for v in o.values()))
+    # the counters and any piece switched off are printed; a piece may switch off on the sandbox when its static
+    # answers name none of the orders asked for (three such reads in a row)
+    check("batch: no 429 from the sandbox (counters and switched-off pieces printed)",
+          lambda: (b.take_counts(), b.take_trips()), lambda o: "http_429" not in o[0])
 
 
 def main():
@@ -106,6 +168,8 @@ def main():
           lambda: b._find_by_client_id(listed["product_id"], listed.get("client_order_id"), tries=1),
           lambda o: o == listed["order_id"])
 
+    batch_checks(sp, end, order, known or oid)
+
     HEADER["X-Sandbox"] = "PostOrder_insufficient_fund"
     check("place with insufficient funds -> rejected with the error text",
           lambda: b.place(sp, "BUY", 50000.0, 0.001, end_time=end),
@@ -116,6 +180,11 @@ def main():
     HEADER["X-Sandbox"] = "CancelOrders_failure"
     check("cancel that fails -> no crash, unconfirmed unless the order is terminal", lambda: b.cancel(order(oid)),
           lambda o: isinstance(o, tuple) and len(o) == 2)
+    bb = batch_broker()
+    check("batch: cancel_many when the batch cancel fails -> no crash, a (fill, confirmed) pair per order",
+          lambda: bb.cancel_many([order(known or oid)]),
+          lambda o: isinstance(o, dict) and len(o) == 1 and all(isinstance(v, tuple) and len(v) == 2
+                                                                and isinstance(v[1], bool) for v in o.values()))
     HEADER.pop("X-Sandbox")
 
     bad = [n for n, ok in RESULTS if not ok]
