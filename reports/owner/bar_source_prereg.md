@@ -232,6 +232,30 @@ Run as "How the reads are run" says, steps 1 to 4. The record is reports/owner/r
 - **Limits:** those of Part 1 (the collector's record; its BTC fallbacks; one period of three days). The paper book
   that runs the build is the forward test, on a rule fixed before it starts.
 
+## Result of the addition (read Nov 16 2026, 08:33 ET)
+The run finished at 08:58 UTC on Nov 15 (job 43689717933, branch owner/read-c2). Nothing was read before Nov 16.
+
+- **Part 1's counts are reproduced exactly:** every count of every pass, coin and day equal; 440,640 rows compared
+  with Part 1's table, none differs.
+- **The 17 traded coins together, three days:**
+
+  | Pass | Disagree on arming | Scores more than 1.0 off | Levels more than 5 bp off |
+  |---|---|---|---|
+  | A: the third book's inputs | 278 of 63,371 (0.44%) | 1,933 of 73,440 (2.63%) | 1,029 of 73,440 (1.40%) |
+  | C18: one trades row (the fourth book) | 188 of 63,326 (0.30%) | 1,434 of 73,440 (1.95%) | 730 of 73,440 (0.99%) |
+  | C2x18: two trades rows | 193 of 63,330 (0.30%) | 1,473 of 73,440 (2.01%) | 730 of 73,440 (0.99%) |
+
+- **The rule:** clause 1 met (193 of 63,330 against 278 of 63,371), clause 2 met (1,473 against 1,933), clause 3
+  met (730 against 730). **Pass.**
+- **What the second trades row costs:** five more disagreements on arming and 39 more score misses in three days
+  over 17 coins; the levels do not change. No coin is worse than under pass A on arming or on scores.
+- **Where the second row came from:** a verified trades bar in 76,250 of 77,760 coin-minutes, a verified empty
+  minute in 1,461, the final candle (no verified bar) in 49.
+- **What follows,** as fixed on Nov 15 before the output: two trades rows are acceptable, so the candle requests
+  leave the step. The build with the request at second 45 goes to its paper test as it is. Its floor is this
+  pass; with fresh answers it is the fourth book's way.
+- **Tables:** reports/owner/bar_source_c2/ (c2_summary.md, c2_counts.json, c2_per_coin.csv, the run's table).
+
 ## Deviation log
 - **Nov 11 2026, 09:17 ET (orchestrator).** Made after the tool's development run and before any minute of either
   registered window was read for this plan.

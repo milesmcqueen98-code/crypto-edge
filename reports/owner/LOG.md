@@ -905,3 +905,29 @@ FORWARD_TESTS.md.
     Its heartbeats carry the trades counters (150 bars per half hour, five coins); 15 fallbacks in about 3,400
     coin-minutes so far. Its data step ended a median of about 10 to 12 s after the minute, by runner; between
     21:00 and 23:00 UTC on Nov 14 all three books were slow (13 to 17 s).
+
+## Nov 16 2026 (times ET; UTC is five hours later)
+- **08:33. Release 4 (order path), the two-row floor read (pass), probe run 2 started, timing Part 3 on the runner.**
+  - **No work was done between 02:45 on Nov 15 and 08:26 today.** The jobs started before then finished on their
+    own; the 08:40 check of Nov 15 found Part 2 already read.
+  - **Release 4 is on `main`** (RELEASES.md). The live bot's order requests in batches, used only after
+    `wickctl order-check` has passed on the server with the installed library; until then release 3's path. Added
+    since the last entry: a hand switch (`wickctl order-path serial|batch`, a marker file the gate reads first), so
+    the way back touches no config. Final commit 513ab722: full suite (job 43691154265) 20 files, none with a
+    failure; sandbox (job 43876402271) 26 of 28, the two sandbox limits. Paper books unaffected. Rule B counts from
+    the first live minute on the new path.
+  - **The addition to the bar-source plan, read: pass** (plan, "Result of the addition"). Part 1's counts
+    reproduced exactly. Two trades rows for all 18 coins: 193 disagreements on arming of 63,330 against 188 with
+    one row and 278 with the third book's inputs; score misses 1,473 against 1,434 and 1,933; levels the same as
+    with one row. So the build that asks for candles at second 45 goes to its paper test as it is.
+  - **Step probe, run 2:** dispatched at 08:27 (job 43875928226; its Run step began 13:27:57 UTC). Read set for
+    13:50.
+  - **Timing study, Part 3, phase 1 reviewed.** The six policies on file reproduce byte for byte (15 files), before
+    and after the agent's changes. The runner script re-derives the paths for fifteen start times from the stored
+    prints, checks the six old ones against the rows on file, and stores one union path per row, verified on every
+    row. Job 43876543675 dispatched at 08:31. Phase 2 (the twelve policies) follows its output.
+  - **Test A since release 3 (the status report shows CHECK):** 27 rungs, $278K bought, net -40 bp per dollar.
+    It is one market-wide minute: at 20:54 UTC on Nov 14 the first bid of 14 coins filled within the minute, the
+    book ran short of cash, and most of those rungs left by time an hour later at lower prices. The third and
+    fourth books show the same (exits since then -$604 and -$895 against -$536 here). No fault and no error
+    event; no new fill since 22:10 UTC on Nov 14. The rule reads at three weeks and 60 rungs.

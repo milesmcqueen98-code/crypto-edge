@@ -126,6 +126,12 @@
     first; `wickctl order-path batch` removes it. Either applies at the next start. No config is touched.
   - **Unchanged:** the gate's other rules, the engine, the tests' results. The offline suite runs once more on the
     final commit.
+- **Nov 16 2026, 08:33 ET (orchestrator): released as release 4.** Final commit 513ab722 on branch
+  owner/order-path: the gate, the hand switch (`wickctl order-path serial|batch`) and the order check's closing
+  lines on top of the reviewed code; the engine is as reviewed. Full offline suite on that commit: runner job
+  43691154265, 20 test files, none with a failure. Sandbox on that commit: job 43876402271, 26 of 28 (the two
+  sandbox limits). The first live day's figures stand as fixed above, counted from the first live minute on the
+  new path.
 
 ## Sources
 - Cancel Orders: https://docs.cdp.coinbase.com/api-reference/advanced-trade-api/rest-api/orders/cancel-order
