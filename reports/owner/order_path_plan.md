@@ -119,6 +119,13 @@
     events and the heartbeats show it), not from the update.
   - **The suite on the commit before this change** (d21317af, run 43673559075): 20 test files, none with a
     failure; replay 156 rungs identical; the three-way simulation equal in both windows.
+- **Nov 15 2026, 02:40 ET (orchestrator), before the release.** A hand switch back to the serial path.
+  - **What stood:** the way back on one server was an edit of the live config: `"inputs_local": true` with the
+    path and all the input settings restated. Six keys by hand on a trading server, where a typo stops the bot.
+  - **Fixed now:** `wickctl order-path serial` puts a marker file in the bot's state folder, and the gate reads it
+    first; `wickctl order-path batch` removes it. Either applies at the next start. No config is touched.
+  - **Unchanged:** the gate's other rules, the engine, the tests' results. The offline suite runs once more on the
+    final commit.
 
 ## Sources
 - Cancel Orders: https://docs.cdp.coinbase.com/api-reference/advanced-trade-api/rest-api/orders/cancel-order
