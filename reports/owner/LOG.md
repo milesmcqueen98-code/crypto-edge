@@ -1053,3 +1053,27 @@ FORWARD_TESTS.md.
     measure is added or loosened.
 - **14:41. The repeat of the suite on the pinned commit ended clean** (job 43927028467, 85 minutes): the same 22
   files, none with a failure, the same 830 passing checks. Two clean runs on 9e6f53b3 on two runners.
+- **15:05. The side-by-side trades pass is built and reviewed; the suite is running on it.**
+  - **The build** (Opus agent, branch owner/trades-workers, commit 4c1717ac; facts in
+    reports/owner/trades_workers_candidate.md on that branch): option `trades_workers`, off unless set.
+    - One function in `bot/market.py` owns the threads, the pace, the stop and the deadline. Workers fetch data
+      only. The engine works out every coin's plan first and applies the results afterwards, in today's order,
+      with the same code the one-after-another loop uses.
+    - With 1 or absent the old path runs. The loop body was split into three functions; I compared them with the
+      old lines one by one.
+  - **Reviewed, and what the review settles:**
+    - the pace: each send reserves a slot at least 1/7 s after the one before and is then checked against the
+      last send that actually went out, under one lock for all workers and the old path;
+    - a refusal or a rate limit: the stop and every send are recorded under one lock, so nothing is sent once the
+      stop is set, not a retry and not the next page of a coin in the middle of paging;
+    - the budget: no job starts and no request is sent after the deadline, the pass returns by it, and a late
+      answer is thrown away.
+  - **What it cannot do, said plainly:** a request that is already on its way when another one is refused cannot
+    be called back. With three workers that is at most two requests. The old path has none.
+  - **Where the two paths differ** (each shown by a test): after a stop the old path keeps the coins before the
+    refused one and the new path keeps whatever had arrived; the new path reaches coins the old one would not
+    reach in time; an answer that arrives after the deadline is used by the old path and dropped by the new one.
+  - **Tests here:** the new file 79 checks (run again by me, passed), 16 light files without a failure. The five
+    long files run in the full suite on a runner (job 43945430666, started 20:01 UTC).
+  - **Infrastructure for the sixth book** is being built by a Sonnet agent (branch owner/tw-infra). The fifth
+    book's pair tool and workflows stay untouched; the new pairs get their own tool.
