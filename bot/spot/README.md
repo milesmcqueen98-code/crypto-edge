@@ -362,8 +362,11 @@ request: it serves only the rows behind the newest one.
   exactly the request the step would make with end M (the same 6 minutes, the merge by provenance, the counters, the
   window cut). An answer never holds a row for the open minute, so the pass never gives M a row. The coins not on the
   list keep their candle request in the step, as before.
-- **Allowed values.** From `confirm_s` + 5 (30 s by default) to 50 s. Outside that range, not a number, or without
-  `"newest_bar": "trades"`, the engine stops at start-up (`ValueError`).
+- **Allowed values.** From `confirm_s` + 5 (30 s by default) to 50 s. With `"newest_bar": "trades"`, a value outside
+  that range or not a number stops the engine at start-up (`ValueError`). Without trades the key is ignored, whatever
+  its value: the engine runs exactly as without it and writes one `warning` event at each start (`candles_at_s is set
+  but newest_bar is not "trades": the setting is ignored (candle requests stay in the step; ...)`), so the watchdog
+  sends it to your phone.
 - **Paper** runs the pass in one go. **Live**, the fast-poll loop spends its waiting time on the pass's requests, a
   few coins per turn, so the fast polls keep their cadence. The pass starts no request unless it would end 3 s before
   the next step even if it took its whole timeout (judged by the longer of its own last request and 4 s); the coins
@@ -430,8 +433,11 @@ a code update also moves the live bot to the release's inputs:
 - **Emergency switch:** `"inputs_local": true` in `config.live.json` keeps the file's own input settings, and they no
   longer follow releases. The file must then state the mode itself (for the mode before release 3:
   `"newest_bar": "candles"` and `"stale_guard": false`), because a key it leaves out takes the code's default. A live
-  file copied from `config.json` from release 5 on also holds `"candles_at_s"`: with `"newest_bar": "candles"` remove
-  that key too, or the engine refuses to start. Remove `"inputs_local"` to follow the release again.
+  file copied from `config.json` from release 5 on also holds `"candles_at_s"`; it may stay. With `"newest_bar":
+  "candles"` the bot ignores it: the inputs line reads `inputs: candles for every coin; stale guard off` (no word of a
+  candle pass), `live` prints its warning about starting without the release's inputs, and the engine writes one
+  `warning` event saying `candles_at_s` is ignored (both reach your phone through the watchdog). Remove
+  `"inputs_local"` to follow the release again.
 - Paper configs (`config.json`, `config.w2.json`, `config.tb.json`, any other name) run exactly what their own file
   says.
 - A minute skipped by the stale guard (no new bids because BTC's newest price row was missing or old; exits still run)

@@ -5,7 +5,7 @@ real clock and no real sleep: a fake clock (epoch seconds) drives the engine's w
 The market is the synthetic one of newest_bar_test.py on that fake clock: a candle request takes a set time and is
 answered as the venue would answer it then (made at the request's own time, no row for the minute open then).
 Checks:
-  - configuration: only with "newest_bar": "trades", only from confirm_s + 5 to 50 seconds, a number;
+  - configuration: in trades mode only from confirm_s + 5 to 50 seconds, a number;
   - paper: the pass runs once per minute, at the set second, in one go, each request exactly update_spot's with end
     = the open minute, and never gives the open minute a row; a second call for the same minute asks nothing;
   - live: fast polls every poll seconds before and during the pass; the pass's requests sit between them, a few per
@@ -22,7 +22,10 @@ Checks:
   - without the setting the step asks every coin's candles with end = its minute, and no new counter appears;
   - the pass's requests have one try of 4 s (the step's and the on-demand requests are today's); a request that
     raises or gives no rows counts pre_error, is not marked fetched and is left to the step; no request starts
-    unless a whole 4 s timeout would end before the stop; the live turn rule is judged by the last request.
+    unless a whole 4 s timeout would end before the stop; the live turn rule is judged by the last request;
+  - without trades (newest_bar "candles" or absent) the key is ignored, whatever its value: the engine builds, one
+    warning event at start, run's wait and every candle request as without the key, and the inputs line does not
+    mention a pass; in trades mode a bad value still stops the start.
 
 Usage: python bot/spot/candle_pass_test.py
 """
@@ -120,7 +123,11 @@ def config_errors():
             return str(e)
         finally:
             shutil.rmtree(sd)
-    check("config: candles_at_s needs newest_bar trades", err(newest_bar="candles", candles_at_s=45) is not None)
+    check("config: candles_at_s with newest_bar candles does not stop the start (ignored; see ignored())",
+          err(newest_bar="candles", candles_at_s=45) is None)
+    check("config: in trades mode a bad value still stops the start (60, text, true)",
+          err(candles_at_s=60) is not None and err(candles_at_s="45") is not None
+          and err(candles_at_s=True) is not None)
     check("config: candles_at_s 29.9 refused (confirm_s 25: from 30)", err(candles_at_s=29.9) is not None)
     check("config: candles_at_s 50.5 refused", err(candles_at_s=50.5) is not None)
     check("config: candles_at_s as text refused", err(candles_at_s="45") is not None)
@@ -421,6 +428,69 @@ def pass_timeout():
     shutil.rmtree(sd)
 
 
+def ignored():
+    """candles_at_s without trades (newest_bar "candles", or absent): ignored as if absent, one warning at start."""
+    import types
+
+    def build(nb, **extra):
+        sd = tempfile.mkdtemp(prefix="cp_ign_")
+        cfg = dict(NB.CFG, **extra)
+        if nb is not None:
+            cfg["newest_bar"] = nb
+        eng = E.Engine(mode="paper", cfg=cfg, state_dir=sd, market=None, broker=E.PaperBroker(0.5),
+                       clock=lambda: NB.T0, echo=False)
+        eng.coins = ["ETH", "SOL"]
+        F = [ep(T) + 10.0]
+        eng.market = ClockMarket(["BTC"] + eng.coins, F)
+        eng.clock = lambda: pd.Timestamp(F[0], unit="s")
+        eng.refresh_adv = lambda t: None
+        eng._timer = lambda: NB.CLOCK[0]
+        waits = []
+        eng._wait_step = lambda *x, **k: waits.append(x)
+        return eng, sd, F, waits
+
+    def run(eng, F):
+        real = E.time
+        E.time = types.SimpleNamespace(time=lambda: F[0], sleep=lambda x: F.__setitem__(0, F[0] + max(0.0, x)),
+                                       monotonic=real.monotonic)
+        try:
+            eng.run(2.5)                                     # start, then the steps of two minutes
+        finally:
+            E.time = real
+
+    def warnings(sd):
+        import json
+        return [e for e in map(json.loads, open(os.path.join(sd, "events.jsonl"))) if e.get("kind") == "warning"]
+
+    ref, sd0, F0, _ = build("candles")
+    run(ref, F0)
+    want = [(r["coin"], r["start"], r["end"], r["at"], r["tries"], r["timeout"]) for r in ref.market.req]
+    for nb, tag in (("candles", 'newest_bar "candles"'), (None, "newest_bar absent")):
+        for v in (45, 99, "x"):
+            eng, sd, F, waits = build(nb, candles_at_s=v)
+            check(f"ignored ({tag}, candles_at_s {v!r}): the engine builds, candles_at_s None",
+                  eng.candles_at_s is None and eng.newest_bar == "candles")
+            run(eng, F)
+            got = [(r["coin"], r["start"], r["end"], r["at"], r["tries"], r["timeout"]) for r in eng.market.req]
+            w = warnings(sd)
+            check(f"ignored ({tag}, candles_at_s {v!r}): one warning event at start, in plain words",
+                  len(w) == 1 and w[0]["msg"].startswith('candles_at_s is set but newest_bar is not "trades": the '
+                                                         "setting is ignored (candle requests stay in the step")
+                  and w[0]["ts"] == str(pd.Timestamp(want[0][3], unit="s").floor("min").isoformat()), str(w))
+            check(f"ignored ({tag}, candles_at_s {v!r}): run's wait takes the old path (no _wait_step), every candle "
+                  "request as without the key", not waits and got == want and len(got) >= 9, f"{len(got)} {waits}")
+            check(f"ignored ({tag}, candles_at_s {v!r}): no counter of the setting",
+                  not set(NEW) & set(eng.counts), str(eng.counts))
+            shutil.rmtree(sd)
+    check("without the key: no warning event", warnings(sd0) == [])
+    shutil.rmtree(sd0)
+    from bot.spot import release_inputs as RI
+    for c in ({"newest_bar": "candles", "candles_at_s": 45, "stale_guard": False}, {"candles_at_s": 45}):
+        line = RI.describe(c)
+        check(f"describe {c}: the line does not claim a candle pass", line == "inputs: candles for every coin; "
+              "stale guard off" and "between steps" not in line, line)
+
+
 def main():
     E.WINDOW_MIN = 30
     try:
@@ -433,6 +503,7 @@ def main():
         candle_old()
         absent()
         pass_timeout()
+        ignored()
     finally:
         E.WINDOW_MIN = 11 * 1440
     print(f"candle_pass_test: {'all passed' if not FAILS else 'FAILED: ' + ', '.join(FAILS)}")

@@ -18,6 +18,14 @@ request costs nothing. Before this, a hanging pass request was bounded only by f
 Shown by tests only (`candle_pass_test.py`, `trades_bar_test.py`): the paper books have no fast polls. The numbers
 below were made before this change.
 
+*Note, Nov 16 2026, the start-up check (on `owner/release-5`).* Without `"newest_bar": "trades"` a `candles_at_s` key
+no longer stops the engine at start-up: it is ignored, whatever its value (the engine runs exactly as without it,
+`run` takes the old wait), and the engine writes one `warning` event at each start. Why: the emergency switch to
+candles leaves the key in a live file, and a server that cannot start is worse than one that ignores a dependent
+setting. In trades mode a value out of range or not a number still raises `ValueError`. The inputs line in candle
+mode does not mention the key (`inputs: candles for every coin; ...`). The "What changed" text below describes the
+check as it was before this note.
+
 Branch `owner/release-4`, from commit `cde92521`. Prepared as a candidate; whether a bot takes it is decided by the
 owner. This file states facts only.
 
@@ -263,11 +271,13 @@ Both use the generic runner `hunt2.yml` on this branch; `commit` stays empty, no
   the trades bar at the decision, where today's step would usually have had the venue's candle. In the fourth book
   10,533 of 68,429 replaced rows (15.4%) had a candle close more than a tick from the trades bar
   (`input_release_candidate.md`). The decisions in the simulation are equal only because its answers are never old.
-- **The emergency switch needs one more key removed.** A VM set up from this release copies `config.json`, with
-  `"candles_at_s": 45`, into its live file. The switch as release 3's note gives it (`"inputs_local": true,
-  "newest_bar": "candles", "stale_guard": false`) then leaves `candles_at_s` in place, and the engine refuses to
-  start (`ValueError`: it needs `newest_bar` trades), so the service fails at every restart. The README now says to
-  remove the key too; nothing in the code catches it. A VM set up before this release has no such key in its file.
+- **The emergency switch needed one more key removed (fixed after the merge, note at the top).** A VM set up from
+  this release copies `config.json`, with `"candles_at_s": 45`, into its live file. The switch as release 3's note
+  gives it (`"inputs_local": true, "newest_bar": "candles", "stale_guard": false`) leaves `candles_at_s` in place.
+  Before the fix the engine then refused to start (`ValueError`: it needs `newest_bar` trades), so the service failed
+  at every restart. Now the engine ignores the key without trades, whatever its value: it starts in candle mode
+  exactly as without the key and writes one `warning` event at each start. In trades mode a bad value still stops
+  the start. A VM set up before this release has no such key in its file.
 - **A pass request blocks the fast polls while it runs** (no new deeper rung, take-profit or retry in that time).
   Corrected after the merge (note at the top): it now has one try with a 4 s timeout (about 5 s for a 429 with
   `bot/market.py`'s 1 s wait), and none starts unless a whole 4 s would end 3 s before the step, so it ends before

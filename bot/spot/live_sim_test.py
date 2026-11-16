@@ -322,7 +322,7 @@ def main(start, end, death=None, death_min=20, config=None, inputs=None, switch=
     # stored history has no trades list: this replay runs on final candles, whatever the config's inputs are
     cfg.update(newest_bar="candles", stale_guard=False)
     cfg.pop("trades_coins", None)
-    cfg.pop("candles_at_s", None)                          # a trades-mode setting (refused with candles)
+    cfg.pop("candles_at_s", None)                          # a trades-mode setting (ignored with a warning)
     cfg_in = None
     if inputs is not None:                                 # --inputs: the input settings of that file, taken the way
         from bot.spot import release_inputs as RI          # the live bot takes them from bot/spot/config.json

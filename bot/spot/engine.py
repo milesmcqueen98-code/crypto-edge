@@ -866,11 +866,14 @@ class Engine:
         if self.trades_rows not in ("keep", "candle_after"):
             raise ValueError(f"trades_rows must be keep or candle_after, not {self.trades_rows}")
         # trades mode: the candle requests of the coins built from trades move out of the step into a candle pass
-        # between steps, at this second of the minute (README, "Candle requests between steps"); absent: as before
+        # between steps, at this second of the minute (README, "Candle requests between steps"); absent: as before.
+        # Without trades the key is ignored (as if absent; one warning event at start), so a live file switched back
+        # to candles still starts; in trades mode a bad value stops the start
         self.candles_at_s = self.cfg.get("candles_at_s")
+        self._cp_ignored = None
+        if self.candles_at_s is not None and self.newest_bar != "trades":
+            self._cp_ignored, self.candles_at_s = self.candles_at_s, None
         if self.candles_at_s is not None:
-            if self.newest_bar != "trades":
-                raise ValueError(f"candles_at_s needs newest_bar trades, not {self.newest_bar}")
             x = self.candles_at_s
             if isinstance(x, bool) or not isinstance(x, (int, float)) or not self.confirm_s + 5 <= x <= 50:
                 raise ValueError(f"candles_at_s must be a number of seconds from confirm_s + 5 "
@@ -2248,6 +2251,10 @@ class Engine:
     # ---------- start-up, catch-up, shutdown
     def start(self):
         end = self.clock().floor("min")
+        if getattr(self, "_cp_ignored", None) is not None:  # once per start (the setting has no effect without trades)
+            self.log("warning", t=end, msg='candles_at_s is set but newest_bar is not "trades": the setting is ignored '
+                                           f'(candle requests stay in the step; candles_at_s {self._cp_ignored!r}, '
+                                           f'newest_bar {self.newest_bar})')
         self.update_spot(end)
         if self.newest_bar == "trades":
             self.trades_pass(end - pd.Timedelta(minutes=1))    # repairs the last minutes of the backfill too
