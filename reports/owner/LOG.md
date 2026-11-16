@@ -1100,10 +1100,26 @@ FORWARD_TESTS.md.
       branch for the corrected build now covers a fail on measure 4, on item 1, or on both. Seen in the status
       report's first rendering of the same first heartbeat; nothing new was read.
 - **17:03. The side-by-side build: Part 1 holds, the commit is pinned, the live check starts.**
-  - **Suite on a runner** (job 43945430666, commit `4c1717ac`): 23 test files, none with a failure, 914 passing checks (the 830 of the fifth book's commit, the new file's 79, five more for the inherited-settings list); the replay equals the research rung for rung.
+  - **Suite on a runner** (job 43945430666, commit `4c1717ac`): 23 test files, none with a failure, 914 passing
+    checks (the 830 of the fifth book's commit, the new file's 79, five more for the inherited-settings list);
+    the replay equals the research rung for rung.
   - One existing expectation changed, the list of inherited settings in `release_inputs_test.py` (eight names
     instead of seven). Logged in the plan with the three places where the two paths differ.
   - **The first same-machine pair of the fifth book counts** (started by hand at 19:27 UTC, the build first): 31
     timed steps in each half, no refusal, no rate limit. One pair is progress, not a result.
   - **Part 2** of the trades-workers plan follows now: one runner, 30 minutes with one worker and 30 with three,
     each checked against the venue's candles. It can find a fault and pass nothing.
+- **17:04. Evening look, faults only.**
+  - **The main book's first run on release 4's code** (16:08 to 21:57 UTC): 12 heartbeats, 37 new bids, no error,
+    warning or halt event. W2 the same. Its next run started by the hand-over, now without the third book's job.
+  - **The third book has ended:** its last run closed at 21:57 UTC. Its folder and log stay as the record.
+  - **The venue's speed, by book, this afternoon** (half hours 16:30 to 21:30 UTC):
+    - main book, five coins on trades: data step at a median of 9.6 to 9.9 s, no budget fallback;
+    - third book, six coins: 10.2 to 10.7 s, none;
+    - fourth book, 18 coins: 14.6 to 17.2 s and 7 to 58 budget fallbacks a half hour (log to 19:00 UTC).
+    - So the slow trades list costs the 18-coin pass and not the short ones. The main book and the live bot's
+      present inputs are not affected.
+  - **The fifth book:** second run in progress, nothing new on `main` until it ends at about 01:10 UTC; no fault
+    in what is there.
+  - **Live check of the side-by-side build** (trades-workers plan, Part 2): job 43966296502 started 22:03 UTC,
+    30 minutes with one worker and then 30 with three.
