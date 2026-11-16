@@ -12,8 +12,9 @@ Inputs
             two_books.json's period equals --start and --end and its books are the ones named by --fifth and --sixth.
   --start, --end  the period (UTC minutes, both included).
   --sixth, --fifth  the two book folders (events.jsonl).
-  --pairs   the folder of the workers pair files (default reports/owner/step_pairs_tw, written by
-            scripts/owner/step_pairs/run_pair_workers.py).
+  --alt     the folder of the alternating-minute job files alt_*.json (default reports/owner/workers_alt, written by
+            scripts/owner/workers_alt/run_alt.py).
+  --now     the time the read is made (UTC, default the clock); only the 14 days of Part 3 are judged against it.
   --items-1-5 pass|fail  items 1 to 5 of the sixth book, read from the status report (scripts/owner/paper_status.py) on a copy
             of its log cut at the period's end; the script does not compute them.
 
@@ -31,21 +32,28 @@ label main). The reading is part3_rule.book_counts, unchanged:
       minute: side_by_side.csv, measure m3_bids, statistics research_new_bids_ex_blocked (r) and research_matched (m), group
       all. A mismatch between a count from item7_bids.csv and its side_by_side.csv check is an error and no verdict.
 
-Part 3, the pairs (the files pair_*.json of --pairs, "counts" true; a pair belongs to the period by its start, the end minute
-  included). If fewer than 8 count in the period, the pairs that count and start after the period's end are added, oldest first,
-  one at a time, until the count reaches 8, and the script says so (how many started in the period, how many were added, the
-  start of the last one used). This is paper_status.pairs_measure itself (workers_pairs_measure calls it), so the status
-  report and this rule choose the same pairs. With fewer than 8 even then it prints
-      PART 3 NOT COMPLETE: <n> of 8 pairs count; the pair jobs go on and the read waits
-  and gives no verdict unless --read-as-is is passed, which then counts clauses 1, 2 and 4 as not met (they need 8 pairs).
-  1. the median over the pairs used of (three's data-step median minus one's), exact from the printed texts, is at most -1/5 s;
-  2. budget fallbacks summed over the three-worker runs of the pairs used are no more than over the one-worker runs, and the
-     median of (longest pass with three minus longest pass with one) is at most 0;
-  3. over ALL pair files that started in the period, counting or not: no three-worker run has peak_per_second above 8 and
-     none is refused or limited; a file that cannot be read is listed and makes the clause not met (its start is the file's
-     utc_start, else the one in its name; a file with neither is taken as inside the period). A null peak is not above 8;
-  4. over the pairs used, rows_differ / rows_compared summed over the three-worker runs is no higher than over the one-worker
-     runs (cross-multiplied on integers; a zero denominator on either side means not met).
+Part 3, alternating minutes (the files alt_*.json of --alt; a job counts when its file says "counts" true and its steps give at
+  least 20 timed steps per arm). This is paper_status.alt_select and alt_measure themselves, so the status report and this rule
+  choose the same jobs. Selection: the counting jobs sorted by start; all those started from the first job up to --end (the
+  end minute included) are taken; then, while fewer than 8 jobs are used OR the one-worker steps of the used jobs hold fewer
+  than 30 slow passes (pass above 6.0 s), the next counting job is added if it started no later than 14 days after the first
+  job's start; adding stops when both hold. The script says how many jobs started in the period and how many were added.
+  Both hold: Part 3 is complete. They do not hold and the 14 days (from the first job's start) have not passed at --now: it
+  prints
+      PART 3 NOT COMPLETE: <jobs> of 8 jobs, <slow> of 30 slow one-worker passes; the jobs go on and the read waits
+  and gives no verdict unless --read-as-is is passed, which then counts clauses 1, 2 and 4 as not met. They do not hold and the
+  14 days have passed: Part 3 is complete, clause 2 is not met ("the gain is not shown"). Over all steps of the used jobs:
+  1. no harm: the median pass_s with three is at most the median with one plus 0.05 s (exact from the printed texts; an even
+     count: the mean of the middle two);
+  2. a gain in slow minutes: the one-worker steps hold at least 30 slow passes, slow3 / steps3 is at most (slow1 / steps1) / 2
+     (cross-multiplied), and budget fallbacks with three are no more than with one;
+  3. the pace, over ALL alt files that started from the first job on up to the last used job's start, counting or not: no
+     three-worker step with a peak above 8, none limited, none refused; a file that cannot be read is listed and makes the
+     clause not met (a file with no known start is taken as inside the range);
+  4. the rows, over the used jobs whose row comparison is complete: differ3 / compared3 is at most differ1 / compared1 + 1/100
+     (cross-multiplied on integers; a zero denominator on either side means not met).
+  Reported, deciding nothing: both arms' median and mean pass, their difference, and "first version of the plan asked for a 0.2 s
+  gain at the median over half-hour pairs"; the steps and slow passes of each arm per job.
 Part 4, the books:
   1. decisions, exact on integers: wrong side w6/ns6 <= w5/ns5 + 2/100 and w6/ns6 <= 5/100; matched m6/r6 >= m5/r5 - 3/100;
      level l6/nl6 < 5/100 (strictly); a zero denominator means that clause is not met;
@@ -61,12 +69,12 @@ Period condition: each of the sixth and fifth books has at least 300 new bids (n
   COMPLETE" and no verdict, unless --read-as-is is passed, which is then stated in the output.
 Verdict: "Trades workers: pass" only if every clause of Parts 3 and 4 holds, else "Trades workers: fail"; none when the period or
   Part 3 is not complete (and no --read-as-is).
-Reported, not ruled on: each pair's trades-pass medians (the pairs used), both books' data-step medians over the common
-  heartbeat times, the sixth book's own heartbeat entry step_s.trades.
+Reported, not ruled on: both books' data-step medians over the common heartbeat times, the sixth book's own heartbeat entry
+  step_s.trades, and the Part 3 figures above.
 
 Command line:
   python scripts/owner/trades_workers/rule.py --dir DIR --start 2026-..T..:.. --end 2026-..T..:.. \\
-      --sixth paper_spot_tw --fifth paper_spot_r5 --items-1-5 pass|fail [--pairs DIR] [--out DIR] [--read-as-is]
+      --sixth paper_spot_tw --fifth paper_spot_r5 --items-1-5 pass|fail [--alt DIR] [--now TIME] [--out DIR] [--read-as-is]
   reads DIR/two_books.json, DIR/item7_bids.csv, DIR/side_by_side.csv and the two events.jsonl; writes trades_workers_rule.json and
   trades_workers_rule.md into --out (default DIR) and prints the markdown.
 """
@@ -88,12 +96,14 @@ import paper_status as ps       # noqa: E402
 import part3_rule as p3         # noqa: E402
 
 MIN_BIDS = p3.MIN_BIDS
-MIN_PAIRS = ps.MIN_PAIRS
-PAIRS_DEFAULT = ps.TW_PAIRS_DIR
+MIN_JOBS = ps.ALT_MIN_JOBS
+MIN_SLOW = ps.ALT_MIN_SLOW
+ALT_DEFAULT = ps.TW_ALT_DIR
 FIFTH, SIXTH = "main", "tb"         # the labels in the folder: main = fifth book (control), tb = sixth book
 GROUP = p3.GROUP
 N_COINS = p3.N_COINS
-STEP_BAR = ps.TW_STEP_BAR           # -1/5 s
+GAIN_MARGIN = ps.ALT_GAIN_MARGIN    # 1/20 s
+ROWS_MARGIN = ps.ALT_ROWS_MARGIN    # 1/100
 PEAK_MAX = ps.TW_PEAK_MAX           # 8
 WRONG_SIDE_TOLERANCE = p3.WRONG_SIDE_TOLERANCE
 WRONG_SIDE_CAP = p3.WRONG_SIDE_CAP
@@ -150,32 +160,47 @@ def log_data(path, start, end):
 
 
 # ---------------------------------------------------------------- Part 3
-def part3(pairs, start, end, min_pairs=MIN_PAIRS):
-    wm = ps.workers_pairs_measure(pairs or [], p3.when(start), p3.when(end), None, min_pairs, extend=True)
-    used = wm["used"]
+def _x(f):
+    return None if f is None else str(f)
+
+
+def part3(jobs, start, end, now=None):
+    sel = ps.alt_select(jobs or [], p3.when(end), now)
+    wm = ps.alt_measure(jobs or [], sel)
     d3, c3 = wm["rows3"]
     d1, c1 = wm["rows1"]
-    step = clause(wm["step_met"], pairs=wm["n"], needed=min_pairs, enough=wm["enough"], median_s=_f(wm["median"]),
-                  median_exact=None if wm["median"] is None else str(wm["median"]), bar_s=float(STEP_BAR),
-                  rule="median of three minus one at most -0.2 s, at least 8 pairs")
-    slow = clause(wm["slow_met"], fallbacks_three=wm["fb3"], fallbacks_one=wm["fb1"], longest_median_s=_f(wm["long_median"]),
-                  longest_median_exact=None if wm["long_median"] is None else str(wm["long_median"]),
-                  rule="fallbacks with three no more than with one; median of longest pass three minus one at most 0")
-    pace = clause(wm["pace_met"], files_in_period=len(wm["files"]), peak_max=wm["peak_max"],
-                  over_peak=[p["file"] for p in wm["peak_over"]], refused_or_limited=[p["file"] for p in wm["stopped"]],
-                  unreadable=[p["file"] for p in wm["unreadable"]],
-                  rule="no three-worker run above 8 trades requests in one second, none refused or limited, every file readable")
-    rows = clause(wm["rows_met"], differ_three=d3, compared_three=c3, differ_one=d1, compared_one=c1,
+    n1, n3 = wm["steps"][1], wm["steps"][3]
+    step = clause(wm["step_met"], steps_three=n3, steps_one=n1, median_three_s=_f(wm["median"][3]), median_one_s=_f(wm["median"][1]),
+                  median_three_exact=_x(wm["median"][3]), median_one_exact=_x(wm["median"][1]), margin_s=float(GAIN_MARGIN),
+                  rule="median pass with three at most the median with one plus 0.05 s")
+    gain = clause(wm["gain_met"], slow_one=wm["slow"][1], steps_one=n1, slow_three=wm["slow"][3], steps_three=n3,
+                  share_one=share(wm["slow"][1], n1), share_three=share(wm["slow"][3], n3), fallbacks_three=wm["fb"][3],
+                  fallbacks_one=wm["fb"][1], slow_needed=MIN_SLOW, gain_not_shown=sel["gain_not_shown"],
+                  rule="at least 30 slow one-worker passes (above 6.0 s); three's slow share at most half of one's; "
+                       "budget fallbacks with three no more than with one")
+    pace = clause(wm["pace_met"], files=len(wm["files"]), peak_max=wm["peak_max"], over_peak=list(wm["peak_over"]),
+                  refused_or_limited=list(wm["stopped"]), unreadable=list(wm["unreadable"]),
+                  rule="no three-worker step above 8 trades requests in one second, none limited or refused, every file readable")
+    rows = clause(wm["rows_met"], differ_three=d3, compared_three=c3, differ_one=d1, compared_one=c1, jobs=wm["rows_jobs"],
                   share_three=share(d3, c3), share_one=share(d1, c1),
-                  rule="rows differing from the venue: three's share no higher than one's (cross-multiplied)")
-    reported = dict(pairs=[dict(file=p["file"], start=p["start"].strftime("%Y-%m-%dT%H:%M:%SZ") if p["start"] else None,
-                                trades_pass_median_one=p["one"]["pass_median"], trades_pass_median_three=p["three"]["pass_median"])
-                           for p in used],
-                    median_one_s=_f(wm["pass_median_one"]), median_three_s=_f(wm["pass_median_three"]), decides="nothing")
-    return dict(step=step, slow=slow, pace=pace, rows=rows, reported=reported, complete=wm["complete"], enough=wm["enough"],
-                in_period=wm["in_period"], added=wm["added"], pair_files=[p["file"] for p in used],
-                last_used_start=None if wm["last_start"] is None else wm["last_start"].strftime("%Y-%m-%dT%H:%M:%SZ"),
-                met=step["met"] and slow["met"] and pace["met"] and rows["met"], _wm=wm)
+                  rule="rows differing from the venue: three's share at most one's plus 1 point (cross-multiplied)")
+    per_job = []
+    for j in sel["used"]:
+        st = {w: [x for x in j["steps"] if x["workers"] == w and x["pass"] is not None] for w in (1, 3)}
+        per_job.append(dict(file=j["file"], start=j["start"].strftime("%Y-%m-%dT%H:%M:%SZ") if j["start"] else None,
+                            first=j["first"], steps_one=len(st[1]), steps_three=len(st[3]),
+                            slow_one=ps.slow_count(j, 1), slow_three=ps.slow_count(j, 3)))
+    reported = dict(median_one_s=_f(wm["median"][1]), median_three_s=_f(wm["median"][3]), mean_one_s=_f(wm["mean"][1]),
+                    mean_three_s=_f(wm["mean"][3]), diff_median_s=_f(wm["diff_median"]), diff_mean_s=_f(wm["diff_mean"]),
+                    note="first version of the plan asked for a 0.2 s gain at the median over half-hour pairs",
+                    jobs=per_job, decides="nothing")
+    fmt = lambda t: t.strftime("%Y-%m-%dT%H:%M:%SZ") if t else None      # noqa: E731
+    return dict(step=step, gain=gain, pace=pace, rows=rows, reported=reported, complete=sel["complete"], holds=sel["holds"],
+                wait=sel["wait"], gain_not_shown=sel["gain_not_shown"], jobs=len(sel["used"]), jobs_needed=MIN_JOBS,
+                slow_one=wm["slow"][1], slow_needed=MIN_SLOW, in_period=sel["in_period"], added=sel["added"],
+                job_files=[j["file"] for j in sel["used"]], first_job_start=fmt(sel["first_start"]),
+                days_end=fmt(sel["deadline"]), last_used_start=fmt(sel["last_start"]),
+                met=step["met"] and gain["met"] and pace["met"] and rows["met"], _sel=sel, _wm=wm)
 
 
 # ---------------------------------------------------------------- Part 4
@@ -235,11 +260,11 @@ def stops(rows6, rows5):
                 met=s["met"])
 
 
-def evaluate(meta, B, S, rows6, starts6, rows5, starts5, trades6, items, pairs=None, fifth_folder="paper_spot_r5",
-             sixth_folder="paper_spot_tw", start=None, end=None, read_as_is=False, min_bids=MIN_BIDS, min_pairs=MIN_PAIRS):
+def evaluate(meta, B, S, rows6, starts6, rows5, starts5, trades6, items, jobs=None, fifth_folder="paper_spot_r5",
+             sixth_folder="paper_spot_tw", start=None, end=None, read_as_is=False, min_bids=MIN_BIDS, now=None):
     """meta: two_books.json; B: item7_bids.csv; S: side_by_side.csv (data frames); rows6, rows5: data-quality rows of the
     heartbeats of the sixth and the fifth book in the period (log_data); starts6, starts5: their first stepped minutes;
-    trades6: the sixth book's step_s.trades statistics (log_data); pairs: ps.load_workers_pairs of --pairs."""
+    trades6: the sixth book's step_s.trades statistics (log_data); jobs: ps.load_alt_jobs of --alt; now: the time of the read."""
     start = start if start is not None else meta["period"]["start"]
     end = end if end is not None else meta["period"]["end"]
     if items not in ("pass", "fail"):
@@ -247,19 +272,23 @@ def evaluate(meta, B, S, rows6, starts6, rows5, starts5, trades6, items, pairs=N
     coins = guard(meta, fifth_folder, sixth_folder, start, end)
     c5, c6 = p3.book_counts(B, S, FIFTH, coins), p3.book_counts(B, S, SIXTH, coins)
     period_ok = c5["n"] >= min_bids and c6["n"] >= min_bids
-    P3 = part3(pairs, start, end, min_pairs)
-    wm = P3.pop("_wm")
+    P3 = part3(jobs, start, end, now)
+    sel, wm = P3.pop("_sel"), P3.pop("_wm")
+    if not P3["complete"] and read_as_is:
+        for k in ("step", "gain", "rows"):
+            P3[k]["met"] = False
+        P3["met"] = False
     P4 = dict(decisions=decisions(c6, c5), items_1_5=dict(value=items, met=items == "pass"),
               requests=requests(rows6, starts6, rows5, starts5), stops=stops(rows6, rows5))
     m1 = ps.measure1(rows6, rows5)
     reported = dict(
-        trades_pass_medians_of_the_pairs=P3["reported"],
+        part3=P3["reported"],
         data_step=dict(common_heartbeat_times=m1["pairs"], sixth_median_s=_f(m1["paired_fifth"]),
                        fifth_median_s=_f(m1["paired_other"]), sixth_own_median_s=_f(m1["median"]),
                        sixth_heartbeats=m1["n"], decides="nothing"),
         step_s_trades=dict(heartbeats=trades6["n"], median_of_medians_s=_f(trades6["median"]),
                            largest_max_s=_f(trades6["max"]), decides="nothing"))
-    holds = {"part3.1_step": P3["step"]["met"], "part3.2_slow_minutes": P3["slow"]["met"], "part3.3_pace": P3["pace"]["met"],
+    holds = {"part3.1_no_harm": P3["step"]["met"], "part3.2_gain": P3["gain"]["met"], "part3.3_pace": P3["pace"]["met"],
              "part3.4_rows": P3["rows"]["met"], "part4.1_decisions": P4["decisions"]["met"],
              "part4.2_items_1_5": P4["items_1_5"]["met"], "part4.3_requests": P4["requests"]["met"],
              "part4.4_stops": P4["stops"]["met"]}
@@ -273,15 +302,7 @@ def evaluate(meta, B, S, rows6, starts6, rows5, starts5, trades6, items, pairs=N
                condition=dict(new_bids_sixth=c6["n"], new_bids_fifth=c5["n"], needed=min_bids, met=period_ok,
                               read_as_is=bool(read_as_is), part3_complete=P3["complete"]),
                counts=dict(sixth=c6, fifth=c5), part3=P3, part4=P4, reported=reported, holds=holds, verdict=verdict)
-    res["_pairs"] = pair_rows(pairs or [], wm)
     return res
-
-
-def pair_rows(pairs, wm):
-    """The pair files of the period (and the added ones) for the markdown: [(pair, in the period, used)]."""
-    used = {p["file"] for p in wm["used"]}
-    inside = {p["file"] for p in wm["files"]}
-    return [(p, p["file"] in inside, p["file"] in used) for p in pairs if p["file"] in inside or p["file"] in used]
 
 
 # ---------------------------------------------------------------- output
@@ -315,44 +336,42 @@ def to_md(res):
     if not c["met"]:
         L += ["", "**PERIOD NOT COMPLETE**" + (" (read as is, as the plan allows)" if c["read_as_is"] else "; no verdict")]
     if not c["part3_complete"]:
-        L += ["", f"PART 3 NOT COMPLETE: {P3['step']['pairs']} of {P3['step']['needed']} pairs count; the pair jobs go on and the "
-                  "read waits"]
+        L += ["", f"PART 3 NOT COMPLETE: {P3['jobs']} of {P3['jobs_needed']} jobs, {P3['slow_one']} of {P3['slow_needed']} slow "
+                  "one-worker passes; the jobs go on and the read waits"]
         if c["read_as_is"]:
-            L += ["", "Read as is: clauses 1, 2 and 4 of Part 3 need 8 pairs and are not met."]
+            L += ["", "Read as is: clauses 1, 2 and 4 of Part 3 need 8 jobs and 30 slow one-worker passes and are not met."]
+    if P3["gain_not_shown"]:
+        L += ["", f"Part 3: the 14 days from the first job ({P3['first_job_start']}) are over and there are {P3['jobs']} jobs and "
+                  f"{P3['slow_one']} slow one-worker passes: Part 3 is complete, clause 2 is not met, the gain is not shown."]
     if P3["added"]:
-        L += ["", f"Part 3 pairs: {P3['in_period']} started in the period and {P3['added']} were added from after it (fewer than "
-                  f"{P3['step']['needed']} counted in the period); the last pair used started {P3['last_used_start']} UTC. The "
-                  "pace clause and Part 4 are read on the period itself."]
-    L += ["", "## Part 3, the same-machine pairs (one worker against three)", ""]
-    pr = res.get("_pairs")
-    if pr:
-        rows = [[p["file"], p["order"] or "n/a", tx(p["one"], "median"), tx(p["three"], "median"),
-                 "n/a" if p["diff"] is None else f"{float(p['diff']):.2f} s", tx(p["one"], "longest"), tx(p["three"], "longest"),
-                 tx(p["one"], "fb", ""), tx(p["three"], "fb", ""), tx(p["three"], "peak", ""),
-                 ("counts" if p["counts"] else "does not count: " + (p["why"] or "")) + ("; used" if used else "")
-                 + ("" if inside else "; after the period")] for p, inside, used in pr]
-        L += ["| file | order | step one | step three | three minus one | longest one | longest three | fallbacks one | "
-              "fallbacks three | peak three | result |", "|---|---|---|---|---|---|---|---|---|---|---|"]
-        L += ["| " + " | ".join(r) + " |" for r in rows] + [""]
-    s, sl, pc, rw = P3["step"], P3["slow"], P3["pace"], P3["rows"]
+        L += ["", f"Part 3 jobs: {P3['in_period']} started in the period and {P3['added']} were added from after it; the last job "
+                  f"used started {P3['last_used_start']} UTC. Part 4 is read on the period itself."]
+    L += ["", "## Part 3, alternating minutes (one worker against three)", ""]
+    if R["part3"]["jobs"]:
+        L += ["| job | start | first arm | steps one | steps three | slow passes one | slow passes three |", "|---|---|---|---|---|---|---|"]
+        L += [f"| {j['file']} | {j['start']} | {j['first'] or 'n/a'} | {j['steps_one']} | {j['steps_three']} | {j['slow_one']} | "
+              f"{j['slow_three']} |" for j in R["part3"]["jobs"]] + [""]
+    s, g, pc, rw = P3["step"], P3["gain"], P3["pace"], P3["rows"]
     L += ["| clause | value | rule | result |", "|---|---|---|---|",
-          f"| 1. the step | median {sx(s['median_s'])} over {s['pairs']} pairs | at most -0.200 s, at least {s['needed']} pairs | "
-          f"{mk(s['met'])} |",
-          f"| 2. the slow minutes | fallbacks {sl['fallbacks_three']} with three, {sl['fallbacks_one']} with one; median of the "
-          f"longest pass, three minus one, {sx(sl['longest_median_s'])} | fallbacks no more with three; median at most 0 | "
-          f"{mk(sl['met'])} |",
-          f"| 3. the pace | {pc['files_in_period']} files in the period; most trades requests in one second "
-          f"{pc['peak_max'] if pc['peak_max'] is not None else 'n/a'}; refused or limited: {len(pc['refused_or_limited'])}; "
-          f"above 8: {len(pc['over_peak'])}; unreadable: {len(pc['unreadable'])} | no three-worker run above 8 in any file, "
-          f"none refused or limited, every file readable | {mk(pc['met'])} |",
+          f"| 1. no harm | median pass three {sx(s['median_three_s'])} ({s['steps_three']} steps), one {sx(s['median_one_s'])} "
+          f"({s['steps_one']} steps) | three at most one plus 0.050 s | {mk(s['met'])} |",
+          f"| 2. a gain in slow minutes | slow passes (above 6.0 s) one {g['slow_one']} of {g['steps_one']} = {pct(g['share_one'])}, "
+          f"three {g['slow_three']} of {g['steps_three']} = {pct(g['share_three'])}; fallbacks three {g['fallbacks_three']}, one "
+          f"{g['fallbacks_one']}" + ("; the gain is not shown" if g["gain_not_shown"] else "")
+          + f" | at least 30 slow one-worker passes; three's share at most half of one's; fallbacks no more with three | "
+          f"{mk(g['met'])} |",
+          f"| 3. the pace | {pc['files']} files; most trades requests in one second "
+          f"{pc['peak_max'] if pc['peak_max'] is not None else 'n/a'}; above 8: {len(pc['over_peak'])}; limited or refused: "
+          f"{len(pc['refused_or_limited'])}; unreadable: {len(pc['unreadable'])} | no three-worker step above 8 in any file, none "
+          f"limited or refused, every file readable | {mk(pc['met'])} |",
           f"| 4. the rows | three {rw['differ_three']} of {rw['compared_three']} = {pct(rw['share_three'])}, one "
-          f"{rw['differ_one']} of {rw['compared_one']} = {pct(rw['share_one'])} | three's share no higher than one's | "
-          f"{mk(rw['met'])} |", ""]
-    for key, what in (("over_peak", "above 8 trades requests in one second"), ("refused_or_limited", "refused or limited"),
-                      ("unreadable", "could not be read")):
+          f"{rw['differ_one']} of {rw['compared_one']} = {pct(rw['share_one'])}, over {rw['jobs']} jobs with a complete comparison "
+          f"| three's share at most one's plus 1 point | {mk(rw['met'])} |", ""]
+    for key, what in (("over_peak", "A file with a three-worker step above 8 trades requests in one second"),
+                      ("refused_or_limited", "A file with a three-worker step limited or refused"),
+                      ("unreadable", "A file that could not be read")):
         if pc[key]:
-            L += [f"Files with a three-worker run {what}: " + ", ".join(pc[key]) if key != "unreadable"
-                  else "Files that could not be read: " + ", ".join(pc[key]), ""]
+            L += [what + ": " + ", ".join(pc[key]), ""]
     L += [f"Part 3: {mk(P3['met'])}.", ""]
     d = P4["decisions"]
     L += ["## Part 4, measure 1: decisions against the research", "",
@@ -392,32 +411,33 @@ def to_md(res):
           f"| request errors (tb_fb_error above 0) | sixth {t['errors_sixth']} heartbeats, fifth {t['errors_fifth']} (at most "
           f"{t['allowed_errors']}) | {t['error_clause']['rule']} | {mk(t['error_clause']['met'])} |", "",
           f"Measure 4: {mk(t['met'])}.", ""]
-    ds, ts, tp = R["data_step"], R["step_s_trades"], R["trades_pass_medians_of_the_pairs"]
+    ds, ts, tp = R["data_step"], R["step_s_trades"], R["part3"]
     L += ["## Reported, deciding nothing", "",
           f"- Data-step medians over the {ds['common_heartbeat_times']} heartbeat times at which both books have a heartbeat: sixth "
-          f"{sx(ds['sixth_median_s'])}, fifth {sx(ds['fifth_median_s'])} (the runners differ, so the pairs decide the step).",
+          f"{sx(ds['sixth_median_s'])}, fifth {sx(ds['fifth_median_s'])} (the runners differ; Part 3 decides the step).",
           f"- The sixth book's own heartbeat entry step_s.trades (the trades pass's duration), over {ts['heartbeats']} heartbeats: "
           f"median of the half-hour medians {sx(ts['median_of_medians_s'])}, largest maximum {sx(ts['largest_max_s'])}.",
-          f"- The trades pass's median duration in the pairs used: three {sx(tp['median_three_s'])}, one {sx(tp['median_one_s'])} "
-          "(median over the pairs)."]
-    for p in tp["pairs"]:
-        L.append(f"  - {p['file']} (started {p['start']}): one {p['trades_pass_median_one']} s, three {p['trades_pass_median_three']} s")
+          f"- Part 3, pass duration over all steps of the jobs used: median one {sx(tp['median_one_s'])}, three "
+          f"{sx(tp['median_three_s'])}, difference {sx(tp['diff_median_s'])}; mean one {sx(tp['mean_one_s'])}, three "
+          f"{sx(tp['mean_three_s'])}, difference {sx(tp['diff_mean_s'])}.",
+          f"- {tp['note']}."]
     L += ["", "| measure | holds |", "|---|---|"] + [f"| {k} | {'yes' if v else 'no'} |" for k, v in res["holds"].items()] + [""]
     if res["verdict"] is None:
         why = " and ".join(([] if c["met"] else ["period not complete"]) + ([] if c["part3_complete"] else ["part 3 not complete"]))
         L += [f"**Trades workers: no verdict ({why})**", ""]
     else:
         L += [f"**Trades workers: {res['verdict']}**", ""]
-    L += ["Rule in plain words: every clause of Parts 3 and 4 must hold. Part 3, over at least 8 same-machine pairs (those that "
-          "start in the period; if fewer than 8 count there, the later pairs are added oldest first up to the one that makes 8, "
-          "and the verdict waits for them): the median of three's data step minus one's at most -0.2 s; budget fallbacks with "
-          "three no more than with one and the median of the longest pass, three minus one, at most 0; in every pair file of the "
-          "period no three-worker run above 8 trades requests in a second and none refused or limited; the share of rows that "
-          "differ from the venue no higher with three. Part 4: against the research, wrong-side share at most the fifth book's "
-          "plus 2.0 points and at most 5%, matched share at least the fifth's minus 3.0 points, under 5% of bids more than 5 bp "
-          "from the level; items 1 to 5; failed requests at most 1% and in-step requests at most 2% of coin-minutes and no higher "
-          "a share than the fifth book's; no rate-limit stop in the sixth book unless the fifth has one at the same heartbeat, "
-          "and its error half hours at most the fifth's plus 2. Shares are compared exactly on the counts. A PASS puts "
+    L += ["Rule in plain words: every clause of Parts 3 and 4 must hold. Part 3, alternating minutes, over the jobs started in "
+          "the period (if there are fewer than 8 jobs or fewer than 30 slow one-worker passes, the next jobs are added oldest "
+          "first, up to 14 days from the first job, and the verdict waits for them): the median pass with three at most the "
+          "median with one plus 0.05 s; at least 30 slow one-worker passes, three's share of slow passes at most half of one's, "
+          "budget fallbacks with three no more than with one; in every alt file from the first job to the last one used no "
+          "three-worker step above 8 trades requests in a second and none limited or refused; the share of rows that differ from "
+          "the venue at most one point higher with three. Part 4: against the research, wrong-side share at most the fifth "
+          "book's plus 2.0 points and at most 5%, matched share at least the fifth's minus 3.0 points, under 5% of bids more than "
+          "5 bp from the level; items 1 to 5; failed requests at most 1% and in-step requests at most 2% of coin-minutes and no "
+          "higher a share than the fifth book's; no rate-limit stop in the sixth book unless the fifth has one at the same "
+          "heartbeat, and its error half hours at most the fifth's plus 2. Shares are compared exactly on the counts. A PASS puts "
           "trades_workers 3 into the release config; it does not change `main` by itself.", ""]
     return "\n".join(L)
 
@@ -440,7 +460,8 @@ def main(argv=None):
     ap.add_argument("--sixth", required=True)
     ap.add_argument("--fifth", required=True)
     ap.add_argument("--items-1-5", dest="items", choices=["pass", "fail"], required=True)
-    ap.add_argument("--pairs", default=PAIRS_DEFAULT)
+    ap.add_argument("--alt", default=ALT_DEFAULT)
+    ap.add_argument("--now")
     ap.add_argument("--out")
     ap.add_argument("--read-as-is", action="store_true")
     ap.add_argument("--min-bids", type=int, default=MIN_BIDS)
@@ -450,9 +471,9 @@ def main(argv=None):
     S = pd.read_csv(os.path.join(a.dir, "side_by_side.csv"))
     rows6, starts6, trades6 = log_data(a.sixth, a.start, a.end)
     rows5, starts5, _ = log_data(a.fifth, a.start, a.end)
-    res = evaluate(meta, B, S, rows6, starts6, rows5, starts5, trades6, a.items, ps.load_workers_pairs(a.pairs),
+    res = evaluate(meta, B, S, rows6, starts6, rows5, starts5, trades6, a.items, ps.load_alt_jobs(a.alt),
                    os.path.basename(os.path.normpath(a.fifth)), os.path.basename(os.path.normpath(a.sixth)),
-                   a.start, a.end, a.read_as_is, a.min_bids)
+                   a.start, a.end, a.read_as_is, a.min_bids, p3.when(a.now) if a.now else None)
     write(a.out or a.dir, res)
     print(to_md(res))
 

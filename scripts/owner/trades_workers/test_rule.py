@@ -106,56 +106,60 @@ def good_rows(n=100, **over):
     return beats(range(1, n + 1), **dict(GOOD4, **over))
 
 
-# ---------------------------------------------------------------- pair files (loaded through paper_status, as the rule does)
-def wrun(median="10.00", longest="6.00", pass_median="4.00", fb=0, peak=7, compared=100, differ=1, refused=False, limited=False):
-    return dict(data_end_median_text=median, trades_pass_longest_text=longest, trades_pass_median_text=pass_median, fb_budget=fb,
-                peak_per_second=peak, rows_compared=compared, rows_differ=differ, refused=refused, limited=limited, steps_timed=31)
+# ---------------------------------------------------------------- alt job files (loaded through paper_status, as the rule does)
+def asteps(n1=20, n3=20, p1="1.000", p3="1.000", slow1=0, slow3=0, fb1=0, fb3=0, peak3=7, limited3=0, refused3=0):
+    """n1 one-worker and n3 three-worker steps; the first slow1 / slow3 of each arm have a slow pass of 7.000 s; fb1 / fb3
+    budget fallbacks in the first step of an arm; peak3 is the three-worker peak."""
+    out = []
+    for w, n, p, slow, fb in ((1, n1, p1, slow1, fb1), (3, n3, p3, slow3, fb3)):
+        for i in range(n):
+            out.append(dict(workers=w, pass_s=float(p), pass_text="7.000" if i < slow else p, tb_fb_budget=fb if i == 0 else 0,
+                            peak=peak3 if w == 3 else 5, limited=w == 3 and i < limited3, refused=w == 3 and i < refused3))
+    return out
 
 
-def write_pair(folder, name, start, one=None, three=None, counts=True, why=None, order="ab"):
+def texts(one, three):
+    """Steps whose pass texts are exactly these lists (one-worker, three-worker)."""
+    return [dict(workers=w, pass_s=float(t), pass_text=t, tb_fb_budget=0, peak=5, limited=False, refused=False)
+            for w, ts in ((1, one), (3, three)) for t in ts]
+
+
+def write_alt(folder, name, start, steps=None, first="one", counts=True, why=None, rows=((100, 1), (100, 1)), rows_complete=True):
     os.makedirs(folder, exist_ok=True)
-    runs = [dict(workers=1, label="one", **(one or wrun())), dict(workers=3, label="three", **(three or wrun()))]
-    if order == "ba":
-        runs.reverse()
+    steps = asteps() if steps is None else steps
+    arms = {w: dict(steps_timed=sum(1 for s in steps if s["workers"] == int(w)), rows_compared=rows[k][0], rows_differ=rows[k][1])
+            for k, w in enumerate(("1", "3"))}
     with open(os.path.join(folder, name), "w") as f:
-        json.dump(dict(mode="workers", utc_start=start, order=order, counts=counts, why_not=why, runs=runs), f)
+        json.dump(dict(utc_start=start, first=first, steps=steps, arms=arms, rows_complete=rows_complete, counts=counts, why_not=why), f)
 
 
 def stamp(hours):
     return (PERIOD_START + timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def fill_pairs(folder, specs, first_hour=1, **kw):
-    """Pair files hour by hour from first_hour; a spec is None, or (one, three) run dicts, or a dict of write_pair keywords."""
+def fill_alt(folder, specs, first_hour=1):
+    """One job per spec (a dict of write_alt keywords) hour by hour from first_hour."""
     for i, sp in enumerate(specs):
         h = first_hour + i
-        args = dict(kw)
-        if isinstance(sp, dict):
-            args.update(sp)
-        elif sp:
-            args.update(one=sp[0], three=sp[1])
-        write_pair(folder, "pair_%s.json" % (PERIOD_START + timedelta(hours=h)).strftime("%Y%m%dT%H%MZ"), stamp(h), **args)
+        write_alt(folder, "alt_%s.json" % (PERIOD_START + timedelta(hours=h)).strftime("%Y%m%dT%H%MZ"), stamp(h), **sp)
 
 
-def pairs_of(specs, first_hour=1, extra=(), **kw):
-    """ps.load_workers_pairs on a folder holding these pairs (extra: raw (name, text) files)."""
+def jobs_of(specs, first_hour=1, extra=()):
+    """ps.load_alt_jobs on a folder holding these jobs (extra: raw (name, text) files)."""
     with tempfile.TemporaryDirectory() as tmp:
-        d = os.path.join(tmp, "pairs")
-        fill_pairs(d, specs, first_hour, **kw)
+        d = os.path.join(tmp, "alt")
+        fill_alt(d, specs, first_hour)
         for n, text in extra:
             open(os.path.join(d, n), "w").write(text)
-        return ps.load_workers_pairs(d)
+        return ps.load_alt_jobs(d)
 
 
-def steps(diffs):
-    """Specs whose three-minus-one data steps are these decimals (texts)."""
-    return [(wrun(median="10.00"), wrun(median=str(F("10.00") + F(d)))) for d in diffs]
+NOW0 = datetime(2026, 11, 24, tzinfo=timezone.utc)                 # a day after the period's end: far inside the 14 days
+G = dict(steps=asteps(20, 20, "1.000", "1.000", slow1=4, slow3=1, fb1=1, fb3=1), rows=((100, 2), (100, 2)))
+GOOD_JOBS = jobs_of([G] * 8)
 
 
-GOOD_PAIRS = pairs_of([(wrun(median="10.00", differ=2), wrun(median="9.50", differ=1))] * 8)
-
-
-def run(fifth=None, sixth=None, items="pass", r6=None, r5=None, s6=None, s5=None, trades=None, pairs=None, **kw):
+def run(fifth=None, sixth=None, items="pass", r6=None, r5=None, s6=None, s5=None, trades=None, jobs=None, now=None, **kw):
     fifth = fifth or spec(300, w=9, l=3, m=280, r=300)
     sixth = sixth or spec(300, w=9, l=3, m=280, r=300)
     over = kw.pop("over", None)
@@ -163,8 +167,8 @@ def run(fifth=None, sixth=None, items="pass", r6=None, r5=None, s6=None, s5=None
     r6 = r6 if r6 is not None else good_rows()
     r5 = r5 if r5 is not None else good_rows()
     trades = trades or dict(n=0, median=None, max=None)
-    return rule.evaluate(meta, B, S, r6, s6 or [], r5, s5 or [], trades, items, GOOD_PAIRS if pairs is None else pairs,
-                         start=START, end=END, **kw)
+    return rule.evaluate(meta, B, S, r6, s6 or [], r5, s5 or [], trades, items, GOOD_JOBS if jobs is None else jobs,
+                         start=START, end=END, now=NOW0 if now is None else now, **kw)
 
 
 # ---------------------------------------------------------------- tests
@@ -175,7 +179,7 @@ def test_baseline_and_labels():
     md = rule.to_md(res)
     check("markdown: verdict line and label mapping", "**Trades workers: pass**" in md and "main = fifth book (paper_spot_r5)" in md
           and "tb = sixth book (paper_spot_tw)" in md)
-    check("json round trip", json.loads(json.dumps(rule.public(res)))["verdict"] == "pass" and "_pairs" not in rule.public(res))
+    check("json round trip", json.loads(json.dumps(rule.public(res)))["verdict"] == "pass" and "_sel" not in rule.public(res)["part3"])
     # the sixth book's numbers sit in the "tb" rows, the fifth's in the "main" rows
     res = run(fifth=spec(300, w=0), sixth=spec(310, w=31))
     c = res["counts"]
@@ -250,131 +254,148 @@ def test_decisions():
 
 def test_part3_clauses():
     def p3res(specs, **kw):
-        return run(pairs=pairs_of(specs), **kw)["part3"]
-    # 1 the step
-    r = p3res(steps(["-0.20"] * 8))
-    check("part 3.1: eight pairs with the median exactly -0.20 s meet", r["step"]["met"] and r["step"]["median_exact"] == "-1/5" and r["step"]["pairs"] == 8, r["step"])
-    check("part 3.1: -0.19 s does not meet", not p3res(steps(["-0.19"] * 8))["step"]["met"])
-    check("part 3.1: -0.21 s meets", p3res(steps(["-0.21"] * 8))["step"]["met"])
-    r = p3res(steps(["-1.00"] * 7))
-    check("part 3.1: seven pairs do not meet even at -1.00 s, and the read is not complete", not r["step"]["met"] and not r["complete"])
-    check("part 3.1: even count, the mean of the middle two (-0.30 and -0.10) is exactly -0.20 and meets",
-          p3res(steps(["-0.50"] * 2 + ["-0.30"] * 2 + ["-0.10"] * 2 + ["0.50"] * 2))["step"]["met"])
-    check("part 3.1: even count, the mean of the middle two (-0.30 and -0.09) is not enough",
-          not p3res(steps(["-0.50"] * 2 + ["-0.30"] * 2 + ["-0.09"] * 2 + ["0.50"] * 2))["step"]["met"])
-    check("part 3.1: the exact decimals, not floats (10.10 minus 9.90 style): -0.2 from 9.90 and 10.10 meets",
-          p3res([(wrun(median="10.10"), wrun(median="9.90"))] * 8)["step"]["met"])
-    # 2 the slow minutes
-    def slow(fb1, fb3, l1="6.00", l3="6.00", n=8):
-        return [(wrun(fb=fb1, longest=l1), wrun(fb=fb3, longest=l3))] * n
-    r = p3res(slow(1, 1))
-    check("part 3.2: equal fallbacks and equal longest passes meet", r["slow"]["met"] and r["slow"]["longest_median_exact"] == "0", r["slow"])
-    check("part 3.2: one more fallback with three does not meet", not p3res(slow(1, 1)[:7] + [(wrun(fb=1), wrun(fb=2))])["slow"]["met"])
-    check("part 3.2: fewer fallbacks with three meet", p3res(slow(2, 0))["slow"]["met"])
-    check("part 3.2: median of the longest pass above zero (+0.01 s) does not meet", not p3res(slow(1, 1, "6.00", "6.01"))["slow"]["met"])
-    check("part 3.2: a longest pass shorter with three meets", p3res(slow(1, 1, "6.00", "5.00"))["slow"]["met"])
-    half = slow(1, 1, "6.00", "5.00", n=4) + slow(1, 1, "6.00", "6.01", n=4)
-    check("part 3.2: the median of the longest differences (even count) is the mean of the middle two (-1 and 0.01 give -0.495)",
-          p3res(half)["slow"]["longest_median_exact"] == "-99/200" and p3res(half)["slow"]["met"])
-    check("part 3.2: seven pairs do not meet", not p3res(slow(1, 1, n=7))["slow"]["met"])
-    # 3 the pace, over every file of the period
-    base = [None] * 8
-    check("part 3.3: eight clean pairs meet", p3res(base)["pace"]["met"] and p3res(base)["pace"]["peak_max"] == 7)
-    check("part 3.3: a three-worker peak of exactly 8 meets", p3res([(None, wrun(peak=8))] * 8)["pace"]["met"])
-    check("part 3.3: a peak of 9 in one three-worker run does not", not p3res([(None, wrun(peak=9))] + base[1:])["pace"]["met"])
-    check("part 3.3: a peak of 9 in a ONE-worker run does not matter", p3res([(wrun(peak=9), None)] * 8)["pace"]["met"])
-    r = p3res(base + [dict(three=wrun(refused=True), counts=False, why="refused")])
-    check("part 3.3: a refused three-worker run in a pair that does not count still fails it, and the file is named",
-          not r["pace"]["met"] and len(r["pace"]["refused_or_limited"]) == 1 and r["step"]["pairs"] == 8, r["pace"])
-    check("part 3.3: a limited three-worker run fails it", not p3res(base + [dict(three=wrun(limited=True), counts=False)])["pace"]["met"])
-    check("part 3.3: a refusal in the one-worker run only does not", p3res(base + [dict(one=wrun(refused=True), counts=False)])["pace"]["met"])
-    check("part 3.3: a peak of 9 in a pair that does not count still fails it", not p3res(base + [dict(three=wrun(peak=9), counts=False)])["pace"]["met"])
-    r = run(pairs=pairs_of(base, extra=[("pair_20261120T0405Z.json", "{not json")]))["part3"]
-    check("part 3.3: a file that cannot be read is listed and makes it not met", not r["pace"]["met"] and r["pace"]["unreadable"] == ["pair_20261120T0405Z.json"], r["pace"])
-    r = run(pairs=pairs_of(base, extra=[("pair_20261201T0405Z.json", "{not json")]))["part3"]
-    check("part 3.3: an unreadable file that started after the period (by its name) is not in the clause", r["pace"]["met"], r["pace"])
-    r = run(pairs=pairs_of(base, extra=[("odd.json", "{not json")]))["part3"]
-    check("part 3.3: an unreadable file with no start at all is taken as inside the period", not r["pace"]["met"])
-    r = run(pairs=pairs_of(base, extra=[("pair_20261125T0305Z.json", json.dumps(dict(utc_start="2026-11-25T03:05:00Z", counts=True, runs=[dict(workers=3, label="three", **wrun(peak=12))])))]))["part3"]
-    check("part 3.3: a three-worker peak of 12 in a file after the period is not in the clause", r["pace"]["met"])
-    check("part 3.3: no files at all: the clause itself is met, the read is not complete", run(pairs=[])["part3"]["pace"]["met"] and not run(pairs=[])["part3"]["complete"])
+        return run(jobs=jobs_of(specs), **kw)["part3"]
+    ok = lambda **kw: dict(G, steps=asteps(20, 20, slow1=4, **kw))                                      # noqa: E731
+    # eight good jobs: all four clauses
+    r = p3res([G] * 8)
+    check("part 3: eight good jobs meet clauses 1 to 4 and are complete", r["step"]["met"] and r["gain"]["met"] and r["pace"]["met"] and r["rows"]["met"]
+          and r["complete"] and r["met"] and r["jobs"] == 8 and r["slow_one"] == 32, r)
+    # 1 no harm
+    one3 = lambda a, b: [dict(steps=asteps(20, 20, a, b, slow1=4))] * 8                                 # noqa: E731
+    r = p3res(one3("1.000", "1.050"))
+    check("part 3.1: three exactly 0.05 s above one meets", r["step"]["met"] and r["step"]["median_three_exact"] == "21/20", r["step"])
+    check("part 3.1: 0.051 s above does not", not p3res(one3("1.000", "1.051"))["step"]["met"])
+    check("part 3.1: three faster than one meets", p3res(one3("1.000", "0.500"))["step"]["met"])
+    check("part 3.1: even count: the mean of the middle two (1.000 and 2.000, so 1.500) plus 0.05 is the bar",
+          p3res([dict(steps=texts(["1.000"] * 10 + ["2.000"] * 10, ["1.550"] * 20))] * 2)["step"]["met"]
+          and not p3res([dict(steps=texts(["1.000"] * 10 + ["2.000"] * 10, ["1.551"] * 20))] * 2)["step"]["met"])
+    r = p3res([dict(steps=texts(["1.000"] * 10 + ["2.000"] * 10, ["1.550"] * 20))] * 2)
+    check("part 3.1: the exact medians are in the result", r["step"]["median_one_exact"] == "3/2" and r["step"]["median_three_exact"] == "31/20", r["step"])
+    check("part 3.1: seven jobs can still meet clause 1 (the read waits, the clause is computed)", p3res([G] * 7)["step"]["met"] and not p3res([G] * 7)["complete"])
+    # 2 a gain in slow minutes
+    sl = lambda s1, s3, **kw: [dict(steps=asteps(20, 20, slow1=s1, slow3=s3, **kw))] * 8                # noqa: E731
+    r = p3res(sl(4, 2))
+    check("part 3.2: 32 slow one-worker passes and exactly half the share with three meet", r["gain"]["met"] and r["gain"]["slow_one"] == 32 and r["gain"]["slow_three"] == 16, r["gain"])
+    check("part 3.2: one more slow pass with three (17 of 160 against 32 of 160) does not", not p3res(sl(4, 2)[:7] + [dict(steps=asteps(20, 20, slow1=4, slow3=3))])["gain"]["met"])
+    check("part 3.2: exactly 30 slow one-worker passes meet", p3res([dict(steps=asteps(20, 20, slow1=4))] * 7 + [dict(steps=asteps(20, 20, slow1=2))])["gain"]["met"])
+    r = p3res([dict(steps=asteps(20, 20, slow1=4))] * 7 + [dict(steps=asteps(20, 20, slow1=1))])
+    check("part 3.2: 29 slow one-worker passes do not (the read waits)", not r["gain"]["met"] and not r["complete"] and r["slow_one"] == 29)
+    check("part 3.2: slow is strictly above 6.0 s", p3res([dict(steps=asteps(20, 20, "6.000", "6.000"))] * 8)["gain"]["slow_one"] == 0
+          and p3res([dict(steps=asteps(20, 20, "6.001", "6.001"))] * 8)["gain"]["slow_one"] == 160)
+    check("part 3.2: more fallbacks with three than with one do not meet", not p3res(sl(4, 2, fb1=0, fb3=1))["gain"]["met"])
+    check("part 3.2: equal fallbacks meet", p3res(sl(4, 2, fb1=1, fb3=1))["gain"]["met"])
+    check("part 3.2: summed over the jobs, not averaged (three 12 of 160 against one's 32 of 160 halved, 16: meets; 17 does not)",
+          p3res([dict(steps=asteps(20, 20, slow1=4, slow3=3))] * 4 + [dict(steps=asteps(20, 20, slow1=4, slow3=0))] * 4)["gain"]["met"]
+          and not p3res([dict(steps=asteps(20, 20, slow1=4, slow3=3))] * 4 + [dict(steps=asteps(20, 20, slow1=4, slow3=0))] * 3
+                        + [dict(steps=asteps(20, 20, slow1=4, slow3=5))])["gain"]["met"])
+    # 3 the pace
+    base = [G] * 8
+    check("part 3.3: eight clean jobs meet, the peak is stated", p3res(base)["pace"]["met"] and p3res(base)["pace"]["peak_max"] == 7)
+    check("part 3.3: a three-worker peak of exactly 8 meets", p3res([dict(G, steps=asteps(20, 20, slow1=4, peak3=8))] * 8)["pace"]["met"])
+    r = p3res([dict(G, steps=asteps(20, 20, slow1=4, peak3=9))] + base[1:])
+    check("part 3.3: a peak of 9 does not meet, the file is named", not r["pace"]["met"] and r["pace"]["over_peak"] == ["alt_20261120T0130Z.json"], r["pace"])
+    check("part 3.3: a limited three-worker step does not meet", not p3res(base[:7] + [dict(G, steps=asteps(20, 20, slow1=4, limited3=1))])["pace"]["met"])
+    check("part 3.3: a refused three-worker step does not meet", not p3res(base[:7] + [dict(G, steps=asteps(20, 20, slow1=4, refused3=1))])["pace"]["met"])
+    bad = dict(steps=asteps(20, 20, peak3=9), counts=False, why="x")
+    r = p3res(base[:4] + [bad] + base[4:])
+    check("part 3.3: a file that does not count, between the first and the last job used, still fails it", not r["pace"]["met"] and r["jobs"] == 8
+          and r["pace"]["over_peak"] == ["alt_20261120T0530Z.json"], r["pace"])
+    r = p3res([bad] + base)
+    check("part 3.3: a file that does not count and started before the first job is outside the range", r["pace"]["met"] and r["jobs"] == 8)
+    r = p3res(base + [bad])
+    check("part 3.3: a file that does not count and started after the last job used is outside the range", r["pace"]["met"] and r["jobs"] == 8)
+    r = p3res(base[:4] + [dict(steps=asteps(20, 20, refused3=1), counts=False, why="refused")] + base[4:])
+    check("part 3.3: a refused step in a file that does not count fails it", not r["pace"]["met"] and r["pace"]["refused_or_limited"] == ["alt_20261120T0530Z.json"])
+    r = run(jobs=jobs_of(base, extra=[("alt_20261120T0405Z.json", "{not json")]))["part3"]
+    check("part 3.3: an unreadable file in the range is listed and does not meet", not r["pace"]["met"] and r["pace"]["unreadable"] == ["alt_20261120T0405Z.json"], r["pace"])
+    r = run(jobs=jobs_of(base, extra=[("alt_20261201T0405Z.json", "{not json")]))["part3"]
+    check("part 3.3: an unreadable file after the last job used is outside the range", r["pace"]["met"] and r["pace"]["unreadable"] == [])
+    r = run(jobs=jobs_of(base, extra=[("odd.json", "{not json")]))["part3"]
+    check("part 3.3: an unreadable file with no start at all is taken as inside the range", not r["pace"]["met"] and r["pace"]["unreadable"] == ["odd.json"])
+    check("part 3.3: no files at all: the clause itself is met, the read is not complete", run(jobs=[])["part3"]["pace"]["met"] and not run(jobs=[])["part3"]["complete"])
     # 4 the rows
-    def rows(c1, d1, c3, d3, n=8):
-        return [(wrun(compared=c1, differ=d1), wrun(compared=c3, differ=d3))] * n
-    check("part 3.4: equal shares meet (3 of 100 and 3 of 100; 3 of 100 and 6 of 200)", p3res(rows(100, 3, 100, 3))["rows"]["met"] and p3res(rows(100, 3, 200, 6))["rows"]["met"])
-    check("part 3.4: a higher share with three does not (3 of 100 and 4 of 100; 3 of 100 and 7 of 200)",
-          not p3res(rows(100, 3, 100, 4))["rows"]["met"] and not p3res(rows(100, 3, 200, 7))["rows"]["met"])
-    check("part 3.4: a lower share with three meets", p3res(rows(100, 3, 100, 0))["rows"]["met"])
-    check("part 3.4: a zero denominator on either side is not met", not p3res(rows(0, 0, 100, 0))["rows"]["met"] and not p3res(rows(100, 0, 0, 0))["rows"]["met"])
-    check("part 3.4: summed over the pairs, not averaged (10 of 100 against 0 of 100, then seven pairs 0 of 100 against 1 of 100)",
-          p3res([(wrun(compared=100, differ=10), wrun(compared=100, differ=0))] + rows(100, 0, 100, 1, n=7))["rows"]["met"])
-    check("part 3.4: seven pairs do not meet", not p3res(rows(100, 3, 100, 0, n=7))["rows"]["met"])
-    # a pair that does not count is left out of 1, 2 and 4 (and in 3 only through its three-worker run)
-    r = p3res([(wrun(median="10.00"), wrun(median="1.00"))] * 7 + [dict(one=wrun(median="10.00"), three=wrun(median="99.00"), counts=False, why="x")])
-    check("part 3: a pair that does not count is left out of the median (7 pairs, not 8)", r["step"]["pairs"] == 7 and not r["complete"])
-    # a pair that says counts but has a figure missing does not count
-    r = run(pairs=pairs_of([None] * 7 + [dict(three=dict(wrun(), fb_budget=None))]))["part3"]
-    check("part 3: counts true with a figure missing does not count", r["step"]["pairs"] == 7)
+    rw = lambda c1, d1, c3, d3, n=8, complete=True: [dict(steps=asteps(20, 20, slow1=4), rows=((c1, d1), (c3, d3)), rows_complete=complete)] * n    # noqa: E731
+    check("part 3.4: three exactly one point above one (2 of 100 and 3 of 100) meets", p3res(rw(100, 2, 100, 3))["rows"]["met"])
+    check("part 3.4: more than one point above (2 of 100 and 4 of 100) does not", not p3res(rw(100, 2, 100, 4))["rows"]["met"])
+    check("part 3.4: cross-multiplied with different sizes (1 of 100 and 4 of 200 is exactly a point: meets; 5 of 200 does not)",
+          p3res(rw(100, 1, 200, 4))["rows"]["met"] and not p3res(rw(100, 1, 200, 5))["rows"]["met"])
+    check("part 3.4: a zero denominator on either side does not meet", not p3res(rw(0, 0, 100, 0))["rows"]["met"] and not p3res(rw(100, 0, 0, 0))["rows"]["met"])
+    r = p3res(rw(100, 0, 100, 0, n=7) + rw(100, 0, 100, 50, n=1, complete=False))
+    check("part 3.4: a job with an incomplete comparison is left out", r["rows"]["met"] and r["rows"]["jobs"] == 7 and r["rows"]["compared_three"] == 700, r["rows"])
+    check("part 3.4: no job with a complete comparison does not meet", not p3res(rw(100, 0, 100, 0, complete=False))["rows"]["met"])
+    # the reported figures
+    r = p3res(one3("1.000", "0.900"))["reported"]
+    check("part 3 reported: medians, means, difference, the note and the per-job steps and slow passes",
+          r["median_one_s"] == 1.0 and r["median_three_s"] == 0.9 and abs(r["diff_median_s"] + 0.1) < 1e-9 and abs(r["mean_one_s"] - 2.2) < 1e-9
+          and r["note"] == "first version of the plan asked for a 0.2 s gain at the median over half-hour pairs" and len(r["jobs"]) == 8
+          and r["jobs"][0]["steps_one"] == 20 and r["jobs"][0]["slow_one"] == 4 and r["decides"] == "nothing", r)
 
 
-def test_pairs_extension():
-    # five in the period, then later ones: three are added, oldest first
-    specs = steps(["-1.00"] * 5) + steps(["0.00"] * 5)                 # hours 1..5 inside, 6..10 after
-    pairs = pairs_of(specs[:5], first_hour=1) + pairs_of(specs[5:], first_hour=24 * 3 + 2)     # after the period
-    pairs.sort(key=lambda p: p["start"])
-    meta, B, S = tables(spec(), spec(), start=START, end=END)
-    res = run(pairs=pairs)
-    P = res["part3"]
-    check("pairs: five in the period and three added oldest first make eight", P["complete"] and P["in_period"] == 5 and P["added"] == 3
-          and P["step"]["pairs"] == 8 and P["pair_files"][5:] == [p["file"] for p in pairs[5:8]], P)
-    check("pairs: the median is over the eight used (5 x -1.00 and 3 x 0.00: -1.00)", P["step"]["median_exact"] == "-1" and P["step"]["met"])
-    check("pairs: the last used start is stated, in the output", P["last_used_start"] == pairs[7]["start"].strftime("%Y-%m-%dT%H:%M:%SZ")
-          and "5 started in the period and 3 were added from after it" in rule.to_md(res) and f"started {P['last_used_start']} UTC" in rule.to_md(res))
-    # the later pairs after the eighth are not used, and a pair after the period does not rescue the pace clause or break it
-    check("pairs: pairs after the eighth are left out of the median", len(P["pair_files"]) == 8 and pairs[8]["file"] not in P["pair_files"])
-    # eight in the period: nothing is added
-    res = run(pairs=pairs_of(steps(["-1.00"] * 8)) + pairs_of(steps(["5.00"] * 2), first_hour=24 * 3 + 2))
-    check("pairs: eight in the period, nothing is added", res["part3"]["added"] == 0 and res["part3"]["step"]["pairs"] == 8 and res["part3"]["step"]["met"])
-    # seven even with the later ones: not complete, no verdict, the exact line
-    res = run(pairs=pairs_of(steps(["-1.00"] * 5)) + pairs_of(steps(["-1.00"] * 2), first_hour=24 * 3 + 2))
+def test_job_selection():
+    first = 1
+    sel = lambda specs_a, specs_b=(), b_hour=24 * 3 + 2, **kw: run(jobs=jobs_of(specs_a, first) + (jobs_of(list(specs_b), b_hour) if specs_b else []), **kw)["part3"]   # noqa: E731
+    S6 = dict(G, steps=asteps(20, 20, slow1=6))
+    S0 = dict(G, steps=asteps(20, 20, slow1=0))
+    # in the period
+    P = sel([S6] * 8)
+    check("selection: eight in the period with 48 slow passes: all used, nothing added", P["complete"] and P["in_period"] == 8 and P["added"] == 0 and P["jobs"] == 8)
+    P = sel([S6] * 5, [S0] * 4)
+    check("selection: five in the period, later ones added for the eighth job, oldest first (30 slow already)",
+          P["complete"] and P["in_period"] == 5 and P["added"] == 3 and P["jobs"] == 8 and P["slow_one"] == 30
+          and P["job_files"][5:] == ["alt_20261123T0230Z.json", "alt_20261123T0330Z.json", "alt_20261123T0430Z.json"], P)
+    check("selection: the last job used is stated", P["last_used_start"] == "2026-11-23T04:30:00Z" and P["first_job_start"] == "2026-11-20T01:30:00Z", P)
+    S3 = dict(G, steps=asteps(20, 20, slow1=3))
+    P = sel([S3] * 8, [S3] * 3)
+    check("selection: eight jobs in the period but 24 slow passes: later jobs added for the 30th slow pass, one at a time (two)",
+          P["complete"] and P["in_period"] == 8 and P["added"] == 2 and P["jobs"] == 10 and P["slow_one"] == 30, P)
+    P = sel([S3] * 8, [S3] * 3, b_hour=24 * 3 + 2)
+    check("selection: adding stops as soon as both hold (the third later job is not used)", "alt_20261123T0430Z.json" not in P["job_files"])
+    # 14 days: first job at hour 1, so the days end at hour 24 * 14 + 1
+    D = 24 * 14
+    S15 = dict(G, steps=asteps(20, 20, slow1=15))
+    P = sel([S0] * 8, [S15] * 2, b_hour=D)
+    check("selection: a job exactly 14 days after the first job's start is still added", P["complete"] and P["added"] == 2 and P["jobs"] == 10
+          and P["last_used_start"] == stamp(D + 1) and P["gain"]["met"], P)
+    P = sel([S0] * 8, [S15] * 2, b_hour=D + 1, now=PERIOD_START + timedelta(days=30))
+    check("selection: the second later job one hour past the 14 days is not added (the gain is not shown)",
+          P["jobs"] == 9 and P["gain_not_shown"] and P["complete"] and not P["gain"]["met"] and P["added"] == 1, P)
+    check("selection: the days are stated", P["days_end"] == stamp(D + 1), P["days_end"])
+    # --now
+    seven = [S6] * 7
+    P = sel(seven, now=PERIOD_START + timedelta(days=14, hours=1))
+    check("selection: seven jobs, now exactly at the end of the 14 days: not complete, waiting", not P["complete"] and P["wait"] and not P["gain_not_shown"], P)
+    P = sel(seven, now=PERIOD_START + timedelta(days=14, hours=1, minutes=1))
+    check("selection: seven jobs, one minute after the 14 days: complete, the gain is not shown, clause 2 not met",
+          P["complete"] and P["gain_not_shown"] and not P["gain"]["met"], P)
+    P = sel([S3] * 8, now=PERIOD_START + timedelta(days=30))
+    check("selection: eight jobs but 24 slow passes after the days: complete, gain not shown, clauses 1, 3 and 4 still computed",
+          P["complete"] and P["gain_not_shown"] and not P["gain"]["met"] and P["step"]["met"] and P["rows"]["met"], P)
+    P = sel([S6] * 8, now=PERIOD_START + timedelta(days=30))
+    check("selection: both hold: the days passing does not matter", P["complete"] and not P["gain_not_shown"] and P["gain"]["met"])
+    # not counting jobs are skipped when adding
+    P = sel([S6] * 5, [dict(G, counts=False, why="x")] + [S0] * 4)
+    check("selection: a job that does not count is skipped when adding", P["added"] == 3 and all("alt_20261123T0230Z" not in f for f in P["job_files"]), P)
+    # it is paper_status.alt_select
+    jobs = jobs_of([S6] * 5) + jobs_of([S0] * 4, 24 * 3 + 2)
+    s = ps.alt_select(jobs, p3.when(END), NOW0)
+    P = run(jobs=jobs)["part3"]
+    check("selection: the files used are exactly paper_status.alt_select's", [j["file"] for j in s["used"]] == P["job_files"] and s["in_period"] == P["in_period"])
+    # not complete, and read as is
+    res = run(jobs=jobs_of([S6] * 7))
     md = rule.to_md(res)
-    check("pairs: seven count even with the later ones: no verdict and the exact line",
-          res["verdict"] is None and not res["part3"]["complete"]
-          and "PART 3 NOT COMPLETE: 7 of 8 pairs count; the pair jobs go on and the read waits" in md.splitlines()
-          and "no verdict (part 3 not complete)" in md and "Trades workers: pass" not in md and "Trades workers: fail" not in md, md[:700])
-    res = run(pairs=pairs_of(steps(["-1.00"] * 7)), read_as_is=True)
-    check("pairs: --read-as-is gives a verdict with the clauses that need 8 pairs not met", res["verdict"] == "fail" and not res["part3"]["step"]["met"]
-          and "Read as is" in rule.to_md(res) and "**Trades workers: fail**" in rule.to_md(res))
-    # the pairs used are the status report's: the same files, whatever the arrangement
-    agree = True
-    for k_in, k_after in ((0, 0), (3, 2), (7, 4), (8, 3), (5, 9)):
-        ps_ = pairs_of(steps(["-0.30"] * k_in)) + pairs_of(steps(["-0.10"] * k_after), first_hour=24 * 3 + 2) + pairs_of([dict(counts=False, why="x")], first_hour=50)
-        ps_.sort(key=lambda p: p["start"])
-        mine = ps.workers_pairs_measure(ps_, p3.when(START), p3.when(END), None, 8, extend=True)
-        ref = ps.pairs_measure(ps_, p3.when(START), p3.when(END), None, 8, extend=True)
-        agree = agree and [p["file"] for p in mine["used"]] == [p["file"] for p in ref["used"]] and mine["median"] == ref["median"] \
-            and mine["in_period"] == ref["in_period"] and mine["added"] == ref["added"]
-    check("pairs: the pairs used are exactly paper_status.pairs_measure's (extension logic shared) on five arrangements", agree)
-    # the same logic as the fifth book's loader and rule: pairs of the fifth book's files, same selection
-    agree = True
-    for k_in, k_after in ((3, 2), (8, 3)):
-        old = []
-        for i in range(k_in + k_after):
-            h = i + 1 if i < k_in else 24 * 3 + 2 + (i - k_in)
-            old.append(dict(file=f"o{i}", start=PERIOD_START + timedelta(hours=h), counts=True, diff=F(-1)))
-        new = pairs_of(steps(["-1.00"] * k_in)) + pairs_of(steps(["-1.00"] * k_after), first_hour=24 * 3 + 2)
-        a = ps.pairs_measure(old, p3.when(START), p3.when(END), None, 8, extend=True)
-        b = ps.workers_pairs_measure(new, p3.when(START), p3.when(END), None, 8, extend=True)
-        agree = agree and (a["n"], a["in_period"], a["added"], a["complete"]) == (b["n"], b["in_period"], b["added"], b["complete"])
-    check("pairs: counts, in-period and added numbers agree with the fifth book's pairs on the same arrangement", agree)
-    # the boundary: a pair at the end minute is in the period, one a minute later is after it
-    with tempfile.TemporaryDirectory() as tmp:
-        d = os.path.join(tmp, "p")
-        for i, st in enumerate(["2026-11-23T00:29:59Z", "2026-11-23T00:30:00Z"]):
-            write_pair(d, f"pair_b{i}.json", st)
-        ld = ps.load_workers_pairs(d)
-        m = ps.workers_pairs_measure(ld, p3.when(START), p3.when(END))
-        check("pairs: a start inside the end minute is in the period, the next minute is not", m["n"] == 1 and m["used"][0]["file"] == "pair_b0.json")
+    check("not complete: the exact line, no verdict", res["verdict"] is None and "PART 3 NOT COMPLETE: 7 of 8 jobs, 42 of 30 slow one-worker passes; the jobs go on and the read waits" in md.splitlines()
+          and "Trades workers: pass" not in md and "no verdict (part 3 not complete)" in md, md[:700])
+    res = run(jobs=jobs_of([S3] * 8))
+    check("not complete: eight jobs, 24 slow: the line names both counts", "PART 3 NOT COMPLETE: 8 of 8 jobs, 24 of 30 slow one-worker passes; the jobs go on and the read waits" in rule.to_md(res).splitlines())
+    res = run(jobs=jobs_of([S6] * 7), read_as_is=True)
+    check("not complete: --read-as-is gives a verdict, fail, clauses 1, 2 and 4 not met", res["verdict"] == "fail" and not res["part3"]["step"]["met"]
+          and not res["part3"]["gain"]["met"] and not res["part3"]["rows"]["met"] and res["part3"]["pace"]["met"] and "Read as is" in rule.to_md(res))
+    res = run(jobs=[], read_as_is=True)
+    check("not complete: no jobs at all, read as is, fails without breaking", res["verdict"] == "fail" and "PART 3 NOT COMPLETE: 0 of 8 jobs, 0 of 30" in rule.to_md(res))
+    res = run(jobs=jobs_of([S3] * 8), now=PERIOD_START + timedelta(days=30))
+    md = rule.to_md(res)
+    check("gain not shown: Part 3 complete, the verdict fails with the words, no NOT COMPLETE line",
+          res["verdict"] == "fail" and not res["holds"]["part3.2_gain"] and "the gain is not shown" in md and "PART 3 NOT COMPLETE" not in md, md[:900])
 
 
 def test_requests_and_stops():
@@ -450,12 +471,12 @@ def test_verdict_and_period():
     res = run(items="fail")
     check("items 1 to 5: fail makes the verdict fail, alone", res["verdict"] == "fail" and [k for k, v in res["holds"].items() if not v] == ["part4.2_items_1_5"])
     # each clause alone fails the verdict (the other seven hold)
-    def good(**three):
-        return (wrun(median="10.00", differ=2), wrun(**dict(dict(median="9.50", differ=1), **three)))
-    cases = {"part3.1_step": dict(pairs=pairs_of([(wrun(median="10.00", differ=2), wrun(median="9.81", differ=1))] * 8)),
-             "part3.2_slow_minutes": dict(pairs=pairs_of([good(fb=1)] * 8)),
-             "part3.3_pace": dict(pairs=pairs_of([good(peak=9)] + [good()] * 7)),
-             "part3.4_rows": dict(pairs=pairs_of([good(differ=3)] * 8)),
+    def gj(**kw):
+        return dict(G, **kw)
+    cases = {"part3.1_no_harm": dict(jobs=jobs_of([gj(steps=asteps(20, 20, "1.000", "1.060", slow1=4, slow3=1, fb1=1, fb3=1))] * 8)),
+             "part3.2_gain": dict(jobs=jobs_of([gj(steps=asteps(20, 20, slow1=4, slow3=4, fb1=1, fb3=1))] * 8)),
+             "part3.3_pace": dict(jobs=jobs_of([gj(steps=asteps(20, 20, slow1=4, slow3=1, fb1=1, fb3=1, peak3=9))] + [G] * 7)),
+             "part3.4_rows": dict(jobs=jobs_of([gj(rows=((100, 2), (100, 4)))] * 8)),
              "part4.1_decisions": dict(sixth=spec(300, w=9, l=15, m=280, r=300))}
     for k, kw in cases.items():
         res = run(**kw)
@@ -474,26 +495,27 @@ def test_verdict_and_period():
     check("period: --read-as-is gives the verdict, stated in the output", res["verdict"] == "pass" and "read as is" in rule.to_md(res), rule.to_md(res)[:600])
     res = run(sixth=spec(299, w=9, l=3, m=280, r=299), items="fail", read_as_is=True)
     check("period: --read-as-is still fails when a clause fails", res["verdict"] == "fail")
-    res = run(sixth=spec(299, w=9, l=3, m=280, r=299), pairs=pairs_of(steps(["-1.00"] * 7)))
-    check("period and pairs both incomplete: both reasons in the no-verdict line", "period not complete and part 3 not complete" in rule.to_md(res))
+    res = run(sixth=spec(299, w=9, l=3, m=280, r=299), jobs=jobs_of([G] * 7, first_hour=1)[:6])
+    check("period and jobs both incomplete: both reasons in the no-verdict line", "period not complete and part 3 not complete" in rule.to_md(res))
     # the reported items, deciding nothing
     r6 = good_rows(10)
-    res = run(r6=r6, trades=dict(n=10, median=F(4), max=F("9.5")), pairs=pairs_of([(wrun(pass_median="5.00", median="10.00"), wrun(pass_median="3.00", median="9.50"))] * 8))
+    res = run(r6=r6, trades=dict(n=10, median=F(4), max=F("9.5")), jobs=jobs_of([dict(G, steps=asteps(20, 20, "5.000", "3.000", slow1=0))] * 8), now=NOW0 + timedelta(days=30))
     rep = res["reported"]
-    check("reported: step_s.trades, the pairs' trades-pass medians and the data-step medians over the common times",
+    check("reported: step_s.trades, the Part 3 pass medians and the data-step medians over the common times",
           rep["step_s_trades"]["median_of_medians_s"] == 4.0 and rep["step_s_trades"]["largest_max_s"] == 9.5 and rep["step_s_trades"]["heartbeats"] == 10
-          and rep["trades_pass_medians_of_the_pairs"]["median_one_s"] == 5.0 and rep["trades_pass_medians_of_the_pairs"]["median_three_s"] == 3.0
-          and len(rep["trades_pass_medians_of_the_pairs"]["pairs"]) == 8 and rep["data_step"]["common_heartbeat_times"] == 10
+          and rep["part3"]["median_one_s"] == 5.0 and rep["part3"]["median_three_s"] == 3.0 and rep["part3"]["diff_median_s"] == -2.0
+          and len(rep["part3"]["jobs"]) == 8 and rep["data_step"]["common_heartbeat_times"] == 10
           and rep["data_step"]["sixth_median_s"] == 10.0 and rep["data_step"]["fifth_median_s"] == 10.0 and rep["data_step"]["decides"] == "nothing", rep)
     md = rule.to_md(res)
     check("reported: in the markdown, and they decide nothing", "step_s.trades" in md and "median of the half-hour medians 4.000 s, largest maximum 9.500 s" in md
-          and "three 3.000 s, one 5.000 s" in md and res["verdict"] == "pass")
+          and "median one 5.000 s, three 3.000 s, difference -2.000 s" in md
+          and "first version of the plan asked for a 0.2 s gain at the median over half-hour pairs" in md and res["verdict"] == "fail")
     bad = run(r6=beats(range(1, 11), data=99.0, **GOOD4))
     check("reported: a data step of 99 s in the sixth decides nothing", bad["verdict"] == "pass")
     # the unreadable file and the listing in the markdown
-    res = run(pairs=pairs_of([None] * 8, extra=[("pair_20261120T0405Z.json", "{not json")]))
+    res = run(jobs=jobs_of([G] * 8, extra=[("alt_20261120T0405Z.json", "{not json")]))
     md = rule.to_md(res)
-    check("markdown: an unreadable pair file is listed and the pace clause is not met", "Files that could not be read: pair_20261120T0405Z.json" in md
+    check("markdown: an unreadable pair file is listed and the pace clause is not met", "A file that could not be read: alt_20261120T0405Z.json" in md
           and "| 3. the pace |" in md and res["verdict"] == "fail")
     check("markdown: no at-sign", chr(64) not in md)
 
@@ -532,19 +554,20 @@ def test_cli_and_shared_numbers():
         B.to_csv(os.path.join(rec, "item7_bids.csv"), index=False)
         S.to_csv(os.path.join(rec, "side_by_side.csv"), index=False)
         out = os.path.join(tmp, "out")
-        pdir = os.path.join(tmp, "reports", "owner", "step_pairs_tw")
-        for i in range(9):                               # eight that count (both orders), one that does not
-            write_pair(pdir, f"pair_{i}.json", f"2026-11-2{i // 4}T{(i % 4) * 6:02d}:35:00Z", order="ab" if i % 3 else "ba",
-                       one=wrun(median="10.00", fb=1), three=wrun(median="9.50", fb=1), counts=i != 8, why=None if i != 8 else "x")
-        cmd = [sys.executable, os.path.join(HERE, "rule.py"), "--dir", rec, "--pairs", pdir, "--start", "2026-11-20T00:30", "--end", "2026-11-23T00:29",
+        pdir = os.path.join(tmp, "reports", "owner", "workers_alt")
+        for i in range(9):                               # eight that count (both first arms), one that does not
+            st = f"2026-11-2{i // 4}T{(i % 4) * 6:02d}:35:00Z"
+            write_alt(pdir, f"alt_{st[:4]}{st[5:7]}{st[8:10]}T{st[11:13]}{st[14:16]}Z.json", st, asteps(20, 20, "1.000", "0.900", slow1=4, slow3=1, fb1=1, fb3=1),
+                      first="one" if i % 3 else "three", rows=((100, 2), (100, 2)), counts=i != 8, why=None if i != 8 else "x")
+        cmd = [sys.executable, os.path.join(HERE, "rule.py"), "--dir", rec, "--alt", pdir, "--now", "2026-11-24T00:00:00Z", "--start", "2026-11-20T00:30", "--end", "2026-11-23T00:29",
                "--sixth", d6, "--fifth", d5, "--items-1-5", "pass", "--out", out]
         r = subprocess.run(cmd, capture_output=True, text=True)
         check("cli runs", r.returncode == 0, r.stderr[-500:])
         js = json.load(open(os.path.join(out, "trades_workers_rule.json")))
         md = open(os.path.join(out, "trades_workers_rule.md")).read()
         check("cli: prints the markdown it writes", r.stdout.strip() == md.strip())
-        check("cli: verdict pass, eight pairs, 120 heartbeats counted, two starts left out as first steps (1 each)",
-              js["verdict"] == "pass" and js["part3"]["step"]["pairs"] == 8 and js["part3"]["step"]["median_s"] == -0.5
+        check("cli: verdict pass, eight jobs, 120 heartbeats counted, two starts left out as first steps (1 each)",
+              js["verdict"] == "pass" and js["part3"]["jobs"] == 8 and js["part3"]["step"]["median_three_s"] == 0.9 and js["part3"]["step"]["median_one_s"] == 1.0
               and js["part4"]["requests"]["heartbeats"] == 120 and js["part4"]["requests"]["left_out_first_steps"] == 2
               and "**Trades workers: pass**" in md, js["holds"])
         check("cli: step_s.trades read from the log", js["reported"]["step_s_trades"]["heartbeats"] == 120
@@ -565,8 +588,9 @@ def test_cli_and_shared_numbers():
               and float(a["coin_minutes"]) == js["part4"]["requests"]["coin_minutes"] and a["left_out"] == js["part4"]["requests"]["left_out_first_steps"], a)
         text = ps.build_report(tmp, T0 + timedelta(days=4))
         sec = text.split("## Rule progress for the sixth book")[1].split("\n## ")[0]
-        row1 = [l for l in sec.splitlines() if l.startswith("| 1. The step")][0]
-        check("shared: the status report reads the same pairs and the same median", "8 pairs (8 needed); median -0.50 s" in row1 and row1.endswith("| meets |"), row1)
+        row1 = [l for l in sec.splitlines() if l.startswith("| 1. No harm")][0]
+        check("shared: the status report reads the same jobs and the same medians", "three 0.90 s, one 1.00 s, over 160 and 160 steps" in row1 and row1.endswith("| meets |"), row1)
+        check("shared: the status report has the same job count", "8 jobs (8 needed); 32 slow one-worker passes (30 needed)" in sec, sec[:1500])
         check("shared: the status report prints the same in-step figure",
               f"{a['in_step']:,.0f} of {float(a['coin_minutes']):,.0f}" in sec, sec[-900:])
         check("shared: the status report has the same step_s.trades", "median of the half-hour medians 4.00 s, largest maximum 9.50 s, over 120 heartbeats" in sec)
@@ -580,25 +604,28 @@ def test_cli_and_shared_numbers():
         rows, _, _ = rule.log_data(d6, "2026-11-20T05:00", "2026-11-20T10:00")
         check("log_data: the end minute is included", rows[-1]["t"] == T0 + timedelta(hours=10))
         check("log_data: a missing folder is an error", raises(lambda: rule.log_data(os.path.join(tmp, "nope"), "2026-11-20T05:00", "2026-11-20T10:00"), "no events.jsonl"))
-        # seven pairs count: the line, no verdict; read as is: fail
-        os.remove(os.path.join(pdir, "pair_0.json"))
+        # seven jobs count: the line, no verdict; read as is: fail
+        os.remove(os.path.join(pdir, "alt_20261120T0035Z.json"))
         r = subprocess.run(cmd, capture_output=True, text=True)
         js = json.load(open(os.path.join(out, "trades_workers_rule.json")))
-        check("cli: 7 pairs count: the line is printed, no verdict",
-              r.returncode == 0 and "PART 3 NOT COMPLETE: 7 of 8 pairs count; the pair jobs go on and the read waits" in r.stdout.splitlines()
+        check("cli: 7 jobs count: the line is printed, no verdict",
+              r.returncode == 0 and "PART 3 NOT COMPLETE: 7 of 8 jobs, 28 of 30 slow one-worker passes; the jobs go on and the read waits" in r.stdout.splitlines()
               and js["verdict"] is None and "Trades workers: pass" not in r.stdout, r.stdout[:500])
         r = subprocess.run(cmd + ["--read-as-is"], capture_output=True, text=True)
         js = json.load(open(os.path.join(out, "trades_workers_rule.json")))
-        check("cli: --read-as-is gives a verdict (fail: the pair clauses need 8)", js["verdict"] == "fail" and not js["part3"]["step"]["met"], r.stdout[:300])
-        # a later pair is added
-        write_pair(pdir, "pair_late.json", "2026-11-23T03:05:00Z", one=wrun(median="10.00", fb=1), three=wrun(median="9.50", fb=1), order="ba")
+        check("cli: --read-as-is gives a verdict (fail: clauses 1, 2 and 4 need 8 jobs)", js["verdict"] == "fail" and not js["part3"]["step"]["met"], r.stdout[:300])
+        r = subprocess.run(cmd[:cmd.index("--now") + 1] + ["2026-12-30T00:00:00Z"] + cmd[cmd.index("--now") + 2:], capture_output=True, text=True)
+        js = json.load(open(os.path.join(out, "trades_workers_rule.json")))
+        check("cli: --now after the 14 days: complete, the gain is not shown, fail", js["verdict"] == "fail" and js["part3"]["gain_not_shown"] and "the gain is not shown" in r.stdout, r.stdout[:300])
+        # a later job is added
+        write_alt(pdir, "alt_20261123T0305Z.json", "2026-11-23T03:05:00Z", asteps(20, 20, "1.000", "0.900", slow1=4, slow3=1, fb1=1, fb3=1), first="three", rows=((100, 2), (100, 2)))
         r = subprocess.run(cmd, capture_output=True, text=True)
         js = json.load(open(os.path.join(out, "trades_workers_rule.json")))
-        check("cli: a pair after the period is added: pass, with the numbers in the output",
+        check("cli: a job after the period is added: pass, with the numbers in the output",
               js["verdict"] == "pass" and js["part3"]["in_period"] == 7 and js["part3"]["added"] == 1 and js["part3"]["last_used_start"] == "2026-11-23T03:05:00Z"
-              and "pair_late.json" in js["part3"]["pair_files"] and "7 started in the period and 1 were added from after it" in r.stdout, r.stdout[:900])
-        # default --pairs and --out
-        check("defaults: the pairs folder is the status report's and the out folder is --dir", rule.PAIRS_DEFAULT == os.path.join("reports", "owner", "step_pairs_tw"))
+              and "alt_20261123T0305Z.json" in js["part3"]["job_files"] and "7 started in the period and 1 were added from after it" in r.stdout, r.stdout[:900])
+        # default --alt and --out
+        check("defaults: the alt folder is the status report's and the out folder is --dir", rule.ALT_DEFAULT == os.path.join("reports", "owner", "workers_alt"))
         r = subprocess.run([c for c in cmd if c not in ("--out", out)], capture_output=True, text=True)
         check("cli: --out defaults to --dir", r.returncode == 0 and os.path.isfile(os.path.join(rec, "trades_workers_rule.json")) and os.path.isfile(os.path.join(rec, "trades_workers_rule.md")))
         # a stop in the sixth log alone through the command line
@@ -607,19 +634,21 @@ def test_cli_and_shared_numbers():
         check("cli: a book folder that is not the one in two_books.json is refused", r.returncode != 0 and "not a fifth-book / sixth-book" in r.stderr, r.stderr[-300:])
 
 
-def test_pairs_in_paper_status_are_the_same_numbers():
-    # the status report's section and the rule use one function for the pair clauses: spot-check a mixed set
-    pairs = pairs_of(steps(["-0.50"] * 6) + [dict(three=wrun(peak=9), counts=False, why="x")] + steps(["-0.20", "0.10"]))
-    m = ps.workers_pairs_measure(pairs, p3.when(START), p3.when(END), None, 8, extend=True)
-    P = run(pairs=pairs)["part3"]
+def test_jobs_in_paper_status_are_the_same_numbers():
+    # the status report's section and the rule use one pair of functions for the Part 3 clauses: spot-check a mixed set
+    bad = dict(steps=asteps(20, 20, peak3=9), counts=False, why="x")
+    specs = [dict(G, steps=asteps(20, 20, "1.000", "1.040", slow1=4, slow3=1))] * 4 + [bad] + [dict(G, steps=asteps(20, 20, "1.000", "1.080", slow1=4, slow3=1))] * 4
+    jobs = jobs_of(specs)
+    m = ps.alt_measure(jobs, ps.alt_select(jobs, p3.when(END), NOW0))
+    P = run(jobs=jobs)["part3"]
     check("shared: rule and status measure agree on a mixed set",
-          m["n"] == P["step"]["pairs"] and str(m["median"]) == P["step"]["median_exact"] and m["pace_met"] == P["pace"]["met"] and m["rows_met"] == P["rows"]["met"]
-          and m["slow_met"] == P["slow"]["met"] and m["step_met"] == P["step"]["met"] and not m["pace_met"], (m["n"], P["step"]))
+          m["jobs"] == P["jobs"] and str(m["median"][3]) == P["step"]["median_three_exact"] and m["pace_met"] == P["pace"]["met"] and m["rows_met"] == P["rows"]["met"]
+          and m["gain_met"] == P["gain"]["met"] and m["step_met"] == P["step"]["met"] and not m["pace_met"], (m["jobs"], P["step"]))
 
 
 def main():
-    for t in (test_baseline_and_labels, test_decisions, test_part3_clauses, test_pairs_extension, test_requests_and_stops,
-              test_verdict_and_period, test_cli_and_shared_numbers, test_pairs_in_paper_status_are_the_same_numbers):
+    for t in (test_baseline_and_labels, test_decisions, test_part3_clauses, test_job_selection, test_requests_and_stops,
+              test_verdict_and_period, test_cli_and_shared_numbers, test_jobs_in_paper_status_are_the_same_numbers):
         t()
     if FAILS:
         print(f"{len(FAILS)} failed: {FAILS}")
