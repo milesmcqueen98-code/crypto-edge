@@ -50,6 +50,7 @@ ORDER_TAG = "wk1m"              # client_order_id prefix: lets reconcile() find 
 REFRESH_S = 150                 # re-place a good-til-date bid this many seconds before it would expire
 PASS_TIMEOUT_S = 4.0            # candles_at_s: each candle request of the pass between steps gives up after this
 PASS_TRIES = 1                  # many seconds, on its one try (a failed one leaves the coin to the step)
+TRADES_WORKERS_MAX = 6          # trades_workers: more cannot be used at 7 trades requests a second
 warnings.filterwarnings("ignore", message="Mean of empty slice")
 warnings.filterwarnings("ignore", category=RuntimeWarning, module="edge.wick")
 
@@ -148,6 +149,11 @@ class LiveMarket:
     def trades_bars(self, coin, m0, m1, deadline=None):
         """Bars of the minutes m0 .. m1 from one paging pass of the venue's trades (bot/market.py)."""
         return self.m.minute_trades_bars(coin, m0, m1, deadline=deadline)
+
+    def trades_many(self, jobs, workers, deadline, clock):
+        """trades_workers 2 or more: the trades pass's requests side by side, one outcome per job in order
+        (bot/market.py minute_trades_many). Never touches the engine."""
+        return self.m.minute_trades_many(jobs, workers, deadline, clock=clock)
 
     def best_bid(self, product):
         bids, _ = self.m.book(product, limit=1)
@@ -880,12 +886,23 @@ class Engine:
                 raise ValueError(f"candles_at_s must be a number of seconds from confirm_s + 5 "
                                  f"({self.confirm_s + 5:g}) to 50, not {x!r}")
             self.candles_at_s = float(x)
+        # trades mode: the trades pass asks this many coins side by side (README, "Trades side by side"); 1 or absent:
+        # one after another, as before. Without trades the key is ignored (one warning event at start); in trades mode
+        # a value that is not a whole number from 1 to 6 stops the start
+        tw = self.cfg.get("trades_workers")
+        self._tw_ignored = None
+        if tw is not None and self.newest_bar != "trades":
+            self._tw_ignored, tw = tw, None
+        if tw is not None and (isinstance(tw, bool) or not isinstance(tw, int) or not 1 <= tw <= TRADES_WORKERS_MAX):
+            raise ValueError(f"trades_workers must be a whole number from 1 to {TRADES_WORKERS_MAX}, not {tw!r}")
+        self.trades_workers = 1 if tw is None else tw
         self._cpass = {}                                   # candles_at_s: coin -> minute its candle pass was for
         self._cp_min, self._cp_todo, self._cp_d = None, [], 0.0
         self._skipped, self._fb, self._fb_stop = set(), [], False
         self._skip_old = set()                             # stale_guard: coins with no new bid this minute
         self._timer = time.monotonic
-        self._tm = {"data": [], "cancel": [], "place": []}  # step timing, seconds after the minute
+        # step timing, seconds after the minute; "trades": the trades pass's own duration (engine timer, trades mode)
+        self._tm = {"data": [], "cancel": [], "place": [], "trades": []}
         self._tb_err = None
         # entry bids expire on their own after ttl seconds (0: good-til-cancelled); the bot re-places them while alive
         self.ttl = int(self.state.get("gtd_ttl_s") or self.cfg.get("bid_ttl_s", 300) or 0)
@@ -1117,17 +1134,16 @@ class Engine:
         stop = getattr(self.market, "Refused", None)
         limited = getattr(self.market, "Limited", None)
         self._fb, self._fb_stop = [], False                # coins that fell back (candles_at_s: fetched on demand)
+        if getattr(self, "trades_workers", 1) >= 2 and hasattr(self.market, "trades_many"):
+            return self._trades_side_by_side(m, todo, t0, budget, limited)
         for i, c in enumerate(todo):
             if self._timer() - t0 > budget:
                 self.count("tb_fb_budget", len(todo) - i)
                 self._fb += todo[i:]
                 return
-            df = self.spot.get(c)
-            if c not in self._cmax:
-                self._cmax[c] = df.index.max() if df is not None and len(df) else m - pd.Timedelta(minutes=WINDOW_MIN)
-            # repair: any of the 4 minutes before m still open is rebuilt in the same paging pass
-            need = [mm for mm in pd.date_range(m - pd.Timedelta(minutes=4), m - pd.Timedelta(minutes=1), freq="min")
-                    if self._open(c, mm)] if hasattr(self.market, "trades_bars") else []
+            cm, need = self._tb_plan(c, m)
+            if cm is not None:
+                self._cmax[c] = cm
             try:
                 if need:
                     rr = self.market.trades_bars(c, need[0], m, deadline=t0 + budget)
@@ -1141,26 +1157,95 @@ class Engine:
                     self.count(k, len(todo) - i)
                     self._fb_stop = True                   # no on-demand candle request this step
                     return
-                self.count("tb_fb_error")
+                self._tb_failed(c)
+                continue
+            self._tb_use(c, m, need, r)
+
+    def _tb_plan(self, c, m):
+        """What the trades pass works out for coin c before its request: (the _cmax default to store, or None when
+        the coin has one already; the open minutes to repair, oldest first). Reads only coin c's own state (its
+        table, its _cmax entry, its provenance) and the market's methods; only coin c's own result changes them (its
+        _put_bar and provenance marks), so working it out for every coin before any request gives the values the
+        sequential loop works out coin by coin (trades_workers_test.py proves it)."""
+        cm = None
+        if c not in self._cmax:
+            df = self.spot.get(c)
+            cm = df.index.max() if df is not None and len(df) else m - pd.Timedelta(minutes=WINDOW_MIN)
+        # repair: any of the 4 minutes before m still open is rebuilt in the same paging pass
+        need = [mm for mm in pd.date_range(m - pd.Timedelta(minutes=4), m - pd.Timedelta(minutes=1), freq="min")
+                if self._open(c, mm)] if hasattr(self.market, "trades_bars") else []
+        return cm, need
+
+    def _tb_failed(self, c):
+        """A coin's trades request raised an error that is not a refusal or a rate limit: its candle row stays."""
+        self.count("tb_fb_error")
+        self._fb.append(c)
+
+    def _tb_use(self, c, m, need, r):
+        """A coin's trades answer r (verified or not; r["bar"] is minute m's bar, r["bars"] the repaired minutes'):
+        the same branches, counters, provenance marks and fallbacks for both paths of the trades pass."""
+        if not r.get("verified"):
+            self.count("tb_fb_budget" if r.get("reason") == "deadline" else "tb_fb_unverified")
+            self._fb.append(c)
+            return
+        for mm in need:
+            b = r["bars"].get(mm)
+            if b is not None:
+                self._put_bar(c, mm, b, count=False)
+            else:
+                self._prov.setdefault(c, {})[mm] = (None, True)     # verified empty
+            self.count("tb_rebuilt")
+        bar = r.get("bar")
+        if bar is None:
+            self.count("tb_empty")                         # no trades: the candles have no row either
+            self._prov.setdefault(c, {})[m] = (None, True)
+            return
+        self._put_bar(c, m, bar)
+
+    def _trades_side_by_side(self, m, todo, t0, budget, limited):
+        """trades_workers 2 or more (and a market with trades_many): the trades pass's requests side by side, then the
+        results applied in today's coin order by the code the sequential loop uses (_tb_use, _tb_failed).
+        1. Before any request, here: each coin's plan (_tb_plan). 2. The market's workers fetch data only (the
+        same request per coin, deadline t0 + budget by this engine's timer). 3. Here again, in coin order: a result
+        that arrived is applied; a coin not asked by the deadline, or whose result had not arrived by then, is a
+        budget fallback; after a refusal or a rate limit every coin without a result is counted as the sequential
+        loop counts "the rest" (tb_fb_limited or tb_fb_error) and no on-demand candle request follows (_fb_stop).
+        A coin's _cmax default is stored when its request was started (the sequential loop stores it for each coin it
+        reaches). Never raises."""
+        plans = [(c,) + self._tb_plan(c, m) for c in todo]
+        jobs = [(c, need[0] if need else None, m) for c, _, need in plans]
+        try:
+            outs = self.market.trades_many(jobs, self.trades_workers, t0 + budget, self._timer)
+        except Exception as err:                           # the pool itself failed: every coin falls back
+            self._tb_err = f"trades_many: {err!r}"[:200]
+            self.count("tb_fb_error", len(todo))
+            self._fb += todo
+            return
+        stops = [(c, o.get("error"), bool(o.get("cause"))) for (c, _, _), o in zip(plans, outs)
+                 if o.get("status") == "stop"]
+        cause = ([x for x in stops if x[2]] or stops or [None])[0]  # the coin whose request saw the refusal
+        n_stop = 0
+        for (c, cm, need), o in zip(plans, outs):
+            if o.get("started") and cm is not None:
+                self._cmax[c] = cm
+            s = o.get("status")
+            if s == "ok":
+                rr = o["result"]
+                self._tb_use(c, m, need, dict(rr, bar=rr["bars"][m]) if need else rr)
+            elif s == "error":
+                self._tb_err = f"{c}: {o.get('error')!r}"[:200]
+                self._tb_failed(c)
+            elif s == "stop":
+                n_stop += 1                                # counted below, as the sequential loop counts the rest
+            else:                                         # "budget": not asked, or no result by the deadline
+                self.count("tb_fb_budget")
                 self._fb.append(c)
-                continue
-            if not r.get("verified"):
-                self.count("tb_fb_budget" if r.get("reason") == "deadline" else "tb_fb_unverified")
-                self._fb.append(c)
-                continue
-            for mm in need:
-                b = r["bars"].get(mm)
-                if b is not None:
-                    self._put_bar(c, mm, b, count=False)
-                else:
-                    self._prov.setdefault(c, {})[mm] = (None, True)     # verified empty
-                self.count("tb_rebuilt")
-            bar = r.get("bar")
-            if bar is None:
-                self.count("tb_empty")                     # no trades: the candles have no row either
-                self._prov.setdefault(c, {})[m] = (None, True)
-                continue
-            self._put_bar(c, m, bar)
+        if n_stop:
+            c, err, _ = cause
+            self._tb_err = f"{c}: {err!r}"[:200]
+            k = "tb_fb_limited" if limited is not None and isinstance(err, limited) else "tb_fb_error"
+            self.count(k, n_stop)
+            self._fb_stop = True                           # no on-demand candle request this step
 
     def _put_bar(self, c, m, bar, count=True):
         df = self.spot.get(c)
@@ -1264,6 +1349,13 @@ class Engine:
         """Step timing (monitoring). Never raises: a failure is counted as obs_error."""
         try:
             self._tm[k].append(self._since(t))
+        except Exception:
+            self.count("obs_error")
+
+    def _took(self, k, t0):
+        """Step timing (monitoring): seconds since t0 by the engine's timer. Never raises: a failure is obs_error."""
+        try:
+            self._tm[k].append(round(self._timer() - t0, 2))
         except Exception:
             self.count("obs_error")
 
@@ -1548,7 +1640,9 @@ class Engine:
         try:
             self.update_spot(t, self._step_coins(t))      # candles_at_s: without the coins its candle pass fetched
             if self.newest_bar == "trades":
+                tt = self._timer()
                 self.trades_pass(prev)
+                self._took("trades", tt)
                 self._fetch_fallbacks(t)
             self.refresh_adv(t)
             if self.broker.live:
@@ -2255,6 +2349,10 @@ class Engine:
         if getattr(self, "_cp_ignored", None) is not None:  # once per start (the setting has no effect without trades)
             self.log("warning", t=end, msg='candles_at_s is set but newest_bar is not "trades": the setting is ignored '
                                            f'(candle requests stay in the step; candles_at_s {self._cp_ignored!r}, '
+                                           f'newest_bar {self.newest_bar})')
+        if getattr(self, "_tw_ignored", None) is not None:  # once per start, as candles_at_s above
+            self.log("warning", t=end, msg='trades_workers is set but newest_bar is not "trades": the setting is '
+                                           f'ignored (no trades pass; trades_workers {self._tw_ignored!r}, '
                                            f'newest_bar {self.newest_bar})')
         self.update_spot(end)
         if self.newest_bar == "trades":

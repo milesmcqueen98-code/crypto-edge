@@ -10,7 +10,9 @@ Part 1, the pure functions:
   - describe: trades mode with and without a list, candle mode, guard on and off, trades_rows (candle_after in plain
     words, keep adds nothing, any other value named; nothing in candle mode); a list that holds BTC and every coin of
     the book reads as no list does when the book's coins are given, and as before when they are not; candles_at_s in
-    a few words, only when set and only in trades mode; the order path clause only for "order_path": "batch";
+    a few words, only when set and only in trades mode; trades_workers in a few words, only when 2 or more and only in
+    trades mode; the order path clause only for "order_path": "batch";
+  - trades_workers is an input key (after candles_at_s), taken from the base like the others;
   - the order-path keys (order_path, orders_rate, place_workers) are taken from the base like the input keys, and
     "inputs_local": true keeps the live file's;
   - preflight_file: the file as read plus coins_disabled and bid_ttl_s, nothing taken from the release;
@@ -77,6 +79,9 @@ def expected_line(cfg, coins=None):
     rows = {"candle_after": "; the venue's candle replaces each trades row afterwards", None: "", "keep": ""}
     line = ("inputs: " + src + "; stale guard " + ("on" if cfg.get("stale_guard") else "off")
             + (rows.get(cfg.get("trades_rows"), "; trades_rows " + str(cfg.get("trades_rows"))) if trades else ""))
+    tw = cfg.get("trades_workers") if trades else None
+    if type(tw) is int and tw >= 2:
+        line += "; trades asked for " + str(tw) + " coins side by side"
     if cfg.get("order_path") == "batch":
         line += ("; order path batch (" + str(cfg.get("orders_rate", 10)) + " requests a second, "
                  + str(cfg.get("place_workers", 1)) + " placing threads)")
@@ -216,16 +221,36 @@ def part1():
     check("describe: no clause for serial, nor without the key (the lines above)",
           o7 == "inputs: newest minute from trades for BTC; candles for the other coins; stale guard on"
           and "order path" not in d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8 + d9 + d10 + d11 + d12, o7)
+    w3 = R.describe(dict(full, trades_workers=3), COINS)
+    check("describe: trades_workers 2 or more in a few words", w3 == "inputs: newest minute from trades for BTC and "
+          "every coin; stale guard on; trades asked for 3 coins side by side", w3)
+    w5 = R.describe(dict(full, trades_rows="candle_after", trades_workers=2, order_path="batch", place_workers=3),
+                    COINS)
+    check("describe: trades_workers after trades_rows and before the order path", w5.endswith(
+        "afterwards; trades asked for 2 coins side by side; order path batch (10 requests a second, 3 placing "
+        "threads)"), w5)
+    check("describe: trades_workers not mentioned when 1, absent, not a whole number, or in candle mode",
+          all("side by side" not in R.describe(dict(full, **x), COINS) for x in
+              ({"trades_workers": 1}, {}, {"trades_workers": "3"}, {"trades_workers": 2.5},
+               {"trades_workers": True}, {"newest_bar": "candles", "trades_workers": 3}))
+          and R.describe(dict(full, trades_workers=1), COINS) == d8)
     o8 = R.describe({"order_path": "batch", "orders_rate": "ten"})
     check("describe: a batch path with odd values still gives a line (status never fails on it)",
           o8.endswith("; order path batch (ten requests a second, 1 placing threads)"), o8)
 
     # the order-path keys follow the release like the input keys
-    check("INPUT_KEYS holds the seven input keys (candles_at_s the last) and then the three order-path keys",
-          R.INPUT_KEYS[:7] == ("newest_bar", "trades_coins", "stale_guard", "trades_rows", "trades_budget_s",
-                               "confirm_s", "candles_at_s") and R.ORDER_KEYS == ("order_path", "orders_rate",
-                                                                                 "place_workers")
-          and R.INPUT_KEYS[7:] == R.ORDER_KEYS)
+    check("INPUT_KEYS holds the eight input keys (candles_at_s, then trades_workers, the last) and then the three "
+          "order-path keys",
+          R.INPUT_KEYS[:8] == ("newest_bar", "trades_coins", "stale_guard", "trades_rows", "trades_budget_s",
+                               "confirm_s", "candles_at_s", "trades_workers") and R.ORDER_KEYS == (
+              "order_path", "orders_rate", "place_workers")
+          and R.INPUT_KEYS[8:] == R.ORDER_KEYS)
+    new_w, notes_w = R.apply(dict(live, trades_workers=1), dict(base, trades_workers=3))
+    check("trades_workers: taken from the release like the other input keys, a differing value noted",
+          new_w["trades_workers"] == 3 and len(notes_w) == 1 and "trades_workers" in notes_w[0], str(notes_w))
+    new_w2, notes_w2 = R.apply(dict(live, trades_workers=3), base)
+    check("trades_workers: a key the release lacks is dropped (the code's default, one coin at a time) and noted",
+          "trades_workers" not in new_w2 and len(notes_w2) == 1 and "trades_workers" in notes_w2[0], str(notes_w2))
     base_o = dict(base, order_path="batch", orders_rate=10, place_workers=3)
     new_o, notes_o = R.apply(dict(live, order_path="serial", place_workers=1), base_o)
     check("order keys: taken from the release, a differing value replaced and noted",
@@ -239,11 +264,12 @@ def part1():
     check("order keys: inputs_local true keeps the live file's own order path",
           new_l2["order_path"] == "serial" and "orders_rate" not in new_l2 and len(notes_l2) == 1, str(new_l2))
 
-    check("describe matches the line written out independently for config.json, config.tb.json and config.t18.json, "
-          "with and without the book's coins",
+    check("describe matches the line written out independently for config.json, config.tb.json, config.t18.json "
+          "and config.tw.json, with and without the book's coins",
           all(R.describe(c, k) == expected_line(c, k) for c in
               (BASE, json.load(open(os.path.join(HERE, "config.tb.json"))),
-               json.load(open(os.path.join(HERE, "config.t18.json")))) for k in (None, COINS)))
+               json.load(open(os.path.join(HERE, "config.t18.json"))),
+               json.load(open(os.path.join(HERE, "config.tw.json")))) for k in (None, COINS)))
 
     # preflight write-back
     raw = {"capital": 12000.0, "coins_disabled": [], "bid_ttl_s": 300, "quote": "USD"}

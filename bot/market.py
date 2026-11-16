@@ -1,5 +1,7 @@
 """Public Coinbase market data (no keys): spot 1-minute candles (Coinbase Exchange, the research source)
 and Coinbase US futures candles / order books (Advanced Trade public endpoints)."""
+import collections
+import threading
 import time
 from email.utils import parsedate_to_datetime
 
@@ -44,19 +46,52 @@ class Limited(Refused):
 
 
 TRADES_RATE = 7.0               # trades requests per second at most (the research fetcher's pace; public limit 10)
-_last_req = [0.0]
+_last_req = [0.0]               # the last trades send (sequential path) or the last reserved send slot (workers)
+_last_sent = [0.0]              # the last trades send, both paths (workers: the send gap is checked against it)
+_pace_lock = threading.Lock()   # guards _last_req, _last_sent and the ring below (both paths, every thread)
+_sends = collections.deque(maxlen=32)   # monitoring only: time of the last trades sends
+_peak = [0]                     # monitoring only: most trades sends in any one second since the last reset
 
 
-def _get_h(url, params=None, tries=2):
+def _note_send(t):
+    """Monitoring only (called under _pace_lock): remember a send time and the most sends in one second."""
+    _sends.append(t)
+    n = sum(1 for x in _sends if x > t - 1.0)
+    if n > _peak[0]:
+        _peak[0] = n
+
+
+def trades_peak(reset=False):
+    """Most trades requests sent in any one second (both paths) since the last reset. Monitoring only."""
+    with _pace_lock:
+        out = _peak[0]
+        if reset:
+            _peak[0] = 0
+            _sends.clear()
+        return out
+
+
+def _get_h(url, params=None, tries=2, session=None, gate=None):
     """Like _get, but returns (json, headers) and gives up sooner (the trades pass runs on a time budget).
-    Paced to TRADES_RATE requests per second. A refusal raises Refused at once; a 429 raises Limited at once."""
+    Paced to TRADES_RATE requests per second. A refusal raises Refused at once; a 429 raises Limited at once.
+    gate (minute_trades_many's workers only): called before every send, the retry too; it paces the send across
+    workers and raises _Halt instead when the pass has stopped or its deadline has passed. session: the worker's own.
+    Without gate: today's pacing and the module session, under the lock (so the shared pacing state stays whole)."""
     for a in range(tries):
-        wait = _last_req[0] + 1.0 / TRADES_RATE - time.time()
-        if wait > 0:
-            time.sleep(wait)
-        _last_req[0] = time.time()
+        if gate is None:
+            with _pace_lock:
+                wait = _last_req[0] + 1.0 / TRADES_RATE - time.time()
+                if wait > 0:
+                    time.sleep(wait)
+                _last_req[0] = time.time()
+                _last_sent[0] = _last_req[0]
+                _note_send(_last_req[0])
+            s = _S
+        else:
+            gate()
+            s = session
         try:
-            r = _S.get(url, params=params, timeout=3)
+            r = s.get(url, params=params, timeout=3)
             if r.status_code in (401, 403, 451):
                 raise Refused(f"HTTP {r.status_code} on {url}: {r.text[:200]!r}")
             if r.status_code == 429:
@@ -202,6 +237,174 @@ def minute_trades_bars(coin, m0, m1, max_pages=20, deadline=None, get=None, cloc
     bars = {mm: trades_to_bar(rows, mm) for mm in mins}
     n = {mm: len({r[1] for r in rows if mm <= r[0] < mm + pd.Timedelta(minutes=1)}) for mm in mins}
     return dict(bars=bars, verified=reason is None, reason=reason, pages=pages, gen=gen, newest=newest, n=n)
+
+
+# ------------------------------------------------------------------------------------------------ trades, side by side
+class _Halt(Exception):
+    """A worker's request was not sent: the pass stopped (a refusal or a rate limit) or its deadline passed."""
+
+
+_free = []                       # idle worker sessions (each used by one thread at a time; kept for keep-alive)
+_free_lock = threading.Lock()
+
+
+def _new_session():
+    s = requests.Session()
+    s.headers["User-Agent"] = _S.headers.get("User-Agent", "crypto-edge-bot/1.0") if hasattr(_S, "headers") \
+        else "crypto-edge-bot/1.0"
+    return s
+
+
+def _take_session():
+    with _free_lock:
+        if _free:
+            return _free.pop()
+    return _new_session()
+
+
+def _give_session(s):
+    with _free_lock:
+        if len(_free) < 8:
+            _free.append(s)
+
+
+class _Pass(object):
+    """The shared state of one minute_trades_many call. Every field is read and written under lock."""
+
+    def __init__(self, n):
+        self.lock = threading.Lock()
+        self.cond = threading.Condition(self.lock)
+        self.next, self.alive, self.done = 0, 0, 0
+        self.out, self.started = [None] * n, [False] * n
+        self.stopped, self.stop_err, self.stop_job, self.closed = False, None, None, False
+
+
+def _gate(st, j, deadline, clock, trace):
+    """Before each send of a worker (the retry too). Reserves the next send slot (at least 1 / TRADES_RATE after the
+    one before, all workers and the sequential path together) under the pacing lock and sleeps to it outside the lock.
+    Then, under the pass's lock, it either refuses (_Halt: the pass stopped, closed or is past its deadline) or records
+    the send; the send time also keeps 1 / TRADES_RATE from the last actual send (a late wake-up of the worker before
+    cannot bring two sends closer). The send and the stop are both recorded under the pass's lock, so no send can
+    be recorded after the stop."""
+    with _pace_lock:
+        now = time.time()
+        slot = max(now, _last_req[0] + 1.0 / TRADES_RATE)
+        _last_req[0] = slot
+    if slot > now:
+        time.sleep(slot - now)
+    while True:
+        with st.lock:
+            if st.stopped or st.closed or clock() > deadline:
+                raise _Halt()
+            with _pace_lock:
+                t = time.time()
+                gap = _last_sent[0] + 1.0 / TRADES_RATE - t
+                if gap <= 0:
+                    _last_sent[0] = t
+                    _note_send(t)
+                    if trace is not None:
+                        trace.append(("send", j, t))
+                    return
+        time.sleep(gap)
+
+
+def _work(st, jobs, deadline, clock, max_pages, sessions, trace):
+    """One worker: takes the next job not yet started until none is left, the pass stops or closes, or the deadline
+    has passed (a job is never started after the deadline). Touches nothing but the pass's state and its own session."""
+    sess = sessions() if sessions is not None else _take_session()
+    try:
+        while True:
+            with st.lock:
+                if st.closed or st.stopped or st.next >= len(jobs) or clock() > deadline:
+                    return
+                j = st.next
+                st.next += 1
+                st.started[j] = True
+            coin, m0, m1 = jobs[j]
+
+            def get(url, params, j=j):
+                return _get_h(url, params, session=sess, gate=lambda: _gate(st, j, deadline, clock, trace))
+            kind, res = None, None
+            try:
+                if m0 is None:
+                    res = minute_trades_bar(coin, m1, max_pages=max_pages, deadline=deadline, get=get, clock=clock)
+                else:
+                    res = minute_trades_bars(coin, m0, m1, max_pages=max_pages, deadline=deadline, get=get,
+                                             clock=clock)
+                kind = "ok"
+            except _Halt:
+                kind = None                                # not finished: the stop or the deadline decides
+            except Refused as err:                         # a refusal or a rate limit: stop every worker
+                kind, res = "stop", err
+            except Exception as err:                       # this job's own error (after its retry)
+                kind, res = "error", err
+            with st.lock:
+                late = st.closed or clock() > deadline     # arrived after the deadline: thrown away
+                if not late and not st.stopped:
+                    if kind == "stop":
+                        st.stopped, st.stop_err, st.stop_job = True, res, j
+                        if trace is not None:
+                            trace.append(("stop", j, time.time()))
+                    elif kind is not None:
+                        st.out[j] = (kind, res)
+                        st.done += 1
+                st.cond.notify_all()
+    finally:
+        if sessions is None:
+            _give_session(sess)
+        with st.lock:
+            st.alive -= 1
+            st.cond.notify_all()
+
+
+def minute_trades_many(jobs, workers, deadline, clock=time.monotonic, max_pages=20, sessions=None, trace=None):
+    """The trades of several coins side by side: the engine's trades pass with trades_workers 2 or more.
+
+    jobs: a list of (coin, m0, m1). m0 None: minute_trades_bar(coin, m1); else minute_trades_bars(coin, m0, m1) (the
+    repair range), each with this deadline and clock, as the sequential pass asks them.
+    workers: threads (daemon threads, started for this call; each with its own requests.Session, taken from a small
+    pool of idle sessions so connections are reused across minutes, never used by two threads at once).
+    deadline: a value of clock(); no job starts and no request is sent after it, and this call returns at the latest
+    when clock() passes it (waiting in real time, a few tens of ms at a time).
+    Pacing: all trades requests of all workers (and of the sequential path) together at most TRADES_RATE a second.
+    A refusal or a rate limit (Refused, Limited) seen by any worker stops the pass: from then on no worker sends a
+    request (not even the next page of a job in the middle of paging), and results that arrive later are thrown away.
+
+    Returns one outcome per job, in the input order: dict(status, started, result or error).
+      "ok": result (the minute_trades_bar(s) dict, verified or not); "error": error (that job's exception);
+      "stop": error (the refusal or rate limit that stopped the pass; cause True for the job that saw it): the job had
+        no result when the pass stopped;
+      "budget": the job was not started by the deadline, or its result had not arrived by then (a late result is
+        thrown away).
+    started: the job was taken by a worker before the deadline and the stop. Workers still finishing a request after
+    the return hold no state of the caller and send nothing more. sessions (tests): a callable making a session per
+    worker; trace (tests): a list that receives ("send", job, time) and ("stop", job, time) in order."""
+    n = len(jobs)
+    if not n:
+        return []
+    st = _Pass(n)
+    k = max(1, min(int(workers), n))
+    st.alive = k
+    for _ in range(k):
+        threading.Thread(target=_work, args=(st, jobs, deadline, clock, max_pages, sessions, trace),
+                         daemon=True).start()
+    with st.lock:
+        while not st.stopped and st.done < n and st.alive > 0:
+            left = deadline - clock()
+            if left < 0:
+                break
+            st.cond.wait(min(max(left, 0.001), 0.05))
+        st.closed = True
+        out = []
+        for j in range(n):
+            if st.out[j] is not None:
+                kind, res = st.out[j]
+                out.append(dict(status=kind, started=True, **({"result": res} if kind == "ok" else {"error": res})))
+            elif st.stopped:
+                out.append(dict(status="stop", started=st.started[j], error=st.stop_err, cause=j == st.stop_job))
+            else:
+                out.append(dict(status="budget", started=st.started[j]))
+        return out
 
 
 def spot_candles(coin, start, end, meta=None, tries=5, timeout=15, need_answer=False):

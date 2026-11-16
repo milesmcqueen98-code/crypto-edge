@@ -12,7 +12,7 @@ import os
 
 ORDER_KEYS = ("order_path", "orders_rate", "place_workers")       # README, "Order path"
 INPUT_KEYS = ("newest_bar", "trades_coins", "stale_guard", "trades_rows", "trades_budget_s", "confirm_s",
-              "candles_at_s") + ORDER_KEYS
+              "candles_at_s", "trades_workers") + ORDER_KEYS
 LOCAL_SWITCH = "inputs_local"
 LIVE_NAME = "config.live.json"
 
@@ -76,6 +76,9 @@ def describe(cfg, coins=None):
         line += "; the venue's candle replaces each trades row afterwards"
     elif rows is not None and rows != "keep":                # "keep" is the default behaviour: nothing to add
         line += "; trades_rows %s" % rows
+    tw = cfg.get("trades_workers") if cfg.get("newest_bar", "candles") == "trades" else None   # trades mode only
+    if isinstance(tw, int) and not isinstance(tw, bool) and tw >= 2:
+        line += "; trades asked for %d coins side by side" % tw
     if cfg.get("order_path") == "batch":
         line += "; order path batch (%s requests a second, %s placing threads)" % (cfg.get("orders_rate", 10),
                                                                                    cfg.get("place_workers", 1))
