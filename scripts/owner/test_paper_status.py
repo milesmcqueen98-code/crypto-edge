@@ -742,6 +742,257 @@ def test_a_start_tests():
         check("test A: an unexplained error after the start: CHECK", "Status: **CHECK**" in ra and "new trouble" in ra, ra)
 
 
+def ended_book_tests():
+    late = datetime(2026, 11, 20, 12, 0, tzinfo=timezone.utc)          # days after the third book's last event
+    n = 10
+    with tempfile.TemporaryDirectory() as tmp:
+        tb_books(tmp, GOOD_COUNTS, GOOD_STEP, n=n)                      # third book newest event Nov 7, 05:00
+        write(tmp, "paper_spot_t18", [{"ts": iso(T(0)), "kind": "backfill"}] + [hb(T(0, 30 * k), {"tb_built": 540}, {"data": [14.0, 15.0]}) for k in range(1, n + 1)])
+        check("ended: the constant marks the third book", ps.ENDED == {"tb": "2026-11-16"})
+        text = ps.build_report(tmp, late)
+        top = [l for l in text.split("## Running time")[0].splitlines() if l.startswith("| Spot TB")]
+        check("ended: top row says ended with its newest event, no STALE", len(top) == 1 and "| ended |" in top[0]
+              and "2026-11-07 05:00 UTC" in top[0] and "STALE" not in top[0], top)
+        check("ended: the other books are still flagged STALE", "| Spot (main) | 2026-11-07 05:00 UTC" in text
+              and "| STALE |" in text.split("## Running time")[0])
+        sinceline = [l for l in text.split("Time since the last event, not counted above:")[1].splitlines()[:1]][0]
+        check("ended: left out of the time since the last event", "Spot TB" not in sinceline and "Spot (main)" in sinceline, sinceline)
+        line = "The third book ended on 2026-11-16; this section is the final record."
+        for title in ("Third book against the main book", "Three-day rule progress for the third book",
+                      "Fourth book against the third book"):
+            body = section(text, title).strip("\n").splitlines()
+            check("ended: section '%s' begins with the line" % title, body[:1] == [line], body[:2])
+        check("ended: the fourth book's own sections have no such line", line not in section(text, "Rule progress for the fourth book"))
+        check("ended: sections are kept", "| Measure | Spot (main) | Spot TB | TB minus main |" in text and "| 5. " in text)
+        # the same log read before the date: not ended, so it is flagged as before
+        text0 = ps.build_report(tmp, datetime(2026, 11, 8, 12, 0, tzinfo=timezone.utc))
+        top0 = [l for l in text0.split("## Running time")[0].splitlines() if l.startswith("| Spot TB")]
+        check("ended: before its date the book is read as any other", "STALE" in top0[0] and "ended" not in top0[0]
+              and "ended on" not in text0, top0)
+        # the date is the owner's to set
+        old = dict(ps.ENDED)
+        try:
+            ps.ENDED["tb"] = "2026-12-01"
+            text1 = ps.build_report(tmp, late)
+            check("ended: a later date puts the book back to STALE until then", "ended on" not in text1 and "| ended |" not in text1)
+        finally:
+            ps.ENDED.clear()
+            ps.ENDED.update(old)
+        # a book with no data keeps its NO DATA row
+        write(tmp, "paper_spot_tb", [])
+        text2 = ps.build_report(tmp, late)
+        check("ended: an empty ended book still says NO DATA", "NO DATA (empty log)" in text2)
+
+
+def r5_books(tmp, r5, main, t18, r5_counts=None, r5_extra=(), n=10):
+    """Fifth, main and fourth book with n heartbeats 30 minutes apart; r5, main and t18 are lists of data-step medians
+    (None leaves that heartbeat out), one per heartbeat."""
+    def book(meds, counts=None, extra=()):
+        ev = [{"ts": iso(T(0)), "kind": "backfill"}]
+        for k, m in enumerate(meds, 1):
+            if m is not None:
+                ev.append(hb(T(0, 30 * k), dict(counts or {}), {"data": [m, m + 1.0]}))
+        return sorted(ev + list(extra), key=lambda e: e["ts"])
+    write(tmp, "paper_spot", book(main))
+    write(tmp, "paper_spot_t18", book(t18))
+    write(tmp, "paper_spot_r5", book(r5, r5_counts, r5_extra))
+
+
+def hrow(k, med, mx=None):
+    return {"t": T(0, 30 * k), "data": (med, mx if mx is not None else med + 1.0), "counts": {}, "minutes": 30.0}
+
+
+def mrow(k, minutes=30.0, **counts):
+    return {"t": T(0, 30 * k), "data": None, "counts": counts, "minutes": minutes}
+
+
+def r5_tests():
+    F = ps.Fraction
+    # ---- the report with the fifth book's folder missing: written as for any missing folder, nothing about r5
+    with tempfile.TemporaryDirectory() as tmp:
+        tb_books(tmp, GOOD_COUNTS, GOOD_STEP, n=10)
+        write(tmp, "paper_spot_t18", [{"ts": iso(T(0)), "kind": "backfill"}, hb(T(0, 30), {"tb_built": 540}, {"data": [14.0, 15.0]})])
+        text = ps.build_report(tmp, NOW)
+        check("r5 missing: report written, no fifth-book row, section or label",
+              "Spot R5" not in text and "fifth book" not in text.lower() and "paper_spot_r5" not in text
+              and "# Paper trading status" in text)
+        check("r5 missing: active_books omits it", [b[0] for b in ps.active_books(tmp)] == ["spot", "w2", "tb", "t18", "v1", "r2"])
+    # ---- measure 1
+    a = [hrow(k, m) for k, m in zip(range(1, 6), (10.0, 10.2, 10.3, 10.4, 10.1))]
+    b = [hrow(k, m) for k, m in zip(range(1, 6), (11.0, 10.0, 10.5, 10.5, 12.0))]
+    m1 = ps.measure1(a, b)
+    check("measure 1: median of the fifth book's heartbeats", m1["median"] == F("10.2") and m1["n"] == 5, m1)
+    check("measure 1: paired medians over the same timestamps", m1["pairs"] == 5 and m1["paired_fifth"] == F("10.2")
+          and m1["paired_other"] == F("10.5"), m1)
+    even = ps.measure1([hrow(1, 10.2), hrow(2, 10.4)], [])
+    check("measure 1: even count takes the mean of the middle two, exactly", even["median"] == F("10.3") and even["median"] <= F("10.3"), even)
+    # pairing by timestamp: heartbeats present in one book only are left out of the paired medians
+    c = [hrow(k, m) for k, m in ((1, 50.0), (2, 10.0), (3, 10.0), (6, 99.0))]
+    d = [hrow(k, m) for k, m in ((2, 12.0), (3, 11.0), (4, 1.0), (5, 1.0))]
+    m1 = ps.measure1(c, d)
+    check("measure 1: a half hour in one book only is left out of the pairs", m1["pairs"] == 2 and m1["paired_fifth"] == F(10)
+          and m1["paired_other"] == F("11.5") and m1["median"] == F(30), m1)
+    check("measure 1: no pairs", ps.measure1(c, [hrow(7, 1.0)])["pairs"] == 0 and ps.measure1([], [])["median"] is None)
+    check("measure 1: heartbeats without a data step are not used", ps.measure1([mrow(1), hrow(2, 9.0)], [])["n"] == 1)
+    # report: both halves, pairing, third column for information
+    with tempfile.TemporaryDirectory() as tmp:
+        r5_books(tmp, r5=[10.0, 10.2, 10.3, 10.4, 10.1, None, 10.0, 10.0, 10.0, 10.0],
+                 main=[11.0, 10.0, 10.5, 10.5, 12.0, 1.0, None, 10.1, 10.1, 10.1],
+                 t18=[9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0])
+        text = ps.build_report(tmp, NOW)
+        sec = section(text, "Rule progress for the fifth book")
+        rows = {l.split(" | ")[0].lstrip("| "): l for l in sec.splitlines() if l.startswith("| (")}
+        ra = [l for k, l in rows.items() if k.startswith("(a)")][0]
+        rb = [l for k, l in rows.items() if k.startswith("(b)")][0]
+        check("r5 report: (a) median over 9 heartbeats at or below 10.3 meets", "10.00 s over 9 heartbeats" in ra and ra.endswith("| meets |"), ra)
+        check("r5 report: (b) paired over 8 half hours, fifth no higher meets",
+              "fifth 10.05 s, main 10.30 s, 8 half hours" in rb and rb.endswith("| meets |"), rb)
+        check("r5 report: information line against the fourth book", "For information: against the fourth book" in sec
+              and "fifth 10.00 s, fourth 9.00 s, 9 half hours" in sec and "not part of the rule" in sec, sec[:1500])
+        check("r5 report: progress-only line names part3_rule.py", "progress only" in sec and "scripts/owner/bar_source/part3_rule.py" in sec)
+    with tempfile.TemporaryDirectory() as tmp:
+        r5_books(tmp, r5=[10.31] * 10, main=[10.4] * 10, t18=[10.0] * 10)
+        sec = section(ps.build_report(tmp, NOW), "Rule progress for the fifth book")
+        check("r5 report: 10.31 fails (a) and a lower main median fails (b) only when lower",
+              [l for l in sec.splitlines() if l.startswith("| (a)")][0].endswith("| does not meet yet |")
+              and [l for l in sec.splitlines() if l.startswith("| (b)")][0].endswith("| meets |"), sec[:900])
+    with tempfile.TemporaryDirectory() as tmp:
+        r5_books(tmp, r5=[10.0] * 10, main=[9.9] * 10, t18=[10.0] * 10)
+        sec = section(ps.build_report(tmp, NOW), "Rule progress for the fifth book")
+        check("r5 report: (b) fails when the fifth's paired median is higher",
+              [l for l in sec.splitlines() if l.startswith("| (b)")][0].endswith("| does not meet yet |"))
+    # ---- item 3: only its second half
+    with tempfile.TemporaryDirectory() as tmp:
+        r5_books(tmp, r5=[16.0] * 10, main=[10.0] * 10, t18=[10.0] * 10, r5_counts={"tb_built": 540})
+        sec = section(ps.build_report(tmp, NOW), "Rule progress for the fifth book")
+        row = [l for l in sec.splitlines() if l.startswith("| 3. ")][0]
+        check("r5 item 3: median 16 s does not fail it (the median is measure 1); 17 s maxima are within 20 s",
+              row.startswith("| 3. Data step 30-minute maximum 20 s or less in 95% or more of heartbeats (the median is measure 1")
+              and row.endswith("| meets |") and "median 16.0 s of 10 heartbeats" in row, row)
+        check("r5 items 1 to 5 use 18 coins and the fourth book's wording for items 1, 2, 4 and 5",
+              "listed coins: BTC, ETH" in sec and "| 1. Verified trades bar share" in sec and "| 5. Unconfirmed rows" in sec
+              and "5,400 verified of 5,400 attempted" in sec, sec)
+    with tempfile.TemporaryDirectory() as tmp:
+        ev = [{"ts": iso(T(0)), "kind": "backfill"}] + [hb(T(0, 30 * k), {"tb_built": 540}, {"data": [5.0, 21.0 if k <= 2 else 6.0]}) for k in range(1, 41)]
+        write(tmp, "paper_spot_r5", ev)
+        sec = section(ps.build_report(tmp, NOW), "Rule progress for the fifth book")
+        row = [l for l in sec.splitlines() if l.startswith("| 3. ")][0]
+        check("r5 item 3: 38 of 40 heartbeats within 20 s (95.0%) meets, 37 would not",
+              "maximum 20 s or less in 95.0% (largest 21.0 s)" in row and row.endswith("| meets |"), row)
+        ev[1:3] = [hb(T(0, 30 * k), {"tb_built": 540}, {"data": [5.0, 21.0]}) for k in (1, 2)]
+        ev[3] = hb(T(1, 30), {"tb_built": 540}, {"data": [5.0, 21.0]})
+        write(tmp, "paper_spot_r5", ev)
+        sec = section(ps.build_report(tmp, NOW), "Rule progress for the fifth book")
+        row = [l for l in sec.splitlines() if l.startswith("| 3. ")][0]
+        check("r5 item 3: 37 of 40 does not meet", "92.5%" in row and row.endswith("| does not meet yet |"), row)
+    # the fourth book's item 3 is unchanged (median bar 15 s still applies)
+    with tempfile.TemporaryDirectory() as tmp:
+        r5_books(tmp, r5=[10.0] * 10, main=[10.0] * 10, t18=[16.0] * 10, r5_counts={"tb_built": 540})
+        sec = section(ps.build_report(tmp, NOW), "Rule progress for the fourth book")
+        row = [l for l in sec.splitlines() if l.startswith("| 3. ")][0]
+        check("r5: the fourth book's item 3 keeps its median half", "Data step median 15 s or less" in row and row.endswith("| does not meet yet |"), row)
+
+    # ---- measure 4
+    def m4(rows, starts=()):
+        return ps.measure4(rows, list(starts))
+    r = m4([mrow(1, pre_fetched=99, pre_error=1)])
+    check("measure 4: 1 failed of 100 requests is exactly 1%: meets", r["failed"] == 1 and r["requests"] == 100 and r["failed_ok"], r)
+    r = m4([mrow(1, pre_fetched=98, pre_error=1)])
+    check("measure 4: 1 failed of 99 requests is just over 1%: fails", not r["failed_ok"], r)
+    r = m4([mrow(1, pre_fetched=100, pre_error=0)])
+    check("measure 4: no failures meets", r["failed_ok"])
+    r = m4([mrow(1, pre_fetched=0, pre_error=0, pre_missing=0)])
+    check("measure 4: no requests at all is not met", not r["failed_ok"] and r["requests"] == 0)
+    r = m4([mrow(1, minutes=50.0, pre_fetched=1, pre_missing=18)])
+    check("measure 4: 18 in-step of 900 coin-minutes (50 minutes) is exactly 2%: meets", r["coin_minutes"] == 900 and r["in_step"] == 18 and r["in_step_ok"], r)
+    r = m4([mrow(1, minutes=50.0, pre_fetched=1, pre_missing=10, pre_ondemand=9)])
+    check("measure 4: pre_missing plus pre_ondemand 19 of 900 is just over: fails", r["in_step"] == 19 and not r["in_step_ok"], r)
+    r = m4([mrow(1, minutes=50.0, pre_fetched=1, pre_missing=18, pre_ondemand=1)])
+    check("measure 4: the 2% test uses both counters", not r["in_step_ok"])
+    # the first step after each start
+    r = m4([mrow(2, pre_fetched=10, pre_missing=25)], [T(0, 45)])
+    check("measure 4: one start in the half hour leaves out 18", r["left_out"] == 18 and r["in_step"] == 7, r)
+    r = m4([mrow(2, pre_fetched=10, pre_missing=40)], [T(0, 45), T(0, 50)])
+    check("measure 4: two starts in the half hour leave out 36", r["left_out"] == 36 and r["in_step"] == 4, r)
+    r = m4([mrow(2, pre_fetched=10, pre_missing=5)], [T(0, 45), T(0, 50)])
+    check("measure 4: never below zero", r["left_out"] == 5 and r["in_step"] == 0, r)
+    r = m4([mrow(2, pre_fetched=10, pre_missing=25, pre_ondemand=3)], [T(0, 45)])
+    check("measure 4: only pre_missing is reduced, pre_ondemand counts in full", r["in_step"] == 10, r)
+    r = m4([mrow(2, pre_fetched=10, pre_missing=25), mrow(3, pre_fetched=10, pre_missing=25)], [T(0, 45)])
+    check("measure 4: a start counts only in its own half hour", r["left_out"] == 18 and r["in_step"] == 32, r)
+    r = m4([mrow(2, pre_fetched=10, pre_missing=20), mrow(3, pre_fetched=10, pre_missing=20)], [T(1)])
+    check("measure 4: a start exactly at a heartbeat belongs to that heartbeat, not the next",
+          r["left_out"] == 18 and r["in_step"] == 22, r)
+    r = m4([mrow(2, pre_fetched=10, pre_missing=20)], [T(0, 30)])
+    check("measure 4: a start exactly at the previous heartbeat is outside the half hour", r["left_out"] == 0 and r["in_step"] == 20, r)
+    # counters absent
+    r = m4([mrow(1), mrow(2)])
+    check("measure 4: counters absent from every heartbeat", r["present"] == [] and not r["failed_ok"] and not r["in_step_ok"], r)
+    r = m4([mrow(1, pre_fetched=5), mrow(2)])
+    check("measure 4: a counter in one heartbeat is present, the others count as 0", r["present"] == ["pre_fetched"] and r["requests"] == 5)
+    r = m4([])
+    check("measure 4: no heartbeats", r["beats"] == 0 and not r["failed_ok"] and not r["in_step_ok"])
+    # starts from a log: the first stepped minute after a backfill
+    ev = [{"ts": "2026-11-07T01:42:00", "kind": "backfill", "_t": T(1, 42)}, {"ts": "2026-11-07T01:42:30", "kind": "catch_up", "_t": T(1, 42)},
+          {"ts": "x", "kind": "arm", "_t": T(1, 47)},
+          {"ts": "2026-11-07T05:00:00", "kind": "backfill", "_t": T(5)}, {"ts": "x", "kind": "arm", "_t": T(5, 20)},
+          {"ts": "2026-11-07T07:00:00", "kind": "backfill", "_t": T(7)}]
+    check("startup_steps: first later event, else backfill plus 6 minutes", ps.startup_steps(ev) == [T(1, 47), T(5, 6), T(7, 6)], ps.startup_steps(ev))
+    # report: measure 4 table
+    with tempfile.TemporaryDirectory() as tmp:
+        counts = {"pre_fetched": 100, "pre_error": 0, "pre_missing": 1, "pre_ondemand": 0, "step_candles": 30}
+        r5_books(tmp, r5=[10.0] * 10, main=[10.0] * 10, t18=[10.0] * 10, r5_counts=counts)
+        sec = section(ps.build_report(tmp, NOW), "Rule progress for the fifth book")
+        t4 = sec.split("### Measure 4")[1]
+        check("r5 report: measure 4 counters summed and shares (first step after the start left out)",
+              "pre_fetched 1,000, pre_error 0, pre_missing 10, pre_ondemand 0, step_candles 300" in t4
+              and "0 of 1,000 = 0.000%" in t4 and "9 of 5,400 = 0.167%" in t4, t4)
+        check("r5 report: left out is stated", "1 left out, over 1 starts in the log" in t4, t4)
+    with tempfile.TemporaryDirectory() as tmp:
+        r5_books(tmp, r5=[10.0] * 10, main=[10.0] * 10, t18=[10.0] * 10)
+        sec = section(ps.build_report(tmp, NOW), "Rule progress for the fifth book")
+        check("r5 report: counters absent says so", "No heartbeat carries the counters pre_fetched" in sec.split("### Measure 4")[1])
+    # fifth log empty (folder exists)
+    with tempfile.TemporaryDirectory() as tmp:
+        write(tmp, "paper_spot", [{"ts": iso(T(0)), "kind": "backfill"}])
+        write(tmp, "paper_spot_r5", [])
+        text = ps.build_report(tmp, NOW)
+        check("r5 empty log: report made, section says no log", "No fifth-book log to judge (empty)." in text)
+
+    # ---- the fifth book against the fourth
+    with tempfile.TemporaryDirectory() as tmp:
+        r5_books(tmp, r5=[10.0] * 10, main=[10.0] * 10, t18=[10.0] * 10, r5_counts={"tb_built": 540})
+        with open(os.path.join(tmp, "paper_spot_r5", "events.jsonl"), "a") as f:
+            f.write(json.dumps(entry(iso(T(1, 1)), 4, 1000)) + "\n")
+        with open(os.path.join(tmp, "paper_spot_t18", "events.jsonl"), "a") as f:
+            f.write(json.dumps(entry(iso(T(1)), 4, 1000)) + "\n")
+            f.write(json.dumps(entry(iso(T(2)), 4, 1000, "A-2")) + "\n")
+        with open(os.path.join(tmp, "paper_spot_r5", "CODE"), "w") as f:
+            f.write("code_ref: x\ncode_commit: abcdef0123456789abcdef0123456789abcdef01\nutc: 2026-11-17T01:00\n")
+        text = ps.build_report(tmp, NOW)
+        cmp_ = section(text, "Fifth book against the fourth book")
+        check("r5 vs t18: same columns as the fourth against the third", "| Measure | Spot T18 | Spot R5 | R5 minus T18 |" in cmp_
+              and "| Rung fills | 2 | 1 | -1 |" in cmp_ and "| First-bid fills in both books | 1 |" in cmp_
+              and "| Only in the fourth book | 1 |" in cmp_ and "| Only in the fifth book | 0 |" in cmp_, cmp_)
+        check("r5 vs t18: sits before the fifth book's rule section", text.index("## Fifth book against the fourth book")
+              < text.index("## Rule progress for the fifth book"))
+        check("r5 vs t18: no ended line, since the fourth book has not ended", "ended on" not in cmp_)
+        check("r5: in the top table, running time, summary and data quality",
+              "| Spot R5 (release 5 build) |" in text.split("## Running time")[0]
+              and "| Spot R5 (release 5 build) |" in text.split("## Running time")[1].split("\n## ")[0]
+              and "| Spot R5 (release 5 build) |" in section(text, "Summary")
+              and "### Spot R5 (release 5 build)" in section(text, "Data quality"))
+        check("r5: engine commit line", "Engine commit: abcdef0 (full hash abcdef0123456789abcdef0123456789abcdef01), recorded 2026-11-17T01:00 UTC." in section(text, "Rule progress for the fifth book"))
+        check("r5: no at-sign in the report", chr(64) not in text)
+    # fifth book present, fourth missing: no comparison section, the rule section still shown
+    with tempfile.TemporaryDirectory() as tmp:
+        write(tmp, "paper_spot", [{"ts": iso(T(0)), "kind": "backfill"}])
+        write(tmp, "paper_spot_r5", [{"ts": iso(T(0)), "kind": "backfill"}, hb(T(0, 30), {"tb_built": 540}, {"data": [1.0, 2.0]})])
+        text = ps.build_report(tmp, NOW)
+        check("r5 alone: no comparison section, rule section shown", "Fifth book against the fourth book" not in text
+              and "## Rule progress for the fifth book" in text and "against the fourth book, same way" not in text)
+
+
 def main():
     with tempfile.TemporaryDirectory() as tmp:
         build_root(tmp)
@@ -897,6 +1148,8 @@ def main():
     data_quality_tests()
     third_book_tests()
     t18_tests()
+    ended_book_tests()
+    r5_tests()
     test_a_start_tests()
 
     print("\n" + ("all passed" if not FAILS else f"{len(FAILS)} failed: {FAILS}"))
