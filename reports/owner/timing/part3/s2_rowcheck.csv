@@ -1,0 +1,4 @@
+era,rows,filled_same,f_off_same,tp_off_same,in_spot_maxrel,g60_maxdiff_bp
+sel,3345,1,1,1,0.195037,1.72102
+chk,1185,1,1,1,0.0491643,0.879298
+early,2076,1,1,0.998301,0.17477,2.61836

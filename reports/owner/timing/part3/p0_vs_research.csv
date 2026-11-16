@@ -1,0 +1,4 @@
+era,research_parents,p0_parents,confirmed,research_only,p0_only,research_rows_without_prints,research_rows_incomplete,studied,with_prints,complete,pre_unknown,no_print_in_minute,print_min_above_candle_low,print_min_below_candle_low
+sel,1155,1165,1115,40,50,0,0,14110,14110,14110,0,0,110,117
+chk,412,418,395,17,23,0,0,4645,4645,4645,0,0,52,49
+early,744,756,692,52,64,0,0,10931,10931,10931,0,0,241,183
