@@ -31,7 +31,8 @@
 ## What a model on the probe's recorded requests expects (an expectation, not a result)
 - Model: every call keeps the time the probe recorded for it, less its wait for the pace; the order and the pace
   stay; three workers instead of one. With one worker the model gives the recorded passes back to within 0.1 s
-  on average. The script goes onto the probe's branch before this plan's first live run.
+  on average. Script: `scripts/owner/step_probe/model_workers.py` on branch owner/step-probe (commit 1bb86d7d);
+  its table is `reports/owner/step_probe/read/model_workers.md`.
 
 | 18-coin pass | Nov 14, recorded | Nov 14, three workers | Nov 16, recorded | Nov 16, three workers |
 |---|---|---|---|---|
@@ -123,4 +124,6 @@
   too.
 
 ## Deviation log
-(none yet)
+- **Nov 16 2026, 14:42 ET (orchestrator), before any live run.** The model's script and table are in (a Sonnet
+  agent, 27 offline checks). It gives the figures of the table above exactly; the sentence that said the script
+  would follow now names it. No rule is touched.
