@@ -48,6 +48,8 @@ SCAN_MIN = 15                   # a partly filled rung rests at most this many m
 ADV_DAYS = 30
 ORDER_TAG = "wk1m"              # client_order_id prefix: lets reconcile() find the bot's own orders
 REFRESH_S = 150                 # re-place a good-til-date bid this many seconds before it would expire
+PASS_TIMEOUT_S = 4.0            # candles_at_s: each candle request of the pass between steps gives up after this
+PASS_TRIES = 1                  # many seconds, on its one try (a failed one leaves the coin to the step)
 warnings.filterwarnings("ignore", message="Mean of empty slice")
 warnings.filterwarnings("ignore", category=RuntimeWarning, module="edge.wick")
 
@@ -131,9 +133,10 @@ class LiveMarket:
         p = p[p.expiry_type == "PERPETUAL"]
         self.perp = {r.contract_root_unit: (r.product_id, float(r.contract_size)) for r in p.itertuples()}
 
-    def spot_candles(self, coin, start, end):
+    def spot_candles(self, coin, start, end, **kw):
+        """kw: tries and timeout for the candle pass's requests (bot/market.py); without them, today's request."""
         meta = {}
-        df = self.m.spot_candles(coin, start, end, meta=meta)
+        df = self.m.spot_candles(coin, start, end, meta=meta, **kw)
         self.candle_meta[coin] = meta
         return df
 
@@ -930,7 +933,9 @@ class Engine:
         self.state["adv_day"] = d
         self.log("adv", t=t, adv_musd={c: round(v / 1e6, 1) for c, v in self.state["adv"].items() if v})
 
-    def update_spot(self, end, coins=None):
+    def update_spot(self, end, coins=None, quick=False):
+        """quick (the candle pass only): each request has one try of PASS_TIMEOUT_S seconds, and an answer without
+        rows raises before anything is stored (a 429 on that try gives no rows), so the pass counts it pre_error."""
         cm = getattr(self, "_cmax", {})                    # empty unless newest_bar is "trades"
         for c in (["BTC"] + self.coins if coins is None else coins):    # coins: only these (candles_at_s)
             df = self.spot.get(c)
@@ -942,7 +947,12 @@ class Engine:
             start = (cm.get(c, df.index.max()) - pd.Timedelta(minutes=deep)) if df is not None and len(df) else end - pd.Timedelta(minutes=WINDOW_MIN)
             if start >= end:
                 continue
-            new = self.market.spot_candles(c, start, end)
+            if quick:
+                new = self.market.spot_candles(c, start, end, tries=PASS_TRIES, timeout=PASS_TIMEOUT_S)
+                if not len(new):
+                    raise RuntimeError(f"candle pass: no rows for {c} (no usable answer)")
+            else:
+                new = self.market.spot_candles(c, start, end)
             if c in cm and len(new):
                 cm[c] = max(cm[c], new.index.max())
             if tb:
@@ -967,24 +977,25 @@ class Engine:
         now (M its start), each exactly as update_spot(M) makes it for that coin (same request, provenance merge,
         counters and bookkeeping). The request ends before M, so it never gives M a row. Resumable: a later call for
         the same M goes on with the coins left; a new M starts again. now() is in epoch seconds (read only with a
-        limit); with stop, no request starts unless it would end before stop (judged by the pass's last request); with
-        turn_end, after the first request of this call none starts unless it would end before turn_end. A coin not
-        reached, or whose request failed (pre_error), is left for the step (pre_missing there). Returns the number of
-        coins left. Never raises."""
+        limit); with stop, no request starts unless it would end before stop even if it took its whole timeout (judged
+        by the longer of the pass's last request and PASS_TIMEOUT_S); with turn_end, after the first request of this
+        call none starts unless it would end before turn_end (judged by the pass's last request). Each request has one
+        try of PASS_TIMEOUT_S seconds (update_spot quick). A coin not reached, or whose request failed or gave no rows
+        (pre_error), is left for the step (pre_missing there). Returns the number of coins left. Never raises."""
         M = pd.Timestamp(M).floor("min")
         if self._cp_min != M:
             self._cp_min, self._cp_todo, self._cp_d = M, [c for c in ["BTC"] + self.coins if self._tb_listed(c)], 0.0
         n, timed = 0, stop is not None or turn_end is not None    # no limit: the clock is not read
         while self._cp_todo:
             t0 = now() if timed else None
-            if stop is not None and t0 + self._cp_d >= stop:
+            if stop is not None and t0 + max(self._cp_d, PASS_TIMEOUT_S) >= stop:
                 break
             if n and turn_end is not None and t0 + self._cp_d >= turn_end:
                 break
             c = self._cp_todo.pop(0)
             n += 1
             try:
-                self.update_spot(M, [c])
+                self.update_spot(M, [c], quick=True)
                 self._cpass[c] = M
                 self.count("pre_fetched")
             except Exception:
@@ -2370,7 +2381,8 @@ class Engine:
         Paper (poll 0): sleep to that minute's second candles_at_s, run the pass in one go, sleep to nxt. Live: a fast
         poll every poll seconds as without the setting; from that second on, each turn spends its waiting time on the
         pass's requests (one at least, more while the turn has room) and sleeps the rest of the turn. No request of the
-        pass starts unless it would end 3 s before nxt; the coins left are fetched by the step."""
+        pass starts unless, even taking its whole timeout (PASS_TIMEOUT_S), it would end 3 s before nxt; the coins left
+        are fetched by the step."""
         m0 = (math.floor(nxt / 60) - 1) * 60               # the minute open now (nxt is 6 s after it closes)
         M, at, stop = pd.Timestamp(m0, unit="s"), m0 + self.candles_at_s, nxt - 3
         if not poll:

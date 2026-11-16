@@ -277,5 +277,67 @@ try:
 finally:
     M._S = real
 
+# 13. _get_full and spot_candles: tries and timeout (the candle pass asks one try of 4 s; the defaults are today's)
+
+
+class TimeoutSession:
+    """Every request raises a timeout, a 429 or answers 200; records each request's timeout."""
+
+    def __init__(self, mode):
+        self.mode, self.timeouts = mode, []
+
+    def get(self, url, params=None, timeout=None):
+        self.timeouts.append(timeout)
+        if self.mode == "timeout":
+            raise M.requests.exceptions.ReadTimeout("read timed out")
+        r = FakeResp(429 if self.mode == "429" else 200)
+        r.json = lambda: [[int(M0.timestamp()) - 60, 1.0, 3.0, 2.0, 2.5, 7.0]]
+        return r
+
+
+real_time = M.time
+slept = []
+M.time = type("T", (), dict(sleep=staticmethod(slept.append), time=staticmethod(real_time.time)))
+try:
+    M._S = TimeoutSession("timeout")
+    try:
+        M._get_full("https://example.invalid/x", {})
+        check("_get_full default: a request error raises after the last try", False)
+    except M.requests.RequestException:
+        check("_get_full default: 5 tries, each with timeout 15, the waits as today (0.5, 1.5, 2.5, 3.5 s)",
+              M._S.timeouts == [15] * 5 and slept == [0.5, 1.5, 2.5, 3.5], str((M._S.timeouts, slept)))
+    M._S, slept[:] = TimeoutSession("timeout"), []
+    try:
+        M._get_full("https://example.invalid/x", {}, tries=1, timeout=4)
+        check("_get_full tries=1 timeout=4: a request error raises", False)
+    except M.requests.RequestException:
+        check("_get_full tries=1 timeout=4: exactly one request, timeout 4, raised at once with no wait",
+              M._S.timeouts == [4] and slept == [], str((M._S.timeouts, slept)))
+    M._S, slept[:] = TimeoutSession("429"), []
+    r = M._get_full("https://example.invalid/x", {})
+    check("_get_full default on 429s: 5 tries, the waits as today (1 to 5 s), then (None, None)",
+          r == (None, None) and M._S.timeouts == [15] * 5 and slept == [1, 2, 3, 4, 5], str((r, slept)))
+    M._S, slept[:] = TimeoutSession("429"), []
+    r = M._get_full("https://example.invalid/x", {}, tries=1, timeout=4)
+    check("_get_full tries=1 on a 429: one request, today's first wait (1 s), then (None, None)",
+          r == (None, None) and M._S.timeouts == [4] and slept == [1], str((r, M._S.timeouts, slept)))
+    M._S, slept[:] = TimeoutSession("429"), []
+    d = M.spot_candles("BTC", M0 - pd.Timedelta(minutes=2), M0, tries=1, timeout=4)
+    check("spot_candles tries=1 on a 429: one request, an empty table (no usable answer)",
+          len(d) == 0 and M._S.timeouts == [4], str((len(d), M._S.timeouts)))
+    M._S, slept[:] = TimeoutSession("200"), []
+    d = M.spot_candles("BTC", M0 - pd.Timedelta(minutes=2), M0)
+    d4 = M.spot_candles("BTC", M0 - pd.Timedelta(minutes=2), M0, tries=1, timeout=4)
+    check("spot_candles: default timeout 15, tries=1 timeout=4 passed through; the same table",
+          M._S.timeouts == [15, 4] and d.equals(d4) and len(d) == 1, str(M._S.timeouts))
+    M._S, slept[:] = TimeoutSession("timeout"), []
+    try:
+        M.spot_candles("BTC", M0 - pd.Timedelta(minutes=2), M0, tries=1, timeout=4)
+        check("spot_candles tries=1 on a timeout raises", False)
+    except M.requests.RequestException:
+        check("spot_candles tries=1 on a timeout raises after one request", M._S.timeouts == [4])
+finally:
+    M._S, M.time = real, real_time
+
 print("TRADES BAR TEST " + ("FAILED: " + ", ".join(FAILS) if FAILS else "PASSED"))
 sys.exit(1 if FAILS else 0)

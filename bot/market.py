@@ -17,11 +17,12 @@ def _get(url, params=None, tries=5):
     return _get_full(url, params, tries)[0]
 
 
-def _get_full(url, params=None, tries=5):
-    """_get's request, retries and timeout, returning (json, headers). (None, None) where _get returned None."""
+def _get_full(url, params=None, tries=5, timeout=15):
+    """_get's request, retries and timeout, returning (json, headers). (None, None) where _get returned None (every
+    try answered 429). tries and timeout: the defaults are _get's; the engine's candle pass asks for one short try."""
     for a in range(tries):
         try:
-            r = _S.get(url, params=params, timeout=15)
+            r = _S.get(url, params=params, timeout=timeout)
             if r.status_code == 429:
                 time.sleep(1 + a)
                 continue
@@ -203,17 +204,19 @@ def minute_trades_bars(coin, m0, m1, max_pages=20, deadline=None, get=None, cloc
     return dict(bars=bars, verified=reason is None, reason=reason, pages=pages, gen=gen, newest=newest, n=n)
 
 
-def spot_candles(coin, start, end, meta=None):
+def spot_candles(coin, start, end, meta=None, tries=5, timeout=15):
     """1-minute candles [start, end) as a DataFrame indexed by minute (UTC, naive). If a dict is passed as meta, it is
     filled with the cache facts of the last answer (the newest minutes): gen (Date minus Age), age, cache, date, and
-    start (rows at or after it came from that answer)."""
+    start (rows at or after it came from that answer). tries and timeout go to each request (_get_full); the defaults
+    are today's."""
     rows = {}
     s = pd.Timestamp(start).floor("min")
     end = pd.Timestamp(end).floor("min")
     while s < end:
         e = min(end, s + pd.Timedelta(minutes=300))
         js, hd = _get_full(f"{EXCHANGE}/products/{coin}-USD/candles",
-                           {"granularity": 60, "start": s.isoformat() + "Z", "end": (e - pd.Timedelta(minutes=1)).isoformat() + "Z"})
+                           {"granularity": 60, "start": s.isoformat() + "Z", "end": (e - pd.Timedelta(minutes=1)).isoformat() + "Z"},
+                           tries=tries, timeout=timeout)
         if meta is not None:
             try:                                           # monitoring only: never raises into the data path
                 meta.clear()

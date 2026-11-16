@@ -19,7 +19,10 @@ Checks:
     refusal, no candle request in that step, the coins have no new row and the stale guard skips them;
   - candle_old and btc_candle_old: not counted for a trades-built row (or a verified empty minute) with the setting;
     still counted otherwise, and counted as before without the setting;
-  - without the setting the step asks every coin's candles with end = its minute, and no new counter appears.
+  - without the setting the step asks every coin's candles with end = its minute, and no new counter appears;
+  - the pass's requests have one try of 4 s (the step's and the on-demand requests are today's); a request that
+    raises or gives no rows counts pre_error, is not marked fetched and is left to the step; no request starts
+    unless a whole 4 s timeout would end before the stop; the live turn rule is judged by the last request.
 
 Usage: python bot/spot/candle_pass_test.py
 """
@@ -51,19 +54,25 @@ def ep(ts):
 class ClockMarket(NB.SynthMarket):
     """SynthMarket on a fake clock F (a one-element list, epoch seconds). A candle request takes `dur` seconds of the
     fake clock; its answer was made at the request's time minus `age` seconds and holds no row for the minute open
-    at the request's time. `fail` holds coins whose next candle request raises. `req` records every request."""
+    at the request's time. `fail` holds coins whose next candle request raises; `empty` holds coins whose next
+    candle request gives no rows (a 429 on the pass's one try). `req` records every request, with the keywords it
+    was given (tries and timeout; None when not given)."""
 
     def __init__(self, coins, F, dur=0.31, age=0.0):
         super().__init__(coins, 40)
         self.F, self.dur, self.age, self.req, self.fail, self.candle_meta = F, dur, age, [], set(), {}
+        self.empty = set()
 
-    def spot_candles(self, coin, start, end):
+    def spot_candles(self, coin, start, end, tries=None, timeout=None):
         at = self.F[0]
-        self.req.append(dict(coin=coin, start=start, end=end, at=at))
+        self.req.append(dict(coin=coin, start=start, end=end, at=at, tries=tries, timeout=timeout))
         self.F[0] += self.dur
         if coin in self.fail:
             self.fail.discard(coin)
             raise RuntimeError("timeout")
+        if coin in self.empty:
+            self.empty.discard(coin)
+            return super().spot_candles(coin, start, end).iloc[:0]
         now = pd.Timestamp(at, unit="s")
         self.candle_meta[coin] = {"gen": now - pd.Timedelta(seconds=self.age), "start": start}
         d = super().spot_candles(coin, start, end)
@@ -337,6 +346,81 @@ def absent():
     shutil.rmtree(sd)
 
 
+def pass_timeout():
+    """The pass's requests: one try of E.PASS_TIMEOUT_S (4 s); a failed one or one without rows leaves the coin to
+    the step; the stop rule counts a whole timeout."""
+    check("pass: PASS_TRIES 1 and PASS_TIMEOUT_S 4.0", E.PASS_TRIES == 1 and E.PASS_TIMEOUT_S == 4.0)
+    # a. keywords; a request that raises (a timeout)
+    eng, sd, F = engine()
+    F[0] = ep(T) + 45
+    eng.market.fail.add("ETH")
+    n = len(eng.market.req)
+    eng.candle_pass(T)
+    rq = eng.market.req[n:]
+    check("pass: every request with tries 1 and timeout 4.0",
+          [(r["coin"], r["tries"], r["timeout"]) for r in rq] == [(c, 1, 4.0) for c in ("BTC", "ETH", "SOL")], str(rq))
+    check("pass, a request that raises: pre_error 1, the pass goes on (BTC and SOL fetched), ETH not marked fetched",
+          eng.counts.get("pre_error") == 1 and eng.counts.get("pre_fetched") == 2 and "ETH" not in eng._cpass
+          and eng._cpass.get("BTC") == T and eng._cpass.get("SOL") == T, f"{eng.counts} {eng._cpass}")
+    eng.market.tb[("SOL", T)] = RuntimeError("timeout")    # SOL: its trades bar fails, so it is fetched on demand
+    eng.counts = {}
+    rq = step(eng, F, T + MIN)
+    check("pass, a request that raises: the step fetches ETH (pre_missing 1); SOL on demand (pre_ondemand 1)",
+          [(r["coin"], r["end"]) for r in rq] == [("ETH", T + MIN), ("SOL", T + MIN)]
+          and eng.counts.get("pre_missing") == 1 and eng.counts.get("pre_ondemand") == 1, f"{rq} {eng.counts}")
+    check("step and on-demand requests: called without tries and timeout (today's request)",
+          [(r["tries"], r["timeout"]) for r in rq] == [(None, None)] * 2, str(rq))
+    shutil.rmtree(sd)
+    # b. a request that gives no rows (a 429 on the one try: bot/market.py returns an empty table)
+    eng, sd, F = engine()
+    F[0] = ep(T) + 45
+    before = eng.spot["ETH"].copy()
+    eng.market.empty.add("ETH")
+    left = eng.candle_pass(T)
+    check("pass, an answer without rows: pre_error 1, the pass goes on, ETH not marked fetched, its table unchanged",
+          left == 0 and eng.counts.get("pre_error") == 1 and eng.counts.get("pre_fetched") == 2
+          and "ETH" not in eng._cpass and eng.spot["ETH"].equals(before), f"{eng.counts} {eng._cpass}")
+    eng.counts = {}
+    rq = step(eng, F, T + MIN)
+    check("pass, an answer without rows: the step fetches ETH, counted pre_missing",
+          [r["coin"] for r in rq] == ["ETH"] and eng.counts.get("pre_missing") == 1
+          and T in eng.spot["ETH"].index, f"{rq} {eng.counts}")
+    shutil.rmtree(sd)
+    # c. the stop rule: a whole timeout must fit before stop, whatever the last request took
+    S = ep(T) + 63.0
+    for off, want in ((-0.01, 1), (+0.01, 0)):
+        eng, sd, F = engine(coins=("ETH", "SOL", "XRP"))
+        eng.market.dur = 0.1
+        F[0] = S - 20.0
+        eng.candle_pass(T, stop=S, turn_end=F[0] + 0.05, now=lambda: F[0])    # one 0.1 s request: the last one
+        F[0] = S - 4.0 + off
+        n = len(eng.market.req)
+        eng.candle_pass(T, stop=S, now=lambda: F[0])
+        rq = eng.market.req[n:]
+        check(f"stop: last request 0.1 s; at stop - 4.0 {off:+.2f} s, {want} request starts",
+              len(rq) == want and (not rq or abs(rq[0]["at"] - (S - 4.01)) < 1e-6), str([r["at"] - S for r in rq]))
+        shutil.rmtree(sd)
+    eng, sd, F = engine(coins=("ETH", "SOL", "XRP"))
+    eng.market.dur = 4.0
+    F[0] = S - 4.0 - 0.01
+    n = len(eng.market.req)
+    eng.candle_pass(T, stop=S, now=lambda: F[0])
+    rq = eng.market.req[n:]
+    check("stop: a request that takes the whole 4.0 s from the last allowed start ends before stop; no other starts",
+          len(rq) == 1 and rq[0]["at"] + 4.0 < S and F[0] < S, str([r["at"] - S for r in rq]))
+    shutil.rmtree(sd)
+    # d. the live turn rule is still judged by the last request's length (not the timeout)
+    eng, sd, F = engine(coins=("ETH", "SOL", "XRP", "DOGE"))
+    eng.market.dur = 0.1
+    F[0] = ep(T) + 45.0
+    n = len(eng.market.req)
+    eng.candle_pass(T, stop=ep(T) + 63.0, turn_end=F[0] + 0.35, now=lambda: F[0])
+    rq = eng.market.req[n:]
+    check("turn: 0.1 s requests in a 0.35 s turn: three requests (turn_end judged by the last request)",
+          len(rq) == 3, str([round(r["at"] - ep(T), 2) for r in rq]))
+    shutil.rmtree(sd)
+
+
 def main():
     E.WINDOW_MIN = 30
     try:
@@ -348,6 +432,7 @@ def main():
         on_demand()
         candle_old()
         absent()
+        pass_timeout()
     finally:
         E.WINDOW_MIN = 11 * 1440
     print(f"candle_pass_test: {'all passed' if not FAILS else 'FAILED: ' + ', '.join(FAILS)}")

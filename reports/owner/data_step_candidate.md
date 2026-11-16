@@ -8,6 +8,16 @@ driver now runs the union of the order path's and this build's test files). The 
 the driver's old path). They are confirmed again by the runner suite on `owner/release-5`. Runner job: to be filled in
 by the owner.
 
+*Note, Nov 16 2026, after the merge (on `owner/release-5`).* The candle pass's requests now fail fast: one try with
+a 4 s timeout (`PASS_TRIES` 1, `PASS_TIMEOUT_S` 4.0 in `engine.py`; `bot/market.py`'s `_get_full` and `spot_candles`
+take `tries` and `timeout`, defaults unchanged, so the step, the on-demand requests and every paper and replay path
+make today's request). A pass request that fails or brings no rows (a 429 on its one try) counts `pre_error` and
+leaves the coin to the step. No pass request starts unless a whole 4 s timeout would still end 3 s before the step.
+Why: the pass shares the main thread with the live bot's fast polls and sits just before the step, and a failed pass
+request costs nothing. Before this, a hanging pass request was bounded only by five tries of 15 s (about 83 s).
+Shown by tests only (`candle_pass_test.py`, `trades_bar_test.py`): the paper books have no fast polls. The numbers
+below were made before this change.
+
 Branch `owner/release-4`, from commit `cde92521`. Prepared as a candidate; whether a bot takes it is decided by the
 owner. This file states facts only.
 
@@ -243,8 +253,9 @@ Both use the generic runner `hunt2.yml` on this branch; `commit` stays empty, no
 - **Python 3.8 to 3.10.** Checked only with Python 3.13 and `ast.parse(..., feature_version=(3, 8))` for the files
   `run.py` imports that changed (`engine.py`, `release_inputs.py`, `run.py`).
 - **The two runner jobs** were not run (they need the network or a runner).
-- **A request of the pass that hangs.** Not simulated: `bot/market.py`'s candle request has a 15 s timeout and five
-  tries; while it hangs, no fast poll runs, and if it hangs past the next step's second the step starts late.
+- **A request of the pass that hangs.** Not simulated on the live clock. Since the change after the merge (note at
+  the top) the pass's request has one try with a 4 s timeout (tested on a fake clock and a stand-in session); while
+  it runs, no fast poll runs.
 
 ## Found while preparing this, for a bot with real money
 - **The pass's request shares its address with the second-6 request of any client without the setting** (above).
@@ -257,9 +268,12 @@ Both use the generic runner `hunt2.yml` on this branch; `commit` stays empty, no
   "newest_bar": "candles", "stale_guard": false`) then leaves `candles_at_s` in place, and the engine refuses to
   start (`ValueError`: it needs `newest_bar` trades), so the service fails at every restart. The README now says to
   remove the key too; nothing in the code catches it. A VM set up before this release has no such key in its file.
-- **A pass request that hangs blocks the fast polls** for as long as it hangs (no new deeper rung, take-profit or
-  retry in that time), and past the next step's second it delays the step. The start rule only keeps a request from
-  starting within 3 s of the step, judged by the last request's time; it does not bound a request.
+- **A pass request blocks the fast polls while it runs** (no new deeper rung, take-profit or retry in that time).
+  Corrected after the merge (note at the top): it now has one try with a 4 s timeout (about 5 s for a 429 with
+  `bot/market.py`'s 1 s wait), and none starts unless a whole 4 s would end 3 s before the step, so it ends before
+  the step (a 429 one up to about 1 s later than the 4 s allowed for). Before the change the start rule was judged by the last request's time only and did not bound a
+  request (five tries of 15 s, about 83 s). The timeout bounds the connection and each wait for data, not a reply
+  that keeps trickling in.
 - **After every start the first step fetches every coin** (`pre_missing` 18), as today; from the next minute on the
   pass covers them.
 - **`tb_insert` changes meaning with the setting:** nearly every trades bar of a covered coin counts as an insert

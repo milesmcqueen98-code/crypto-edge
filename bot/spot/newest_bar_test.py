@@ -76,7 +76,7 @@ class SynthMarket:
         self.copy = {}           # (coin, end) -> a frame served instead (an old copy)
         self.starts = []
 
-    def spot_candles(self, coin, start, end):
+    def spot_candles(self, coin, start, end, tries=5, timeout=15):
         self.starts.append((coin, start))
         if self.lag is not None:
             lag = self.lag.get(coin, pd.Timedelta(seconds=30)) if isinstance(self.lag, dict) else self.lag
@@ -178,7 +178,7 @@ def _part1():
     eng.market.tb[("BTC", end)] = "final"
     seen = []
     orig = eng.market.spot_candles
-    eng.market.spot_candles = lambda coin, s, e: (seen.append((coin, s)), orig(coin, s, e))[1]
+    eng.market.spot_candles = lambda coin, s, e, **kw: (seen.append((coin, s)), orig(coin, s, e, **kw))[1]
     end2 = end + pd.Timedelta(minutes=1)
     eng.update_spot(end2)
     check("next step: SOL re-fetch starts 5 minutes before its newest candle (6 minutes), not the trades-built row",
@@ -480,7 +480,7 @@ def make_market():
         (drop_btc); trades bars are the stored (final) candles."""
         alter, drop_btc, drop, tb_calls = {}, set(), set(), [0]
 
-        def spot_candles(self, coin, start, end):
+        def spot_candles(self, coin, start, end, tries=5, timeout=15):
             d = super().spot_candles(coin, start, end)
             newest = pd.Timestamp(end) - pd.Timedelta(minutes=1)
             if (coin, newest) in self.alter and newest in d.index:

@@ -53,7 +53,7 @@ class ReplayMarket:
                 self.P[c] = (d.close * d.volume * cs[c]).resample("D").sum()
         self.ticks = E.fallback_ticks()
 
-    def spot_candles(self, coin, start, end):
+    def spot_candles(self, coin, start, end, tries=5, timeout=15):
         d = self.D[coin]
         i0, i1 = d.index.searchsorted([pd.Timestamp(start), pd.Timestamp(end)])
         return d.iloc[i0:i1]
