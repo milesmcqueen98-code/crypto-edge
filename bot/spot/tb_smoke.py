@@ -15,13 +15,17 @@ five values equal), rows that differ (and the largest close difference in bp), r
 the venue has, and engine rows in the range still marked trades-built. It also prints, per step, when the step
 started and when its data part ended (seconds after the minute, wall clock), the candle and trades requests the step
 made, and the candle requests made between the step and the one before it (the candle pass of "candles_at_s"), then
-the medians.
+the medians. It also prints, per step and for the run, the trades pass's own duration by the engine's timer (median and
+longest), its budget fallbacks (tb_fb_budget), and the most trades requests sent in any one second (bot/market.py
+trades_peak; both paths, the start-up pass included). With trades_workers 2 or more, a step's trades requests are the
+coins the side-by-side pass started.
 
 --set KEY=JSON: override a key of the config (null removes it), e.g. --set candles_at_s=45 or --set candles_at_s=null.
 --then KEY=JSON (with --parity; repeatable): after the first run and its parity check, a second run of the same
 length on the same runner, in a fresh state dir (<state-dir>_then), with these overrides on top of the first run's
-config, then its parity check and a line comparing the two runs' data step medians. No wait before the second run
-(any 30 minutes of steps cross one heartbeat minute).
+config, then its parity check and lines comparing the two runs' data step medians and trades passes. No wait before
+the second run (any 30 minutes of steps cross one heartbeat minute). E.g. --set trades_workers=1 --then
+trades_workers=3: the sequential trades pass, then three coins at a time.
 """
 import argparse
 import json
@@ -64,20 +68,21 @@ def instrument(eng):
     """Per step: start and data-end times (seconds after the minute, wall clock) and the requests it made; candle
     requests between steps. Wraps the engine's and its market's methods on the instance; changes nothing else."""
     rec, cur, between = [], {}, {"candles": 0}
-    step, mark, mkt = eng.step, eng._mark, eng.market
+    step, mark, mkt, tpass = eng.step, eng._mark, eng.market, eng.trades_pass
     sc, tb, tbs = mkt.spot_candles, mkt.trades_bar, mkt.trades_bars
 
     def w_step(t=None):
         t0 = time.time()
         cur.clear()
-        cur.update(on=True, t0=t0, data=None, candles=0, trades=0)
+        cur.update(on=True, t0=t0, data=None, candles=0, trades=0, trades_s=None, fb_budget=None)
         try:
             return step(t)
         finally:
             m0 = int(t0 // 60) * 60
             rec.append(dict(minute=time.strftime("%H:%M", time.gmtime(m0)), start_s=round(t0 - m0, 2),
                             data_end_s=None if cur["data"] is None else round(cur["data"] - m0, 2),
-                            step_candles=cur["candles"], step_trades=cur["trades"], pass_candles=between["candles"]))
+                            step_candles=cur["candles"], step_trades=cur["trades"], pass_candles=between["candles"],
+                            trades_s=cur["trades_s"], fb_budget=cur["fb_budget"]))
             cur["on"], between["candles"] = False, 0
 
     def w_mark(k, t):
@@ -93,8 +98,26 @@ def instrument(eng):
                 between["candles"] += 1
             return f(*x, **kw)
         return g
-    eng.step, eng._mark = w_step, w_mark
+    def w_pass(m):
+        """The trades pass's own duration (engine timer) and its budget fallbacks."""
+        b0, t0 = eng.counts.get("tb_fb_budget", 0), eng._timer()
+        try:
+            return tpass(m)
+        finally:
+            if cur.get("on"):
+                cur["trades_s"] = round(eng._timer() - t0, 3)
+                cur["fb_budget"] = eng.counts.get("tb_fb_budget", 0) - b0
+
+    def w_many(jobs, *x, **kw):
+        out = many(jobs, *x, **kw)
+        if cur.get("on"):
+            cur["trades"] += sum(1 for o in out if o.get("started"))
+        return out
+    eng.step, eng._mark, eng.trades_pass = w_step, w_mark, w_pass
     mkt.spot_candles, mkt.trades_bar, mkt.trades_bars = count("candles", sc), count("trades", tb), count("trades", tbs)
+    many = getattr(mkt, "trades_many", None)
+    if many is not None:
+        mkt.trades_many = w_many
     return rec
 
 
@@ -103,14 +126,22 @@ def timing(rec, label):
     print(f"\nstep timing ({label}; seconds after the minute, wall clock):", flush=True)
     if not rec:
         print("  no steps", flush=True)
-        return None
+        return None, {}
     d = pd.DataFrame(rec)
     print(d.to_string(index=False), flush=True)
     med = d.median(numeric_only=True)
     print(f"  median: step start {med['start_s']:.2f} s, data step end {med['data_end_s']:.2f} s (max "
           f"{d.data_end_s.max():.2f} s); per step {med['step_candles']:g} candle and {med['step_trades']:g} trades "
           f"requests; {med['pass_candles']:g} candle requests between steps", flush=True)
-    return float(med["data_end_s"])
+    tr = d.trades_s.dropna() if "trades_s" in d else pd.Series(dtype=float)
+    fb = int(d.fb_budget.fillna(0).sum()) if "fb_budget" in d else 0
+    tp = dict(median=float(tr.median()) if len(tr) else None, longest=float(tr.max()) if len(tr) else None, fb=fb)
+    if len(tr):
+        print(f"  trades pass ({label}; engine timer): median {tp['median']:.2f} s, longest {tp['longest']:.2f} s; "
+              f"budget fallbacks (tb_fb_budget) {fb}", flush=True)
+    else:
+        print(f"  trades pass ({label}): none in the steps (newest_bar not trades)", flush=True)
+    return float(med["data_end_s"]), tp
 
 
 def parity(eng):
@@ -195,15 +226,21 @@ def events(sd):
 
 def in_process(cfg, sd, label):
     """One paper run in this process (what run.py paper does), its events, step timing and parity check."""
+    from bot import market
     from bot.spot.engine import Engine
     print(f"\n===== {label}: running in process: Engine(mode=paper, config={a.config}, overrides {label}, "
-          f"state_dir={sd}).run({a.minutes}); candles_at_s {cfg.get('candles_at_s')}", flush=True)
+          f"state_dir={sd}).run({a.minutes}); candles_at_s {cfg.get('candles_at_s')}, trades_workers "
+          f"{cfg.get('trades_workers')}", flush=True)
     eng = Engine(mode="paper", cfg=cfg, state_dir=sd, echo=False)
     rec = instrument(eng)
+    market.trades_peak(reset=True)
     eng.run(a.minutes)
+    peak = market.trades_peak(reset=True)
     events(sd)
-    med = timing(rec, label)
-    return parity(eng), med
+    med, tp = timing(rec, label)
+    tp["peak"] = peak
+    print(f"  trades requests ({label}): at most {peak} sent in any one second (start-up pass included)", flush=True)
+    return parity(eng), med, tp
 
 
 if a.then and not a.parity:
@@ -215,12 +252,15 @@ while int(time.time() // 60) % 30 != 20:
 refused = None
 if a.parity:
     sys.path.insert(0, ROOT)
-    refused, m1 = in_process(cfg0, a.state_dir, " ".join(a.set) or "none")
+    refused, m1, p1 = in_process(cfg0, a.state_dir, " ".join(a.set) or "none")
     if a.then:
-        r2, m2 = in_process(overrides(cfg0, a.then), a.state_dir + "_then", " ".join(a.set + a.then))
+        r2, m2, p2 = in_process(overrides(cfg0, a.then), a.state_dir + "_then", " ".join(a.set + a.then))
         refused = refused or r2
         print(f"\ndata step end, median seconds after the minute: first run {m1}, second run {m2}"
               + (f" (second minus first: {m2 - m1:+.2f} s)" if m1 is not None and m2 is not None else ""), flush=True)
+        for lab, p in (("first run", p1), ("second run", p2)):
+            print(f"trades pass, {lab}: median {p.get('median')} s, longest {p.get('longest')} s, budget fallbacks "
+                  f"{p.get('fb')}, at most {p.get('peak')} trades requests in one second", flush=True)
     sys.exit(3 if refused else 0)
 cfg_path = os.path.join(ROOT, a.config)
 if a.set:                                                  # run.py takes a file: the overridden config next to state
