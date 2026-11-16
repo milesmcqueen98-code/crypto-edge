@@ -431,3 +431,30 @@ The run finished at 08:58 UTC on Nov 15 (job 43689717933, branch owner/read-c2).
     BTC's candle request with a copy in 96% of minutes, a median 65 s old, so BTC keeps two or three trades rows
     under any of these designs, the fourth book's included. BTC's trades bar equalled the final candle in 97.6% to
     99.4% of minutes in the third book's read, so this costs little.
+- **Nov 16 2026, 12:04 ET (orchestrator), before the fifth book exists.** Part 3, measure 1: the fixed bar of
+  10.3 s is replaced by a comparison on the same machine. Measures 2 to 4 are untouched.
+  - **What was found today, before any run of the fifth book.**
+    - The step's time moves with the period and with the runner by more than the difference being measured.
+      Release 3's way ended its data step at a median of 10.26 s in the third book over Nov 11 to 14; since noon
+      UTC on Nov 15 the same way is at 11.5 s in the main book and 11.1 s in the third (56 heartbeats each).
+    - The build itself, 30 minutes each on two runners two hours apart today: 9.70 s and 11.37 s. On the same two
+      runners the fourth book's way took 14.88 s and 15.35 s (jobs 43880261551 and 43898466756).
+  - **Why the bar as written is wrong.** Taken from another period, 10.3 s would today fail release 3's own way.
+    The condition of Nov 14 is "no later than release 3", and that can only be read with both on the same machine
+    in the same hour.
+  - **Measure 1 as it now stands. Both parts must hold.**
+    - **(a) Same-machine pairs.** Every six hours of the period a runner job runs, on one machine and on the
+      fifth book's pinned commit, 30 minutes of paper steps with release 3's inputs (`bot/spot/config.json` of
+      `main`) and 30 minutes with the build's inputs, one straight after the other. The order alternates from job
+      to job. A pair counts if both halves have at least 20 timed steps and neither met a refusal or a rate
+      limit. The measure is the median, over the pairs that count, of the build's median data-step end minus
+      release 3's. It must be at or below zero, with at least 8 pairs.
+    - **(b) As written:** over the half hours in which both the fifth and the main book have a heartbeat, the
+      median of the fifth book's values is no higher than the median of the main book's (at least 100 such half
+      hours, and at least 100 heartbeats of the fifth book).
+    - The fifth book's own median and the 10.3 s figure are reported, and decide nothing.
+  - **Is this easier to pass?** It drops a bar that release 3 itself would not meet this week, and adds a direct
+    test of the condition that the plan did not have. A build that is slower than release 3 on the same machine
+    fails (a) whatever the week is like.
+  - **Cost:** the pairs' paper steps place no orders and add about 40 public requests a minute from their own
+    runner for an hour, four times a day.
