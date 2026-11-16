@@ -256,6 +256,63 @@ The run finished at 08:58 UTC on Nov 15 (job 43689717933, branch owner/read-c2).
   pass; with fresh answers it is the fourth book's way.
 - **Tables:** reports/owner/bar_source_c2/ (c2_summary.md, c2_counts.json, c2_per_coin.csv, the run's table).
 
+## Part 3: the build as a paper book (plan fixed Nov 16 2026, 08:38 ET, before the book exists)
+- **Why.** Parts 1 and 2 and the addition settle which rows the decision should read. They do not show that the
+  build which reads them keeps the step early, or that its candle requests between steps work against the real
+  venue. Both were made conditions of the release on Nov 14, to be met by a paper book on a rule fixed first.
+- **The fifth book** (`paper_spot_r5`): the build on branch owner/release-5, which is `main` with the input build
+  merged in, at one pinned commit. It runs that commit's own `bot/spot/config.json`, the file the release would
+  ship: all 18 coins take the newest minute from trades, the venue's candle replaces it afterwards, and the candle
+  requests for those coins are made at second 45, between steps. $250,000 of paper money, its own workflow and
+  runner, like the fourth book.
+  - The commit is named in the deviation log before the book's first run, after the full offline suite has passed
+    on it on a runner. A different commit restarts the three days.
+- **Controls, unchanged while the test runs:** the fourth book (engine commit 58eba8b: the same rows with the
+  candle requests inside the step) and the main book (release 4 on `main`, release 3's inputs).
+- **The third book ends when the fifth starts.** Its question was answered by release 3, and the main book runs
+  nearly its inputs. Its folder and log stay as the record.
+- **Period.** From the first half-hour mark after the fifth book's first decision minute, 4,320 minutes. It is
+  extended by six hours, at most three times, while the fifth or the fourth book has fewer than 300 new bids on the
+  17 coins on the minutes both were live (counted from the two logs before any research is fetched). After the
+  third extension the read is made on what there is.
+- **Measures. All four must hold.**
+  1. **The step** (the condition of Nov 14: no later than release 3). From the half-hour heartbeats inside the
+     period, each book's median of the data step's end (`step_s`, `data`, the first number):
+     - the median of the fifth book's values is at or below 10.3 s (release 3's way measured over the third
+       book's three days: 10.26 s);
+     - and, over the half hours in which both the fifth and the main book have a heartbeat, the median of the
+       fifth book's values is no higher than the median of the main book's.
+  2. **Decisions,** both books against the research with Part 2's tools, all 17 coins, the minutes both the fifth
+     and the fourth book were live:
+     - bids the research would not have placed: the fifth book's share is at most the fourth's plus 2.0 points,
+       and at most 5%;
+     - the research's new bids with a bot bid within a minute: the fifth book's share is at least the fourth's
+       minus 3.0 points;
+     - bids more than 5 bp from the research level: under 5% of the fifth book's bids.
+     - **Why tolerances and not "no worse":** the two books read the same rows except where a candle answer was a
+       copy, and the emulation puts that difference at 5 disagreements in 63,000. With about 700 bids a book in
+       three days, a share near 3% moves by 0.6 points and a share near 93% by 1 point from chance alone. The
+       tolerances are a little over two such steps of the difference. This measure is there to catch a fault, not
+       to rank the two ways; Part 1 and the addition did that.
+  3. **Items 1 to 5** for the fifth book with all 18 coins listed, as for the fourth book, with one change: item
+     3's median is measure 1. Its other half stays: the data step's half-hour maximum at or below 20 s in at least
+     95% of heartbeats.
+  4. **The candle requests between steps,** from the heartbeat counters over the period:
+     - failed requests (`pre_error`) are at most 1% of the requests made (`pre_fetched` plus `pre_error`);
+     - candle requests that had to be made inside a step for a trades-built coin (`pre_missing` plus
+       `pre_ondemand`), leaving out the first step after each start, are at most 2% of coin-minutes.
+- **Reported, not part of the rule:** each book's bids and fills side by side; how often a coin had two or more
+  trades rows at a decision, as far as the counters show it; the measures for the twelve and the five apart; P&L.
+- **One read.** Interim looks may stop the test for a fault (a crash, a refusal, a rate-limit stop, an error
+  event). They cannot pass it and change no rule.
+- **A pass** makes the build's configuration release 5 for the main book, W2 and the live bot, with a release
+  note. Test A does not restart (FORWARD_TESTS.md, note of Nov 14).
+- **A fail:**
+  - on measure 1: the build is not released; the twelve stay on candles until a step fed another way (a trade
+    stream) exists and has its own test;
+  - on measure 2 or 3: no release; the cause is found first, and a corrected build starts a new three days;
+  - on measure 4 alone: the same, since requests inside the step are what the build exists to avoid.
+
 ## Deviation log
 - **Nov 11 2026, 09:17 ET (orchestrator).** Made after the tool's development run and before any minute of either
   registered window was read for this plan.
