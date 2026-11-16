@@ -1,0 +1,89 @@
+{
+ "script": "scripts/owner/timing/rederive_runner.py",
+ "reproduced": true,
+ "artifact_files": [
+  {
+   "file": "art/42832337582/hunt2-timing-s0-42832337582/prints_0.parquet",
+   "rows": 1711448,
+   "windows_new": 795
+  },
+  {
+   "file": "art/42832822913/hunt2-timing-s1-42832822913/prints_1.parquet",
+   "rows": 1784490,
+   "windows_new": 796
+  },
+  {
+   "file": "art/42832828967/hunt2-timing-s2-42832828967/prints_2.parquet",
+   "rows": 1580274,
+   "windows_new": 796
+  },
+  {
+   "file": "art/42832836109/hunt2-timing-s3-42832836109/prints_3.parquet",
+   "rows": 1874465,
+   "windows_new": 796
+  },
+  {
+   "file": "art/42832842075/hunt2-timing-s4-42832842075/prints_4.parquet",
+   "rows": 1887805,
+   "windows_new": 796
+  },
+  {
+   "file": "art/42832847428/hunt2-timing-s5-42832847428/prints_5.parquet",
+   "rows": 1719690,
+   "windows_new": 797
+  },
+  {
+   "file": "art/42832853431/hunt2-timing-s6-42832853431/prints_6.parquet",
+   "rows": 1811338,
+   "windows_new": 797
+  },
+  {
+   "file": "art/42832860048/hunt2-timing-s7-42832860048/prints_7.parquet",
+   "rows": 1711761,
+   "windows_new": 797
+  }
+ ],
+ "starts": [
+  0,
+  1300,
+  2000,
+  5200,
+  7500,
+  8000,
+  10000,
+  10200,
+  11080,
+  11700,
+  12150,
+  13900,
+  15000,
+  17250,
+  24000
+ ],
+ "old_starts": [
+  0,
+  1300,
+  7500,
+  8000,
+  10000,
+  15000
+ ],
+ "windows_in_artifacts": 6370,
+ "t_read_s": 4.6,
+ "shards": [
+  "derived_0.parquet",
+  "derived_1.parquet",
+  "derived_2.parquet",
+  "derived_3.parquet",
+  "derived_4.parquet",
+  "derived_5.parquet",
+  "derived_6.parquet",
+  "derived_7.parquet"
+ ],
+ "rows_compared": 29686,
+ "rows_differing": 0,
+ "rows_missing": 0,
+ "union_recovery_bad": 0,
+ "out_mb": 31.64,
+ "t_total_s": 38.9
+}

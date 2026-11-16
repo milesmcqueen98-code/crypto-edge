@@ -1,0 +1,9 @@
+shard,rows_file,rows_studied,rows_compared,rows_rederived,missing_on_file,missing_rederived,missing_window_prints,rows_differing,status_differing,union_recovery_bad,pre_in_window_differs,file_not_studied,diff_n60,diff_n70,diff_min60,diff_min70,diff_pre_ms,diff_pre_px,diff_last_px_0,diff_last_ms_0,diff_rl_ms_0,diff_rl_px_0,diff_ft_prev_0,diff_ft_cur_0,diff_last_px_1300,diff_last_ms_1300,diff_rl_ms_1300,diff_rl_px_1300,diff_ft_prev_1300,diff_ft_cur_1300,diff_last_px_7500,diff_last_ms_7500,diff_rl_ms_7500,diff_rl_px_7500,diff_ft_prev_7500,diff_ft_cur_7500,diff_last_px_8000,diff_last_ms_8000,diff_rl_ms_8000,diff_rl_px_8000,diff_ft_prev_8000,diff_ft_cur_8000,diff_last_px_10000,diff_last_ms_10000,diff_rl_ms_10000,diff_rl_px_10000,diff_ft_prev_10000,diff_ft_cur_10000,diff_last_px_15000,diff_last_ms_15000,diff_rl_ms_15000,diff_rl_px_15000,diff_ft_prev_15000,diff_ft_cur_15000,identical
+0,3738,3738,3738,3738,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,True
+1,3327,3327,3327,3327,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,True
+2,3445,3445,3445,3445,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,True
+3,3938,3938,3938,3938,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,True
+4,4140,4140,4140,4140,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,True
+5,3684,3684,3684,3684,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,True
+6,3677,3677,3677,3677,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,True
+7,3737,3737,3737,3737,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,True
