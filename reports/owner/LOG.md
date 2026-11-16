@@ -1016,8 +1016,9 @@ FORWARD_TESTS.md.
   - **Interim look at the 19:00 heartbeat** (17 steps). It can find a fault and pass nothing.
     - Between-step candle requests: 306 made, none failed. Data step: median 11.06 s, longest 16.32 s.
     - Candle requests inside a step: 10 of 306 coin-minutes (3.3%). All ten followed a trades pass that ran out
-      of its 8 s budget before it reached every coin. The other 10 budget fallbacks in the counter are from the
-      start's own pass, which rebuilds five minutes at once.
+      of its 8 s budget before it reached every coin. The counter shows 20 budget fallbacks; the other 10 had no
+      such request after them, so by the code they belong to the start's own pass, which rebuilds five minutes
+      at once (not checked further).
   - **To watch: the venue's trades list has been slow since Nov 14, and slower this afternoon.**
     - The fourth book's trades pass ran out of its budget for 1 of 23,888 coin-minutes on Nov 12 and 3 of 24,304
       on Nov 13. Then 1.0% on Nov 14, 1.3% on Nov 15, 1.6% today so far, and 58 of 531 (10.9%) in the half hour to
