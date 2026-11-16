@@ -81,7 +81,57 @@
 - If either fails, the cause is found before rule B's count goes on. No P&L is read for this.
 
 ## Deviation log
-(none yet)
+- **Nov 14 2026, 22:42 ET (orchestrator), before any live order.** Additions made in four reviews of the build
+  (branch owner/order-path). None changes which bids are placed; each makes the new path lean less on what the
+  venue's answers are assumed to be.
+  - **The status read costs two more requests a minute.** Before the batch read, one request lists the orders
+    that had a fill since the last read; those are read singly, as today. And every minute one order of the batch
+    read is also read singly and compared. The list is switched off after two contradictions (the list showing
+    more filled than a later single read, a different average price or more fees at equal fills, or a final
+    status the single read does not confirm).
+  - **Cancels.** If the batch cancel request fails, its orders are cancelled singly at once. From 0.6 s after the
+    cancel, an order the list still shows as open is also read singly, and that read decides.
+  - **Placements.** One unreadable answer no longer costs the record of the other bids of the minute. If the
+    placing call fails as a whole, the sweep for unknown bot orders runs at once.
+  - **An older library** on the server does not stop the bot (it then runs without the venue's limit headers).
+  - **A check the account owner runs once** (`wickctl order-check`): three bids of about $25 at half the market
+    price are placed, read and cancelled through the batch requests, with the bot stopped. It reports whether the
+    venue's answers are what the code assumes and how long they take. The sandbox cannot show that (it does not
+    serve the best-bid request or the limit headers; 26 of its 28 checks pass, runs 43667375643 and 43670119883).
+  - **The first-day figure is now measurable as written.** The heartbeat counts the minutes in which any batch
+    request fell back to single requests (`fallback_min`), and `wickctl status` prints the share and the median
+    time from the data step's end to the last new bid.
+  - **The model of the clock after these additions** (0.1 s a request; a model): a median 23 requests a minute and
+    2.3 s from the data step's end to the last new bid, against 50 requests and 7.8 s on today's path. The plan's
+    "handful of calls" and "about 1 to 2.5 s" were written before the safety reads were added.
+- **Nov 15 2026, 02:21 ET (orchestrator), before any live order and before the release.** A gate at the start of
+  the live bot; nothing else changes.
+  - **What stood:** the release sets the batch path for the live bot, and the owner's check
+    (`wickctl order-check`) was a step in the release note. A server updated and started without that step would
+    have run requests that have never reached the real venue, with real ladders depending on them.
+  - **Fixed now:** at every start the live bot uses the batch path only if the newest order check that placed
+    test orders on that server passed, with the library version that is installed. Otherwise it runs today's
+    serial path, exactly as release 3 does, and prints the reason at start and in `wickctl status`. A library
+    upgrade asks for the check again. Every live start writes one `order_path` event naming the path in use.
+  - **The decision is made before the engine is built** (`bot/spot/run.py`), so the engine and the simulation
+    results are untouched. The offline suite is run again on the final commit before the release.
+  - **Rule B and the first live day** are counted from the first live minute on the batch path (the `order_path`
+    events and the heartbeats show it), not from the update.
+  - **The suite on the commit before this change** (d21317af, run 43673559075): 20 test files, none with a
+    failure; replay 156 rungs identical; the three-way simulation equal in both windows.
+- **Nov 15 2026, 02:40 ET (orchestrator), before the release.** A hand switch back to the serial path.
+  - **What stood:** the way back on one server was an edit of the live config: `"inputs_local": true` with the
+    path and all the input settings restated. Six keys by hand on a trading server, where a typo stops the bot.
+  - **Fixed now:** `wickctl order-path serial` puts a marker file in the bot's state folder, and the gate reads it
+    first; `wickctl order-path batch` removes it. Either applies at the next start. No config is touched.
+  - **Unchanged:** the gate's other rules, the engine, the tests' results. The offline suite runs once more on the
+    final commit.
+- **Nov 16 2026, 08:33 ET (orchestrator): released as release 4.** Final commit 513ab722 on branch
+  owner/order-path: the gate, the hand switch (`wickctl order-path serial|batch`) and the order check's closing
+  lines on top of the reviewed code; the engine is as reviewed. Full offline suite on that commit: runner job
+  43691154265, 20 test files, none with a failure. Sandbox on that commit: job 43876402271, 26 of 28 (the two
+  sandbox limits). The first live day's figures stand as fixed above, counted from the first live minute on the
+  new path.
 
 ## Sources
 - Cancel Orders: https://docs.cdp.coinbase.com/api-reference/advanced-trade-api/rest-api/orders/cancel-order

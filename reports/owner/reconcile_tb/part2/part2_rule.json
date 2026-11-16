@@ -1,0 +1,69 @@
+{
+ "period": {
+  "start": "2026-11-11 22:30:00",
+  "end": "2026-11-14 22:29:00"
+ },
+ "minutes": {
+  "main": 4258,
+  "tb": 4249,
+  "common": 4187
+ },
+ "books": {
+  "main": "paper_spot_tb",
+  "tb": "paper_spot_t18"
+ },
+ "min_bids": 300,
+ "min_minutes": 4320,
+ "conditions": {
+  "c1_minutes_together": {
+   "value": 4320,
+   "needed": 4320,
+   "met": true
+  },
+  "c2_bids_on_the_twelve": {
+   "third": 452,
+   "fourth": 435,
+   "needed": 300,
+   "met": true
+  }
+ },
+ "measures": {
+  "wrong_side": {
+   "label": "wrong-side share (new bids whose research score is at or below the threshold)",
+   "third_k": 20,
+   "third_n": 452,
+   "third_share": 0.04424778761061947,
+   "fourth_k": 18,
+   "fourth_n": 435,
+   "fourth_share": 0.041379310344827586,
+   "verdict": "PASS"
+  },
+  "matched": {
+   "label": "matched share (research's new bids with a bot bid within a minute)",
+   "third_k": 414,
+   "third_n": 448,
+   "third_share": 0.9241071428571429,
+   "fourth_k": 404,
+   "fourth_n": 434,
+   "fourth_share": 0.9308755760368663,
+   "verdict": "PASS"
+  },
+  "level": {
+   "label": "level (new bids more than 5 bp from the research level)",
+   "third_k": 4,
+   "third_n": 452,
+   "third_share": 0.008849557522123894,
+   "fourth_k": 4,
+   "fourth_n": 435,
+   "fourth_share": 0.009195402298850575,
+   "verdict": "PASS",
+   "note": "the third book's figures carry no verdict"
+  }
+ },
+ "items_1_5": {
+  "value": "pass",
+  "verdict": "PASS",
+  "text": "pass"
+ },
+ "overall": "PASS"
+}

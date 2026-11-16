@@ -190,3 +190,66 @@ For each minute q, with c = seconds after q when the stale bid is cancelled and 
   and from P1a differ by $10,231 in 2022-23, and the ten largest removed ladders are $6.4K of P1's $13.1K. The text
   above now states the dollar change only.
 - **"Fills are spread evenly"** now reads "roughly evenly", with the numbers.
+
+## Part 3: the live bot as built and each stage of the rebuild (plan fixed Nov 14 2026, 12:52 ET, before any evaluation)
+- **Why.** The first two parts took the live bot's new bid to rest from 10 s after the minute. Read from the code
+  on Nov 14, the bot as built is slower than the slowest case studied (CHARTER.md, "Live order timing";
+  reports/owner/order_path_plan.md). Three builds are under way to close that. This part puts a number on each
+  stage with the same data and the same method, so that the builds can be ranked and the pilot's expected capture
+  restated.
+- **Method: unchanged.** The same studied minutes, the same reduced print paths (branch owner/timing,
+  reports/owner/timing/data/derived), the same evaluator and both valuations (S1 and S2). Only the two times of a
+  policy are new: the second at which the bid carried in from the last minute is cancelled, and the second from
+  which the new bid rests. One pair of times stands for all coins of a minute (the middle coin of 15).
+- **Policies (fixed now; cancel time, new-bid time, in seconds after the minute):**
+
+  | Name | Stands for | Cancel | New bid |
+  |---|---|---|---|
+  | B0 | The bot as built, 0.1 s a request | 14.25 | 17.25 |
+  | B0f | As built, 0.05 s a request | 12.4 | 13.9 |
+  | B0s | As built, 0.2 s a request | 18.0 | 24.0 |
+  | B1 | Order path rebuilt, today's data step | 10.8 | 11.7 |
+  | B2 | B1 and the data step rebuilt (step still 6 s after the minute) | 9.3 | 10.2 |
+  | B3 | B2 with the step 1 s after the minute | 4.3 | 5.2 |
+  | B4 | B3 with a stream of trades instead of requests | 1.1 | 2.0 |
+  | N1, N2, N3 | B1, B2, B3 with no carried bid: every old bid is cancelled before the minute starts | 0 | 11.7, 10.2, 5.2 |
+
+  - **Where the times come from:** the data step ends at 10.2 s today (candles, trades for five coins, cash), at
+    8.7 s with the candle requests moved out and trades fetched two at a time, and 5 s earlier again with the step
+    at 1 s. As built: 15 status requests, 0.3 s of computing, then cancel, status and price for each coin in turn,
+    then the 15 bids. Rebuilt: one request each for status, prices and the cancel, about one and a half for the
+    confirmation, then the bids at 10 a second. These are models of code that has not run against the venue.
+- **Reported for each policy and era,** exactly as in parts 1 and 2: parents, the share of the research's first-bid
+  fills caught in the same minute and within two minutes, fills on the carried bid, and the first-order P&L against
+  P0 and against P1 under S1 and S2.
+- **How it will be read. No gate: this is a measurement.**
+  - The builds are fidelity work and go ahead whatever this shows, as long as each stage is not further from the
+    research than the one before it on the same-minute share.
+  - The pilot's expected capture is restated from B1, the stage rule B will count from.
+  - N1 to N3 are for information. Dropping the carried bid would change which orders rest, which is an execution
+    change (class 3 in the charter). Nothing is adopted from this part; a later test would need its own plan.
+- **Limits:** those of parts 1 and 2 (first order only, levels from final candles, mid-coin times), plus this: the
+  times are assumptions until the pilot's heartbeats record the real ones.
+
+### Part 3, deviation 1 (Nov 15 2026, 02:29 ET, orchestrator; logged before any evaluation)
+- **Two policies are added; none is removed or changed.** The builds have moved since the table was fixed.
+
+  | Name | Stands for | Cancel | New bid |
+  |---|---|---|---|
+  | B1r | The order path as reviewed (branch owner/order-path), today's data step | 10.7 | 12.15 |
+  | B2r | B1r with the data step of the built candidate (branch owner/release-4) | 9.63 | 11.08 |
+
+  - **Where the times come from:** the order path's simulation after its reviews has the cancel request about
+    0.5 s after the data step's end, the first new bid 1.6 s after it and the last 2.3 s (medians; a model at 0.1 s
+    a request). The middle bid is taken at 1.95 s. The candidate's data step ends at a modelled 9.13 s with all 18
+    coins from trades.
+- **How the paths are made.** The reduced print paths on file hold the path from six placement times only (0, 1.3,
+  7.5, 8, 10 and 15 s), so the new placement times need paths of their own. They are derived on a runner from the
+  first fetch's print artifacts, with the same function and no new request to the venue. The six old times are
+  derived again in the same job and must equal the paths on file exactly; if they do not, nothing is evaluated
+  until the difference is explained.
+- **N1 to N3 as code.** "No carried bid" means the bid of the minute before never rests into the new minute and is
+  never kept: each approved minute places its new bid at the policy's time, subject to the same skip test.
+- **An earlier step by requests is off the table** (step probe, first run, interim look: the venue's trades list
+  held the closed minute in 74% of requests made one second after it and 96% at three seconds). B3 therefore
+  stands for a stream-fed step, like B4, and is kept for information.

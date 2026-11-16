@@ -780,3 +780,154 @@ FORWARD_TESTS.md.
   - **Agents:** the release candidate with the new bar source is being built on branch owner/release-4 (Opus).
     The order path and the data step go to Opus agents on their own branches; the venue's interface facts are
     checked from its documentation first.
+- **11:19. Step probe: script reviewed, run 1 started; order path: the venue's facts and the plan.**
+  - **Step probe.** Plan fixed at 10:55 (reports/owner/step_probe_prereg.md). A Sonnet agent built the probe, the
+    summary and the rule with offline tests (61, 23 and 36 checks). Reviewed: the probe uses the engine's own
+    request and check at the engine's own pace, stops at once on a refusal or a rate-limit answer, and writes one
+    row per request. One addition asked for and made: an error that escapes the loop no longer loses the rows.
+    Run 1 started at 16:07 UTC on a runner (run 43613801204, 300 minutes, 54 requests a minute, at most 7 in a
+    second). Run 2 is set for Monday from 13:30 UTC. The rule reads both together.
+  - **The venue's interface facts.** The research agent read the venue's Python library (version 1.8.4) but could
+    not open the documentation: its page requests needed an approval that was not answered in time, and it
+    stopped, as told. It asked for those requests to be allowed. No setting was changed. The pages were then read
+    from this session through its own search results, which the tool allows without that approval. One page was
+    not read: the overview that the venue's retired rate-limit page forwards to needs Miles's approval to open, so
+    the order endpoints' request limit stays unconfirmed and the bot will read it from the venue's own headers.
+  - **What the documentation settles:** several orders can be cancelled in one request, but success only means the
+    cancel was submitted; several orders can be read in one request, with fills and status; the best bid of
+    several products comes in one request; editing a bid in place is not documented for good-till-date orders, so
+    it is not used. Public market data is limited to 10 requests a second per IP (the bot's pace is 7).
+  - **Order path plan** (reports/owner/order_path_plan.md, fixed at 11:16, before any live order): setting
+    `order_path`, today's code untouched as the default, the batch path beside it with today's single requests as
+    the fallback for every piece, the tests before release, and what the first live day must show. An Opus agent
+    is building it on branch owner/order-path.
+- **12:50. The main book's first run on release 3 is under way.** Run 43620656443 started at 17:21 UTC from a
+  commit that holds release 3 (bot/spot/config.json: newest bar from trades, guard on, list BTC, ETH, SOL, XRP,
+  ZEC). Both of its jobs, the main book with W2 and the third book, are still running after 29 minutes, so there
+  was no start-up fault. Its log reaches `main` when the run ends, at about 23:12 UTC. Tomorrow's read confirms
+  the heartbeat counters and puts test A's start on file.
+- **16:26. Step probe, run 1: complete with no fault. An interim look.**
+  - **The run** (43613801204): 300 minutes, 16:08 to 21:07 UTC, 16,218 calls in 21,211 requests, never more than 7
+    in a second. No refusal, no rate-limit answer, no pass skipped, no crash file.
+  - **Interim look.** It can find a fault and pass nothing; the rule is read on both runs after Monday's.
+    - **At 6 s and later,** when the engine asks today: 5,201 of 5,202 requests verified, and all 5,197 that have a
+      reference equal it.
+    - **Earlier:** sent in second 1, 74% verified and 83% of those equal the reference; second 2, 90% and 93%;
+      second 3, 96% and 97%; seconds 4 and 5 (383 requests), 100% and 96%. BTC, always sent at 1.0 s: 43%
+      verified, and half of those equal.
+    - **Why:** every unverified early request got a first page that the venue had made before the minute ended.
+      Early bars that pass the check still miss prints that reach the list a few seconds late.
+  - **What it points to (not a verdict):** the public trades list is complete only about 6 s after the minute. If
+    Monday's run agrees, the step cannot start earlier while it asks for trades by request. Only a stream of
+    trades could, and that would need its own probe.
+  - **How long requests take on this runner:** 0.11 to 0.17 s for most coins, 0.5 to 0.6 s for BTC, whose minute
+    spans several pages. The 18-coin pass takes a median 3.2 s, which is what a pace of 7 a second allows for
+    its 22 or so requests. Sending them side by side would not shorten it.
+  - **Decision for the data-step build:** it drops the side-by-side setting and the step-time setting. One thing
+    remains: the candle requests move out of the critical seconds. With all 18 coins from trades that puts the end
+    of the data step at about 9.2 s after the minute on a runner, against 10.3 s for release 3's way and 13.4 s
+    for the fourth book's.
+- **17:46. Order path build reviewed; seven changes asked for. Scorecard re-scored: 51 of 100.**
+  - **What came back** (branch owner/order-path): the batch methods on the live broker, the engine's batch path
+    beside today's code, a stand-in for the venue's library so that the real broker class runs in the live-path
+    simulation for the first time, 70 unit checks, and a three-way run in which the test exchange, the real broker
+    on today's path and the real broker on the batch path agree on every entry, exit and dollar. Today's functions
+    keep their text: four lines changed, 559 added.
+  - **The model of the clock** (0.1 s a request; a model, not a measurement): from the end of the data step to the
+    last new bid, a median 7.8 s on today's path and 2.0 s on the batch path; 50 requests a minute against 19.
+  - **Reviewed line by line.** The batch path reproduces today's decisions coin by coin. Seven changes before it is
+    a candidate: (1) one unreadable placement answer must not lose the bookkeeping of the others; (2) a failed
+    batch cancel falls back to single cancels at once, and late reads are checked against the single read; (3) an
+    order with a recent fill is always read singly; (4) a running check of the batch read against the single
+    read, which switches the batch read off after two mismatches; (5) an older library on the server must not
+    stop the bot; (6) a command the account owner runs once, `order-check`, which places three tiny bids at half
+    the market price, reads and cancels them through the batch requests and reports what the venue really does;
+    (7) documents. The agent is on them.
+  - **Scorecard:** "the live bot matches the research" from 11 to 9, total 51. The order path's gap was there
+    before today; the score now says so.
+  - **Still running:** the release candidate with the new bar source (tests are slow on two cores). The data-step
+    build waits for it. Part 3 of the timing study waits for a free core.
+- **21:45. Evening: order path second review, sandbox run, the bar-source candidate reviewed, the data-step build
+  started.**
+  - **Order path, second review.** The seven changes are in as asked (94 unit checks, 14 for the new check command;
+    the three-way run still agrees to the dollar; modelled median from the data step's end to the last new bid 2.3 s
+    with the added safety reads, against 7.8 s on today's path). Four smaller changes went back: the running check
+    flags only contradictions, the check command prices its test bids from the public book and sweeps for a lost
+    test order, and `wickctl order-check` refuses while the bot runs.
+  - **Sandbox run** (run 43667375643, the venue's library 1.8.4): 26 of 28 checks pass. The two that fail are limits
+    of the sandbox: it does not serve the best-bid request (404) and sends no rate-limit headers. The batch read,
+    the batch cancel and placing on three threads answer in the expected shapes. Canned answers only: shapes, not
+    behaviour.
+  - **Bar-source candidate** (branch owner/release-4, built by an Opus agent over the day): the engine option is
+    carried over from owner/engine-c unchanged (checked here: the two diffs are the same and three files are the
+    same to the byte), the main book's and W2's configs carry the fourth book's four input settings, every test
+    equal to the baseline with the option absent, and the live-path simulation on the new inputs gives the same
+    entries, exits and P&L as candle mode (8,153 of 8,187 trades rows replaced by their candle, none differing in
+    the made-up feed). One fact from the fourth book's own counters: 10,533 of 68,429 replaced rows (15.4%) had a
+    candle close more than a tick from the trades bar that the decision used. Not merged: it waits for Part 2's
+    read, the step-time condition and its own paper book.
+  - **Data-step build started** on the same branch (Opus): one setting, `candles_at_s`, moves the candle requests
+    of trades-built coins into a pass between steps. It also corrects the inputs line where it said "candles for
+    the other coins" with no other coin left.
+  - **Tomorrow, 08:40 ET:** Part 2's read. Its period ended at 22:29 UTC today.
+
+## Nov 15 2026 (times ET; UTC is five hours later)
+- **02:37. Night: Part 2 read (pass), a gate on the new order path, the data-step build's floor under measurement,
+  timing Part 3 started.**
+  - **Part 2 of the bar-source plan, read as planned** (plan, "Result of Part 2"; record in
+    reports/owner/reconcile_tb/part2/). The logs reached the period's end hours ago, so the read did not wait for
+    the 08:40 check. Count first: 452 and 435 new bids on the twelve, no extension. Research job 43689324147.
+    Verdict: **pass**. Wrong-side bids on the twelve 18 of 435 against 20 of 452, matched 404 of 434 against 414
+    of 448, level errors 4 and 4, items 1 to 5 all met. On the twelve the books are nearly the same; the clear
+    gains are on the five coins the third book keeps on trades rows and in minutes skipped for an old answer (4
+    against 763).
+  - **Order path.** The full offline suite passed on the reviewed commit (d21317af, run 43673559075: 20 test
+    files, none with a failure, replay 156 rungs identical, the three-way simulation equal in both windows). Then
+    one more change, logged in the plan before the work: **a gate**. The live bot uses the batch path only after
+    `wickctl order-check` has passed on that server with the installed library; until then it runs release 3's
+    path. Reason: the batch requests have never reached the real venue, and a server updated and started without
+    the check would have traded on them. Built by a Sonnet agent (decision in `run.py`, engine untouched; 62
+    status and gate checks, 20 for the check command), reviewed, pushed as e3bd62d1. The suite is running on that
+    commit (run 43690044333). Release 4 follows if it is clean.
+  - **Data step.** The builder of the request-at-second-45 design found that its answers can be copies made at
+    the start of the minute by other clients of the same address, which leaves two trades rows instead of one.
+    The collector's record agrees (BTC's candle answer is a copy in 96% of minutes, a median 65 s old). An
+    addition to the bar-source plan was fixed at 02:07, before any output: an emulation pass with two trades rows
+    for all 18 coins, to pass if it is no worse than release 3's inputs on arming and on scores. At 02:26, still
+    before any output, a correction: the later request is never worse than one right after the bids, so the pass
+    measures the built design's floor. Tool extended by a Sonnet agent (50 new offline checks), reviewed; runner
+    job 43689717933.
+  - **Timing study, Part 3.** Two policies added and the way the new paths are derived logged at 02:29, before
+    any evaluation. An Opus agent is on phase 1 (regression of the six policies on file, a runner script that
+    re-derives the paths from the first fetch's print artifacts, the evaluator for twelve policies). The
+    artifacts expire on Dec 1.
+  - **Test A's start is on file:** the main book's first decision minute on release 3 was 17:27 UTC on Nov 14.
+    Its heartbeats carry the trades counters (150 bars per half hour, five coins); 15 fallbacks in about 3,400
+    coin-minutes so far. Its data step ended a median of about 10 to 12 s after the minute, by runner; between
+    21:00 and 23:00 UTC on Nov 14 all three books were slow (13 to 17 s).
+
+## Nov 16 2026 (times ET; UTC is five hours later)
+- **08:33. Release 4 (order path), the two-row floor read (pass), probe run 2 started, timing Part 3 on the runner.**
+  - **No work was done between 02:45 on Nov 15 and 08:26 today.** The jobs started before then finished on their
+    own; the 08:40 check of Nov 15 found Part 2 already read.
+  - **Release 4 is on `main`** (RELEASES.md). The live bot's order requests in batches, used only after
+    `wickctl order-check` has passed on the server with the installed library; until then release 3's path. Added
+    since the last entry: a hand switch (`wickctl order-path serial|batch`, a marker file the gate reads first), so
+    the way back touches no config. Final commit 513ab722: full suite (job 43691154265) 20 files, none with a
+    failure; sandbox (job 43876402271) 26 of 28, the two sandbox limits. Paper books unaffected. Rule B counts from
+    the first live minute on the new path.
+  - **The addition to the bar-source plan, read: pass** (plan, "Result of the addition"). Part 1's counts
+    reproduced exactly. Two trades rows for all 18 coins: 193 disagreements on arming of 63,330 against 188 with
+    one row and 278 with the third book's inputs; score misses 1,473 against 1,434 and 1,933; levels the same as
+    with one row. So the build that asks for candles at second 45 goes to its paper test as it is.
+  - **Step probe, run 2:** dispatched at 08:27 (job 43875928226; its Run step began 13:27:57 UTC). Read set for
+    13:50.
+  - **Timing study, Part 3, phase 1 reviewed.** The six policies on file reproduce byte for byte (15 files), before
+    and after the agent's changes. The runner script re-derives the paths for fifteen start times from the stored
+    prints, checks the six old ones against the rows on file, and stores one union path per row, verified on every
+    row. Job 43876543675 dispatched at 08:31. Phase 2 (the twelve policies) follows its output.
+  - **Test A since release 3 (the status report shows CHECK):** 27 rungs, $278K bought, net -40 bp per dollar.
+    It is one market-wide minute: at 20:54 UTC on Nov 14 the first bid of 14 coins filled within the minute, the
+    book ran short of cash, and most of those rungs left by time an hour later at lower prices. The third and
+    fourth books show the same (exits since then -$604 and -$895 against -$536 here). No fault and no error
+    event; no new fill since 22:10 UTC on Nov 14. The rule reads at three weeks and 60 rungs.

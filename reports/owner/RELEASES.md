@@ -4,6 +4,94 @@ A release is any change on `main` that can alter what the bot does with orders, 
 The paper books pick a release up at their next run. The live bot picks it up when Miles updates the VM. Each entry
 says what changed, why, how it was tested, and what Miles needs to do.
 
+## Release 4 (Nov 16 2026): the live bot's order requests in batches, behind a check you run once
+
+### What changed
+1. **A second order path for the live bot** (`bot/spot/engine.py`; settings `"order_path": "batch"`,
+   `"orders_rate": 10`, `"place_workers": 3` in `bot/spot/config.json`). The bot makes the same decisions and
+   places the same bids. What changes is how the requests are sent:
+   - one request reads every resting order, where release 3 asks about each order in turn;
+   - one request gets the best bid of every coin;
+   - one request cancels every bid that has to move, and reads at set times confirm each cancel;
+   - the new bids go out three at a time, at no more than 10 requests a second.
+2. **Each grouped request has the single requests of release 3 behind it.** An order missing from a grouped
+   answer is read singly. An order with a fill is always read singly. One order a minute is read both ways and
+   compared. If the grouped cancel fails, each order is cancelled singly at once, and from 0.6 s after a cancel a
+   single read decides whether the order is gone. A piece that fails three times, or disagrees with a single read
+   twice, switches itself off until the next start and sends one warning to the phone.
+3. **A gate.** The live bot uses the new path only after `wickctl order-check` has passed on that server, with the
+   library version that is installed. Until then it runs release 3's path, unchanged. At every start it prints
+   which path is in use and why, and writes one `order_path` event. `wickctl order-path serial` holds a server on
+   release 3's path by hand, and `wickctl order-path batch` removes the hold; neither touches a config.
+4. **`wickctl order-check`** (new). With the bot stopped it places three post-only bids of about $25 each,
+   normally on ETH, SOL and XRP, at half the market price, reads them through the grouped requests and singly,
+   cancels them, and looks for anything left behind. It prints `order check PASSED` or `FAILED` with the reasons and writes the
+   result to `live_spot/`.
+5. **`wickctl status`** prints an order-path block: the path in use, the last check, the median time from the data
+   step's end to the last new bid, and how often a grouped request fell back to single ones.
+6. **The live bot takes the three settings from `config.json`**, as it takes the input settings since release 3.
+   `"inputs_local": true` in the live file keeps that file's own.
+7. **The paper books are not affected.** They place no orders at the venue and ignore the setting.
+8. **Release 3's path is still in the code, untouched** apart from four lines that pass the new arguments
+   through (742 lines added to the engine, 4 changed).
+
+### Why
+- **As built, the live bot sends its order requests one after another:** about 75 for 15 bids. Read from the
+  code, a new bid rests from about 17 to 18 s after the minute, and a coin has no bid between its cancel and its
+  new bid. This is an estimate; no live run exists yet.
+- **The research fills a bid from the start of the minute.** The timing study on trade prints puts each second of
+  delay at about one point of the research's same-minute first-bid fills (87%, 90% and 83% by era with the bid
+  resting from 10 s; 83%, 85% and 78% from 15 s).
+- **In the simulation's clock** (0.1 s a request; a model, not a measurement) the last new bid rests 2.3 s after
+  the data step's end instead of 7.8 s, with 23 requests a minute instead of 50.
+
+### Effect on trading
+- **Paper books:** none.
+- **Live bot:** none until the check has passed on the VM. From the next start after that: the same bids, resting
+  earlier in the minute.
+- **Which bids are placed does not change.** The live-path simulation gives the same entries, exits, P&L and
+  final balance on the new path as on release 3's, with the same injected faults.
+- **Rule B is counted from the first live minute on the new path** (FORWARD_TESTS.md). Its three weeks and 50 rungs
+  are meant for the bot as it will run.
+- **What the first live day on the new path must show** (fixed on Nov 14, reports/owner/order_path_plan.md): the
+  median time from the data step's end to the last new bid at or below 3 s; grouped requests falling back to single
+  ones in fewer than 5% of minutes; no balance warning that a restart does not explain. `wickctl status` prints
+  the first two.
+
+### Tests
+- **The full offline suite on the final commit** (513ab722, runner job 43691154265): 20 test files, none with a
+  failure.
+  - **The engine against the research** (Oct 10 to 12 2025): 156 rungs, every one identical.
+  - **The live-path simulation, three ways:** the paper exchange, release 3's path on a stand-in for Coinbase's
+    client, and the new path on the same stand-in. Six hours of Oct 10 2025 with injected faults: 111 entries, 134
+    exits, 45 ladders, the same final balance and 1,454 identical event lines. With the server killed in mid-run:
+    109 entries, 135 exits, 48 ladders, 1,284 identical lines.
+  - **Units and commands:** order path 116 checks, order check 20, status block, gate and hand switch 70, inputs
+    74, `wickctl` 15, watchdog 31. The older files are unchanged and pass (merge 21, trades bar 37, USDC 11, newest
+    bar 73, hand-over 11, commit step 38, emulator 53).
+- **Coinbase's sandbox,** on the final commit (job 43876402271): 26 of 28 checks. The two that fail are limits of
+  the sandbox: it does not serve the best-bid request and sends no rate-limit headers.
+- **Not tested: the real venue.** No grouped request has reached Coinbase with a real key. That is what
+  `wickctl order-check` is for, and why the gate keeps the bot on release 3's path until it passes.
+
+### What Miles does
+- **Nothing is required.** The paper books are unchanged, and a VM that is updated and started keeps trading
+  exactly as on release 3.
+- **To switch the VM to the new path** (about five minutes, once):
+  1. `wickctl update`
+  2. `wickctl stop` (the check refuses to run next to a running bot)
+  3. `wickctl order-check`, and type `yes` when it asks. It places three bids of about $25 at half the market
+     price and cancels them within seconds. They cannot fill unless a coin halves in those seconds, and an unfilled
+     post-only bid costs no fee. The account needs about $75 of free cash for them.
+  4. Send me what it printed, or the file it names in `live_spot/`. A pass ends with `order check PASSED` and
+     `The bot uses the batch order path from its next start (wickctl start).`
+  5. `wickctl start`, then `wickctl status`. The block near the end must say `order path in use: batch`.
+- **If the check fails,** the bot keeps release 3's path by itself. Send me the output; nothing else to do.
+- **The switch back, at any time:** `wickctl order-path serial`, then `wickctl restart`. It holds this server on
+  release 3's path and touches no config. `wickctl order-path batch` removes the hold.
+- **Still open from release 3:** how the pilot's live log reaches me (a private repository the VM pushes to, or a
+  file about once a week). The first live day's reading needs it.
+
 ## Release 3 (Nov 14 2026): verified inputs for the main book, W2 and the live bot
 
 ### What changed
