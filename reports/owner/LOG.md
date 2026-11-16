@@ -1032,3 +1032,22 @@ FORWARD_TESTS.md.
       a busy one, and busy days are where the strategy earns. If Part 3 fails here, the corrected build has to
       make the trades pass faster (requests side by side under the same pace, or less paging), and that build
       gets its own three days.
+- **14:40. Why the trades pass is slow, and a plan for asking side by side.**
+  - **The cause** (read from the probe's recorded requests): single slow requests, not paging. A slow 18-coin
+    pass has the same number of pages as a fast one. On Nov 16, 6.0% of the requests to the smaller coins took
+    more than half a second and 0.4% three seconds or more; on Nov 14, 0.7% and 0.04%. Asked one after another,
+    one slow request holds up every coin behind it.
+  - **A model on those requests** (each call keeps its recorded time less its pace wait; with one worker it gives
+    the recorded passes back to within 0.1 s): three workers at the same pace bring the pass from a median of
+    3.1 to 3.2 s down to 2.5 s, from a mean of 3.3 and 4.1 s to 2.6 and 2.9 s, and leave none over the 8 s budget
+    (1.0% and 6.3% as recorded).
+    - My first model run counted each call's pace wait as network time and put the gain at 0.9 s at the median.
+      Checked against the gaps between sends before the plan was committed; the corrected figure is 0.6 s.
+  - **In money this is small.** The timing study cannot rank a second. The reason to build it is the build under
+    test: 18 coins on trades cannot keep their inputs on a busy day with this pass.
+  - **Plan fixed** (reports/owner/trades_workers_plan.md) before the code has run on live data: offline parts,
+    one live run for faults, same-machine pairs of one worker against three, and a sixth paper book against the
+    fifth. An Opus agent is building the option on branch owner/trades-workers, off by default.
+  - **Bar-source plan, deviation log:** if Part 3 fails on measure 4 alone, this is the corrected build and the
+    sixth book's three days count for it, read by Part 3's own measures. Written before either book is read; no
+    measure is added or loosened.

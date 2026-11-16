@@ -500,3 +500,25 @@ The run finished at 08:58 UTC on Nov 15 (job 43689717933, branch owner/read-c2).
   - **The first run is a short one** (40 minutes), so the counters can be looked at for a fault within the hour;
     the hand-over then starts the normal runs. Such a look can stop the test, cannot pass it, and changes no rule.
   - **The third book** is taken out of the main paper workflow in the same change; its last run ends by itself.
+- **Nov 16 2026, 14:40 ET (orchestrator), after the fifth book's first heartbeat and before any read.** Part 3:
+  what the corrected build would be if measure 4 fails alone, fixed now.
+  - **Seen in an interim look** (LOG.md, 14:28): the venue's trades list is slow. In the fifth book's first 17
+    steps a trades pass ran out of its 8 s budget often enough to send 10 of 306 coin-minutes (3.3%) to a candle
+    request inside the step. The fourth book shows the same since Nov 14 (1.0%, 1.3%, 1.6% of coin-minutes a day,
+    10.9% in the half hour to 19:00 UTC today). Measure 4 allows 2%.
+  - **No rule changes.** This is not a fault in the plan's sense. The fifth book runs on and is read once, by
+    the measures as written.
+  - **What is fixed now is only the fail branch "on measure 4 alone".** That branch asks for a corrected build
+    and a new three days. The cause is already visible without the fifth book's read: a trades pass that asks
+    18 coins one after another. So the corrected build is being made now: the same build with the trades pass
+    asked side by side (reports/owner/trades_workers_plan.md, fixed today before that code has run on live
+    data). Its paper book, the sixth, starts as soon as its offline parts are clean, which may be before this
+    plan's read.
+  - **If Part 3 here fails on measure 4 alone and the sixth book's plan passes,** the sixth book's three days are
+    the corrected build's three days. It is then read by this plan's measures 2 to 4 as written, computed for the
+    sixth book (decisions against the fourth book's, items 1 to 5, the requests between steps). Measure 1 counts
+    as met if the fifth book met it and the sixth book's pairs show three workers no later than one.
+  - **In every other case nothing here applies:** a pass releases the build as it is; a fail on measure 1, 2 or 3
+    follows the branches as written.
+  - **Why this is not a second chance taken after the fact:** it is written before either book is read, it adds
+    no measure and loosens none, and the sixth book has to pass its own plan as well.
