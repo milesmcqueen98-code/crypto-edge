@@ -1,0 +1,400 @@
+{
+ "candidate": null,
+ "verdict": "wait: too few requests",
+ "waiting_s": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "standard_line": {
+  "requests": 9544,
+  "verified": 9543,
+  "with_ref": 9532,
+  "equal": 9531
+ },
+ "per_s": {
+  "1": {
+   "s": 1,
+   "bins": [
+    "[1,2)",
+    "[2,3)",
+    "[3,4)",
+    "[4,6)"
+   ],
+   "status": "wait",
+   "item1": [
+    {
+     "bin": "[1,2)",
+     "requests": 2604,
+     "verified": 1722,
+     "with_ref": 1718,
+     "equal": 1497,
+     "V_ok": false,
+     "E_ok": false,
+     "ok": false
+    },
+    {
+     "bin": "[2,3)",
+     "requests": 3441,
+     "verified": 2889,
+     "with_ref": 2889,
+     "equal": 2750,
+     "V_ok": false,
+     "E_ok": false,
+     "ok": false
+    },
+    {
+     "bin": "[3,4)",
+     "requests": 3164,
+     "verified": 2931,
+     "with_ref": 2931,
+     "equal": 2854,
+     "V_ok": false,
+     "E_ok": false,
+     "ok": false
+    },
+    {
+     "bin": "[4,6)",
+     "requests": 1220,
+     "verified": 1220,
+     "with_ref": 1220,
+     "equal": 1189,
+     "V_ok": true,
+     "E_ok": false,
+     "ok": false
+    }
+   ],
+   "item2": [
+    {
+     "bin": "[1,2)",
+     "equal": 1497,
+     "with_ref": 1718,
+     "std_equal": 9531,
+     "std_with_ref": 9532,
+     "ok": false
+    },
+    {
+     "bin": "[2,3)",
+     "equal": 2750,
+     "with_ref": 2889,
+     "std_equal": 9531,
+     "std_with_ref": 9532,
+     "ok": false
+    },
+    {
+     "bin": "[3,4)",
+     "equal": 2854,
+     "with_ref": 2931,
+     "std_equal": 9531,
+     "std_with_ref": 9532,
+     "ok": false
+    },
+    {
+     "bin": "[4,6)",
+     "equal": 1189,
+     "with_ref": 1220,
+     "std_equal": 9531,
+     "std_with_ref": 9532,
+     "ok": false
+    }
+   ],
+   "item3": {
+    "requests": 600,
+    "verified": 256,
+    "with_ref": 252,
+    "equal": 136,
+    "V_ok": false,
+    "E_ok": false,
+    "ok": false
+   },
+   "item4": [
+    {
+     "bin": "[1,2)",
+     "requests": 2604,
+     "need": 2000,
+     "ok": true
+    },
+    {
+     "bin": "[2,3)",
+     "requests": 3441,
+     "need": 2000,
+     "ok": true
+    },
+    {
+     "bin": "[3,4)",
+     "requests": 3164,
+     "need": 2000,
+     "ok": true
+    },
+    {
+     "bin": "[4,6)",
+     "requests": 1220,
+     "need": 2000,
+     "ok": false
+    },
+    {
+     "bin": "BTC early",
+     "requests": 600,
+     "need": 500,
+     "ok": true
+    }
+   ],
+   "items_ok": {
+    "item1": false,
+    "item2": false,
+    "item3": false,
+    "item4": false
+   }
+  },
+  "2": {
+   "s": 2,
+   "bins": [
+    "[2,3)",
+    "[3,4)",
+    "[4,6)"
+   ],
+   "status": "wait",
+   "item1": [
+    {
+     "bin": "[2,3)",
+     "requests": 3441,
+     "verified": 2889,
+     "with_ref": 2889,
+     "equal": 2750,
+     "V_ok": false,
+     "E_ok": false,
+     "ok": false
+    },
+    {
+     "bin": "[3,4)",
+     "requests": 3164,
+     "verified": 2931,
+     "with_ref": 2931,
+     "equal": 2854,
+     "V_ok": false,
+     "E_ok": false,
+     "ok": false
+    },
+    {
+     "bin": "[4,6)",
+     "requests": 1220,
+     "verified": 1220,
+     "with_ref": 1220,
+     "equal": 1189,
+     "V_ok": true,
+     "E_ok": false,
+     "ok": false
+    }
+   ],
+   "item2": [
+    {
+     "bin": "[2,3)",
+     "equal": 2750,
+     "with_ref": 2889,
+     "std_equal": 9531,
+     "std_with_ref": 9532,
+     "ok": false
+    },
+    {
+     "bin": "[3,4)",
+     "equal": 2854,
+     "with_ref": 2931,
+     "std_equal": 9531,
+     "std_with_ref": 9532,
+     "ok": false
+    },
+    {
+     "bin": "[4,6)",
+     "equal": 1189,
+     "with_ref": 1220,
+     "std_equal": 9531,
+     "std_with_ref": 9532,
+     "ok": false
+    }
+   ],
+   "item3": {
+    "requests": 600,
+    "verified": 256,
+    "with_ref": 252,
+    "equal": 136,
+    "V_ok": false,
+    "E_ok": false,
+    "ok": false
+   },
+   "item4": [
+    {
+     "bin": "[2,3)",
+     "requests": 3441,
+     "need": 2000,
+     "ok": true
+    },
+    {
+     "bin": "[3,4)",
+     "requests": 3164,
+     "need": 2000,
+     "ok": true
+    },
+    {
+     "bin": "[4,6)",
+     "requests": 1220,
+     "need": 2000,
+     "ok": false
+    },
+    {
+     "bin": "BTC early",
+     "requests": 600,
+     "need": 500,
+     "ok": true
+    }
+   ],
+   "items_ok": {
+    "item1": false,
+    "item2": false,
+    "item3": false,
+    "item4": false
+   }
+  },
+  "3": {
+   "s": 3,
+   "bins": [
+    "[3,4)",
+    "[4,6)"
+   ],
+   "status": "wait",
+   "item1": [
+    {
+     "bin": "[3,4)",
+     "requests": 3164,
+     "verified": 2931,
+     "with_ref": 2931,
+     "equal": 2854,
+     "V_ok": false,
+     "E_ok": false,
+     "ok": false
+    },
+    {
+     "bin": "[4,6)",
+     "requests": 1220,
+     "verified": 1220,
+     "with_ref": 1220,
+     "equal": 1189,
+     "V_ok": true,
+     "E_ok": false,
+     "ok": false
+    }
+   ],
+   "item2": [
+    {
+     "bin": "[3,4)",
+     "equal": 2854,
+     "with_ref": 2931,
+     "std_equal": 9531,
+     "std_with_ref": 9532,
+     "ok": false
+    },
+    {
+     "bin": "[4,6)",
+     "equal": 1189,
+     "with_ref": 1220,
+     "std_equal": 9531,
+     "std_with_ref": 9532,
+     "ok": false
+    }
+   ],
+   "item3": {
+    "requests": 600,
+    "verified": 256,
+    "with_ref": 252,
+    "equal": 136,
+    "V_ok": false,
+    "E_ok": false,
+    "ok": false
+   },
+   "item4": [
+    {
+     "bin": "[3,4)",
+     "requests": 3164,
+     "need": 2000,
+     "ok": true
+    },
+    {
+     "bin": "[4,6)",
+     "requests": 1220,
+     "need": 2000,
+     "ok": false
+    },
+    {
+     "bin": "BTC early",
+     "requests": 600,
+     "need": 500,
+     "ok": true
+    }
+   ],
+   "items_ok": {
+    "item1": false,
+    "item2": false,
+    "item3": false,
+    "item4": false
+   }
+  },
+  "4": {
+   "s": 4,
+   "bins": [
+    "[4,6)"
+   ],
+   "status": "wait",
+   "item1": [
+    {
+     "bin": "[4,6)",
+     "requests": 1220,
+     "verified": 1220,
+     "with_ref": 1220,
+     "equal": 1189,
+     "V_ok": true,
+     "E_ok": false,
+     "ok": false
+    }
+   ],
+   "item2": [
+    {
+     "bin": "[4,6)",
+     "equal": 1189,
+     "with_ref": 1220,
+     "std_equal": 9531,
+     "std_with_ref": 9532,
+     "ok": false
+    }
+   ],
+   "item3": {
+    "requests": 600,
+    "verified": 256,
+    "with_ref": 252,
+    "equal": 136,
+    "V_ok": false,
+    "E_ok": false,
+    "ok": false
+   },
+   "item4": [
+    {
+     "bin": "[4,6)",
+     "requests": 1220,
+     "need": 2000,
+     "ok": false
+    },
+    {
+     "bin": "BTC early",
+     "requests": 600,
+     "need": 500,
+     "ok": true
+    }
+   ],
+   "items_ok": {
+    "item1": false,
+    "item2": false,
+    "item3": false,
+    "item4": false
+   }
+  }
+ }
+}
