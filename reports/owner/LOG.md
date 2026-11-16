@@ -1099,3 +1099,11 @@ FORWARD_TESTS.md.
     - item 1 of measure 3 counts the same budget fallbacks (304 of 324 verified, 93.8% against 99%), so the
       branch for the corrected build now covers a fail on measure 4, on item 1, or on both. Seen in the status
       report's first rendering of the same first heartbeat; nothing new was read.
+- **17:03. The side-by-side build: Part 1 holds, the commit is pinned, the live check starts.**
+  - **Suite on a runner** (job 43945430666, commit `4c1717ac`): 23 test files, none with a failure, 914 passing checks (the 830 of the fifth book's commit, the new file's 79, five more for the inherited-settings list); the replay equals the research rung for rung.
+  - One existing expectation changed, the list of inherited settings in `release_inputs_test.py` (eight names
+    instead of seven). Logged in the plan with the three places where the two paths differ.
+  - **The first same-machine pair of the fifth book counts** (started by hand at 19:27 UTC, the build first): 31
+    timed steps in each half, no refusal, no rate limit. One pair is progress, not a result.
+  - **Part 2** of the trades-workers plan follows now: one runner, 30 minutes with one worker and 30 with three,
+    each checked against the venue's candles. It can find a fault and pass nothing.

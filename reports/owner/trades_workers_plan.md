@@ -137,3 +137,20 @@
     rate-limit answer really prints: `Limited(`, `HTTP 429`, the words rate limit or too many requests, or the
     heartbeat counter `tb_fb_limited` above zero. The refusal mark is unchanged.
   - Decided before the tool has read any real output. Nothing else in the plan changes.
+- **Nov 16 2026, 17:03 ET (orchestrator), before Part 2.** Part 1 holds; the commit is pinned.
+  - **The commit:** `4c1717ac3cd711c3383e281ccb3eb2742f993b23` on branch owner/trades-workers (the fifth book's commit 9e6f53b3 plus the option).
+  - **The suite on a runner** (job 43945430666): 23 test files, none with a failure, 914 passing checks (the 830 of the fifth book's commit, the new file's 79, five more for the inherited-settings list); the replay equals the research rung for rung.
+  - **One existing expectation was changed, and it is not behaviour.** `release_inputs_test.py` checks the list of
+    settings the live bot inherits. The option was added to that list, so the list in the test has eight names
+    instead of seven. Every other existing check passes as it was written.
+  - **Three places where the two paths differ,** each shown by a test (facts in
+    `reports/owner/trades_workers_candidate.md` on the branch):
+    - after a refusal or a rate limit, the old path keeps the coins before the refused one and the new path
+      keeps whatever had arrived;
+    - the new path reaches coins the old one would not reach inside the budget;
+    - an answer that arrives after the budget is used by the old path and dropped by the new one. That is the
+      budget bounding the pass, as this plan says.
+  - **A limit of the stop, said plainly:** a request already on its way when another one is refused cannot be
+    called back. With three workers that is at most two requests. Nothing is sent once the stop is set.
+  - **The bar-source plan's branch** named under "What follows" was corrected there at 15:32, before any read: it
+    covers a fail on its measure 4, on item 1 of its measure 3, or on both, and on nothing else.
