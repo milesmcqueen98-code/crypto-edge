@@ -985,3 +985,23 @@ FORWARD_TESTS.md.
     the period, the pairs go on and the reading of part (a) waits for the eighth. It can delay the read, not choose
     pairs. The rule script does this (Sonnet agent, branch owner/r5-pairs-ext, reviewed; 110 checks).
   - **First run:** 40 minutes, for an early look at the counters; then the normal hand-over.
+- **13:40. Step probe read: no second earlier than 6 passes. The step stays at 6 s.**
+  - **Run 2** (job 43875928226): Monday, the minutes closing 13:29 to 18:28 UTC, 300 minutes, 16,218 calls, no
+    refusal, no rate-limit answer, never more than seven requests in a second. It began one minute before the
+    planned 13:30 (plan, deviation log).
+  - **Both runs together** (plan, "Result"; tables in reports/owner/step_probe/read/):
+    - sent in second 1: the engine's check accepts 66% of requests, and 87% of the accepted bars equal the list
+      95 s later; second 2: 84% and 95%; second 3: 93% and 97%; seconds 4 and 5: 100% and 97.5%;
+    - BTC, always sent at 1.0 s: 43% and 54%;
+    - from 6 s, where the engine asks today: 9,543 of 9,544 accepted, 9,531 of 9,532 equal.
+  - **The rule:** items 1 to 3 fail in every early bin and for BTC, on samples that are large enough. The script
+    prints "wait" because the bin [4,6) holds 1,220 requests against 2,000; I record "none" by the plan's own
+    words and add no run, since BTC is sent at the same second in every run (plan, deviation log).
+  - **Looked at afterwards, deciding nothing** (reports/owner/step_probe/read/explore.md): by the second a request
+    was sent, the bars of the 17 other coins equal the later list in 82%, 88%, 94%, 97% and 99.4% of cases for
+    seconds 1 to 5, and in 10,787 of 10,788 from second 6 (all coins). An answer's age does not explain it: the
+    venue's cache never gave an incomplete early answer back five seconds later (0 of 239), and gave a complete
+    one back about half the time. Trades reach the public list up to about five seconds after they happen.
+  - **What follows.** A step that decides earlier than 6 s cannot be built on requests. The trade stream is the
+    only way to it, and it has to be measured from the server with its own plan. The timing study puts a stream-fed
+    step at 93 to 96% same-minute fills by era against 81 to 87% for release 4, so the lever stays on the list.
