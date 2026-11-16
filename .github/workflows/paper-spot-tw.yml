@@ -21,9 +21,9 @@ on:
         description: "engine commit the book runs; leave empty for the pinned commit (CODE_REF in this file, branch owner/trades-workers). Pinned on purpose: a different commit restarts the test (reports/owner/trades_workers_plan.md, Part 4)"
         default: ""
 
-# the pinned commit of branch owner/trades-workers: the only place it is written (the owner sets it before the merge)
+# the pinned commit of branch owner/trades-workers: the only place it is written
 env:
-  CODE_REF: "PINNED_COMMIT_TO_BE_SET_BY_THE_OWNER"
+  CODE_REF: "4c1717ac3cd711c3383e281ccb3eb2742f993b23"
 
 concurrency:
   group: paper-spot-tw

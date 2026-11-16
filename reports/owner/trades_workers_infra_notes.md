@@ -24,13 +24,12 @@ Plain words. Nothing here changes a trading decision. The plan is `reports/owner
 - Tests: `scripts/owner/step_pairs/test_run_pair_workers.py`, `scripts/owner/test_paper_status.py` (new checks added, old
   ones unchanged) and `scripts/owner/trades_workers/test_rule.py`.
 
-## What to set before the merge
+## What was set before the merge
 
-One line: `CODE_REF: "PINNED_COMMIT_TO_BE_SET_BY_THE_OWNER"` near the top of `.github/workflows/paper-spot-tw.yml`. Put the
-commit of branch `owner/trades-workers` that passed Parts 1 and 2 there. It is written nowhere else: the checkout, the
-CODE file and the manual-run input (empty means this commit) all read it, and `step-pairs-tw.yml` takes the commit from
-`paper_spot_tw/CODE` once the book has run. Until it is set the sixth book's checkout fails, so set it before the merge. A
-different commit restarts the test.
+One line: `CODE_REF: "4c1717ac3cd711c3383e281ccb3eb2742f993b23"` near the top of `.github/workflows/paper-spot-tw.yml`:
+the commit of branch `owner/trades-workers` named in the plan's deviation log. It is written nowhere else: the
+checkout, the CODE file and the manual-run input (empty means this commit) all read it, and `step-pairs-tw.yml` takes
+the commit from `paper_spot_tw/CODE` once the book has run. A different commit restarts the test.
 
 Also: the schedules only run from `main`, and `step-pairs-tw` does nothing until `paper_spot_tw/CODE` exists (the book
 must have run once).
