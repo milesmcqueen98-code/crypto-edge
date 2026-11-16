@@ -13,7 +13,7 @@ prints the modelled clock of the data step (bot/spot/live_sim_inputs_test.py).
 On owner/release-5 (merged onto main after release 4) it runs the union of that list and the order path's
 (scripts/owner/order_path/run_spot_tests.py: order_path_unit_test.py, order_check_test.py, order_status_test.py and
 order_path_test.py with and without the server's death), each file once with the same arguments; the result lines
-of both are shown.
+of both are shown. owner/trades-workers adds trades_workers_test.py (the trades pass asking coins side by side).
 
 Reads bot, edge, scripts/owner, scripts/forward (input_checks.py, for test_bar_source.py), reports/cfm_products.csv,
 reports/wick1m/spot_ticks_wide.csv, data/minute and data/cfm.
@@ -29,6 +29,7 @@ WINDOW = ["2025-10-10 20:00", "2025-10-11 02:00"]
 DEATH = "--death=2025-10-10 21:10"
 PY = [("merge_test.py", []), ("trades_bar_test.py", []), ("usdc_test.py", []), ("newest_bar_test.py", []),
       ("candle_after_test.py", []), ("candle_pass_test.py", []), ("release_inputs_test.py", []),
+      ("trades_workers_test.py", []),
       ("order_path_unit_test.py", []), ("order_check_test.py", []), ("order_status_test.py", []),
       ("replay_test.py", ["2025-10-10", "2025-10-12"]),
       ("live_sim_test.py", WINDOW), ("live_sim_test.py", WINDOW + [DEATH]),
