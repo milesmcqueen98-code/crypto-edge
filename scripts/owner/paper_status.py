@@ -616,17 +616,28 @@ def num_s(x):
     return "n/a" if x is None else f"{x:.1f}"
 
 
-def dq_section(label, dq):
+# Counters whose meaning differs in the fifth book: with candles_at_s the step has no candle row for the newest minute of a
+# trades-built coin, so tb_insert counts nearly every trades bar and tb_close_diff is not measured for those coins.
+R5_NOT_COMPARABLE = ("tb_insert", "tb_close_diff")
+
+
+def dq_section(label, dq, leave_out=()):
     out = [f"### {label}", ""]
     if not dq or dq["total"] is None:
         return out + [NOT_REPORTED + ".", ""]
     rows = []
     for d, v in list(dq["days"].items()) + [("Total", dq["total"])]:
         rows.append([d.isoformat() if not isinstance(d, str) else d, f"{v['minutes']:,.0f}", str(v["beats"]),
-                     num_s(v["data_median"]), num_s(v["data_max"]), count_text(v["counts"])])
+                     num_s(v["data_median"]), num_s(v["data_max"]),
+                     count_text({k: x for k, x in v["counts"].items() if k not in leave_out})])
     out += [table(["Day (UTC)", "Minutes run", "Heartbeats", "Data step median (s)", "Data step largest max (s)",
                    "Counters (sum)"], rows), ""]
     t = dq["total"]
+    if leave_out:
+        out += [f"Left out for this book: {', '.join(leave_out)}. With candle requests between steps (candles_at_s) the "
+                "step has no candle row for the newest minute of a trades-built coin, so tb_insert counts nearly every "
+                "trades bar and tb_close_diff is not measured for those coins; the counters are not comparable with the "
+                "fourth book's and are not shown.", ""]
     skipped = dq["all_beats"] - t["beats"]
     if skipped:
         out += [f"{skipped} earlier heartbeat(s) carry none of these fields and are not counted.", ""]
@@ -1303,7 +1314,7 @@ def build_report(root, now):
           "heartbeat medians, and the largest heartbeat maximum.", ""]
     for key, _, label, _, spot_style in books:
         if spot_style:
-            L += dq_section(label, dqs.get(key))
+            L += dq_section(label, dqs.get(key), R5_NOT_COMPARABLE if key == "r5" else ())
 
     # third book
     if "tb" in st:

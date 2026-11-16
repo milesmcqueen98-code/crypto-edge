@@ -984,6 +984,27 @@ def r5_tests():
               and "### Spot R5 (release 5 build)" in section(text, "Data quality"))
         check("r5: engine commit line", "Engine commit: abcdef0 (full hash abcdef0123456789abcdef0123456789abcdef01), recorded 2026-11-17T01:00 UTC." in section(text, "Rule progress for the fifth book"))
         check("r5: no at-sign in the report", chr(64) not in text)
+    # the two counters that do not mean the same in the fifth book are left out there, with a note, and kept for the fourth
+    with tempfile.TemporaryDirectory() as tmp:
+        cnt = {"tb_built": 540, "tb_insert": 538, "tb_close_diff": 0, "tb_replaced": 3}
+        r5_books(tmp, r5=[10.0] * 10, main=[10.0] * 10, t18=[10.0] * 10, r5_counts=cnt)
+        with open(os.path.join(tmp, "paper_spot_t18", "events.jsonl"), "w") as f:
+            for e in [{"ts": iso(T(0)), "kind": "backfill"}] + [hb(T(0, 30 * k), dict(cnt), {"data": [10.0, 11.0]}) for k in range(1, 11)]:
+                f.write(json.dumps(e) + "\n")
+        text = ps.build_report(tmp, NOW)
+        dq = section(text, "Data quality")
+        r5dq = dq.split("### Spot R5 (release 5 build)")[1].split("\n### ")[0]
+        t18dq = dq.split("### Spot T18 (all coins on trades)")[1].split("\n### ")[0]
+        check("r5 counters: tb_insert and tb_close_diff are not printed for the fifth book",
+              "tb_insert" not in r5dq.split("Left out for this book")[0] and "tb_close_diff" not in r5dq.split("Left out for this book")[0]
+              and "tb_built 5,400" in r5dq and "tb_replaced 30" in r5dq, r5dq)
+        check("r5 counters: the fifth book says they are not comparable",
+              "Left out for this book: tb_insert, tb_close_diff." in r5dq and "not comparable" in r5dq, r5dq)
+        check("r5 counters: the fourth book still shows them", "tb_insert 5,380" in t18dq and "Left out" not in t18dq, t18dq)
+        rest = text.replace(r5dq, "")
+        check("r5 counters: nowhere else in the fifth book's sections",
+              "tb_insert" not in section(text, "Rule progress for the fifth book") and "tb_close_diff" not in section(text, "Rule progress for the fifth book")
+              and "tb_insert" not in section(text, "Fifth book against the fourth book"))
     # fifth book present, fourth missing: no comparison section, the rule section still shown
     with tempfile.TemporaryDirectory() as tmp:
         write(tmp, "paper_spot", [{"ts": iso(T(0)), "kind": "backfill"}])
