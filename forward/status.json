@@ -1,24 +1,24 @@
 {
  "run": "43914694109",
- "heartbeat": "2026-11-16T18:00:56Z",
+ "heartbeat": "2026-11-16T18:30:56Z",
  "started": "2026-11-16T17:06:07Z",
  "planned_end": "2026-11-16T22:51:06Z",
  "rows_last_hour": {
-  "book": 972,
-  "hl": 972,
-  "candles": 1199,
-  "cfm": 1566,
-  "tbar": 972
+  "book": 1080,
+  "hl": 1080,
+  "candles": 1282,
+  "cfm": 1740,
+  "tbar": 1062
  },
  "bursts_last_hour": {
-  "book": 54,
-  "hl": 54,
-  "candles": 54,
-  "cfm": 54,
-  "tbar": 54
+  "book": 60,
+  "hl": 60,
+  "candles": 60,
+  "cfm": 60,
+  "tbar": 59
  },
  "errors": {
-  "tbar:timeout": 3
+  "tbar:timeout": 7
  },
  "refused": {},
  "coins": [
