@@ -127,3 +127,13 @@
 - **Nov 16 2026, 14:42 ET (orchestrator), before any live run.** The model's script and table are in (a Sonnet
   agent, 27 offline checks). It gives the figures of the table above exactly; the sentence that said the script
   would follow now names it. No rule is touched.
+- **Nov 16 2026, 15:21 ET (orchestrator), before any live run and before any pair.** How a pair's rate-limit
+  mark is set.
+  - **Found in review of the pair tool:** the fifth book's tool marks a half as rate-limited when the bare number
+    429 stands anywhere in that half's output outside the step table. A counter that happens to be 429, a price
+    of 429.5 or a time of 7.429 s would set it. The agent puts the chance at a few percent a pair, unmeasured.
+  - **Here it would do harm:** Part 3's measure 3 fails the test on one such mark in a three-worker half.
+  - **So this plan's own pair tool does not use the bare number.** A half is marked rate-limited only by what a
+    rate-limit answer really prints: `Limited(`, `HTTP 429`, the words rate limit or too many requests, or the
+    heartbeat counter `tb_fb_limited` above zero. The refusal mark is unchanged.
+  - Decided before the tool has read any real output. Nothing else in the plan changes.

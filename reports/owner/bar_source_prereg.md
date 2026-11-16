@@ -522,3 +522,12 @@ The run finished at 08:58 UTC on Nov 15 (job 43689717933, branch owner/read-c2).
     follows the branches as written.
   - **Why this is not a second chance taken after the fact:** it is written before either book is read, it adds
     no measure and loosens none, and the sixth book has to pass its own plan as well.
+- **Nov 16 2026, 15:21 ET (orchestrator), before the first pair has ended.** Part 3, the pairs: a weakness of the
+  pair tool, and why the tool stays as it is.
+  - The tool marks a half as rate-limited when the bare number 429 stands anywhere in that half's output outside
+    the step table. A counter that happens to be 429 or a price of 429.5 would set the mark without any
+    rate-limit answer.
+  - Such a false mark can only take a pair out of the count. It cannot let one in and cannot move a median.
+  - **The tool is not changed while the test runs. A pair it marks stays out,** also when the job's log shows
+    that the mark is false. Each such case is logged with the line that set it. The rule of 13:36 (the pairs go
+    on until 8 count) covers the loss.

@@ -1077,3 +1077,11 @@ FORWARD_TESTS.md.
     long files run in the full suite on a runner (job 43945430666, started 20:01 UTC).
   - **Infrastructure for the sixth book** is being built by a Sonnet agent (branch owner/tw-infra). The fifth
     book's pair tool and workflows stay untouched; the new pairs get their own tool.
+- **15:21. A weakness in the pair tool's rate-limit mark, handled before any pair has ended.**
+  - Found by the Sonnet agent while building the sixth book's infrastructure: the fifth book's pair tool takes
+    the bare number 429 anywhere in a half's output as a rate limit.
+  - **Fifth book's pairs:** a false mark can only remove a pair. The tool stays frozen and a marked pair stays
+    out (bar-source plan, deviation log).
+  - **Sixth book's pairs:** there a false mark in a three-worker half would fail the test, so that plan's own
+    tool marks a rate limit only by what one really prints (trades-workers plan, deviation log). The agent is
+    making that change.
