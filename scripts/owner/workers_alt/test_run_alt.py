@@ -272,6 +272,42 @@ def test_bars_and_rows():
     check("a refused candle request stops the comparison: rows_complete false with the reason, the earlier coin is counted, the later none",
           not res["rows_complete"] and "SOL: RuntimeError" in res["rows_reason"] and a["1"]["rows_compared"] + a["3"]["rows_compared"] == 8 and [c[0] for c in calls] == ["ETH", "SOL"], (a, res["rows_reason"]))
     check("the comparison's refusal is not an arm's: no refused or limited steps, the job still counts", a["1"]["refused_steps"] == a["3"]["refused_steps"] == 0 )
+    # one try, no retry: the call carries tries=1 and need_answer=True
+    import pandas as pd
+
+    class Mkt:
+        def __init__(self, err=None):
+            self.kw, self.err = [], err
+
+        def spot_candles(self, c, start, end, tries=5, timeout=15, need_answer=False):
+            self.kw.append((c, tries, need_answer))
+            if self.err:
+                raise self.err
+            return pd.DataFrame({k: [1.0] for k in ra.COLS}, index=[pd.Timestamp(start)])
+    def ok_call(fn):
+        try:
+            fn()
+            return True
+        except RuntimeError:
+            return False
+    m = Mkt()
+    got = ra.fetch_candles(m, "ETH", KEYS[1], KEYS[3])
+    check("candles: the venue request is made with tries=1 and need_answer=True, and returned as minute keys",
+          m.kw == [("ETH", 1, True)] and list(got.values()) == [(1.0,) * 5], (m.kw, got))
+    check("candles: a request that got no answer raises (not an empty table)", not ok_call(lambda: ra.fetch_candles(Mkt(RuntimeError("no answer")), "ETH", KEYS[1], KEYS[3])))
+    # an exception on the third coin: the first two coins stay counted, nothing for the third or later ones
+    s4 = sc()
+    cand4 = {c: {} for c in ("ETH", "SOL", "XRP", "LTC")}
+    for i in range(1, 12):
+        s4[i]["bars"] = {"ETH": bar(i), "SOL": bar(i + 100), "XRP": bar(i + 200), "LTC": bar(i + 300)}
+        for j, c in enumerate(cand4):
+            cand4[c][KEYS[i + 1]] = bar(i + 100 * j)
+    s4[0]["bars"] = {}
+    res, *_, calls4, _ = run(s4, candles=cand4, coins=("ETH", "SOL", "XRP", "LTC"), candle_err={"XRP": RuntimeError("HTTP 429 no answer")})
+    a = res["arms"]
+    check("third coin fails: first two coins counted (16 rows), nothing for the third or the fourth, rows_complete false with the reason",
+          not res["rows_complete"] and "XRP: RuntimeError" in res["rows_reason"] and a["1"]["rows_compared"] + a["3"]["rows_compared"] == 16
+          and [c[0] for c in calls4] == ["ETH", "SOL", "XRP"] and a["1"]["rows_differ"] + a["3"]["rows_differ"] == 0, (a, res["rows_reason"], calls4))
     sb = sc()
     sb[2]["bars"] = {"ETH": bar(1)}
     res, *_ = run(sb, candle_err={"ETH": RuntimeError("down")})

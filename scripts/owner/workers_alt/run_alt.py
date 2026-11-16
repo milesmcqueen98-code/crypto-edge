@@ -27,13 +27,13 @@ the minute is in eng.spot[coin] (open, high, low, close, volume as floats); a tr
 empty minute; a coin that fell back has no entry. The result file keeps only bars_built and bars_empty per step.
 
 After the run, the rows: for each coin one request for the venue's candles over the recorded minutes
-(eng.market.spot_candles(coin, start, end), one coin after another), made at least three minutes after the last recorded
+(eng.market.spot_candles(coin, start, end, tries=1, need_answer=True): ONE try per coin, no retry, one coin after another), made at least three minutes after the last recorded
 minute (it waits if needed). The newest three recorded minutes are left out, as tb_smoke's parity leaves out the newest
 three minutes. EQUALITY, as in tb_smoke's parity: a recorded bar and the venue's candle of its minute are "identical" when
 all five values open, high, low, close and volume are equal as floats (==, no tolerance). A recorded bar whose minute has no
 candle differs. A recorded empty minute is equal when the venue has no candle for that minute and differs when it has one.
-Counted by the arm that built the bar: rows_compared, rows_differ. If a candle request is refused, rate-limited or fails,
-the comparison stops, rows_complete is false with the reason (rows_reason), and nothing is counted for the coins not
+Counted by the arm that built the bar: rows_compared, rows_differ. One try per coin, no retry: a request that is refused,
+rate-limited (no answer) or fails raises, and the comparison stops at once and is reported, rows_complete is false with the reason (rows_reason), and nothing is counted for the coins not
 compared (a coin counts only when all its bars were compared). The refusal is the comparison's, not an arm's.
 
 Result: <out>/alt_<UTC start YYYYMMDDTHHMM>Z.json with utc_start, utc_end, minutes, code_commit (git rev-parse HEAD in
@@ -125,9 +125,17 @@ def make_env(code_dir, state_dir):
         return bool(eng._prov.get(c, {}).get(pd.Timestamp(m), (None, False))[1])
 
     def candles(c, start, end):
-        v = eng.market.spot_candles(c, pd.Timestamp(start), pd.Timestamp(end))
-        return {minute_key(t): tuple(float(v.loc[t, k]) for k in COLS) for t in v.index}
+        return fetch_candles(eng.market, c, start, end)
     return Env(eng, lambda reset=False: market.trades_peak(reset=reset), row, trusted, candles, state_dir)
+
+
+def fetch_candles(market, c, start, end):
+    """One request for the venue's candles of one coin: one try, no retry, and a request that got no answer (every try a
+    429) raises RuntimeError, as does a connection error on the one try (bot/market.py spot_candles with tries=1 and
+    need_answer=True). {minute key: (open, high, low, close, volume)}."""
+    import pandas as pd
+    v = market.spot_candles(c, pd.Timestamp(start), pd.Timestamp(end), tries=1, need_answer=True)
+    return {minute_key(t): tuple(float(v.loc[t, k]) for k in COLS) for t in v.index}
 
 
 def git_commit(code_dir):
