@@ -1085,3 +1085,17 @@ FORWARD_TESTS.md.
   - **Sixth book's pairs:** there a false mark in a three-worker half would fail the test, so that plan's own
     tool marks a rate limit only by what one really prints (trades-workers plan, deviation log). The agent is
     making that change.
+- **15:32. Sixth book's infrastructure reviewed; two corrections to my 14:40 entry in the bar-source plan.**
+  - **Infrastructure** (Sonnet agent, branch owner/tw-infra, head 538a0871): the sixth book's workflow, the
+    workers pairs with their own tool, the status report's sections, the rule script (135 checks), notes.
+    - The fifth book's workflows, its pair tool with test and fixtures, and both older rule scripts are identical
+      to `main` (empty diff). Five existing lines of the status script changed; on today's logs the new script
+      writes the same report as the one on `main`, byte for byte.
+    - Tests run by me: 90, 57, 135, 110, 63 checks and the status report's suite, all passing.
+    - It merges when the commit is pinned (after the suite and the live check).
+  - **Corrections** (bar-source plan, deviation log):
+    - the in-step share at the first heartbeat is 1.9% by the rule's own arithmetic (10 of 540), not the 3.3% I
+      wrote (10 of the 306 coin-minutes actually stepped);
+    - item 1 of measure 3 counts the same budget fallbacks (304 of 324 verified, 93.8% against 99%), so the
+      branch for the corrected build now covers a fail on measure 4, on item 1, or on both. Seen in the status
+      report's first rendering of the same first heartbeat; nothing new was read.

@@ -531,3 +531,19 @@ The run finished at 08:58 UTC on Nov 15 (job 43689717933, branch owner/read-c2).
   - **The tool is not changed while the test runs. A pair it marks stays out,** also when the job's log shows
     that the mark is false. Each such case is logged with the line that set it. The rule of 13:36 (the pairs go
     on until 8 count) covers the loss.
+- **Nov 16 2026, 15:32 ET (orchestrator), before any read; nothing new has been looked at since the first
+  heartbeat.** Two corrections to my entry of 14:40.
+  - **The figure.** I wrote that 10 of 306 coin-minutes (3.3%) needed a candle request inside a step. That divides
+    by the 17 minutes the book had stepped. The rule divides by 18 coins times 30 minutes for each heartbeat, as
+    fixed in the code before the book ran, so by the rule the first heartbeat reads 10 of 540 (1.9%). The two
+    agree from the second heartbeat on. The rule's arithmetic stands.
+  - **The branch.** I fixed the corrected build for a fail "on measure 4 alone". I had missed that item 1 of
+    measure 3 (verified trades bars in at least 99% of coin-minutes) counts the same budget fallbacks: at the
+    first heartbeat it reads 304 of 324 (93.8%). A slow trades pass therefore fails item 1 as well, and what I
+    wrote at 14:40 would not have applied in the very case it was written for.
+  - **The branch as it now stands:** if Part 3 fails on measure 4, on item 1 of measure 3, or on both, and on
+    nothing else, the corrected build is the side-by-side build and the sixth book's three days count for it, on
+    the terms written at 14:40 (it must pass its own plan, and it is read by this plan's measures 2 to 4 as
+    written). A fail on anything else follows the branches as they were.
+  - No measure is added, loosened or re-read. This only settles, before either read, which three days a
+    corrected build may use.
