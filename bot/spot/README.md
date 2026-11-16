@@ -290,6 +290,23 @@ final candles. Live, the candles it reads are often not final:
     (Date header minus Age header, or the page holds a later trade). Anything else keeps the candle rows.
   - The pass stops after `"trades_budget_s"` seconds (default 8). A refusal or a rate limit (HTTP 429) stops it at
     once for that minute, with no retry. The coins not done keep their candle.
+  - **Trades side by side (`"trades_workers"`; absent, or 1: off).** The pass asks the coins one after another, so
+    one stalled request (a 3 s timeout and its retry) holds up every coin behind it. With `"trades_workers": 3` the
+    pass asks three coins at a time (`bot/market.py`, `minute_trades_many`). It is off unless set; `config.tw.json`
+    is `config.json` with 3, for a paper test.
+    - Each coin gets the same request as before (the same repair range, the same deadline). The results are then
+      used in the usual coin order, by the same code, with the same counters.
+    - The pace stays at 7 trades requests a second for all workers together. Each send waits for its own slot.
+    - A refusal or a rate limit stops everything at once: no worker sends another request, not even the next page of
+      a coin. Coins whose answer had already come in are used. Every other coin counts as today's "rest"
+      (`tb_fb_limited` or `tb_fb_error`), and no on-demand candle request follows.
+    - The budget is wall time for the whole pass. No request starts after it. A coin not started by then, or whose
+      answer has not come in by then, is a budget fallback (`tb_fb_budget`); a late answer is thrown away.
+    - What can differ from one at a time: after a stop, the coins used are those that had answered (not those before
+      the refused coin); a coin that one at a time would not reach in the budget can be reached; an answer that
+      comes in after the budget is not used (one at a time uses it).
+    - A whole number from 1 to 6 (more cannot be used at 7 a second); anything else stops the start. Without
+      `"trades"` the key is ignored, with one warning event at start.
 - With `"trades"`, for BTC and all 17 coins, listed or not (the coins on the candle path need this most):
   - Candles are re-fetched for the last 6 minutes instead of 3, so every row is seen again until a copy can no longer
     be older than its minute.
@@ -350,7 +367,8 @@ final candles. Live, the candles it reads are often not final:
 
 `candle_old` and `btc_candle_old` only count; they read the answer's Date and Age headers and change no request and
 no decision. `step_s` gives the median and the maximum seconds after the minute at which the data step, the cancel
-pass and the place pass of the 4-sigma bids finished. `tb_err` is the last trades error, when there was one.
+pass and the place pass of the 4-sigma bids finished; in trades mode also `trades`, the trades pass's own duration in
+seconds (median and maximum). `tb_err` is the last trades error, when there was one.
 
 **Candle requests between steps (`"candles_at_s"`; absent in the code's defaults: everything as above; `config.json`
 and `config.w2.json` set 45).** Every
