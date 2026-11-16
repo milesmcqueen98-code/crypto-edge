@@ -21,9 +21,13 @@ Usage: python bot/spot/live_sim_test.py "2025-10-10 20:00" "2025-10-11 02:00" "-
                                          no trades list, so the run is on final candles)
        [--inputs=bot/spot/config.json]  run on that file's input settings instead (taken as the live bot takes them),
                                          with a trades feed made from the candles: every trades bar equals its candle
-                                         and no answer is old (bot/spot/live_sim_inputs_test.py compares the runs)
+                                         and no answer is old (bot/spot/live_sim_inputs_test.py compares the runs);
+                                         with "candles_at_s" in them, the candle pass runs at that second of each
+                                         minute, after the fast poll at second 36
        [--switch=2025-10-10 21:00]      with --inputs: candle mode until then, then a fresh process on the inputs,
                                          on the same state folder
+       [--switch-from=path.json]         with --switch: that file's input settings until the switch instead of
+                                         candle mode (taken the same way)
 """
 import os
 import random
@@ -64,30 +68,53 @@ class TradesFeedMarket(LiveReplayMarket):
     """The same stored candles plus a trades feed made from them (as FirstSeen in bot/spot/newest_bar_test.py): every
     trades bar equals its candle, a minute with no volume has no trades, every paging pass is proven complete, and
     while the feed is on every candle answer reports being made 8 s after its request's end (no answer is old).
-    With the feed off it is LiveReplayMarket exactly (no answer facts)."""
+    With the feed off it is LiveReplayMarket exactly (no answer facts).
+    Made-up differences (empty unless a test sets them; bot/spot/live_sim_inputs_test.py, case D): alter[(coin, m)]
+    is the trades bar served for minute m instead of the candle's values; (coin, m) in no_candle is a minute the
+    venue's candle answers leave out while the trades list has its trades (the fake exchange still fills from the
+    candle). served records which of those minutes the feed handed out as a trades bar.
+    A candle request made mid-minute (the candle pass of "candles_at_s") is answered as the venue would: made at the
+    request's own time, and no answer ever holds a row for the minute open at the request's time. calls records every
+    request as (phase, minute of the request, "candles" or "trades", coin); main() sets the phase (start, step, fast,
+    pass)."""
 
     def __init__(self, start, end, clock):
         super().__init__(start, end, clock)
         self.on, self.tb_calls = False, 0
+        self.alter, self.no_candle, self.served = {}, set(), set()
+        self.calls, self.phase = [], None
 
     def spot_candles(self, coin, start, end):
+        now = self.clock()
+        self.calls.append((self.phase, now.floor("min"), "candles", coin))
         if self.on:
             if not hasattr(self, "candle_meta"):
                 self.candle_meta = {}
-            self.candle_meta[coin] = {"gen": pd.Timestamp(end) + pd.Timedelta(seconds=8), "start": pd.Timestamp(start)}
-        return super().spot_candles(coin, start, end)
+            # made 8 s after the request's end, or at the request's own time when that is later (mid-minute)
+            gen = max(pd.Timestamp(end) + pd.Timedelta(seconds=8), now)
+            self.candle_meta[coin] = {"gen": gen, "start": pd.Timestamp(start)}
+        out = super().spot_candles(coin, start, end)
+        out = out[out.index < now.floor("min")]          # never a row for the minute open at the request's time
+        gone = [m for c, m in self.no_candle if c == coin and m in out.index]
+        return out.drop(gone) if gone else out
 
     def _bar(self, coin, m):
+        if (coin, m) in self.alter or (coin, m) in self.no_candle:
+            self.served.add((coin, m))
+            if (coin, m) in self.alter:
+                return dict(self.alter[(coin, m)])
         d = self.D[coin]
         return d.loc[m].to_dict() if m in d.index and d.loc[m, "volume"] > 0 else None
 
     def trades_bars(self, coin, m0, m1, deadline=None):
         self.tb_calls += 1
+        self.calls.append((self.phase, self.clock().floor("min"), "trades", coin))
         return dict(bars={x: self._bar(coin, x) for x in pd.date_range(m0, m1, freq="min")}, verified=True,
                     reason=None, pages=1)
 
     def trades_bar(self, coin, m, deadline=None):
         self.tb_calls += 1
+        self.calls.append((self.phase, self.clock().floor("min"), "trades", coin))
         return dict(bar=self._bar(coin, m), verified=True, reason=None, pages=1)
 
 
@@ -267,15 +294,19 @@ class FakeExchange:
 
 
 SWITCH_SEEN = {}                     # --switch: the ladders open before and after it (read by live_sim_inputs_test.py)
+LAST = {}                            # the last run's engine and market (read by live_sim_inputs_test.py)
 
 
-def main(start, end, death=None, death_min=20, config=None, inputs=None, switch=None, make_broker=None, on_engine=None):
+def main(start, end, death=None, death_min=20, config=None, inputs=None, switch=None, switch_from=None, feed=None,
+         over=None, make_broker=None, on_engine=None):
     """make_broker(ex, mkt, now) -> the broker each process uses (default: the fake exchange itself);
     on_engine(eng) is called on every engine made (bot/spot/order_path_test.py: the real LiveBroker over a stand-in
     for the venue's library)."""
     clock = {"t": pd.Timestamp(start)}
     now = lambda: clock["t"] + pd.Timedelta(seconds=6)  # noqa: E731
     mkt = LiveReplayMarket(start, end, now) if inputs is None else TradesFeedMarket(start, end, now)
+    if feed is not None:                                   # a test's made-up differences in the trades feed
+        feed(mkt)
     cap = 250000.0
     ex = FakeExchange(mkt, now, cap)
 
@@ -291,17 +322,26 @@ def main(start, end, death=None, death_min=20, config=None, inputs=None, switch=
     # stored history has no trades list: this replay runs on final candles, whatever the config's inputs are
     cfg.update(newest_bar="candles", stale_guard=False)
     cfg.pop("trades_coins", None)
+    cfg.pop("candles_at_s", None)                          # a trades-mode setting (refused with candles)
     cfg_in = None
     if inputs is not None:                                 # --inputs: the input settings of that file, taken the way
         from bot.spot import release_inputs as RI          # the live bot takes them from bot/spot/config.json
         cfg_in, notes = RI.apply(cfg, json.load(open(inputs)))
+        for k, v in (over or {}).items():                  # a test's own settings on top of them (None: removed)
+            cfg_in.pop(k, None) if v is None else cfg_in.update({k: v})
+        cfg_0 = RI.apply(cfg, json.load(open(switch_from)))[0] if switch and switch_from else None
         print(f"inputs from {inputs}: {RI.describe(cfg_in)}; trades feed made from the candles"
-              + (f"; candle mode until {switch}, then a fresh process on these inputs" if switch else ""))
+              + (f"; candle mode until {switch}, then a fresh process on these inputs" if switch and not cfg_0 else "")
+              + (f"; until {switch} the inputs of {switch_from} ({RI.describe(cfg_0)}), then a fresh process on "
+                 "these inputs" if cfg_0 else ""))
         if switch is None:
             cfg, mkt.on = cfg_in, True
+        elif cfg_0 is not None:
+            cfg, mkt.on = cfg_0, True
     sd = tempfile.mkdtemp(prefix="spot_live_")
     eng = engine()
     t0 = time.time()
+    mkt.phase = "start"
     eng.start()
     steps = pd.date_range(start, pd.Timestamp(end) + pd.Timedelta(minutes=3 * H), freq="min", inclusive="left")
     dead_until, death_ok = None, None
@@ -314,6 +354,7 @@ def main(start, end, death=None, death_min=20, config=None, inputs=None, switch=
             eng = engine()
             if t >= pd.Timestamp(end):
                 eng.tradable = []
+            mkt.phase = "start"
             eng.start()
             after = sorted(l["id"] for l in eng.ladders())
             SWITCH_SEEN.update(t=str(t), before=before, after=after)
@@ -335,14 +376,21 @@ def main(start, end, death=None, death_min=20, config=None, inputs=None, switch=
             eng = engine()
             if t >= pd.Timestamp(end):
                 eng.tradable = []
+            mkt.phase = "start"
             eng.start()                                    # a fresh process: reconcile, book fills, overdue exits
             dead_until = None
         if t == pd.Timestamp(end):
             eng.tradable = []
         clock["t"] = t
+        mkt.phase = "step"
         eng.step(t)
         clock["t"] = t + pd.Timedelta(seconds=30)
+        mkt.phase = "fast"
         eng.fast_poll()
+        if getattr(eng, "candles_at_s", None) is not None:  # the candle pass at that second (now() adds 6 s)
+            clock["t"] = t + pd.Timedelta(seconds=eng.candles_at_s - 6)
+            mkt.phase = "pass"
+            eng.candle_pass(t)
         if t > pd.Timestamp(end) + pd.Timedelta(minutes=2 * H + 5) and not eng.ladders():
             break
     ev = pd.read_json(os.path.join(sd, "events.jsonl"), lines=True)
@@ -377,6 +425,7 @@ def main(start, end, death=None, death_min=20, config=None, inputs=None, switch=
         print(errs.error.astype(str).str[:120].value_counts().head(10).to_string())
     if inputs is not None:
         print(f"trades feed calls: {mkt.tb_calls}")
+    LAST.update(eng=eng, mkt=mkt)
     print("LIVE-PATH TEST", "PASSED" if ok else "FAILED")
     return sd, ok
 
@@ -387,4 +436,5 @@ if __name__ == "__main__":
     cf = next((x.split("=", 1)[1] for x in sys.argv[1:] if x.startswith("--config=")), None)
     ip = next((x.split("=", 1)[1] for x in sys.argv[1:] if x.startswith("--inputs=")), None)
     sw = next((x.split("=", 1)[1] for x in sys.argv[1:] if x.startswith("--switch=")), None)
-    main(a[0], a[1], death=d, config=cf, inputs=ip, switch=sw)
+    sf = next((x.split("=", 1)[1] for x in sys.argv[1:] if x.startswith("--switch-from=")), None)
+    main(a[0], a[1], death=d, config=cf, inputs=ip, switch=sw, switch_from=sf)

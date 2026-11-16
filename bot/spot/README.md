@@ -266,16 +266,20 @@ final candles. Live, the candles it reads are often not final:
 **The switches** (in the config file; the defaults keep today's behaviour exactly):
 - `"newest_bar"`: `"candles"` (default) as today, or `"trades"`.
 - `"trades_coins"`: the coins rebuilt from trades (default: BTC and every coin). Coins not listed are never asked for trades;
-  their rows come from candles, under the cache rules below. An unknown name stops the bot at start-up. From release 3
-  `config.json` lists BTC, ETH, SOL, XRP and ZEC for the main book, W2 and the live bot. The third paper book
-  (`config.tb.json`) still lists LTC as well.
+  their rows come from candles, under the cache rules below. An unknown name stops the bot at start-up. From release 5
+  `config.json` lists all 18 coins for the main book, W2 and the live bot, in `config.t18.json`'s order, with
+  `"trades_rows": "candle_after"` (below). Release 3 listed BTC, ETH, SOL, XRP and ZEC and kept the trades rows. The
+  third paper book (`config.tb.json`) lists those five and LTC.
   - **Why a list.** For the other twelve coins Coinbase cuts the candle late after quiet minutes (8% to 41% of
     minute boundaries): the 17:32 candle holds trades stamped in the first seconds of 17:33. A bar built from the
     trade stamps then differs from the final candle the research used, and no fixed offset fixes it.
   - **How good the listed coins are** (the third book's three-day read, Nov 11 to 14 2026, share of a day's minutes
     in which the trades bar was materially off the final candle): BTC 0.0% to 0.7%, ETH, SOL and XRP 0.0% to 0.9%,
     ZEC 1.3% to 3.0%, LTC 2.0% to 3.3%. A coin stays on the list only if its trades bar beats its own first-seen
-    candle on every day. LTC did not on one day, so release 3 left it off. ZEC passed by a small margin.
+    candle on every day. LTC did not on one day, so release 3 left it off. ZEC passed by a small margin. That rule
+    was for trades rows kept for good. Release 5 lists all 18 with the venue's candle replacing each trades row
+    afterwards (the fourth paper book's inputs; reports/owner/bar_source_prereg.md): the older rows end up as the
+    venue's candles, as in the research.
 - With `"trades"`, for each coin on the list, each minute:
   - The minute that just closed is rebuilt from Coinbase's public trades list (`bot/market.py`,
     `minute_trades_bars`). So is any of the 4 minutes before it that is still open (repair). An open minute has no
@@ -297,6 +301,18 @@ final candles. Live, the candles it reads are often not final:
       the trades), so the trades row is the complete one.
   - So for the listed coins the recent rows are trades-built and stay so. Only the start-up backfill and the rows the
     trades pass could not build come from candles.
+  - `"trades_rows"`: `"keep"` (default) is the rule above. With `"candle_after"` (the fourth paper book,
+    `config.t18.json`), a trades-built row and a verified empty minute only stand until a candle answer confirmed for
+    that minute (made at least 60 + `confirm_s` seconds after the minute began) covers it. A row in that answer
+    replaces the stored one. If the answer has no row for the minute, although the minute lies between the answer's
+    first requested minute and its newest row (that newest row excluded), the trades-built row is dropped, as the
+    venue has no bar there. An answer not confirmed for the minute changes nothing, as with `"keep"`. From then on
+    the minute is a confirmed candle row under the rules above. So the decision for a minute uses its trades bar, and
+    the older rows end up as the venue's candles, as in the research. The minute that just closed is never confirmed
+    at the step, so the trades pass and the stale guard work on it as with `"keep"`. Counters, only in this mode:
+    `tb_replaced` (trades-built rows replaced by a confirmed candle row), `tb_replaced_diff` (of those, the close
+    differed by more than one tick), `tb_dropped` (trades-built rows dropped because the confirmed answer had none),
+    `tb_pending` (rows 3 to 6 minutes old that are still trades-built; per step, summed, like `rows_open`).
 - `"stale_guard"`: `false` (default). With `true`:
   - BTC counts as stale unless its row for the minute that just closed is trades-built or comes from an answer made
     after that minute closed (and, as before, unless that minute is BTC's newest traded one). A stale minute runs like
@@ -336,6 +352,47 @@ final candles. Live, the candles it reads are often not final:
 no decision. `step_s` gives the median and the maximum seconds after the minute at which the data step, the cancel
 pass and the place pass of the 4-sigma bids finished. `tb_err` is the last trades error, when there was one.
 
+**Candle requests between steps (`"candles_at_s"`; absent in the code's defaults: everything as above; `config.json`
+and `config.w2.json` set 45).** Every
+second of the data step is a second in which the bot's bids do not rest. For a coin whose newest minute is built from
+trades (on `"trades_coins"`, or BTC and every coin when there is no list), the decision does not need the candle
+request: it serves only the rows behind the newest one.
+- **What it does.** With `"candles_at_s": 45`, those coins' candle requests leave the step. A candle pass runs once
+  per minute, between steps, from second 45 of the minute. For the minute M open then, it makes for each such coin
+  exactly the request the step would make with end M (the same 6 minutes, the merge by provenance, the counters, the
+  window cut). An answer never holds a row for the open minute, so the pass never gives M a row. The coins not on the
+  list keep their candle request in the step, as before.
+- **Allowed values.** From `confirm_s` + 5 (30 s by default) to 50 s. Outside that range, not a number, or without
+  `"newest_bar": "trades"`, the engine stops at start-up (`ValueError`).
+- **Paper** runs the pass in one go. **Live**, the fast-poll loop spends its waiting time on the pass's requests, a
+  few coins per turn, so the fast polls keep their cadence. The pass starts no request unless it would end 3 s before
+  the next step (judged by the time of its own last request); the coins it does not reach are left to the step.
+- **In the step.** A coin the pass fetched for the minute that just closed gets no candle request. A coin the pass
+  did not reach, or whose request failed, is fetched in the step as before and counted as `pre_missing` (after every
+  start, all of them once).
+- **Fallbacks.** When such a coin's trades bar cannot be used (not verified, an error, the budget), the step fetches
+  that coin's candle then, on demand, with the request it would have made before, and goes on as without the setting
+  (the same counters, plus `pre_ondemand`). After a refusal or a rate limit in the trades pass there is no on-demand
+  request in that step: the coins left have no fresh row this minute, and the existing checks give them no new bid
+  (with the stale guard: `skip_old` for a coin, a `stale_input` minute for BTC).
+- **When the venue's candle replaces a trades row** (`"trades_rows": "candle_after"`). The rule is unchanged: an
+  answer made at least 60 + `confirm_s` seconds after the minute began. The pass's answer for M is made about 45 s
+  into M, so it confirms every row up to M - 1, as the step's answer made 6 to 10 s into M + 1 did; both come before
+  the decision on M. A cached copy of age a was made at 45 - a s into M: it confirms M - 1 only if a is 20 s or less
+  (the step's answer: about 41 s or less). The pass's request has the same address as the request a bot without the
+  setting makes 6 s into M, so a copy about 39 s old is to be expected when such a client asked first; M - 1 is then
+  confirmed one pass later. The age rule keeps such a copy from replacing anything early.
+- **Counters,** in the heartbeat, only with the setting: `pre_fetched` (coins the pass fetched), `pre_error` (pass
+  requests that failed), `pre_missing` (coins built from trades the step had to fetch), `pre_ondemand` (on-demand
+  requests after a trades bar that could not be used), `step_candles` (candle requests the step made; with every coin
+  on the list it is `pre_missing` plus `pre_ondemand`). `candle_old` and `btc_candle_old` leave out a coin whose row
+  for the minute is trades-built or a verified empty minute (its candle answer's age says nothing about that row);
+  every other case counts as before. `tb_insert` then counts nearly every trades bar of a covered coin (the step has
+  no candle row for the minute yet), and `tb_close_diff` cannot be measured for them.
+- **What stays.** The trades pass, its requests and pace, the verification rule, the fallbacks, the stale guard,
+  `trades_rows` and the provenance of every row. The fast poll does the same work. A pass request that hangs holds
+  up the fast polls for as long as it hangs (`bot/market.py`'s timeout and retries), as it held up the step before.
+
 **Paper.** `.github/workflows/paper-spot.yml` runs the trades book (`config.tb.json`, `paper_spot_tb/`) in its own
 job (`paper_tb`) on its own runner, so the two registered books keep their requests and rate unchanged.
 
@@ -343,8 +400,8 @@ job (`paper_tb`) on its own runner, so the two registered books keep their reque
 The live bot runs with `bot/spot/config.live.json`. That file is not in the repository: setup made it once as a copy
 of `config.json`, and `configure` and `preflight` change only the capital, `coins_disabled` and `bid_ttl_s`. So that
 a code update also moves the live bot to the release's inputs:
-- At every start, `run.py` takes these six keys from `bot/spot/config.json` for a file named `config.live.json`:
-  `newest_bar`, `trades_coins`, `stale_guard`, `trades_rows`, `trades_budget_s`, `confirm_s`
+- At every start, `run.py` takes these seven keys from `bot/spot/config.json` for a file named `config.live.json`:
+  `newest_bar`, `trades_coins`, `stale_guard`, `trades_rows`, `trades_budget_s`, `confirm_s`, `candles_at_s`
   (`bot/spot/release_inputs.py`), and the three keys of the order path: `order_path`, `orders_rate`,
   `place_workers` (section "Order path"). A key that `config.json` does not set is dropped, so the code's default
   applies.
@@ -352,8 +409,11 @@ a code update also moves the live bot to the release's inputs:
   command given that file, `wickctl paper-test` included.
 - The file itself is not changed. `preflight` writes back only `coins_disabled` and `bid_ttl_s`.
 - **To see it:** `wickctl status` prints the inputs line first, for example
-  `inputs: newest minute from trades for BTC, ETH, SOL, XRP, ZEC; candles for the other coins; stale guard on
-  (from bot/spot/config.json)`, then one line for each setting of the live file that was replaced or dropped.
+  `inputs: newest minute from trades for BTC and every coin, their candles fetched between steps from second 45;
+  stale guard on; the venue's candle replaces each trades row afterwards; order path batch (10 requests a second,
+  3 placing threads) (from bot/spot/config.json)` (a list that holds BTC and every coin of the book reads as no list
+  does; the order-path clause only with `"order_path": "batch"`), then one line for each setting of the live file
+  that was replaced or dropped.
   `live` and `paper` print the same line at start (in `live_spot/stdout.log` for the service).
 - `live` also warns when it starts without trades and the stale guard (for example on candles, the mode before
   release 3): a printed line and a `warning` event in `live_spot/events.jsonl`, so the watchdog sends it to your phone.
@@ -362,8 +422,9 @@ a code update also moves the live bot to the release's inputs:
   one line saying so; the kill switches (`pause`, `resume`, `cancel-all`, `flatten`) never depend on it.
 - **Emergency switch:** `"inputs_local": true` in `config.live.json` keeps the file's own input settings, and they no
   longer follow releases. The file must then state the mode itself (for the mode before release 3:
-  `"newest_bar": "candles"` and `"stale_guard": false`), because a key it leaves out takes the code's default. Remove
-  the key to follow the release again.
+  `"newest_bar": "candles"` and `"stale_guard": false`), because a key it leaves out takes the code's default. A live
+  file copied from `config.json` from release 5 on also holds `"candles_at_s"`: with `"newest_bar": "candles"` remove
+  that key too, or the engine refuses to start. Remove `"inputs_local"` to follow the release again.
 - Paper configs (`config.json`, `config.w2.json`, `config.tb.json`, any other name) run exactly what their own file
   says.
 - A minute skipped by the stale guard (no new bids because BTC's newest price row was missing or old; exits still run)
@@ -578,10 +639,21 @@ Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
   synthetic tables and on the stored Oct 10 2025 crash). No network. `bot/spot/trades_bar_check.py` is the network
   check for a GitHub runner (hunt2.yml).
 - **Inputs of the live bot:** `python bot/spot/release_inputs_test.py` checks the rules of the section above and runs
-  `run.py status` on temp live files (one made before release 3, one with its own list, one with `inputs_local`).
+  `run.py status` on temp live files (one made before release 3, one holding release 3's inputs, one with its own
+  list, one with `inputs_local`).
   `python bot/spot/live_sim_inputs_test.py "2025-10-10 20:00" "2025-10-11 02:00"` runs the live-path test on
-  `config.json`'s inputs with a trades feed made from the candles, from the start and after a switch from candle mode
-  on the same state, and compares the logs with the candle run. No network.
+  `config.json`'s inputs with a trades feed made from the candles, from the start and after a switch on the same
+  state (from candle mode, and from release 3's inputs), and compares the logs with the candle run. Without
+  `--death` it also runs a feed whose trades bars differ from their candles in some minutes and checks that the
+  candle replaced or dropped each of them. No network.
+- **Trades rows replaced by the candle:** `python bot/spot/candle_after_test.py` checks `"trades_rows"` on synthetic
+  tables (replace, drop, counters, the key absent equal to `"keep"`) and on the stored Oct 10 2025 crash.
+- **Candle requests between steps:** `python bot/spot/candle_pass_test.py` checks `"candles_at_s"` on a fake clock
+  (the second of the pass, paper in one go, live in slices between fast polls at their cadence, the stop 3 s before
+  the step, the coins the step still fetches, `pre_missing`, on demand and not after a rate limit or a refusal,
+  `candle_old`, the configuration errors). `live_sim_inputs_test.py` also runs the inputs with and without the setting
+  (E), and five listed coins without and with it (F), compares their decisions with the candle run and prints a
+  modelled clock of the data step.
 - **wickctl update:** `bash bot/spot/deploy/wickctl_test.sh` runs the real `update` branch against stub `sudo`, `systemctl`, `git` and
   `install`. It checks the order of calls for a bot that was active, activating, inactive or failed, and for a failed pull.
   Only a bot that was active or activating is started again. No network, no sudo.

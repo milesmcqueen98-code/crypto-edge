@@ -230,6 +230,7 @@ def main(start, end, skip_descriptive=False):
     # stored history has no trades list: this replay runs on final candles, whatever config.json's inputs are
     cfg2.update(newest_bar="candles", stale_guard=False)
     cfg2.pop("trades_coins", None)
+    cfg2.pop("candles_at_s", None)                     # a trades-mode setting (refused with candles)
     ev2, eng2 = run_engine(mkt, start, end, cfg2, cfg2["paper_capture"], "paper250k")
     ent, ext = ev2[ev2.kind == "fill_entry"], ev2[ev2.kind == "fill_exit"]
     notional = (ext.entry_px * ext["size"]).sum()

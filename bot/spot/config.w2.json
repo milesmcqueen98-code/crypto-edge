@@ -25,11 +25,26 @@
   },
   "newest_bar": "trades",
   "stale_guard": true,
+  "candles_at_s": 45,
   "trades_coins": [
     "BTC",
     "ETH",
     "SOL",
     "XRP",
+    "DOGE",
+    "LTC",
+    "LINK",
+    "BCH",
+    "SUI",
+    "XLM",
+    "HBAR",
+    "NEAR",
+    "AAVE",
+    "HYPE",
+    "ENA",
+    "PEPE",
+    "ONDO",
     "ZEC"
-  ]
+  ],
+  "trades_rows": "candle_after"
 }

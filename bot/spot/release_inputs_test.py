@@ -7,8 +7,10 @@ Part 1, the pure functions:
     base lacks is dropped and noted; keys outside INPUT_KEYS are never touched; "inputs_local": true keeps everything
     and gives one note; false or absent does not; neither argument is changed; applying twice equals applying once;
   - applies: true only for the base name config.live.json;
-  - describe: trades mode with and without a list, candle mode, guard on and off, trades_rows; the order path clause
-    only for "order_path": "batch";
+  - describe: trades mode with and without a list, candle mode, guard on and off, trades_rows (candle_after in plain
+    words, keep adds nothing, any other value named; nothing in candle mode); a list that holds BTC and every coin of
+    the book reads as no list does when the book's coins are given, and as before when they are not; candles_at_s in
+    a few words, only when set and only in trades mode; the order path clause only for "order_path": "batch";
   - the order-path keys (order_path, orders_rate, place_workers) are taken from the base like the input keys, and
     "inputs_local": true keeps the live file's;
   - preflight_file: the file as read plus coins_disabled and bid_ttl_s, nothing taken from the release;
@@ -17,6 +19,8 @@ Part 2, run.py status end to end (a subprocess, temp folder, no network):
   - a live file as a VM set up before release 3 has it (config.json without the input keys, capital changed): the
     inputs line of bot/spot/config.json with the "(from bot/spot/config.json)" marker, then every line status printed
     before;
+  - a live file as a VM set up on release 3 has it (release 3's input keys: trades kept for BTC, ETH, SOL, XRP, ZEC,
+    the stale guard on): the release's line with the marker, one note for each key whose value the release changes;
   - a live file made as setup_vm.sh makes it now (a copy of config.json, capital 0) with a different trades_coins
     list: the release's list is used and a note names both;
   - "inputs_local": true with "newest_bar": "candles": the candle line and the note, no marker;
@@ -48,6 +52,8 @@ from bot.spot import release_inputs as R  # noqa: E402
 FAILS = []
 BASE = json.load(open(os.path.join(HERE, "config.json")))
 MARK = " (from bot/spot/config.json)"
+RELEASE3_COINS = ("BTC", "ETH", "SOL", "XRP", "ZEC")       # trades_coins of release 3's config.json
+COINS = json.load(open(os.path.join(ROOT, "bot", "v2", "model_meta.json")))["coins"]   # the book (run.py passes it)
 
 
 def check(name, ok, extra=""):
@@ -56,15 +62,21 @@ def check(name, ok, extra=""):
         FAILS.append(name)
 
 
-def expected_line(cfg):
-    """The inputs line written out here independently of describe()."""
-    if cfg.get("newest_bar", "candles") == "trades":
+def expected_line(cfg, coins=None):
+    """The inputs line written out here independently of describe() (coins: the book's, as run.py gives them)."""
+    trades = cfg.get("newest_bar", "candles") == "trades"
+    if trades:
         tc = cfg.get("trades_coins")
-        src = ("newest minute from trades for BTC and every coin" if tc is None else
-               "newest minute from trades for " + ", ".join(tc) + "; candles for the other coins")
+        every = tc is None or (coins is not None and bool(tc) and all(c in tc for c in ["BTC"] + list(coins)))
+        at = "" if cfg.get("candles_at_s") is None else ", their candles fetched between steps from second " + str(
+            cfg["candles_at_s"])
+        src = ("newest minute from trades for BTC and every coin" + at if every else
+               "newest minute from trades for " + ", ".join(tc) + at + "; candles for the other coins")
     else:
         src = "candles for every coin"
-    line = "inputs: " + src + "; stale guard " + ("on" if cfg.get("stale_guard") else "off")
+    rows = {"candle_after": "; the venue's candle replaces each trades row afterwards", None: "", "keep": ""}
+    line = ("inputs: " + src + "; stale guard " + ("on" if cfg.get("stale_guard") else "off")
+            + (rows.get(cfg.get("trades_rows"), "; trades_rows " + str(cfg.get("trades_rows"))) if trades else ""))
     if cfg.get("order_path") == "batch":
         line += ("; order path batch (" + str(cfg.get("orders_rate", 10)) + " requests a second, "
                  + str(cfg.get("place_workers", 1)) + " placing threads)")
@@ -157,27 +169,63 @@ def part1():
           d4 == "inputs: candles for every coin; stale guard on", d4)
     d5 = R.describe({"newest_bar": "trades", "trades_coins": ["BTC", "ETH"], "stale_guard": True,
                      "trades_rows": "candle_after"})
-    check("describe: trades_rows mentioned when set", d5.endswith("; stale guard on; trades_rows candle_after")
-          and "BTC, ETH;" in d5, d5)
-    check("describe: trades_rows not mentioned when absent", "trades_rows" not in d1 + d2 + d3 + d4)
-    d6 = R.describe({"newest_bar": "trades", "trades_coins": ["BTC"], "stale_guard": True, "order_path": "batch",
+    check("describe: trades_rows candle_after in plain words", d5 == "inputs: newest minute from trades for BTC, "
+          "ETH; candles for the other coins; stale guard on; the venue's candle replaces each trades row afterwards",
+          d5)
+    d6 = R.describe({"newest_bar": "trades", "trades_coins": ["BTC", "ETH"], "stale_guard": True,
+                     "trades_rows": "keep"})
+    check("describe: trades_rows keep (the default behaviour) adds nothing",
+          d6 == "inputs: newest minute from trades for BTC, ETH; candles for the other coins; stale guard on", d6)
+    d7 = R.describe({"newest_bar": "trades", "stale_guard": True, "trades_rows": "later"})
+    check("describe: any other trades_rows value is named as it is",
+          d7 == "inputs: newest minute from trades for BTC and every coin; stale guard on; trades_rows later", d7)
+    check("describe: trades_rows not mentioned when absent", "trades_rows" not in d1 + d2 + d3 + d4
+          and "candle replaces" not in d1 + d2 + d3 + d4)
+    full = {"newest_bar": "trades", "trades_coins": ["BTC"] + list(COINS), "stale_guard": True}
+    d8 = R.describe(full, COINS)
+    check("describe: BTC and every coin of the book on the list, the book's coins given: as without a list",
+          d8 == "inputs: newest minute from trades for BTC and every coin; stale guard on", d8)
+    check("describe: the same list without the book's coins: the line as before (the list, then the other coins)",
+          R.describe(full) == "inputs: newest minute from trades for " + ", ".join(["BTC"] + list(COINS))
+          + "; candles for the other coins; stale guard on")
+    part = dict(full, trades_coins=["BTC"] + list(COINS)[:-1])
+    check("describe: one coin of the book missing: the list, then the other coins",
+          R.describe(part, COINS) == R.describe(part) and "candles for the other coins" in R.describe(part, COINS))
+    nob = dict(full, trades_coins=list(COINS))
+    check("describe: every coin but BTC: the list, then the other coins", "candles for the other coins"
+          in R.describe(nob, COINS))
+    d11 = R.describe(dict(full, candles_at_s=45), COINS)
+    check("describe: candles_at_s in a few words", d11 == "inputs: newest minute from trades for BTC and every coin, "
+          "their candles fetched between steps from second 45; stale guard on", d11)
+    d12 = R.describe(dict(full, trades_coins=["BTC", "ETH"], candles_at_s=45), COINS)
+    check("describe: candles_at_s with a list: the words follow the list", d12 == "inputs: newest minute from trades "
+          "for BTC, ETH, their candles fetched between steps from second 45; candles for the other coins; stale guard "
+          "on", d12)
+    check("describe: candles_at_s not mentioned when absent, nor in candle mode", "between steps" not in
+          d1 + d2 + d8 + R.describe({"newest_bar": "candles", "candles_at_s": 45}))
+    d9 = R.describe({"newest_bar": "candles", "stale_guard": False, "trades_rows": "candle_after"})
+    d10 = R.describe({"capital": 1, "trades_rows": "later"})
+    check("describe: trades_rows is not mentioned in candle mode (the engine reads it only with trades)",
+          d9 == "inputs: candles for every coin; stale guard off" and d10 == d9, d9 + " | " + d10)
+    o6 = R.describe({"newest_bar": "trades", "trades_coins": ["BTC"], "stale_guard": True, "order_path": "batch",
                      "orders_rate": 10, "place_workers": 3})
-    check("describe: the order path clause for batch", d6 == "inputs: newest minute from trades for BTC; candles for "
-          "the other coins; stale guard on; order path batch (10 requests a second, 3 placing threads)", d6)
-    d7 = R.describe({"newest_bar": "trades", "trades_coins": ["BTC"], "stale_guard": True, "order_path": "serial",
+    check("describe: the order path clause for batch", o6 == "inputs: newest minute from trades for BTC; candles for "
+          "the other coins; stale guard on; order path batch (10 requests a second, 3 placing threads)", o6)
+    o7 = R.describe({"newest_bar": "trades", "trades_coins": ["BTC"], "stale_guard": True, "order_path": "serial",
                      "orders_rate": 10, "place_workers": 3})
     check("describe: no clause for serial, nor without the key (the lines above)",
-          d7 == "inputs: newest minute from trades for BTC; candles for the other coins; stale guard on"
-          and "order path" not in d1 + d2 + d3 + d4 + d5, d7)
-    d8 = R.describe({"order_path": "batch", "orders_rate": "ten"})
+          o7 == "inputs: newest minute from trades for BTC; candles for the other coins; stale guard on"
+          and "order path" not in d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8 + d9 + d10 + d11 + d12, o7)
+    o8 = R.describe({"order_path": "batch", "orders_rate": "ten"})
     check("describe: a batch path with odd values still gives a line (status never fails on it)",
-          d8.endswith("; order path batch (ten requests a second, 1 placing threads)"), d8)
+          o8.endswith("; order path batch (ten requests a second, 1 placing threads)"), o8)
 
     # the order-path keys follow the release like the input keys
-    check("INPUT_KEYS holds the six input keys and the three order-path keys",
-          R.INPUT_KEYS[:6] == ("newest_bar", "trades_coins", "stale_guard", "trades_rows", "trades_budget_s",
-                               "confirm_s") and R.ORDER_KEYS == ("order_path", "orders_rate", "place_workers")
-          and R.INPUT_KEYS[6:] == R.ORDER_KEYS)
+    check("INPUT_KEYS holds the seven input keys (candles_at_s the last) and then the three order-path keys",
+          R.INPUT_KEYS[:7] == ("newest_bar", "trades_coins", "stale_guard", "trades_rows", "trades_budget_s",
+                               "confirm_s", "candles_at_s") and R.ORDER_KEYS == ("order_path", "orders_rate",
+                                                                                 "place_workers")
+          and R.INPUT_KEYS[7:] == R.ORDER_KEYS)
     base_o = dict(base, order_path="batch", orders_rate=10, place_workers=3)
     new_o, notes_o = R.apply(dict(live, order_path="serial", place_workers=1), base_o)
     check("order keys: taken from the release, a differing value replaced and noted",
@@ -191,9 +239,11 @@ def part1():
     check("order keys: inputs_local true keeps the live file's own order path",
           new_l2["order_path"] == "serial" and "orders_rate" not in new_l2 and len(notes_l2) == 1, str(new_l2))
 
-    check("describe matches the line written out independently for config.json and config.tb.json",
-          all(R.describe(c) == expected_line(c) for c in
-              (BASE, json.load(open(os.path.join(HERE, "config.tb.json"))))))
+    check("describe matches the line written out independently for config.json, config.tb.json and config.t18.json, "
+          "with and without the book's coins",
+          all(R.describe(c, k) == expected_line(c, k) for c in
+              (BASE, json.load(open(os.path.join(HERE, "config.tb.json"))),
+               json.load(open(os.path.join(HERE, "config.t18.json")))) for k in (None, COINS)))
 
     # preflight write-back
     raw = {"capital": 12000.0, "coins_disabled": [], "bid_ttl_s": 300, "quote": "USD"}
@@ -277,7 +327,7 @@ def part2():
     with open(os.path.join(sd, "state.json"), "w") as f:
         json.dump(STATE, f)
     eff = {k: BASE[k] for k in R.INPUT_KEYS if k in BASE}
-    want = expected_line(BASE) + MARK
+    want = expected_line(BASE, COINS) + MARK                # run.py gives the book's coins
     print(f"  config.json inputs: {eff}", flush=True)
     try:
         # 1. a VM set up before release 3: config.json of that time (no input keys), capital changed
@@ -294,11 +344,43 @@ def part2():
         check("old live file: the order-path block after them exactly when the release's order_path is batch",
               (BLOCK in out) == (BASE.get("order_path") == "batch"), str(out[5:7]))
         if BASE.get("newest_bar") == "trades":
+            tl = BASE.get("trades_coins")
+            words = ("BTC and every coin" if tl is None or all(c in tl for c in ["BTC"] + list(COINS))
+                     else ", ".join(tl))
             check("old live file: trades mode for config.json's list, stale guard on",
-                  "newest minute from trades for " + ", ".join(BASE.get("trades_coins") or []) in out[0]
+                  "newest minute from trades for " + words in out[0]
                   and "; stale guard on" in out[0] and out[0].endswith(MARK) and bool(BASE.get("stale_guard")),
                   out[0])
         check("old live file: unchanged byte for byte", open(p, "rb").read() == b)
+
+        # 1b. a VM set up on release 3 (setup_vm.sh copied that release's config.json): release 3's input keys,
+        # written out here (bot/spot/config.json on main at release 3, commit 39f7c56a), capital changed
+        r3 = dict(old, newest_bar="trades", stale_guard=True, trades_coins=list(RELEASE3_COINS))
+        p, b = write_live(tmp, r3)
+        rc, out, err = status(p, sd)
+        print("  [live file holding release 3's input keys]\n    " + "\n    ".join(out), flush=True)
+        notes = [x for x in out[1:] if x.startswith("  ") and "live config had" in x]
+        check("release 3 live file: exit 0, the release's line with the marker, first", rc == 0 and out[:1] == [want],
+              str(out[:1]) + err[-300:])
+        want_r3 = (["trades_coins"] if BASE.get("trades_coins") != r3["trades_coins"] else []) + \
+            (["newest_bar"] if BASE.get("newest_bar") != "trades" else []) + \
+            (["stale_guard"] if BASE.get("stale_guard") is not True else [])
+        check("release 3 live file: one note per key whose value the release changes, naming both values",
+              len(notes) == len(want_r3) and all(any(k in x for x in notes) for k in want_r3)
+              and all(str(r3[k]) in x and str(BASE.get(k)) in x for k, x in zip(
+                  [k for k in R.INPUT_KEYS if k in want_r3], notes)), str(notes))
+        if BASE.get("trades_rows") is not None:
+            check("release 3 live file: the release's trades_rows is in use (the file has none, so no note)",
+                  not any("trades_rows" in x for x in notes) and R.describe(R.apply(r3, BASE)[0], COINS) + MARK
+                  == out[0],
+                  out[0])
+        check("release 3 live file: then every line status printed before",
+              before_block(out)[1 + len(notes):] == old_lines(sd, 10000), str(out[1 + len(notes):]))
+        check("release 3 live file: the order-path block after them exactly when the release's order_path is batch",
+              (BLOCK in out) == (BASE.get("order_path") == "batch")
+              and (BLOCK not in out or out.index(BLOCK) == 1 + len(notes) + len(old_lines(sd, 10000))),
+              str(out[1 + len(notes):]))
+        check("release 3 live file: unchanged byte for byte", open(p, "rb").read() == b)
 
         # 2. made as setup_vm.sh makes it after release 3, then edited: the three keys with a different list
         new = dict(BASE, capital=0)
@@ -335,7 +417,7 @@ def part2():
         rc, out, err = status(tb, sd)
         print("  [config.tb.json]\n    " + "\n    ".join(out), flush=True)
         check("config.tb.json: its own line, no marker, no note",
-              rc == 0 and out[:1] == [expected_line(json.loads(tbb))]
+              rc == 0 and out[:1] == [expected_line(json.loads(tbb), COINS)]
               and out[1:] == old_lines(sd, json.loads(tbb)["capital"]), str(out) + err)
         check("config.tb.json: unchanged", open(tb, "rb").read() == tbb)
     finally:
@@ -431,7 +513,7 @@ def part3():
             print(f"  [{label}: live with a stand-in engine]\n    " + "\n    ".join(out), flush=True)
             check(f"{label}: live starts on the file's own inputs, warns, logs the warning event, then runs",
                   rc == 0 and [c["what"] for c in cl] == ["init", "log", "run"] and cl[1]["kind"] == "warning"
-                  and "without the release 3 inputs" in cl[1]["msg"] and cl[0]["newest_bar"] is None
+                  and "without the release's verified inputs" in cl[1]["msg"] and cl[0]["newest_bar"] is None
                   and any(x.startswith("WARNING: ") for x in out) and out[0].startswith(NOTE), str(cl) + err[-300:])
             check(f"{label}: the live file is unchanged", open(p, "rb").read() == b)
         finally:

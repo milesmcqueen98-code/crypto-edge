@@ -857,6 +857,25 @@ class Engine:
         # its minute closed
         self._prov = {}
         self.confirm_s = float(self.cfg.get("confirm_s", 25.0))
+        # trades mode: "keep" (default) keeps a trades-built row (or verified empty mark) for good; "candle_after"
+        # lets a candle answer confirmed for the minute replace the row, or drop it when that answer has none there
+        self.trades_rows = self.cfg.get("trades_rows", "keep")
+        if self.trades_rows not in ("keep", "candle_after"):
+            raise ValueError(f"trades_rows must be keep or candle_after, not {self.trades_rows}")
+        # trades mode: the candle requests of the coins built from trades move out of the step into a candle pass
+        # between steps, at this second of the minute (README, "Candle requests between steps"); absent: as before
+        self.candles_at_s = self.cfg.get("candles_at_s")
+        if self.candles_at_s is not None:
+            if self.newest_bar != "trades":
+                raise ValueError(f"candles_at_s needs newest_bar trades, not {self.newest_bar}")
+            x = self.candles_at_s
+            if isinstance(x, bool) or not isinstance(x, (int, float)) or not self.confirm_s + 5 <= x <= 50:
+                raise ValueError(f"candles_at_s must be a number of seconds from confirm_s + 5 "
+                                 f"({self.confirm_s + 5:g}) to 50, not {x!r}")
+            self.candles_at_s = float(x)
+        self._cpass = {}                                   # candles_at_s: coin -> minute its candle pass was for
+        self._cp_min, self._cp_todo, self._cp_d = None, [], 0.0
+        self._skipped, self._fb, self._fb_stop = set(), [], False
         self._skip_old = set()                             # stale_guard: coins with no new bid this minute
         self._timer = time.monotonic
         self._tm = {"data": [], "cancel": [], "place": []}  # step timing, seconds after the minute
@@ -911,9 +930,9 @@ class Engine:
         self.state["adv_day"] = d
         self.log("adv", t=t, adv_musd={c: round(v / 1e6, 1) for c, v in self.state["adv"].items() if v})
 
-    def update_spot(self, end):
+    def update_spot(self, end, coins=None):
         cm = getattr(self, "_cmax", {})                    # empty unless newest_bar is "trades"
-        for c in ["BTC"] + self.coins:
+        for c in (["BTC"] + self.coins if coins is None else coins):    # coins: only these (candles_at_s)
             df = self.spot.get(c)
             tb = getattr(self, "newest_bar", "candles") == "trades"   # trades mode: provenance rules, every coin
             # re-fetch the last 3 minutes too: the newest candle can still be filling in when first fetched
@@ -933,9 +952,77 @@ class Engine:
             elif len(new):
                 df = pd.concat([df, new])
                 df = df[~df.index.duplicated(keep="last")].sort_index()    # a re-fetch can skip a stored minute
+            if tb and getattr(self, "_tb_drop", {}).get(c):
+                df = df.drop(self._tb_drop.pop(c), errors="ignore")    # candle_after: the venue has no bar there
             if len(df):
                 df = df.loc[end - pd.Timedelta(minutes=WINDOW_MIN):]
             self.spot[c] = df
+
+    def _tb_listed(self, c):
+        """Trades mode: the coin's newest minute is built from trades (on the list, or no list: BTC and every coin)."""
+        return self.trades_coins is None or c in self.trades_coins
+
+    def candle_pass(self, M, stop=None, turn_end=None, now=time.time):
+        """candles_at_s, between steps: the candle request of each coin built from trades, for the minute M that is open
+        now (M its start), each exactly as update_spot(M) makes it for that coin (same request, provenance merge,
+        counters and bookkeeping). The request ends before M, so it never gives M a row. Resumable: a later call for
+        the same M goes on with the coins left; a new M starts again. now() is in epoch seconds (read only with a
+        limit); with stop, no request starts unless it would end before stop (judged by the pass's last request); with
+        turn_end, after the first request of this call none starts unless it would end before turn_end. A coin not
+        reached, or whose request failed (pre_error), is left for the step (pre_missing there). Returns the number of
+        coins left. Never raises."""
+        M = pd.Timestamp(M).floor("min")
+        if self._cp_min != M:
+            self._cp_min, self._cp_todo, self._cp_d = M, [c for c in ["BTC"] + self.coins if self._tb_listed(c)], 0.0
+        n, timed = 0, stop is not None or turn_end is not None    # no limit: the clock is not read
+        while self._cp_todo:
+            t0 = now() if timed else None
+            if stop is not None and t0 + self._cp_d >= stop:
+                break
+            if n and turn_end is not None and t0 + self._cp_d >= turn_end:
+                break
+            c = self._cp_todo.pop(0)
+            n += 1
+            try:
+                self.update_spot(M, [c])
+                self._cpass[c] = M
+                self.count("pre_fetched")
+            except Exception:
+                self.count("pre_error")
+            if timed:
+                self._cp_d = max(0.0, now() - t0)
+        return len(self._cp_todo)
+
+    def _step_coins(self, t):
+        """The coins the step's update_spot fetches. Without candles_at_s: None (every coin, as before). With it: every
+        coin not built from trades, and each coin built from trades whose candle pass for the minute that just closed
+        did not happen or failed (counted as pre_missing); the others are left out (_skipped)."""
+        self._skipped = set()
+        if self.candles_at_s is None:
+            return None
+        prev = t - pd.Timedelta(minutes=1)
+        out = []
+        for c in ["BTC"] + self.coins:
+            if self._tb_listed(c) and self._cpass.get(c) == prev:
+                self._skipped.add(c)
+                continue
+            if self._tb_listed(c):
+                self.count("pre_missing")
+            out.append(c)
+        self.count("step_candles", len(out))
+        return out
+
+    def _fetch_fallbacks(self, t):
+        """candles_at_s: a coin left out of the step's candle requests whose trades bar could not be used (unverified,
+        an error, the budget) gets its candle row now, on demand, by the request the step would have made
+        (update_spot(t) for that coin). None after a refusal or a rate limit in the trades pass (_fb_stop)."""
+        if self.candles_at_s is None or self._fb_stop:
+            return
+        todo = [c for c in ["BTC"] + self.coins if c in self._skipped and c in self._fb]
+        if todo:
+            self.count("pre_ondemand", len(todo))
+            self.count("step_candles", len(todo))
+            self.update_spot(t, todo)
 
     PROV_MIN = 15
 
@@ -953,7 +1040,12 @@ class Engine:
         """Trades mode, any coin: the rows of a candle answer that may replace or fill stored rows.
         A candle row replaces a stored candle row only if its answer is not older, and never replaces a trades-built
         row or a verified empty minute (the venue's final candle can leave out trades that are in the public list).
-        Rows older than the provenance window merge as in candles mode."""
+        Rows older than the provenance window merge as in candles mode.
+        trades_rows "candle_after": a trades-built row or verified empty mark is provisional. A row of an answer
+        confirmed for that minute replaces it; and a minute in [answer start, the answer's newest row) that holds a
+        trades-built row or mark, which a confirmed answer leaves out, loses its row (dropped in update_spot). Either
+        way the minute then counts as a confirmed candle row."""
+        after = getattr(self, "trades_rows", "keep") == "candle_after"
         meta = (getattr(self.market, "candle_meta", None) or {}).get(c) or {}
         g0, frm = meta.get("gen"), meta.get("start")
         P = self._prov.setdefault(c, {})
@@ -965,12 +1057,31 @@ class Engine:
             if mm >= lo:
                 old = P.get(mm)
                 if old is not None and old[1]:
-                    ok = False                             # a trades-built row (or verified empty minute) stays
+                    ok = after and self._confirmed(mm, g)  # "keep": a trades-built row (or verified empty) stays
+                    if ok and df is not None and mm in df.index:
+                        self.count("tb_replaced")
+                        try:
+                            tick = self.spec(c).tick
+                        except Exception:
+                            tick = 0.0
+                        if abs(float(df.loc[mm, "close"]) - float(new.loc[mm, "close"])) > tick * (1 + 1e-9):
+                            self.count("tb_replaced_diff")
                 elif old is not None and df is not None and mm in df.index:
                     ok = not self._older(g, old[0])
                 if ok:
                     P[mm] = (g, False)
             keep.append(ok)
+        if after and frm is not None and len(new) and g0 is not None:
+            top = new.index.max()                          # the newest minute of the answer
+            drop = []
+            for mm in [x for x, v in P.items() if v[1] and max(frm, lo) <= x < top and x not in new.index]:
+                if self._confirmed(mm, g0):
+                    if df is not None and mm in df.index:
+                        drop.append(mm)
+                        self.count("tb_dropped")
+                    P[mm] = (g0, False)
+            if drop:
+                self._tb_drop = dict(getattr(self, "_tb_drop", {}), **{c: drop})
         for mm in [x for x in P if x < lo]:
             P.pop(mm)
         return new[np.array(keep, dtype=bool)] if len(new) else new
@@ -990,9 +1101,11 @@ class Engine:
         # coins not listed are never asked for trades
         stop = getattr(self.market, "Refused", None)
         limited = getattr(self.market, "Limited", None)
+        self._fb, self._fb_stop = [], False                # coins that fell back (candles_at_s: fetched on demand)
         for i, c in enumerate(todo):
             if self._timer() - t0 > budget:
                 self.count("tb_fb_budget", len(todo) - i)
+                self._fb += todo[i:]
                 return
             df = self.spot.get(c)
             if c not in self._cmax:
@@ -1011,11 +1124,14 @@ class Engine:
                 if stop is not None and isinstance(err, stop):      # refused or rate-limited: stop for this minute
                     k = "tb_fb_limited" if limited is not None and isinstance(err, limited) else "tb_fb_error"
                     self.count(k, len(todo) - i)
+                    self._fb_stop = True                   # no on-demand candle request this step
                     return
                 self.count("tb_fb_error")
+                self._fb.append(c)
                 continue
             if not r.get("verified"):
                 self.count("tb_fb_budget" if r.get("reason") == "deadline" else "tb_fb_unverified")
+                self._fb.append(c)
                 continue
             for mm in need:
                 b = r["bars"].get(mm)
@@ -1067,6 +1183,9 @@ class Engine:
             for c in ["BTC"] + self.coins:
                 g = (meta.get(c) or {}).get("gen")
                 if g is not None and g < end:              # made before the minute ended: cannot be final for it
+                    if getattr(self, "candles_at_s", None) is not None and \
+                            self._prov.get(c, {}).get(m, (None, False))[1]:
+                        continue                           # candles_at_s: the row is trades-built or verified empty
                     self.count("btc_candle_old" if c == "BTC" else "candle_old")
         if getattr(self, "newest_bar", "candles") == "trades":          # rows 3 to 6 minutes old still unconfirmed
             for c in ["BTC"] + self.coins:
@@ -1076,6 +1195,9 @@ class Engine:
                 for mm in pd.date_range(m - pd.Timedelta(minutes=5), m - pd.Timedelta(minutes=2), freq="min"):
                     if mm in df.index and self._open(c, mm):
                         self.count("rows_open")
+                    if getattr(self, "trades_rows", "keep") == "candle_after" and mm in df.index \
+                            and self._prov.get(c, {}).get(mm, (None, False))[1]:
+                        self.count("tb_pending")           # still trades-built 3 to 6 minutes on
         guard = self.cfg.get("stale_guard", False)
         self._skip_old = set()
         if guard:                                          # coins whose newest row is missing or from an old answer
@@ -1409,9 +1531,10 @@ class Engine:
         t = pd.Timestamp(t if t is not None else self.clock()).floor("min")    # the minute now starting
         prev = t - pd.Timedelta(minutes=1)
         try:
-            self.update_spot(t)
+            self.update_spot(t, self._step_coins(t))      # candles_at_s: without the coins its candle pass fetched
             if self.newest_bar == "trades":
                 self.trades_pass(prev)
+                self._fetch_fallbacks(t)
             self.refresh_adv(t)
             if self.broker.live:
                 self.cash_live = self.broker.cash() - self.cfg.get("usd_reserve", 500.0)
@@ -2242,6 +2365,31 @@ class Engine:
             except Exception:
                 pass
 
+    def _wait_step(self, nxt, poll, now=time.time, sleep=time.sleep):
+        """candles_at_s: run()'s wait for the step at nxt (epoch seconds), with the candle pass of the minute open now.
+        Paper (poll 0): sleep to that minute's second candles_at_s, run the pass in one go, sleep to nxt. Live: a fast
+        poll every poll seconds as without the setting; from that second on, each turn spends its waiting time on the
+        pass's requests (one at least, more while the turn has room) and sleeps the rest of the turn. No request of the
+        pass starts unless it would end 3 s before nxt; the coins left are fetched by the step."""
+        m0 = (math.floor(nxt / 60) - 1) * 60               # the minute open now (nxt is 6 s after it closes)
+        M, at, stop = pd.Timestamp(m0, unit="s"), m0 + self.candles_at_s, nxt - 3
+        if not poll:
+            if now() < stop:
+                sleep(max(0.0, at - now()))
+                self.candle_pass(M, stop=stop, now=now)
+            sleep(max(0.0, nxt - now()))
+            return
+        while now() < nxt - poll - 1:
+            end = now() + poll
+            if now() >= at:
+                self.candle_pass(M, stop=stop, turn_end=end, now=now)
+            sleep(max(0.0, end - now()))
+            try:
+                self.fast_poll()
+            except Exception as err:
+                self.log("error", error=f"fast poll: {err!r}"[:300])
+        sleep(max(0.0, nxt - now()))
+
     def run(self, minutes):
         self._hc("/start")
         self.start()
@@ -2250,6 +2398,8 @@ class Engine:
         errors = 0
         while time.time() < stop:
             nxt = (math.floor(time.time() / 60) + 1) * 60 + 6       # 6 s after each minute closes
+            if self.candles_at_s is not None:
+                self._wait_step(nxt, poll)                 # the wait below with the candle pass in it; then a no-op
             while poll and time.time() < nxt - poll - 1:
                 time.sleep(poll)
                 try:

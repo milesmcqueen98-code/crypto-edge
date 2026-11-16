@@ -11,7 +11,8 @@ import copy
 import os
 
 ORDER_KEYS = ("order_path", "orders_rate", "place_workers")       # README, "Order path"
-INPUT_KEYS = ("newest_bar", "trades_coins", "stale_guard", "trades_rows", "trades_budget_s", "confirm_s") + ORDER_KEYS
+INPUT_KEYS = ("newest_bar", "trades_coins", "stale_guard", "trades_rows", "trades_budget_s", "confirm_s",
+              "candles_at_s") + ORDER_KEYS
 LOCAL_SWITCH = "inputs_local"
 LIVE_NAME = "config.live.json"
 
@@ -54,21 +55,27 @@ def _names(coins):
     return ", ".join(str(c) for c in coins)
 
 
-def describe(cfg):
-    """One plain line for a human, built only from the config."""
+def describe(cfg, coins=None):
+    """One plain line for a human, built only from the config and, when given, the book's coins (a trades list that
+    holds BTC and every one of them reads as no list does)."""
     if cfg.get("newest_bar", "candles") == "trades":
         tc = cfg.get("trades_coins")
-        if tc is None:
-            src = "newest minute from trades for BTC and every coin"
+        at = cfg.get("candles_at_s")                       # their candles fetched between steps (engine.candle_pass)
+        pre = "" if at is None else ", their candles fetched between steps from second %s" % at
+        if tc is None or (tc and coins is not None and set(["BTC"] + list(coins)) <= set(tc)):
+            src = "newest minute from trades for BTC and every coin" + pre
         elif not tc:
             src = "newest minute from trades for no coin (empty list); candles for every coin"
         else:
-            src = "newest minute from trades for %s; candles for the other coins" % _names(tc)
+            src = "newest minute from trades for %s%s; candles for the other coins" % (_names(tc), pre)
     else:
         src = "candles for every coin"
     line = "inputs: %s; stale guard %s" % (src, "on" if cfg.get("stale_guard", False) else "off")
-    if cfg.get("trades_rows") is not None:
-        line += "; trades_rows %s" % cfg["trades_rows"]
+    rows = cfg.get("trades_rows") if cfg.get("newest_bar", "candles") == "trades" else None   # read in trades mode only
+    if rows == "candle_after":
+        line += "; the venue's candle replaces each trades row afterwards"
+    elif rows is not None and rows != "keep":                # "keep" is the default behaviour: nothing to add
+        line += "; trades_rows %s" % rows
     if cfg.get("order_path") == "batch":
         line += "; order path batch (%s requests a second, %s placing threads)" % (cfg.get("orders_rate", 10),
                                                                                    cfg.get("place_workers", 1))
