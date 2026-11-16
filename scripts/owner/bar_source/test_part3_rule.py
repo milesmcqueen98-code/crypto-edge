@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 from datetime import datetime, timedelta, timezone
+from fractions import Fraction
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -97,12 +98,14 @@ def run(fourth=None, fifth=None, items="pass", r5=None, rmain=None, rfourth=None
     fourth = fourth or spec(300, w=9, l=3, m=280, r=300)
     fifth = fifth or spec(300, w=9, l=3, m=280, r=300)
     over = kw.pop("over", None)
+    pairs = kw.pop("pairs", GOOD_PAIRS)
     meta, B, S = tables(fourth, fifth, over)
     r5 = r5 if r5 is not None else hrows([10.0] * 100)
     rmain = rmain if rmain is not None else hrows([10.0] * 100)
     rfourth = rfourth if rfourth is not None else hrows([10.0] * 100)
     rows = r5 if r5 and r5[0]["counts"] else r5
-    return p3.evaluate(meta, B, S, rows, [], rmain, rfourth, items, start="2026-11-20 00:30", end="2026-11-23 00:29", **kw)
+    return p3.evaluate(meta, B, S, rows, [], rmain, rfourth, items, start="2026-11-20 00:30", end="2026-11-23 00:29",
+                       pairs=pairs, **kw)
 
 
 def with_counters(rows, **c):
@@ -113,32 +116,82 @@ def hbs(meds, counters=None, offset=1):
     return with_counters(hrows(meds, offset), **(GOOD4 if counters is None else counters)) if counters != {} else hrows(meds, offset)
 
 
+PERIOD_START = datetime(2026, 11, 20, 0, 30, tzinfo=timezone.utc)
+
+
+def pr(diff, hours=1, counts=True, order="ab"):
+    """A pair as ps.load_pairs gives it: starts `hours` hours after the period's start; diff is build minus release 3 (text)."""
+    return dict(file=f"pair_{hours}_{diff}.json", start=PERIOD_START + timedelta(hours=hours), order=order, counts=counts,
+                why=None if counts else "x", release3="10.00", build="10.00", diff=Fraction(diff))
+
+
+def prs(diffs, **kw):
+    return [pr(d, hours=i + 1, **kw) for i, d in enumerate(diffs)]
+
+
+GOOD_PAIRS = prs(["0"] * 8)
+
+
 def test_measure1():
-    res = run(r5=hbs([10.3] * 100))
-    s = res["measures"]["step"]
-    check("m1 (a): median exactly 10.3 passes", s["a"]["met"], s)
-    res = run(r5=hbs([10.31] * 100))
-    check("m1 (a): 10.31 fails", not res["measures"]["step"]["a"]["met"] and not res["measures"]["step"]["met"])
-    res = run(r5=hbs([10.2] * 50 + [10.4] * 50))
-    check("m1 (a): even count, middle two average exactly 10.3, passes", res["measures"]["step"]["a"]["met"])
-    res = run(r5=hbs([10.2] * 49 + [10.4] * 51))
-    check("m1 (a): median 10.4 fails", not res["measures"]["step"]["a"]["met"])
-    res = run(r5=hbs([10.0] * 99))
-    check("m1: 99 fifth-book heartbeats is not met, 100 is", not res["measures"]["step"]["a"]["met"]
-          and not res["measures"]["step"]["a"]["enough"] and run(r5=hbs([10.0] * 100))["measures"]["step"]["a"]["met"])
+    def a_of(pairs, **kw):
+        return run(pairs=pairs, **kw)["measures"]["step"]["a"]
+    a = a_of(prs(["0"] * 8))
+    check("m1 (a): eight pairs with median exactly zero is met", a["met"] and a["pairs"] == 8 and a["median_s"] == 0.0, a)
+    a = a_of(prs(["-0.01"] * 4 + ["0.01"] * 4))
+    check("m1 (a): even count, mean of the two middle values (-0.01 and 0.01) is exactly zero: met", a["met"] and a["median_exact"] == "0", a)
+    a = a_of(prs(["-0.02"] * 3 + ["0", "0.01"] + ["0.01"] * 3))
+    check("m1 (a): even count, middle values 0 and 0.01 give 0.005: not met", not a["met"] and a["median_exact"] == "1/200", a)
+    a = a_of(prs(["0.01"] * 8))
+    check("m1 (a): the smallest positive step (0.01 s) is not met", not a["met"] and a["median_s"] == 0.01, a)
+    a = a_of(prs(["-5.18"] * 8))
+    check("m1 (a): a faster build is met", a["met"] and a["median_s"] == -5.18)
+    a = a_of(prs(["-1"] * 3 + ["0"] * 3 + ["1"] * 2))
+    check("m1 (a): median is -1, 0 or +1 by position, not the mean (middle values 0 and 0 here)", a["met"] and a["median_exact"] == "0")
+    a = a_of(prs(["-9"] * 7))
+    check("m1 (a): 7 pairs against 8: seven is not met however good", not a["met"] and not a["enough"] and a["pairs"] == 7, a)
+    check("m1 (a): eight is enough", a_of(prs(["-9"] * 8))["enough"])
+    a = a_of(prs(["-9"] * 7) + [pr("-9", hours=9, counts=False)])
+    check("m1 (a): a pair that does not count is left out (7 count)", a["pairs"] == 7 and not a["met"], a)
+    outside = [pr("5", hours=-2), pr("5", hours=24 * 3 + 1)]
+    a = a_of(prs(["0"] * 8) + outside)
+    check("m1 (a): pairs starting before or after the period are left out of the median", a["pairs"] == 8 and a["met"] and a["median_s"] == 0.0, a)
+    a = a_of(prs(["-1"] * 7) + [pr("-1", hours=72 - 1)])
+    check("m1 (a): a pair starting inside the last hour of the period counts", a["pairs"] == 8, a)
+    end_in = datetime(2026, 11, 23, 0, 29, 30, tzinfo=timezone.utc)
+    p_end = dict(pr("0"), start=end_in)
+    p_after = dict(pr("0"), start=datetime(2026, 11, 23, 0, 30, 0, tzinfo=timezone.utc))
+    check("m1 (a): the period's end minute is included, the next minute is not",
+          a_of(prs(["0"] * 7) + [p_end])["pairs"] == 8 and a_of(prs(["0"] * 7) + [p_after])["pairs"] == 7)
+    a = a_of([])
+    check("m1 (a): no pairs is not met", not a["met"] and a["pairs"] == 0 and a["median_s"] is None)
+    a = a_of(prs(["-1", "1"] * 4, order="ba"))
+    check("m1 (a): both orders mixed give one median", a["met"] and a["pairs"] == 8)
+    # (a) alone does not decide: (b) must hold too
+    res = run(pairs=prs(["-9"] * 8), r5=hbs([10.1] * 100), rmain=hrows([10.0] * 100))
+    check("m1: (a) met and (b) failed: measure 1 not met", res["measures"]["step"]["a"]["met"] and not res["measures"]["step"]["b"]["met"]
+          and not res["measures"]["step"]["met"])
+    res = run(pairs=prs(["0.01"] * 8), r5=hbs([10.0] * 100), rmain=hrows([10.1] * 100))
+    check("m1: (b) met and (a) failed: measure 1 not met", not res["measures"]["step"]["a"]["met"] and res["measures"]["step"]["b"]["met"]
+          and not res["measures"]["step"]["met"])
+    # the 10.3 s comparison is reported and decides nothing
+    res = run(pairs=prs(["0"] * 8), r5=hbs([12.0] * 100), rmain=hrows([13.0] * 100))
+    rep = res["measures"]["step"]["reported"]
+    check("m1: a fifth-book median of 12 s (above 10.3) is reported and does not fail the measure", res["measures"]["step"]["met"]
+          and rep["fifth_own_median_s"] == 12.0 and rep["at_or_below_bar"] is False and rep["decides"] == "nothing", rep)
+    check("m1: the report names it as reported only", "reported, decides nothing" in p3.to_md(res) and "above 10.3 s" in p3.to_md(res))
+    # (b) as before
     res = run(r5=hbs([10.0] * 100), rmain=hrows([10.0] * 100))
     check("m1 (b): equal medians pass", res["measures"]["step"]["b"]["met"])
     res = run(r5=hbs([10.1] * 100), rmain=hrows([10.0] * 100))
     check("m1 (b): fifth just higher fails", not res["measures"]["step"]["b"]["met"] and not res["measures"]["step"]["met"])
     res = run(r5=hbs([10.0] * 100), rmain=hrows([10.1] * 100))
     check("m1 (b): fifth lower passes", res["measures"]["step"]["b"]["met"])
-    # pairing by timestamp: only 99 shared timestamps
+    res = run(r5=hbs([10.0] * 99))
+    check("m1 (b): 99 fifth-book heartbeats is not met, 100 is", not res["measures"]["step"]["b"]["met"]
+          and not res["measures"]["step"]["b"]["enough"] and run(r5=hbs([10.0] * 100))["measures"]["step"]["b"]["met"])
     res = run(r5=hbs([10.0] * 100), rmain=hrows([10.0] * 99, offset=2))
     b = res["measures"]["step"]["b"]
     check("m1 (b): 99 shared heartbeat times is not met", b["paired_half_hours"] == 99 and not b["met"], b)
-    res = run(r5=hbs([10.0] * 100), rmain=hrows([10.0] * 100, offset=1))
-    check("m1 (b): 100 shared times is enough", res["measures"]["step"]["b"]["paired_half_hours"] == 100)
-    # a half hour in one book only is left out of the pairs: the main book's extra low values do not count
     res = run(r5=hbs([10.0] * 100), rmain=hrows([10.0] * 100 + [1.0] * 300, offset=1))
     b = res["measures"]["step"]["b"]
     check("m1 (b): main heartbeats at times the fifth lacks are left out", b["paired_half_hours"] == 100 and b["main_median_s"] == 10.0, b)
@@ -147,6 +200,17 @@ def test_measure1():
     res = run(r5=hbs([10.0] * 100), rfourth=hrows([9.0] * 100))
     check("m1: the fourth book is for information only", res["measures"]["step"]["fourth_for_information"]["fourth_median_s"] == 9.0
           and res["measures"]["step"]["met"])
+    # pairs read from files, both orders: the difference is always build minus release 3
+    with tempfile.TemporaryDirectory() as tmp:
+        for i, (order, r3, bd) in enumerate((("ab", "14.88", "9.70"), ("ba", "11.37", "11.37"), ("ab", "10.00", "10.01"), ("ba", "10.01", "10.00"))):
+            runs = [dict(inputs="release3", data_end_median_text=r3), dict(inputs="build", data_end_median_text=bd)]
+            if order == "ba":
+                runs.reverse()
+            json.dump(dict(utc_start=f"2026-11-20T0{i + 1}:05:00Z", order=order, counts=True, runs=runs),
+                      open(os.path.join(tmp, f"pair_{i}.json"), "w"))
+        got = p3.ps.load_pairs(tmp)
+        check("pair files: differences are build minus release 3 for both orders, exact",
+              [str(p["diff"]) for p in got] == ["-259/50", "0", "1/100", "-1/100"] and [p["order"] for p in got] == ["ab", "ba", "ab", "ba"], got)
 
 
 def test_measure2():
@@ -274,7 +338,7 @@ def test_verdict_and_period():
     # a fifth book that is at the minimum is fine with a lower --min-heartbeats
     meta, B, S = tables(spec(), spec())
     res = p3.evaluate(meta, B, S, hbs([10.0] * 10), [], hrows([10.0] * 10), hrows([10.0] * 10), "pass", min_heartbeats=10,
-                      start="2026-11-20 00:30", end="2026-11-23 00:29")
+                      start="2026-11-20 00:30", end="2026-11-23 00:29", pairs=GOOD_PAIRS)
     check("min heartbeats can be set", res["measures"]["step"]["met"])
 
 
@@ -350,7 +414,16 @@ def test_cli_and_shared_numbers():
         B.to_csv(os.path.join(rec, "item7_bids.csv"), index=False)
         S.to_csv(os.path.join(rec, "side_by_side.csv"), index=False)
         out = os.path.join(tmp, "out")
-        cmd = [sys.executable, os.path.join(HERE, "part3_rule.py"), "--dir", rec, "--start", "2026-11-20T00:30", "--end", "2026-11-23T00:29",
+        pdir = os.path.join(tmp, "reports", "owner", "step_pairs")
+        os.makedirs(pdir)
+        for i in range(9):                                      # eight that count (both orders), one that does not
+            r3, bd = "10.00", ("9.90" if i % 2 else "10.10")    # build minus release 3: -0.10 and +0.10, four each
+            runs = [dict(inputs="release3", data_end_median_text=r3), dict(inputs="build", data_end_median_text=bd)]
+            if i % 3 == 0:
+                runs.reverse()
+            json.dump(dict(utc_start=f"2026-11-2{i // 4}T{(i % 4) * 6:02d}:35:00Z", order="ab" if i % 3 else "ba", counts=i != 8, why_not=None if i != 8 else "x", runs=runs),
+                      open(os.path.join(pdir, f"pair_{i}.json"), "w"))
+        cmd = [sys.executable, os.path.join(HERE, "part3_rule.py"), "--dir", rec, "--pairs", pdir, "--start", "2026-11-20T00:30", "--end", "2026-11-23T00:29",
                "--fifth", d5, "--fourth", d4, "--main", dm, "--items-1-5", "pass", "--out", out]
         r = subprocess.run(cmd, capture_output=True, text=True)
         check("cli runs", r.returncode == 0, r.stderr[-400:])
@@ -358,7 +431,8 @@ def test_cli_and_shared_numbers():
         md = open(os.path.join(out, "part3_rule.md")).read()
         check("cli: prints the markdown it writes", r.stdout.strip() == md.strip())
         check("cli: 120 heartbeats counted, measure 1 met, two starts left out as the first step (1 each)",
-              js["measures"]["step"]["a"]["heartbeats"] == 120 and js["measures"]["step"]["met"]
+              js["measures"]["step"]["b"]["fifth_heartbeats"] == 120 and js["measures"]["step"]["a"]["pairs"] == 8
+              and js["measures"]["step"]["a"]["median_s"] == 0.0 and js["measures"]["step"]["met"]
               and js["measures"]["candle_requests"]["left_out_first_steps"] == 2, js["measures"]["step"])
         check("cli: verdict pass", js["verdict"] == "pass" and "**Part 3: pass**" in md, js["holds"])
         # the same numbers as the status report on the same log
@@ -375,10 +449,13 @@ def test_cli_and_shared_numbers():
               and a["coin_minutes"] == b["coin_minutes"] and a["left_out"] == b["left_out"] and b["beats"] == 120, (a, b))
         text = ps.build_report(tmp, T0 + timedelta(days=4))
         sec = text.split("## Rule progress for the fifth book")[1].split("\n## ")[0]
+        arow = [l for l in sec.splitlines() if l.startswith("| (a) Pairs that count")][0]
+        check("shared: the status report and the rule read the same pairs and the same median",
+              "8 pairs (8 needed); median 0.00 s" in arow and arow.endswith("| meets |") and js["measures"]["step"]["a"]["pairs"] == 8, arow)
         check("shared: the status report prints the rule's in-step figure",
               f"{b['in_step']:,.0f} of {float(b['coin_minutes']):,.0f}" in sec and f"{b['left_out']:,.0f} left out" in sec, sec[-700:])
         m1 = ps.measure1(dq["rep"], ps.data_quality(ps.load_book(tmp, "paper_spot")["events"], rt)["rep"])
-        check("shared: measure 1 medians agree", float(m1["median"]) == js["measures"]["step"]["a"]["median_s"])
+        check("shared: measure 1 medians agree", float(m1["median"]) == js["measures"]["step"]["reported"]["fifth_own_median_s"])
         # the log is cut at the end: heartbeats after the period do not count
         r = subprocess.run(cmd[:-2] + ["--end", "2026-11-20T09:59", "--out", out], capture_output=True, text=True)
         check("cli: a period that differs from the folder's is refused", r.returncode != 0 and "differs" in r.stderr)

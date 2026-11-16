@@ -12,6 +12,7 @@ Inputs
             --start and --end and its books are the ones named by --fourth and --fifth.
   --start, --end  the period (UTC minutes, both included).
   --fifth, --fourth, --main  the three book folders (events.jsonl); --main is the main book (paper_spot).
+  --pairs   the folder of pair files (default reports/owner/step_pairs).
   --items-1-5 pass|fail  items 1 to 5 of the fifth book, read from the status report on a copy of its log cut at the
             period's end (as in Part 2); the script does not compute them.
 
@@ -28,12 +29,18 @@ Where each count comes from (all for the 17 coins, on the common minutes; "fifth
       minute: side_by_side.csv, measure m3_bids, statistics research_new_bids_ex_blocked and research_matched, group all.
   A mismatch between a count from item7_bids.csv and its side_by_side.csv check is an error and no verdict.
 
-Measure 1, the step (heartbeats of the logs whose timestamp is inside the period; the data step is the first number of
-  step_s.data):
-  (a) the median of the fifth book's values is at or below 10.3 s, with at least 100 such heartbeats;
-  (b) over the heartbeat timestamps at which both the fifth and the main book have one, the median of the fifth book's
-      values is no higher than the main book's, with at least 100 such timestamps.
-  Both hold or the measure is not met. The fourth book's paired median is printed for information only.
+Measure 1, the step (deviation log of Nov 16 2026, 12:04 ET):
+  (a) same-machine pairs: the files pair_*.json of --pairs (written by scripts/owner/step_pairs/run_pair.py), those with
+      "counts" true and a utc_start inside [start, end] (end minute included). The measure is the median of the build's
+      median data-step end minus release 3's, computed exactly from the medians as printed (data_end_median_text of the
+      two runs) with Fractions; it must be at or below zero, with at least 8 such pairs (fewer: not met). A pair that
+      does not count, or starts outside the period, is left out. The even-count median is the mean of the two middle
+      values.
+  (b) over the heartbeat timestamps inside the period at which both the fifth and the main book have a heartbeat (the
+      data step is the first number of step_s.data), the median of the fifth book's values is no higher than the main
+      book's, with at least 100 such timestamps and at least 100 fifth-book heartbeats (fewer: not met).
+  Both must hold. Reported, deciding nothing: the fifth book's own median of heartbeat data steps against 10.3 s, and
+  the fifth book's median against the fourth book's over the paired half hours.
 Measure 2, decisions (exact): wrong side w5/ns5 <= w4/ns4 + 0.02 and w5/ns5 <= 0.05; matched m5/r5 >= m4/r4 - 0.03;
   level l5/nl5 < 0.05 (strictly). A zero denominator means that clause is not met.
 Measure 3: the --items-1-5 argument.
@@ -47,7 +54,8 @@ Verdict: "Part 3: pass" only if all four measures hold, else "Part 3: fail". The
 
 Command line:
   python scripts/owner/bar_source/part3_rule.py --dir DIR --start 2026-..T..:.. --end 2026-..T..:.. \\
-      --fifth paper_spot_r5 --fourth paper_spot_t18 --main paper_spot --items-1-5 pass|fail [--out DIR] [--read-as-is]
+      --fifth paper_spot_r5 --fourth paper_spot_t18 --main paper_spot --items-1-5 pass|fail [--pairs DIR] [--out DIR] \
+      [--read-as-is]
   reads DIR/two_books.json, DIR/item7_bids.csv, DIR/side_by_side.csv and the three events.jsonl; writes part3_rule.json and
   part3_rule.md into --out (default DIR) and prints the markdown.
 """
@@ -68,6 +76,8 @@ import paper_status as ps       # noqa: E402
 
 MIN_BIDS = 300
 MIN_HEARTBEATS = 100
+MIN_PAIRS = ps.MIN_PAIRS
+PAIRS_DEFAULT = ps.PAIRS_DIR
 LIMIT_BP = 5.0
 FOURTH, FIFTH = "main", "tb"        # the labels in the folder: main = fourth book, tb = fifth book
 GROUP = "all"
@@ -157,17 +167,25 @@ def clause(met, **kw):
     return dict(met=bool(met), **kw)
 
 
-def measure1(rows5, rows_main, rows_fourth, min_hb=MIN_HEARTBEATS):
+def when(x):
+    """A UTC datetime from a period bound (a string or Timestamp)."""
+    return pd.Timestamp(x).to_pydatetime().replace(tzinfo=ps.timezone.utc)
+
+
+def measure1(rows5, rows_main, rows_fourth, pairs, start, end, min_hb=MIN_HEARTBEATS, min_pairs=MIN_PAIRS):
+    pm = ps.pairs_measure(pairs or [], when(start), when(end), None, min_pairs)
     mm = ps.measure1(rows5, rows_main)
     mf = ps.measure1(rows5, rows_fourth)
-    enough_a = mm["n"] >= min_hb
-    enough_b = mm["pairs"] >= min_hb
-    a = clause(enough_a and mm["median"] <= STEP_BAR, heartbeats=mm["n"], needed=min_hb, median_s=_f(mm["median"]),
-               bar_s=float(STEP_BAR), enough=enough_a)
-    b = clause(enough_b and mm["paired_fifth"] <= mm["paired_other"], paired_half_hours=mm["pairs"], needed=min_hb,
-               fifth_median_s=_f(mm["paired_fifth"]), main_median_s=_f(mm["paired_other"]), enough=enough_b)
+    enough_b = mm["pairs"] >= min_hb and mm["n"] >= min_hb
+    a = clause(pm["met"], pairs=pm["n"], needed=min_pairs, enough=pm["enough"], median_s=_f(pm["median"]),
+               median_exact=None if pm["median"] is None else str(pm["median"]),
+               pair_files=[p["file"] for p in pm["used"]], rule="median of build minus release 3 at or below 0")
+    b = clause(enough_b and mm["paired_fifth"] <= mm["paired_other"], paired_half_hours=mm["pairs"], fifth_heartbeats=mm["n"],
+               needed=min_hb, fifth_median_s=_f(mm["paired_fifth"]), main_median_s=_f(mm["paired_other"]), enough=enough_b)
+    reported = dict(fifth_own_median_s=_f(mm["median"]), fifth_heartbeats=mm["n"], bar_s=float(STEP_BAR),
+                    at_or_below_bar=mm["median"] is not None and mm["median"] <= STEP_BAR, decides="nothing")
     info = dict(paired_half_hours=mf["pairs"], fifth_median_s=_f(mf["paired_fifth"]), fourth_median_s=_f(mf["paired_other"]))
-    return dict(a=a, b=b, fourth_for_information=info, met=a["met"] and b["met"])
+    return dict(a=a, b=b, reported=reported, fourth_for_information=info, met=a["met"] and b["met"])
 
 
 def _f(x):
@@ -211,7 +229,7 @@ def measure4(rows5, starts5):
 
 def evaluate(meta, B, S, rows5, starts5, rows_main, rows_fourth, items, fourth_folder="paper_spot_t18",
              fifth_folder="paper_spot_r5", start=None, end=None, read_as_is=False, min_bids=MIN_BIDS,
-             min_heartbeats=MIN_HEARTBEATS):
+             min_heartbeats=MIN_HEARTBEATS, pairs=None, min_pairs=MIN_PAIRS):
     """meta: two_books.json; B: item7_bids.csv; S: side_by_side.csv (data frames); rows5, rows_main, rows_fourth: data-quality
     rows of the heartbeats in the period (log_rows); starts5: the fifth book's first stepped minutes."""
     start = start if start is not None else meta["period"]["start"]
@@ -221,7 +239,7 @@ def evaluate(meta, B, S, rows5, starts5, rows_main, rows_fourth, items, fourth_f
     coins = guard(meta, fourth_folder, fifth_folder, start, end)
     c4, c5 = book_counts(B, S, FOURTH, coins), book_counts(B, S, FIFTH, coins)
     period_ok = c4["n"] >= min_bids and c5["n"] >= min_bids
-    m1 = measure1(rows5, rows_main, rows_fourth, min_heartbeats)
+    m1 = measure1(rows5, rows_main, rows_fourth, pairs, start, end, min_heartbeats, min_pairs)
     m2 = measure2(c5, c4)
     m3 = dict(value=items, met=items == "pass")
     m4 = measure4(rows5, starts5)
@@ -268,11 +286,14 @@ def to_md(res):
     s = M["step"]
     L += ["", "## Measure 1, the step", "",
           "| clause | value | rule | result |", "|---|---|---|---|",
-          f"| (a) fifth book's median of data steps | {sx(s['a']['median_s'])} over {s['a']['heartbeats']} heartbeats | "
-          f"at most {s['a']['bar_s']:g} s, at least {s['a']['needed']} heartbeats | {mk(s['a']['met'])} |",
+          f"| (a) same-machine pairs, build minus release 3 | median {sx(s['a']['median_s'])} over {s['a']['pairs']} pairs | "
+          f"at or below zero, at least {s['a']['needed']} pairs | {mk(s['a']['met'])} |",
           f"| (b) fifth against main, same heartbeat times | fifth {sx(s['b']['fifth_median_s'])}, main "
-          f"{sx(s['b']['main_median_s'])}, {s['b']['paired_half_hours']} half hours | fifth no higher, at least "
-          f"{s['b']['needed']} half hours | {mk(s['b']['met'])} |",
+          f"{sx(s['b']['main_median_s'])}, {s['b']['paired_half_hours']} half hours, {s['b']['fifth_heartbeats']} fifth-book "
+          f"heartbeats | fifth no higher, at least {s['b']['needed']} half hours and heartbeats | {mk(s['b']['met'])} |",
+          f"| reported, decides nothing: the fifth book's own median | {sx(s['reported']['fifth_own_median_s'])} over "
+          f"{s['reported']['fifth_heartbeats']} heartbeats, against {s['reported']['bar_s']:g} s | - | "
+          f"{'at or below' if s['reported']['at_or_below_bar'] else 'above'} {s['reported']['bar_s']:g} s |",
           f"| for information: fifth against fourth | fifth {sx(s['fourth_for_information']['fifth_median_s'])}, fourth "
           f"{sx(s['fourth_for_information']['fourth_median_s'])}, {s['fourth_for_information']['paired_half_hours']} "
           "half hours | not part of the rule | - |", "", f"Measure 1: {mk(s['met'])}.", ""]
@@ -305,8 +326,9 @@ def to_md(res):
         L += ["**Part 3: no verdict (period not complete)**", ""]
     else:
         L += [f"**Part 3: {res['verdict']}**", ""]
-    L += ["Rule in plain words: all four measures must hold. 1: the fifth book's median data step at most 10.3 s and no "
-          "higher than the main book's over the same half hours. 2: against the research, wrong-side share at most the "
+    L += ["Rule in plain words: all four measures must hold. 1: the median over at least 8 same-machine pairs of the build's "
+          "data step minus release 3's at or below zero, and the fifth book's median no higher than the main book's over "
+          "the same half hours. 2: against the research, wrong-side share at most the "
           "fourth book's plus 2.0 points and at most 5%, matched share at least the fourth's minus 3.0 points, under 5% of "
           "bids more than 5 bp from the level. 3: items 1 to 5. 4: failed candle requests at most 1% of requests, "
           "requests inside a step at most 2% of coin-minutes. Shares are compared exactly on the counts. A PASS makes "
@@ -329,6 +351,7 @@ def main(argv=None):
     ap.add_argument("--fourth", required=True)
     ap.add_argument("--main", required=True)
     ap.add_argument("--items-1-5", dest="items", choices=["pass", "fail"], required=True)
+    ap.add_argument("--pairs", default=PAIRS_DEFAULT)
     ap.add_argument("--out")
     ap.add_argument("--read-as-is", action="store_true")
     ap.add_argument("--min-bids", type=int, default=MIN_BIDS)
@@ -342,7 +365,7 @@ def main(argv=None):
     rows_fourth, _ = log_rows(a.fourth, a.start, a.end)
     res = evaluate(meta, B, S, rows5, starts5, rows_main, rows_fourth, a.items,
                    os.path.basename(os.path.normpath(a.fourth)), os.path.basename(os.path.normpath(a.fifth)),
-                   a.start, a.end, a.read_as_is, a.min_bids, a.min_heartbeats)
+                   a.start, a.end, a.read_as_is, a.min_bids, a.min_heartbeats, ps.load_pairs(a.pairs))
     write(a.out or a.dir, res)
     print(to_md(res))
 
