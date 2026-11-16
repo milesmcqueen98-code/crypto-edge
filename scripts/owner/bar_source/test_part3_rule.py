@@ -160,8 +160,12 @@ def test_measure1():
     end_in = datetime(2026, 11, 23, 0, 29, 30, tzinfo=timezone.utc)
     p_end = dict(pr("0"), start=end_in)
     p_after = dict(pr("0"), start=datetime(2026, 11, 23, 0, 30, 0, tzinfo=timezone.utc))
-    check("m1 (a): the period's end minute is included, the next minute is not",
-          a_of(prs(["0"] * 7) + [p_end])["pairs"] == 8 and a_of(prs(["0"] * 7) + [p_after])["pairs"] == 7)
+    # edited: with the pairs-after-the-period rule a pair starting a minute after the end is not in the period but is added
+    # when fewer than 8 count in it, so the check now reads in_period and added instead of the count alone
+    a_end, a_next = a_of(prs(["0"] * 7) + [p_end]), a_of(prs(["0"] * 7) + [p_after])
+    check("m1 (a): the period's end minute is included, the next minute is not (it is added, not in the period)",
+          a_end["pairs"] == 8 and a_end["in_period"] == 8 and a_end["added"] == 0
+          and a_next["in_period"] == 7 and a_next["added"] == 1 and a_next["pairs"] == 8)
     a = a_of([])
     check("m1 (a): no pairs is not met", not a["met"] and a["pairs"] == 0 and a["median_s"] is None)
     a = a_of(prs(["-1", "1"] * 4, order="ba"))
@@ -211,6 +215,68 @@ def test_measure1():
         got = p3.ps.load_pairs(tmp)
         check("pair files: differences are build minus release 3 for both orders, exact",
               [str(p["diff"]) for p in got] == ["-259/50", "0", "1/100", "-1/100"] and [p["order"] for p in got] == ["ab", "ba", "ab", "ba"], got)
+
+
+def test_pairs_after_the_period():
+    def later(diffs, first=73):
+        return [pr(d, hours=first + i) for i, d in enumerate(diffs)]       # the period ends 72 hours less a minute after PERIOD_START
+    r5 = hbs([10.0] * 100)
+    # not complete: 5 in the period and 2 after
+    pairs = prs(["-1"] * 5) + later(["-1"] * 2)
+    res = run(r5=r5, pairs=pairs)
+    md = p3.to_md(res)
+    a = res["measures"]["step"]["a"]
+    line = "PART (a) NOT COMPLETE: 7 of 8 pairs count; the pair jobs go on and the read waits"
+    check("part (a) not complete: 7 of 8 count: the line is printed and there is no verdict",
+          res["verdict"] is None and line in md.splitlines() and "Part 3: pass" not in md and "Part 3: fail" not in md
+          and "no verdict (part (a) not complete)" in md and not a["met"] and not a["complete"] and a["pairs"] == 7, md[:900])
+    check("part (a) not complete: the period condition itself is met and the other measures are read on the period",
+          res["condition"]["met"] and not res["condition"]["part_a_complete"] and res["measures"]["step"]["b"]["met"]
+          and res["measures"]["decisions"]["met"] and "PERIOD NOT COMPLETE" not in md)
+    res = run(r5=r5, pairs=pairs, read_as_is=True)
+    md = p3.to_md(res)
+    check("part (a) not complete with --read-as-is: a verdict, part (a) not met", res["verdict"] == "fail" and not res["holds"]["1"]
+          and not res["measures"]["step"]["a"]["met"] and "Part 3: fail" in md and "Read as is: part (a) is not met." in md, md[:900])
+    # both incomplete: both reasons named
+    res = run(r5=r5, pairs=pairs, fifth=spec(299))
+    check("period and part (a) both not complete: no verdict, both stated", res["verdict"] is None
+          and "no verdict (period not complete and part (a) not complete)" in p3.to_md(res))
+    # no pairs at all
+    res = run(r5=r5, pairs=[])
+    check("no pairs: part (a) not complete, no verdict", res["verdict"] is None and "PART (a) NOT COMPLETE: 0 of 8 pairs count" in p3.to_md(res))
+    # complete in the period: nothing added, the line is not printed
+    res = run(r5=r5, pairs=prs(["0"] * 8) + later(["9"] * 3))
+    a, md = res["measures"]["step"]["a"], p3.to_md(res)
+    check("8 in the period: nothing added, later pairs unused, no part (a) line",
+          res["verdict"] == "pass" and a["pairs"] == 8 and a["in_period"] == 8 and a["added"] == 0 and a["last_used_start"] is None
+          and "NOT COMPLETE" not in md and "were added" not in md and len(a["pair_files"]) == 8)
+    # a pass only through an added pair
+    pairs = prs(["-1"] * 7) + later(["-1", "9", "9"])
+    res = run(r5=r5, pairs=pairs)
+    a, md = res["measures"]["step"]["a"], p3.to_md(res)
+    last = pairs[7]["start"].strftime("%Y-%m-%dT%H:%M:%SZ")
+    check("pass only through an added pair: 7 in the period and one added give a pass",
+          res["verdict"] == "pass" and a["met"] and a["pairs"] == 8 and a["in_period"] == 7 and a["added"] == 1 and a["complete"]
+          and a["last_used_start"] == last and a["pair_files"] == [p["file"] for p in pairs[:8]], a)
+    check("pass only through an added pair: the markdown says how many started in the period, how many were added, the last start",
+          f"7 started in the period and 1 were added from after it" in md and f"started {last} UTC" in md, md[:1200])
+    check("the same case read as is without the later pairs is not met", run(r5=r5, pairs=pairs[:7], read_as_is=True)["verdict"] == "fail")
+    check("the json keeps in_period, added, last_used_start and the files used",
+          json.loads(json.dumps(res))["measures"]["step"]["a"]["added"] == 1)
+    # a fail only through an added pair: the added pair moves the median above zero
+    base = ["-1", "0", "0", "0", "1", "1", "1"]
+    pairs = prs(base) + later(["1", "-9", "-9"])
+    res = run(r5=r5, pairs=pairs)
+    a = res["measures"]["step"]["a"]
+    check("fail only through an added pair: the median of seven is 0, the added pair makes it 1/2 above zero",
+          res["verdict"] == "fail" and a["pairs"] == 8 and a["added"] == 1 and a["median_exact"] == "1/2" and not a["met"] and a["complete"]
+          and "NOT COMPLETE" not in p3.to_md(res) and run(r5=r5, pairs=prs(base) + later(["-1"]))["measures"]["step"]["a"]["median_exact"] == "0", a)
+    # part (b) and measures 2 to 4 are read on the period: later pairs change nothing else
+    res2 = run(r5=r5, pairs=prs(["-1"] * 7) + later(["-1"]))
+    res1 = run(r5=r5, pairs=prs(["-1"] * 8))
+    check("later pairs change only part (a): (b), measures 2 to 4 and the counts are the same",
+          all(res1["measures"][k] == res2["measures"][k] for k in ("decisions", "items_1_5", "candle_requests"))
+          and res1["measures"]["step"]["b"] == res2["measures"]["step"]["b"] and res1["counts"] == res2["counts"])
 
 
 def test_measure2():
@@ -465,11 +531,31 @@ def test_cli_and_shared_numbers():
               and rows[-1]["t"] == T0 + timedelta(hours=9, minutes=30), [r["t"] for r in rows][:2])
         rows, _ = p3.log_rows(d5, "2026-11-20T05:00", "2026-11-20T10:00")
         check("log_rows: the end minute is included", rows[-1]["t"] == T0 + timedelta(hours=10), rows[-1]["t"])
+        # pairs after the period, through the command line: 7 count in the period, then a later one is added
+        os.remove(os.path.join(pdir, "pair_0.json"))
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        js = json.load(open(os.path.join(out, "part3_rule.json")))
+        check("cli: 7 pairs count: the line is printed, no verdict, no verdict line in the file",
+              r.returncode == 0 and "PART (a) NOT COMPLETE: 7 of 8 pairs count; the pair jobs go on and the read waits" in r.stdout.splitlines()
+              and js["verdict"] is None and "Part 3: pass" not in r.stdout, r.stdout[:500])
+        r = subprocess.run(cmd + ["--read-as-is"], capture_output=True, text=True)
+        js = json.load(open(os.path.join(out, "part3_rule.json")))
+        check("cli: --read-as-is gives a verdict with part (a) not met", js["verdict"] == "fail" and not js["measures"]["step"]["a"]["met"], r.stdout[:300])
+        json.dump(dict(utc_start="2026-11-23T03:05:00Z", order="ba", counts=True,
+                       runs=[dict(inputs="build", data_end_median_text="9.90"), dict(inputs="release3", data_end_median_text="10.00")]),
+                  open(os.path.join(pdir, "pair_late.json"), "w"))
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        js = json.load(open(os.path.join(out, "part3_rule.json")))
+        a = js["measures"]["step"]["a"]
+        check("cli: a pair after the period is added: pass, with the counts and the last start in the markdown and the json",
+              js["verdict"] == "pass" and a["in_period"] == 7 and a["added"] == 1 and a["last_used_start"] == "2026-11-23T03:05:00Z"
+              and "pair_late.json" in a["pair_files"] and "7 started in the period and 1 were added from after it" in r.stdout
+              and "started 2026-11-23T03:05:00Z UTC" in r.stdout, r.stdout[:900])
         check("log_rows: a missing folder is an error", raises(lambda: p3.log_rows(os.path.join(tmp, "nope"), "2026-11-20T05:00", "2026-11-20T10:00"), "no events.jsonl"))
 
 
 def main():
-    for t in (test_measure1, test_measure2, test_measure4, test_verdict_and_period, test_labels_and_guards, test_cli_and_shared_numbers):
+    for t in (test_measure1, test_pairs_after_the_period, test_measure2, test_measure4, test_verdict_and_period, test_labels_and_guards, test_cli_and_shared_numbers):
         t()
     if FAILS:
         print(f"{len(FAILS)} failed: {FAILS}")

@@ -31,11 +31,16 @@ Where each count comes from (all for the 17 coins, on the common minutes; "fifth
 
 Measure 1, the step (deviation log of Nov 16 2026, 12:04 ET):
   (a) same-machine pairs: the files pair_*.json of --pairs (written by scripts/owner/step_pairs/run_pair.py), those with
-      "counts" true and a utc_start inside [start, end] (end minute included). The measure is the median of the build's
-      median data-step end minus release 3's, computed exactly from the medians as printed (data_end_median_text of the
-      two runs) with Fractions; it must be at or below zero, with at least 8 such pairs (fewer: not met). A pair that
-      does not count, or starts outside the period, is left out. The even-count median is the mean of the two middle
-      values.
+      "counts" true. The pairs that count and start inside [start, end] (end minute included) are taken first. If they are
+      fewer than 8, the pair jobs go on at the same times after the period, and the pairs that count and start after the
+      period's end are added, oldest first, one at a time, until the count reaches 8; pairs after that one are not used. With
+      8 or more in the period nothing is added. This can delay the read; it cannot choose pairs. The measure is the median of
+      the build's median data-step end minus release 3's, computed exactly from the medians as printed (data_end_median_text
+      of the two runs) with Fractions; it must be at or below zero, with at least 8 such pairs. A pair that does not count
+      is left out. The even-count median is the mean of the two middle values. If fewer than 8 count even with the pairs
+      after the period, the script prints "PART (a) NOT COMPLETE" and gives no verdict (part (a) is not met under
+      --read-as-is). When pairs were added, the output says how many started in the period, how many were added and the
+      start of the last one used. Part (b) and measures 2 to 4 are read on the period itself.
   (b) over the heartbeat timestamps inside the period at which both the fifth and the main book have a heartbeat (the
       data step is the first number of step_s.data), the median of the fifth book's values is no higher than the main
       book's, with at least 100 such timestamps and at least 100 fifth-book heartbeats (fewer: not met).
@@ -50,7 +55,8 @@ Measure 4, from the fifth book's heartbeats in the period, computed by scripts/o
   each start) over 18 times the minutes run, at most 2%. Counters absent from every heartbeat means not met.
 Verdict: "Part 3: pass" only if all four measures hold, else "Part 3: fail". The period condition: each of the fifth and
   fourth books has at least 300 new bids (n above). Under 300 in either: "PERIOD NOT COMPLETE" and no verdict, unless
-  --read-as-is is passed (the plan allows the read after the third extension), which is then stated in the output.
+  --read-as-is is passed (the plan allows the read after the third extension), which is then stated in the output. Part (a)
+  not complete (above) likewise gives no verdict, unless --read-as-is is passed, which then counts part (a) as not met.
 
 Command line:
   python scripts/owner/bar_source/part3_rule.py --dir DIR --start 2026-..T..:.. --end 2026-..T..:.. \\
@@ -173,13 +179,15 @@ def when(x):
 
 
 def measure1(rows5, rows_main, rows_fourth, pairs, start, end, min_hb=MIN_HEARTBEATS, min_pairs=MIN_PAIRS):
-    pm = ps.pairs_measure(pairs or [], when(start), when(end), None, min_pairs)
+    pm = ps.pairs_measure(pairs or [], when(start), when(end), None, min_pairs, extend=True)
     mm = ps.measure1(rows5, rows_main)
     mf = ps.measure1(rows5, rows_fourth)
     enough_b = mm["pairs"] >= min_hb and mm["n"] >= min_hb
     a = clause(pm["met"], pairs=pm["n"], needed=min_pairs, enough=pm["enough"], median_s=_f(pm["median"]),
                median_exact=None if pm["median"] is None else str(pm["median"]),
-               pair_files=[p["file"] for p in pm["used"]], rule="median of build minus release 3 at or below 0")
+               pair_files=[p["file"] for p in pm["used"]], rule="median of build minus release 3 at or below 0",
+               complete=pm["complete"], in_period=pm["in_period"], added=pm["added"],
+               last_used_start=None if pm["last_start"] is None else pm["last_start"].strftime("%Y-%m-%dT%H:%M:%SZ"))
     b = clause(enough_b and mm["paired_fifth"] <= mm["paired_other"], paired_half_hours=mm["pairs"], fifth_heartbeats=mm["n"],
                needed=min_hb, fifth_median_s=_f(mm["paired_fifth"]), main_median_s=_f(mm["paired_other"]), enough=enough_b)
     reported = dict(fifth_own_median_s=_f(mm["median"]), fifth_heartbeats=mm["n"], bar_s=float(STEP_BAR),
@@ -244,7 +252,8 @@ def evaluate(meta, B, S, rows5, starts5, rows_main, rows_fourth, items, fourth_f
     m3 = dict(value=items, met=items == "pass")
     m4 = measure4(rows5, starts5)
     holds = [m1["met"], m2["met"], m3["met"], m4["met"]]
-    if not period_ok and not read_as_is:
+    part_a_complete = m1["a"]["complete"]
+    if (not period_ok or not part_a_complete) and not read_as_is:
         verdict = None
     else:
         verdict = "pass" if all(holds) else "fail"
@@ -252,7 +261,7 @@ def evaluate(meta, B, S, rows5, starts5, rows_main, rows_fourth, items, fourth_f
                 label_mapping={"main": f"fourth book ({fourth_folder})", "tb": f"fifth book ({fifth_folder})"},
                 minutes=meta.get("minutes"), coins=coins,
                 condition=dict(new_bids_fifth=c5["n"], new_bids_fourth=c4["n"], needed=min_bids, met=period_ok,
-                               read_as_is=bool(read_as_is)),
+                               read_as_is=bool(read_as_is), part_a_complete=part_a_complete),
                 counts=dict(fifth=c5, fourth=c4), measures=dict(step=m1, decisions=m2, items_1_5=m3, candle_requests=m4),
                 holds=dict(zip(("1", "2", "3", "4"), holds)), verdict=verdict)
 
@@ -284,6 +293,15 @@ def to_md(res):
         L += ["", "**PERIOD NOT COMPLETE**" + (" (read as is, as the plan allows after the third extension)"
                                                 if c["read_as_is"] else "; no verdict")]
     s = M["step"]
+    if not c.get("part_a_complete", True):
+        L += ["", f"PART (a) NOT COMPLETE: {s['a']['pairs']} of {s['a']['needed']} pairs count; the pair jobs go on and the "
+                  "read waits"]
+        if c["read_as_is"]:
+            L += ["", "Read as is: part (a) is not met."]
+    if s["a"].get("added"):
+        L += ["", f"Part (a) pairs: {s['a']['in_period']} started in the period and {s['a']['added']} were added from after "
+                  f"it (fewer than {s['a']['needed']} counted in the period); the last pair used started "
+                  f"{s['a']['last_used_start']} UTC. Part (b) and measures 2 to 4 are read on the period itself."]
     L += ["", "## Measure 1, the step", "",
           "| clause | value | rule | result |", "|---|---|---|---|",
           f"| (a) same-machine pairs, build minus release 3 | median {sx(s['a']['median_s'])} over {s['a']['pairs']} pairs | "
@@ -323,11 +341,13 @@ def to_md(res):
     L += [f"Measure 4: {mk(q['met'])}.", ""]
     L += ["| measure | holds |", "|---|---|"] + [f"| {k} | {'yes' if v else 'no'} |" for k, v in res["holds"].items()] + [""]
     if res["verdict"] is None:
-        L += ["**Part 3: no verdict (period not complete)**", ""]
+        why = " and ".join(([] if c["met"] else ["period not complete"]) + ([] if c.get("part_a_complete", True) else ["part (a) not complete"]))
+        L += [f"**Part 3: no verdict ({why})**", ""]
     else:
         L += [f"**Part 3: {res['verdict']}**", ""]
     L += ["Rule in plain words: all four measures must hold. 1: the median over at least 8 same-machine pairs of the build's "
-          "data step minus release 3's at or below zero, and the fifth book's median no higher than the main book's over "
+          "data step minus release 3's at or below zero (the pairs that start in the period; if fewer than 8 count there, the "
+          "later pairs are added oldest first up to the one that makes 8, and the verdict waits for them), and the fifth book's median no higher than the main book's over "
           "the same half hours. 2: against the research, wrong-side share at most the "
           "fourth book's plus 2.0 points and at most 5%, matched share at least the fourth's minus 3.0 points, under 5% of "
           "bids more than 5 bp from the level. 3: items 1 to 5. 4: failed candle requests at most 1% of requests, "

@@ -46,7 +46,8 @@ against 10.3 s is still printed, marked as reported only.
   `"counts": false` and why.
 - How the read uses them: `part3_rule.py` takes the pairs that count and start inside the period (`--pairs`, default
   `reports/owner/step_pairs`), computes the median of the build's median data step minus release 3's exactly from the
-  printed medians, and needs at least 8 pairs and a median at or below zero. The status report lists every pair so far
+  printed medians, and needs at least 8 pairs and a median at or below zero (pairs from after the period are
+  added only if fewer than 8 count inside it; see step 5 of the read). The status report lists every pair so far
   and the same count and median.
 - To start a pair by hand: run the workflow `step-pairs` (Run workflow on `main`); the input `order` (ab or ba) is
   optional and empty means automatic from the hour; `minutes` stays 30.
@@ -86,6 +87,11 @@ both included (for example START 2026-11-19T01:30 and END 2026-11-22T01:29).
    `python scripts/owner/bar_source/part3_rule.py --dir reports/owner/reconcile_tb/part3 --start START --end END --fifth paper_spot_r5 --fourth paper_spot_t18 --main paper_spot --items-1-5 pass`
    (or `fail`). It writes `part3_rule.md` and `part3_rule.json` into the folder and prints the markdown. If it prints
    "PERIOD NOT COMPLETE" it gives no verdict. After the third extension, add `--read-as-is`.
+   Part (a) may need pairs from after the period: if fewer than 8 pairs count among those that started in the period,
+   the script adds the pairs that count after END, oldest first, only until it has 8, and says in the markdown and the
+   JSON how many started in the period, how many were added and when the last one used started. If fewer than 8 count
+   even then it prints "PART (a) NOT COMPLETE" and gives no verdict: wait for the pair jobs to go on, then run it again.
+   Part (b) and measures 2 to 4 are still read on the period. (`--read-as-is` makes part (a) not met instead.)
 
 ## Things to know
 
