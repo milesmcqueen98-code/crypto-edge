@@ -1005,3 +1005,29 @@ FORWARD_TESTS.md.
   - **What follows.** A step that decides earlier than 6 s cannot be built on requests. The trade stream is the
     only way to it, and it has to be measured from the server with its own plan. The timing study puts a stream-fed
     step at 93 to 96% same-minute fills by era against 81 to 87% for release 4, so the lever stays on the list.
+- **14:28. The fifth book's first run: no fault. An interim look, and one thing to watch.**
+  - **The run** (43930915168, 18:39 to 19:24 UTC): the pinned commit checked out (`paper_spot_r5/CODE` names
+    9e6f53b3), first stepped minute 18:44 UTC, 18 new bids, one heartbeat, no error, warning or halt event. The
+    hand-over started the next run (43938993420), a normal one of 345 minutes.
+  - **The period** of Part 3 therefore begins at 19:00 UTC on Nov 16 and its 4,320 minutes end at 18:59 UTC on
+    Nov 19, before any extension.
+  - **The first pair** was started by hand at 19:26 UTC, the build first (job 43939421658), as the plan's entry of
+    13:36 says. From 00:05 UTC the schedule runs them.
+  - **Interim look at the 19:00 heartbeat** (17 steps). It can find a fault and pass nothing.
+    - Between-step candle requests: 306 made, none failed. Data step: median 11.06 s, longest 16.32 s.
+    - Candle requests inside a step: 10 of 306 coin-minutes (3.3%). All ten followed a trades pass that ran out
+      of its 8 s budget before it reached every coin. The other 10 budget fallbacks in the counter are from the
+      start's own pass, which rebuilds five minutes at once.
+  - **To watch: the venue's trades list has been slow since Nov 14, and slower this afternoon.**
+    - The fourth book's trades pass ran out of its budget for 1 of 23,888 coin-minutes on Nov 12 and 3 of 24,304
+      on Nov 13. Then 1.0% on Nov 14, 1.3% on Nov 15, 1.6% today so far, and 58 of 531 (10.9%) in the half hour to
+      19:00 UTC. Its data step went from a median of 11.5 s this morning to 15 to 17 s this afternoon.
+    - The probe saw the same from its own runner: an 18-coin pass took 4.0 s at the 90th percentile on Saturday
+      and 7.5 s today.
+    - Measure 4 allows candle requests inside a step in 2% of coin-minutes. If the venue stays this slow, the
+      fifth book will not meet it, and the cause will be the trades pass's time, not the requests between steps.
+      The rule stays as written: this is not a fault in the plan's sense, so the test runs on and is read once.
+    - It matters beyond the test. Eighteen coins asked one after another fit the budget on a quiet day and not on
+      a busy one, and busy days are where the strategy earns. If Part 3 fails here, the corrected build has to
+      make the trades pass faster (requests side by side under the same pace, or less paging), and that build
+      gets its own three days.
