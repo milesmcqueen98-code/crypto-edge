@@ -204,11 +204,12 @@ def minute_trades_bars(coin, m0, m1, max_pages=20, deadline=None, get=None, cloc
     return dict(bars=bars, verified=reason is None, reason=reason, pages=pages, gen=gen, newest=newest, n=n)
 
 
-def spot_candles(coin, start, end, meta=None, tries=5, timeout=15):
+def spot_candles(coin, start, end, meta=None, tries=5, timeout=15, need_answer=False):
     """1-minute candles [start, end) as a DataFrame indexed by minute (UTC, naive). If a dict is passed as meta, it is
     filled with the cache facts of the last answer (the newest minutes): gen (Date minus Age), age, cache, date, and
     start (rows at or after it came from that answer). tries and timeout go to each request (_get_full); the defaults
-    are today's."""
+    are today's. need_answer: a request that got no answer at all (every try answered 429) raises RuntimeError; an
+    answer that is an empty list is an answer (an empty table, as without it)."""
     rows = {}
     s = pd.Timestamp(start).floor("min")
     end = pd.Timestamp(end).floor("min")
@@ -217,6 +218,8 @@ def spot_candles(coin, start, end, meta=None, tries=5, timeout=15):
         js, hd = _get_full(f"{EXCHANGE}/products/{coin}-USD/candles",
                            {"granularity": 60, "start": s.isoformat() + "Z", "end": (e - pd.Timedelta(minutes=1)).isoformat() + "Z"},
                            tries=tries, timeout=timeout)
+        if need_answer and js is None:
+            raise RuntimeError(f"candles {coin}: no answer (every try answered 429)")
         if meta is not None:
             try:                                           # monitoring only: never raises into the data path
                 meta.clear()

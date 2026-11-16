@@ -134,7 +134,8 @@ class LiveMarket:
         self.perp = {r.contract_root_unit: (r.product_id, float(r.contract_size)) for r in p.itertuples()}
 
     def spot_candles(self, coin, start, end, **kw):
-        """kw: tries and timeout for the candle pass's requests (bot/market.py); without them, today's request."""
+        """kw: tries, timeout and need_answer for the candle pass's requests (bot/market.py); without them, today's
+        request."""
         meta = {}
         df = self.m.spot_candles(coin, start, end, meta=meta, **kw)
         self.candle_meta[coin] = meta
@@ -937,8 +938,9 @@ class Engine:
         self.log("adv", t=t, adv_musd={c: round(v / 1e6, 1) for c, v in self.state["adv"].items() if v})
 
     def update_spot(self, end, coins=None, quick=False):
-        """quick (the candle pass only): each request has one try of PASS_TIMEOUT_S seconds, and an answer without
-        rows raises before anything is stored (a 429 on that try gives no rows), so the pass counts it pre_error."""
+        """quick (the candle pass only): each request has one try of PASS_TIMEOUT_S seconds, and a request with no
+        answer (a 429 on that try) raises before anything is stored, so the pass counts it pre_error; an answer
+        without rows is an answer, handled as without quick."""
         cm = getattr(self, "_cmax", {})                    # empty unless newest_bar is "trades"
         for c in (["BTC"] + self.coins if coins is None else coins):    # coins: only these (candles_at_s)
             df = self.spot.get(c)
@@ -951,9 +953,8 @@ class Engine:
             if start >= end:
                 continue
             if quick:
-                new = self.market.spot_candles(c, start, end, tries=PASS_TRIES, timeout=PASS_TIMEOUT_S)
-                if not len(new):
-                    raise RuntimeError(f"candle pass: no rows for {c} (no usable answer)")
+                new = self.market.spot_candles(c, start, end, tries=PASS_TRIES, timeout=PASS_TIMEOUT_S,
+                                               need_answer=True)
             else:
                 new = self.market.spot_candles(c, start, end)
             if c in cm and len(new):
@@ -983,7 +984,7 @@ class Engine:
         limit); with stop, no request starts unless it would end before stop even if it took its whole timeout (judged
         by the longer of the pass's last request and PASS_TIMEOUT_S); with turn_end, after the first request of this
         call none starts unless it would end before turn_end (judged by the pass's last request). Each request has one
-        try of PASS_TIMEOUT_S seconds (update_spot quick). A coin not reached, or whose request failed or gave no rows
+        try of PASS_TIMEOUT_S seconds (update_spot quick). A coin not reached, or whose request failed or got no answer
         (pre_error), is left for the step (pre_missing there). Returns the number of coins left. Never raises."""
         M = pd.Timestamp(M).floor("min")
         if self._cp_min != M:

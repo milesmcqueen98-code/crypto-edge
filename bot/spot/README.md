@@ -373,12 +373,13 @@ request: it serves only the rows behind the newest one.
   it does not reach are left to the step.
 - **The pass's requests fail fast.** Each has one try with a 4 s timeout (`PASS_TRIES`, `PASS_TIMEOUT_S` in
   `engine.py`), where the step's candle requests keep five tries of 15 s. A request that fails (a timeout, an error)
-  or brings no rows (a 429 on its one try gives none, after `bot/market.py`'s 1 s wait) counts `pre_error`, changes
-  no row, and leaves the coin to the step (`pre_missing` there); the pass goes on with the next coin. The timeout
-  bounds the connection and each wait for data, not a reply that keeps trickling in.
+  or gets no answer (a 429 on its one try, after `bot/market.py`'s 1 s wait; `need_answer`) counts `pre_error`,
+  changes no row, and leaves the coin to the step (`pre_missing` there); the pass goes on with the next coin. An
+  answer that is an empty list (no rows in the window, as for a coin without trades) is an answer: `pre_fetched`, as
+  before. The timeout bounds the connection and each wait for data, not a reply that keeps trickling in.
 - **In the step.** A coin the pass fetched for the minute that just closed gets no candle request. A coin the pass
-  did not reach, or whose request failed or brought no rows, is fetched in the step as before and counted as `pre_missing` (after every
-  start, all of them once).
+  did not reach, or whose request failed or got no answer, is fetched in the step as before and counted as
+  `pre_missing` (after every start, all of them once).
 - **Fallbacks.** When such a coin's trades bar cannot be used (not verified, an error, the budget), the step fetches
   that coin's candle then, on demand, with the request it would have made before, and goes on as without the setting
   (the same counters, plus `pre_ondemand`). After a refusal or a rate limit in the trades pass there is no on-demand
@@ -392,9 +393,10 @@ request: it serves only the rows behind the newest one.
   setting makes 6 s into M, so a copy about 39 s old is to be expected when such a client asked first; M - 1 is then
   confirmed one pass later. The age rule keeps such a copy from replacing anything early.
 - **Counters,** in the heartbeat, only with the setting: `pre_fetched` (coins the pass fetched), `pre_error` (pass
-  requests that failed or brought no rows), `pre_missing` (coins built from trades the step had to fetch), `pre_ondemand` (on-demand
-  requests after a trades bar that could not be used), `step_candles` (candle requests the step made; with every coin
-  on the list it is `pre_missing` plus `pre_ondemand`). `candle_old` and `btc_candle_old` leave out a coin whose row
+  requests that failed or got no answer), `pre_missing` (coins built from trades the step had to fetch),
+  `pre_ondemand` (on-demand requests after a trades bar that could not be used), `step_candles` (candle requests
+  the step made; with every coin on the list it is `pre_missing` plus `pre_ondemand`).
+  `candle_old` and `btc_candle_old` leave out a coin whose row
   for the minute is trades-built or a verified empty minute (its candle answer's age says nothing about that row);
   every other case counts as before. `tb_insert` then counts nearly every trades bar of a covered coin (the step has
   no candle row for the minute yet), and `tb_close_diff` cannot be measured for them.

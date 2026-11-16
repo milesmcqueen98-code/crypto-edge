@@ -10,9 +10,13 @@ by the owner.
 
 *Note, Nov 16 2026, after the merge (on `owner/release-5`).* The candle pass's requests now fail fast: one try with
 a 4 s timeout (`PASS_TRIES` 1, `PASS_TIMEOUT_S` 4.0 in `engine.py`; `bot/market.py`'s `_get_full` and `spot_candles`
-take `tries` and `timeout`, defaults unchanged, so the step, the on-demand requests and every paper and replay path
-make today's request). A pass request that fails or brings no rows (a 429 on its one try) counts `pre_error` and
-leaves the coin to the step. No pass request starts unless a whole 4 s timeout would still end 3 s before the step.
+take `tries` and `timeout`, and `spot_candles` takes `need_answer`; defaults unchanged, so the step, the on-demand
+requests and every paper and replay path make today's request). A pass request that fails or gets no answer (a 429
+on its one try) counts `pre_error` and leaves the coin to the step; an answer that is an empty list is an answer
+(`pre_fetched`, as before). A first version (660d6528) also treated an empty answer as a failure; the runner's
+live-path inputs test showed it (HYPE has no candles in the October 2025 window, so it went to the step every
+minute), and `need_answer` replaced it. No pass request starts unless a whole 4 s timeout would still end 3 s
+before the step.
 Why: the pass shares the main thread with the live bot's fast polls and sits just before the step, and a failed pass
 request costs nothing. Before this, a hanging pass request was bounded only by five tries of 15 s (about 83 s).
 Shown by tests only (`candle_pass_test.py`, `trades_bar_test.py`): the paper books have no fast polls. The numbers
@@ -281,8 +285,9 @@ Both use the generic runner `hunt2.yml` on this branch; `commit` stays empty, no
 - **A pass request blocks the fast polls while it runs** (no new deeper rung, take-profit or retry in that time).
   Corrected after the merge (note at the top): it now has one try with a 4 s timeout (about 5 s for a 429 with
   `bot/market.py`'s 1 s wait), and none starts unless a whole 4 s would end 3 s before the step, so it ends before
-  the step (a 429 one up to about 1 s later than the 4 s allowed for). Before the change the start rule was judged by the last request's time only and did not bound a
-  request (five tries of 15 s, about 83 s). The timeout bounds the connection and each wait for data, not a reply
+  the step (a 429 one up to about 1 s later than the 4 s allowed for). Before the change the start rule was judged
+  by the last request's time only and did not bound a request (five tries of 15 s, about 83 s).
+  The timeout bounds the connection and each wait for data, not a reply
   that keeps trickling in.
 - **After every start the first step fetches every coin** (`pre_missing` 18), as today; from the next minute on the
   pass covers them.

@@ -291,7 +291,8 @@ class TimeoutSession:
         if self.mode == "timeout":
             raise M.requests.exceptions.ReadTimeout("read timed out")
         r = FakeResp(429 if self.mode == "429" else 200)
-        r.json = lambda: [[int(M0.timestamp()) - 60, 1.0, 3.0, 2.0, 2.5, 7.0]]
+        r.json = (lambda: []) if self.mode == "empty" else (lambda: [[int(M0.timestamp()) - 60, 1.0, 3.0, 2.0, 2.5,
+                                                                        7.0]])
         return r
 
 
@@ -336,6 +337,25 @@ try:
         check("spot_candles tries=1 on a timeout raises", False)
     except M.requests.RequestException:
         check("spot_candles tries=1 on a timeout raises after one request", M._S.timeouts == [4])
+    # need_answer (the candle pass): no answer raises; an empty list is an answer
+    M._S, slept[:] = TimeoutSession("429"), []
+    try:
+        M.spot_candles("BTC", M0 - pd.Timedelta(minutes=2), M0, tries=1, timeout=4, need_answer=True)
+        check("spot_candles need_answer, a 429 on the one try: raises", False)
+    except RuntimeError as err:
+        check("spot_candles need_answer, a 429 on the one try: raises (RuntimeError naming the coin), one request",
+              "BTC" in str(err) and M._S.timeouts == [4] and slept == [1], str((err, slept)))
+    M._S, slept[:] = TimeoutSession("empty"), []
+    meta = {}
+    d = M.spot_candles("BTC", M0 - pd.Timedelta(minutes=2), M0, meta=meta, tries=1, timeout=4, need_answer=True)
+    check("spot_candles need_answer, a 200 with an empty list: an empty table, no error",
+          len(d) == 0 and list(d.columns) == ["open", "high", "low", "close", "volume"] and M._S.timeouts == [4], str(d))
+    M._S, slept[:] = TimeoutSession("empty"), []
+    d0 = M.spot_candles("BTC", M0 - pd.Timedelta(minutes=2), M0)
+    M._S = TimeoutSession("429")
+    d1 = M.spot_candles("BTC", M0 - pd.Timedelta(minutes=2), M0)
+    check("spot_candles default (no need_answer): an empty list and five 429s both give an empty table, as today",
+          len(d0) == 0 and len(d1) == 0 and M._S.timeouts == [15] * 5)
 finally:
     M._S, M.time = real, real_time
 

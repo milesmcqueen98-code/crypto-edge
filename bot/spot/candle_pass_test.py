@@ -21,8 +21,9 @@ Checks:
     still counted otherwise, and counted as before without the setting;
   - without the setting the step asks every coin's candles with end = its minute, and no new counter appears;
   - the pass's requests have one try of 4 s (the step's and the on-demand requests are today's); a request that
-    raises or gives no rows counts pre_error, is not marked fetched and is left to the step; no request starts
-    unless a whole 4 s timeout would end before the stop; the live turn rule is judged by the last request;
+    raises or gets no answer counts pre_error, is not marked fetched and is left to the step (an empty answer is an
+    answer: pre_fetched, no step request); no request starts unless a whole 4 s timeout would end before the stop;
+    the live turn rule is judged by the last request;
   - without trades (newest_bar "candles" or absent) the key is ignored, whatever its value: the engine builds, one
     warning event at start, run's wait and every candle request as without the key, and the inputs line does not
     mention a pass; in trades mode a bad value still stops the start.
@@ -58,26 +59,34 @@ class ClockMarket(NB.SynthMarket):
     """SynthMarket on a fake clock F (a one-element list, epoch seconds). A candle request takes `dur` seconds of the
     fake clock; its answer was made at the request's time minus `age` seconds and holds no row for the minute open
     at the request's time. `fail` holds coins whose next candle request raises; `empty` holds coins whose next
-    candle request gives no rows (a 429 on the pass's one try). `req` records every request, with the keywords it
-    was given (tries and timeout; None when not given)."""
+    candle request is answered with an empty list (a valid answer without rows); `noanswer` holds coins whose next
+    candle request gets no answer (every try a 429): with need_answer it raises as bot/market.py does, otherwise an
+    empty table. `req` records every request, with the keywords it was given (None when not given)."""
 
     def __init__(self, coins, F, dur=0.31, age=0.0):
         super().__init__(coins, 40)
         self.F, self.dur, self.age, self.req, self.fail, self.candle_meta = F, dur, age, [], set(), {}
-        self.empty = set()
+        self.empty, self.noanswer = set(), set()
 
-    def spot_candles(self, coin, start, end, tries=None, timeout=None):
+    def spot_candles(self, coin, start, end, tries=None, timeout=None, need_answer=None):
         at = self.F[0]
-        self.req.append(dict(coin=coin, start=start, end=end, at=at, tries=tries, timeout=timeout))
+        self.req.append(dict(coin=coin, start=start, end=end, at=at, tries=tries, timeout=timeout,
+                             need_answer=need_answer))
         self.F[0] += self.dur
         if coin in self.fail:
             self.fail.discard(coin)
             raise RuntimeError("timeout")
-        if coin in self.empty:
-            self.empty.discard(coin)
+        if coin in self.noanswer:
+            self.noanswer.discard(coin)
+            if need_answer:
+                raise RuntimeError(f"candles {coin}: no answer (every try answered 429)")
+            self.candle_meta[coin] = {"gen": None, "start": start}
             return super().spot_candles(coin, start, end).iloc[:0]
         now = pd.Timestamp(at, unit="s")
         self.candle_meta[coin] = {"gen": now - pd.Timedelta(seconds=self.age), "start": start}
+        if coin in self.empty:
+            self.empty.discard(coin)
+            return super().spot_candles(coin, start, end).iloc[:0]
         d = super().spot_candles(coin, start, end)
         return d[d.index < now.floor("min")]
 
@@ -354,8 +363,8 @@ def absent():
 
 
 def pass_timeout():
-    """The pass's requests: one try of E.PASS_TIMEOUT_S (4 s); a failed one or one without rows leaves the coin to
-    the step; the stop rule counts a whole timeout."""
+    """The pass's requests: one try of E.PASS_TIMEOUT_S (4 s); a failed one or one with no answer leaves the coin to
+    the step, an answer without rows is an answer; the stop rule counts a whole timeout."""
     check("pass: PASS_TRIES 1 and PASS_TIMEOUT_S 4.0", E.PASS_TRIES == 1 and E.PASS_TIMEOUT_S == 4.0)
     # a. keywords; a request that raises (a timeout)
     eng, sd, F = engine()
@@ -364,8 +373,9 @@ def pass_timeout():
     n = len(eng.market.req)
     eng.candle_pass(T)
     rq = eng.market.req[n:]
-    check("pass: every request with tries 1 and timeout 4.0",
-          [(r["coin"], r["tries"], r["timeout"]) for r in rq] == [(c, 1, 4.0) for c in ("BTC", "ETH", "SOL")], str(rq))
+    check("pass: every request with tries 1, timeout 4.0 and need_answer",
+          [(r["coin"], r["tries"], r["timeout"], r["need_answer"]) for r in rq]
+          == [(c, 1, 4.0, True) for c in ("BTC", "ETH", "SOL")], str(rq))
     check("pass, a request that raises: pre_error 1, the pass goes on (BTC and SOL fetched), ETH not marked fetched",
           eng.counts.get("pre_error") == 1 and eng.counts.get("pre_fetched") == 2 and "ETH" not in eng._cpass
           and eng._cpass.get("BTC") == T and eng._cpass.get("SOL") == T, f"{eng.counts} {eng._cpass}")
@@ -375,23 +385,36 @@ def pass_timeout():
     check("pass, a request that raises: the step fetches ETH (pre_missing 1); SOL on demand (pre_ondemand 1)",
           [(r["coin"], r["end"]) for r in rq] == [("ETH", T + MIN), ("SOL", T + MIN)]
           and eng.counts.get("pre_missing") == 1 and eng.counts.get("pre_ondemand") == 1, f"{rq} {eng.counts}")
-    check("step and on-demand requests: called without tries and timeout (today's request)",
-          [(r["tries"], r["timeout"]) for r in rq] == [(None, None)] * 2, str(rq))
+    check("step and on-demand requests: called without tries, timeout and need_answer (today's request)",
+          [(r["tries"], r["timeout"], r["need_answer"]) for r in rq] == [(None, None, None)] * 2, str(rq))
     shutil.rmtree(sd)
-    # b. a request that gives no rows (a 429 on the one try: bot/market.py returns an empty table)
+    # b. a request with no answer (a 429 on the one try: bot/market.py raises with need_answer)
     eng, sd, F = engine()
     F[0] = ep(T) + 45
     before = eng.spot["ETH"].copy()
-    eng.market.empty.add("ETH")
+    eng.market.noanswer.add("ETH")
     left = eng.candle_pass(T)
-    check("pass, an answer without rows: pre_error 1, the pass goes on, ETH not marked fetched, its table unchanged",
+    check("pass, no answer: pre_error 1, the pass goes on, ETH not marked fetched, its table unchanged",
           left == 0 and eng.counts.get("pre_error") == 1 and eng.counts.get("pre_fetched") == 2
           and "ETH" not in eng._cpass and eng.spot["ETH"].equals(before), f"{eng.counts} {eng._cpass}")
     eng.counts = {}
     rq = step(eng, F, T + MIN)
-    check("pass, an answer without rows: the step fetches ETH, counted pre_missing",
+    check("pass, no answer: the step fetches ETH, counted pre_missing",
           [r["coin"] for r in rq] == ["ETH"] and eng.counts.get("pre_missing") == 1
           and T in eng.spot["ETH"].index, f"{rq} {eng.counts}")
+    shutil.rmtree(sd)
+    # b2. an answer that is an empty list (a coin without rows in the window): an answer, as before the change
+    eng, sd, F = engine()
+    F[0] = ep(T) + 45
+    eng.market.empty.add("ETH")
+    left = eng.candle_pass(T)
+    check("pass, an empty answer: counted pre_fetched (3, no pre_error), ETH marked fetched for T",
+          left == 0 and eng.counts.get("pre_fetched") == 3 and "pre_error" not in eng.counts
+          and eng._cpass.get("ETH") == T, f"{eng.counts} {eng._cpass}")
+    eng.counts = {}
+    rq = step(eng, F, T + MIN)
+    check("pass, an empty answer: the step asks no candles again (no pre_missing)",
+          rq == [] and "pre_missing" not in eng.counts, f"{rq} {eng.counts}")
     shutil.rmtree(sd)
     # c. the stop rule: a whole timeout must fit before stop, whatever the last request took
     S = ep(T) + 63.0

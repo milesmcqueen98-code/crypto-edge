@@ -55,7 +55,7 @@ class FakeMarket:
     def __init__(self, frames):
         self.frames = frames
 
-    def spot_candles(self, coin, start, end, tries=5, timeout=15):
+    def spot_candles(self, coin, start, end, tries=5, timeout=15, need_answer=False):
         d = self.frames[coin]
         return d[(d.index >= start) & (d.index < end)]
 

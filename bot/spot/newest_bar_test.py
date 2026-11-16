@@ -76,7 +76,7 @@ class SynthMarket:
         self.copy = {}           # (coin, end) -> a frame served instead (an old copy)
         self.starts = []
 
-    def spot_candles(self, coin, start, end, tries=5, timeout=15):
+    def spot_candles(self, coin, start, end, tries=5, timeout=15, need_answer=False):
         self.starts.append((coin, start))
         if self.lag is not None:
             lag = self.lag.get(coin, pd.Timedelta(seconds=30)) if isinstance(self.lag, dict) else self.lag
@@ -480,7 +480,7 @@ def make_market():
         (drop_btc); trades bars are the stored (final) candles."""
         alter, drop_btc, drop, tb_calls = {}, set(), set(), [0]
 
-        def spot_candles(self, coin, start, end, tries=5, timeout=15):
+        def spot_candles(self, coin, start, end, tries=5, timeout=15, need_answer=False):
             d = super().spot_candles(coin, start, end)
             newest = pd.Timestamp(end) - pd.Timedelta(minutes=1)
             if (coin, newest) in self.alter and newest in d.index:

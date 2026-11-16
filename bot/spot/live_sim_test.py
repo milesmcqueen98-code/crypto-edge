@@ -84,7 +84,7 @@ class TradesFeedMarket(LiveReplayMarket):
         self.alter, self.no_candle, self.served = {}, set(), set()
         self.calls, self.phase = [], None
 
-    def spot_candles(self, coin, start, end, tries=5, timeout=15):
+    def spot_candles(self, coin, start, end, tries=5, timeout=15, need_answer=False):
         now = self.clock()
         self.calls.append((self.phase, now.floor("min"), "candles", coin))
         if self.on:
