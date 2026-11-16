@@ -30,10 +30,14 @@ those printed by the candidate's tb_smoke.py):
   "  trades requests (<label>): at most P sent in any one second (start-up pass included)": peak_per_second.
   the parity table (header "coin minutes identical differ ..."): rows_compared is the sum of its minutes column, rows_differ
     the sum of its differ column, over the coins listed.
-  refused and limited: run_pair.py's own patterns (REFUSED_RX, LIMITED_RX, imported, not changed), searched over the
-    run's text leaving out its "=====" header and the step table, as run_pair.py does. See that file for the patterns.
-    Known to fire on numbers (see the notes of the test file): a heartbeat counter equal to 429, or a price such as
-    429.5 in an event line, reads as an HTTP 429. The patterns are not loosened here.
+  refused: run_pair.py's own pattern (REFUSED_RX, imported), searched over the run's text leaving out its "=====" header
+    and the step table.
+  limited: this tool's own pattern (LIMITED_RX below), searched over the same text, case-insensitively: Limited( , HTTP 429 ,
+    rate limit (also rate-limit), too many requests, or a heartbeat counter "tb_fb_limited": N with N of 1 or more.
+    Unlike run_pair.py's pattern it has no bare 429: a heartbeat counter of 429 (for example "tb_built": 429), a price of
+    429.5 in an event line, or a time ending in .429 (a step_s value, a printed median) must not mark a run limited. A
+    429 answer from the venue is still caught through Limited( and HTTP 429 (what the parity fetch prints). The fifth
+    book's tool run_pair.py keeps its old pattern.
   tb_smoke exits 3 when a run was refused; any non-zero exit code makes counts false.
 
 Result: <out>/pair_<UTC start YYYYMMDDTHHMM>Z.json with mode "workers", utc_start, utc_end, order, minutes, code_commit
@@ -63,6 +67,7 @@ MIN_STEPS = rp.MIN_STEPS
 SMOKE = rp.SMOKE
 CONFIG = os.path.join("bot", "spot", "config.tw.json")
 KEY = "trades_workers"
+LIMITED_RX = re.compile(r"Limited\(|HTTP 429|rate.?limit|too many requests|\"tb_fb_limited\": [1-9]", re.I)
 ROW_RX = re.compile(r"^\s*\d\d:\d\d\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s*$")
 PASS_RX = re.compile(r"trades pass \(.*; engine timer\): median (\S+) s, longest (\S+) s; budget fallbacks "
                      r"\(tb_fb_budget\) (\S+)")
@@ -134,7 +139,7 @@ def parse_run(lines, workers, label):
                steps_timed=timed, trades_pass_median_text=None, trades_pass_median_s=None,
                trades_pass_longest_text=None, trades_pass_longest_s=None, fb_budget=None, peak_per_second=None,
                rows_compared=None, rows_differ=None, refused=bool(rp.REFUSED_RX.search(text)),
-               limited=bool(rp.LIMITED_RX.search(text)))
+               limited=bool(LIMITED_RX.search(text)))
     if med:
         d = rp.num(med.group(2))
         if d is not None:

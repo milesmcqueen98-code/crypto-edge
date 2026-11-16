@@ -7,12 +7,10 @@ The fixtures fixtures/synthetic_tw_*.txt are built from the print statements of 
 line, the trades requests line, the parity table, the closing lines); they are not taken from a real run. A NaN cell is
 in the first row of every table, as the real table has when a step has no data end.
 
-Notes on the refusal and rate-limit patterns (run_pair.py's own, imported, not loosened): they are text searches over a
-run's output, so a number can set them off. A heartbeat counter equal to 429 (for example "tb_built": 429), a price such
-as 429.5 in an event line, or a float printed with three decimals ending in .429 (the heartbeat's step_s lists) reads as
-an HTTP 429. The step table rows are left out of the search (as run_pair.py does), and the new lines of the candidate's
-tb_smoke (two-decimal durations, the budget fallback count, the peak per second) cannot reach 429 in practice. The
-checks below pin this behaviour so that a change of the patterns is noticed."""
+Notes on the patterns: the refusal pattern is run_pair.py's own (imported). The rate-limit pattern is this tool's own and
+has no bare 429: a heartbeat counter of 429, a price of 429.5 or a time ending in .429 must not mark a run limited, while
+Limited(, HTTP 429, rate limit, too many requests and a tb_fb_limited counter of 1 or more do. The step table rows are
+left out of the search, as in run_pair.py."""
 import contextlib
 import io
 import json
@@ -279,30 +277,40 @@ def test_not_counted():
 
 
 def test_patterns():
-    """What the imported patterns do with numbers (see the notes at the top of this file). Nothing here loosens them."""
-    check("the patterns are run_pair.py's own objects", rw.rp.REFUSED_RX is rp.REFUSED_RX and rw.rp.LIMITED_RX is rp.LIMITED_RX
-          and rw.rp.MEDIAN_RX is rp.MEDIAN_RX)
+    """The tool's own rate-limit pattern (no bare 429) and the imported refusal pattern."""
+    check("refusal pattern is run_pair.py's own object, the limited pattern is the tool's own", rw.rp.REFUSED_RX is rp.REFUSED_RX
+          and rw.LIMITED_RX is not rp.LIMITED_RX and rw.rp.MEDIAN_RX is rp.MEDIAN_RX)
     ab = fixture("synthetic_tw_ab.txt")
 
-    def limited(text):
+    def flags(text):
         with tempfile.TemporaryDirectory() as tmp:
             res, _, _ = go(tmp, "ab", text)
-            return by_label(res)["one"]["limited"], by_label(res)["one"]["refused"], res["why_not"]
-    check("the clean fixture is neither limited nor refused", limited(ab)[:2] == (False, False))
-    check("a heartbeat counter equal to 429 reads as a rate limit (known, not changed)",
-          limited(ab.replace('"tb_built": 125', '"tb_built": 429', 1))[0] is True)
-    check("a heartbeat float ending in .429 reads as a rate limit (known, not changed)",
-          limited(ab.replace('"trades": [5.125, 7.5]', '"trades": [5.429, 7.5]', 1))[0] is True)
-    check("a price 429.5 in an event line reads as a rate limit (known, not changed)",
-          limited(ab.replace("event kinds:", 'event kinds: {"price": 429.5}', 1))[0] is True)
-    check("4290 and 1429 do not", limited(ab.replace('"tb_built": 125', '"tb_built": 4290, "x": 1429', 1))[0] is False)
-    with_row = ab.replace("14:26      6.0        9.31             0           18             0       5.4        0.0",
-                          "14:26      6.0        9.31             0           18             0     7.429        0.0", 1)
-    check("a .429 in a step table row is left out of the search", with_row != ab and limited(with_row)[0] is False)
-    check("the new lines of the candidate's tb_smoke are clean (a 4.29 s pass, 29 fallbacks, peak 8)",
-          limited(ab.replace("median 5.80 s, longest 6.60 s; budget fallbacks (tb_fb_budget) 2",
-                             "median 4.29 s, longest 6.42 s; budget fallbacks (tb_fb_budget) 29", 1))[:2] == (False, False))
-    check("the word refus in a coin or a label does not appear in the new lines", not rp.REFUSED_RX.search(
+            return by_label(res)["one"]["limited"], by_label(res)["one"]["refused"]
+    check("the clean fixture is neither limited nor refused", flags(ab) == (False, False))
+    not_marked = {
+        "a heartbeat counter of 429": ab.replace('"tb_built": 125', '"tb_built": 429', 1),
+        "a price of 429.5 in an event line": ab.replace("event kinds:", 'event kinds: {"price": 429.5}', 1),
+        "a step_s value of 7.429": ab.replace('"trades": [5.125, 7.5]', '"trades": [5.125, 7.429]', 1),
+        "a summary median of 2.429": ab.replace("trades pass, first run: median 5.8 s", "trades pass, first run: median 2.429 s", 1),
+        "the text 'at most 7 sent'": ab.replace("errors and warnings:\n", "errors and warnings:\nat most 7 sent\n", 1),
+        "tb_fb_limited 0": ab,
+        "4290 and 1429": ab.replace('"tb_built": 125', '"tb_built": 4290, "x": 1429', 1),
+        "a .429 in a step table row": ab.replace("14:26      6.0        9.31             0           18             0       5.4        0.0",
+                                                  "14:26      6.0        9.31             0           18             0     7.429        0.0", 1),
+        "the new lines with a 4.29 s pass and 29 fallbacks": ab.replace(
+            "median 5.80 s, longest 6.60 s; budget fallbacks (tb_fb_budget) 2", "median 4.29 s, longest 6.42 s; budget fallbacks (tb_fb_budget) 29", 1)}
+    for name, text in not_marked.items():
+        check(f"does NOT mark a run limited: {name}", ("429" in text or "tb_fb_limited" in text) and flags(text) == (False, False), flags(text))
+    marked = {
+        "Limited('HTTP 429 on https://x')": "Limited('HTTP 429 on https://x')", "HTTP 429": "got HTTP 429 back", "rate limit": "rate limit reached",
+        "rate-limit": "a rate-limit answer", "Too Many Requests": "Too Many Requests", '"tb_fb_limited": 1': '{"counts": {"tb_fb_limited": 1}}',
+        '"tb_fb_limited": 12': '{"counts": {"tb_fb_limited": 12}}'}
+    for name, line in marked.items():
+        text = ab.replace("errors and warnings:\n", "errors and warnings:\n" + line + "\n", 1)
+        check(f"marks a run limited: {name}", flags(text)[0] is True and flags(text)[1] is False, flags(text))
+    text = ab.replace("errors and warnings:\n", "errors and warnings:\nREFUSED (parity fetch stopped): BTC: Limited('HTTP 429 ...')\n", 1)
+    check("REFUSED (parity fetch stopped): Limited('HTTP 429 ...') sets both flags", flags(text) == (True, True))
+    check("the word refus does not appear in the new lines", not rp.REFUSED_RX.search(
         "\n".join(l for l in ab.splitlines() if "trades pass" in l or "trades requests" in l)))
 
 

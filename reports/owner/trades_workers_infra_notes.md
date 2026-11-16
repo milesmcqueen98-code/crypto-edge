@@ -72,11 +72,12 @@ were live. Write START and END as UTC minutes, both included (for example START 
 - Part 3, measure 3 (the pace) reads every pair file that started in the period, counting or not: a three-worker run with
   more than 8 trades requests in one second, a refusal or a rate limit fails it, and so does a file that cannot be read.
   The plan says one such answer in a three-worker half stops the pairs and the sixth book until the cause is known.
-- The refusal and rate-limit tests of the pair tool are text searches taken over unchanged from `run_pair.py`. A printed
-  number can set them off: a heartbeat counter equal to 429, a price such as 429.5 in an event line, or a three-decimal
-  figure ending in .429 in the heartbeat. Such a pair is written as "limited" and does not count (and, if it is the
-  three-worker run, fails the pace clause). If a pair file says so, look at its run's output in the job log before
-  believing a rate limit.
+- The workers pair tool marks a run limited only when its output has `Limited(`, `HTTP 429`, "rate limit" (or rate-limit),
+  "too many requests", or a heartbeat counter `"tb_fb_limited"` of 1 or more. The bare number 429 (a counter of 429, a
+  price of 429.5, a time ending in .429) does not mark a run. A pair marked limited does not count, and if it is the
+  three-worker run it also fails the pace clause; the pair file's `why_not` and the job log show which text did it.
+  The fifth book's pairs (`run_pair.py`) still use the old pattern with the bare 429; a pair it marks stays out. This is
+  logged in `reports/owner/bar_source_prereg.md`.
 - The rule script stops with an error (no verdict) if the folder's books are not the fifth and sixth, if its period differs
   from START and END, if the "all" group is not the 17 traded coins, or if a count from `item7_bids.csv` differs from
   `side_by_side.csv`.
