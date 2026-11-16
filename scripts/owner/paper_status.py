@@ -958,6 +958,64 @@ def measure1(rows5, rows_other):
             "paired_fifth": median_exact([a[t] for t in common]), "paired_other": median_exact([b[t] for t in common])}
 
 
+PAIRS_DIR = os.path.join("reports", "owner", "step_pairs")
+MIN_PAIRS = 8                                                  # measure 1 (a): pairs that count, at least
+
+
+def load_pairs(directory):
+    """The same-machine pairs written by scripts/owner/step_pairs/run_pair.py: every *.json in the folder, oldest start
+    first. Each is {file, start (datetime or None), order, counts (the file says true and both printed medians can be
+    read), why (text when it does not count), release3 and build (the printed median texts), diff (build minus release 3,
+    an exact Fraction from the printed texts, or None)}. A missing folder means no pairs; an unreadable file is a pair
+    that does not count. Shared with scripts/owner/bar_source/part3_rule.py."""
+    out = []
+    try:
+        names = sorted(n for n in os.listdir(directory) if n.endswith(".json"))
+    except OSError:
+        return out
+    for n in names:
+        p = {"file": n, "start": None, "order": None, "counts": False, "why": None, "release3": None, "build": None,
+             "diff": None}
+        try:
+            with open(os.path.join(directory, n), encoding="utf-8") as f:
+                o = json.load(f)
+            p["start"] = parse_ts(o.get("utc_start"))
+            p["order"] = o.get("order")
+            runs = {r.get("inputs"): r for r in o.get("runs", []) if isinstance(r, dict)}
+            for k in ("release3", "build"):
+                t = (runs.get(k) or {}).get("data_end_median_text")
+                p[k] = t if isinstance(t, str) else None
+            if p["release3"] is not None and p["build"] is not None:
+                p["diff"] = Fraction(p["build"]) - Fraction(p["release3"])
+            p["counts"] = o.get("counts") is True and p["diff"] is not None and p["start"] is not None
+            p["why"] = None if p["counts"] else (clean(o.get("why_not") or "unreadable or incomplete")[:ERR_CHARS])
+        except (OSError, ValueError, TypeError, ArithmeticError):
+            p["why"] = "file could not be read"
+        out.append(p)
+    out.sort(key=lambda p: (p["start"] is None, p["start"] or datetime.min.replace(tzinfo=timezone.utc), p["file"]))
+    return out
+
+
+def pairs_measure(pairs, start=None, end=None, now=None, min_pairs=MIN_PAIRS):
+    """Measure 1 (a): the pairs that count whose start is in [start, end + 1 minute) (None: no limit; now: not after it),
+    their number, and the median of build minus release 3 as an exact Fraction (None without pairs). Met when there are
+    at least min_pairs and the median is at or below zero."""
+    use = []
+    for p in pairs:
+        if not p["counts"]:
+            continue
+        if start is not None and p["start"] < start:
+            continue
+        if end is not None and p["start"] >= end + timedelta(minutes=1):
+            continue
+        if now is not None and p["start"] > now:
+            continue
+        use.append(p)
+    med = median_exact([p["diff"] for p in use])
+    return {"n": len(use), "needed": min_pairs, "enough": len(use) >= min_pairs, "median": med,
+            "met": len(use) >= min_pairs and med is not None and med <= 0, "used": use}
+
+
 def startup_steps(events):
     """The first stepped minute after each start (a backfill event), as common.startups in scripts/owner/reconcile finds it:
     the minute of the first later event that is neither a catch_up nor a backfill, or the backfill minute plus
@@ -1019,7 +1077,7 @@ def share_text(k, n, nd=3):
     return "n/a" if n <= 0 else f"{100.0 * float(k) / n:.{nd}f}%"
 
 
-def r5_rule_section(st, loaded, rts, dqs, root):
+def r5_rule_section(st, loaded, rts, dqs, root, now=None):
     """The fifth book's progress on the four measures of Part 3. Progress only: the read is made once, by part3_rule.py."""
     L = ["## Rule progress for the fifth book", ""]
     code = code_lines(root, R5_BOOK[1])
@@ -1043,20 +1101,38 @@ def r5_rule_section(st, loaded, rts, dqs, root):
     m_main = measure1(rows5, dqs["spot"]["rep"] if dqs.get("spot") else [])
     m_t18 = measure1(rows5, dqs["t18"]["rep"] if dqs.get("t18") else []) if "t18" in st else None
     bar = exact(R5_STEP_BAR)
-    ok_a = m_main["median"] is not None and m_main["median"] <= bar
+    pairs = load_pairs(os.path.join(root, PAIRS_DIR))
+    pm = pairs_measure(pairs, now=now)
+    L += ["(a) Same-machine pairs: on one runner and the pinned commit, 30 minutes with release 3's inputs and 30 minutes "
+          "with the build's, one after the other, the order alternating (scripts/owner/step_pairs/run_pair.py, "
+          "step-pairs.yml). The measure is the median of the build's median data step minus release 3's over the pairs "
+          "that count: at or below zero, at least 8 pairs.", ""]
+    if not pairs:
+        L += ["No pairs yet.", ""]
+    else:
+        prow = [[fmt_t(p["start"]) if p["start"] else p["file"], p["order"] or "n/a",
+                 f"{p['release3']} s" if p["release3"] else "n/a", f"{p['build']} s" if p["build"] else "n/a",
+                 sec(p["diff"]) if p["diff"] is not None else "n/a",
+                 "counts" if p["counts"] else "does not count: " + (p["why"] or "")] for p in pairs]
+        L += [table(["Start", "Order", "Release 3 median", "Build median", "Build minus release 3", "Counts"], prow), ""]
+    L += [table(["Part", "Current value", "Verdict"],
+                [["(a) Pairs that count, and the median of build minus release 3",
+                  f"{pm['n']} pairs (8 needed); median {sec(pm['median'])}; must be at or below 0.00 s",
+                  "meets" if pm["met"] else no]]), ""]
     ok_b = m_main["pairs"] > 0 and m_main["paired_fifth"] <= m_main["paired_other"]
-    mrows = [["(a) The fifth book's median of its half-hour data-step medians",
-              f"{sec(m_main['median'])} over {m_main['n']} heartbeats; bar {R5_STEP_BAR:g} s or less",
-              "meets" if ok_a else no],
-             ["(b) Against the main book, over the half hours both have a heartbeat (same heartbeat time)",
+    mrows = [["(b) Against the main book, over the half hours both have a heartbeat (same heartbeat time)",
               f"fifth {sec(m_main['paired_fifth'])}, main {sec(m_main['paired_other'])}, {m_main['pairs']} half hours; "
-              "the fifth's must be no higher", "meets" if ok_b else no]]
+              "the fifth's must be no higher", "meets" if ok_b else no],
+             ["Reported, decides nothing: the fifth book's own median of its half-hour data-step medians",
+              f"{sec(m_main['median'])} over {m_main['n']} heartbeats; for comparison {R5_STEP_BAR:g} s (release 3's "
+              "figure of Nov 11 to 14, which moves with the period and the runner)", "reported only"]]
     if m_t18 is not None:
         mrows.append(["For information: against the fourth book, same way",
                       f"fifth {sec(m_t18['paired_fifth'])}, fourth {sec(m_t18['paired_other'])}, {m_t18['pairs']} half hours",
                       "not part of the rule"])
     L += [table(["Part", "Current value", "Verdict"], mrows), "",
-          "The read needs at least 100 heartbeats of the fifth book and at least 100 paired half hours with the main book.", ""]
+          "The read needs at least 100 heartbeats of the fifth book and at least 100 paired half hours with the main book "
+          "for (b).", ""]
 
     L += ["### Items 1 to 5 (measure 3)", ""]
     run_min, rows = tb_rule_rows(d5, t5, loaded["r5"]["events"], T18_COINS, rts["r5"], T18_MEDIAN_BAR, T18_COINS,
@@ -1336,7 +1412,7 @@ def build_report(root, now):
                                  ("Only in the fourth book", "Only in the fifth book"),
                                  "This comparison is for the record. The registered read is Part 3 of "
                                  "reports/owner/bar_source_prereg.md.", st, loaded, rts)
-        L += r5_rule_section(st, loaded, rts, dqs, root)
+        L += r5_rule_section(st, loaded, rts, dqs, root, now)
 
     # perps
     L += ["## Perp books", ""]

@@ -844,7 +844,11 @@ def r5_tests():
         rows = {l.split(" | ")[0].lstrip("| "): l for l in sec.splitlines() if l.startswith("| (")}
         ra = [l for k, l in rows.items() if k.startswith("(a)")][0]
         rb = [l for k, l in rows.items() if k.startswith("(b)")][0]
-        check("r5 report: (a) median over 9 heartbeats at or below 10.3 meets", "10.00 s over 9 heartbeats" in ra and ra.endswith("| meets |"), ra)
+        check("r5 report: (a) is now the pairs: none yet, does not meet", ra.startswith("| (a) Pairs that count") and "0 pairs (8 needed)" in ra
+              and ra.endswith("| does not meet yet |") and "No pairs yet." in sec, ra)
+        rep10 = [l for l in sec.splitlines() if l.startswith("| Reported, decides nothing")][0]
+        check("r5 report: the fifth book's own median against 10.3 s is reported and decides nothing",
+              "10.00 s over 9 heartbeats" in rep10 and "10.3 s" in rep10 and rep10.endswith("| reported only |"), rep10)
         check("r5 report: (b) paired over 8 half hours, fifth no higher meets",
               "fifth 10.05 s, main 10.30 s, 8 half hours" in rb and rb.endswith("| meets |"), rb)
         check("r5 report: information line against the fourth book", "For information: against the fourth book" in sec
@@ -853,14 +857,54 @@ def r5_tests():
     with tempfile.TemporaryDirectory() as tmp:
         r5_books(tmp, r5=[10.31] * 10, main=[10.4] * 10, t18=[10.0] * 10)
         sec = section(ps.build_report(tmp, NOW), "Rule progress for the fifth book")
-        check("r5 report: 10.31 fails (a) and a lower main median fails (b) only when lower",
-              [l for l in sec.splitlines() if l.startswith("| (a)")][0].endswith("| does not meet yet |")
+        check("r5 report: 10.31 s no longer fails anything by itself; (b) meets against a higher main median",
+              [l for l in sec.splitlines() if l.startswith("| Reported")][0].endswith("| reported only |")
               and [l for l in sec.splitlines() if l.startswith("| (b)")][0].endswith("| meets |"), sec[:900])
     with tempfile.TemporaryDirectory() as tmp:
         r5_books(tmp, r5=[10.0] * 10, main=[9.9] * 10, t18=[10.0] * 10)
         sec = section(ps.build_report(tmp, NOW), "Rule progress for the fifth book")
         check("r5 report: (b) fails when the fifth's paired median is higher",
               [l for l in sec.splitlines() if l.startswith("| (b)")][0].endswith("| does not meet yet |"))
+    # ---- measure 1 (a): the pairs
+    def pair_file(tmp, name, start, order, r3, bd, counts=True, why=None, steps=31):
+        d = os.path.join(tmp, "reports", "owner", "step_pairs")
+        os.makedirs(d, exist_ok=True)
+        runs = [dict(inputs="release3", data_end_median_text=r3, steps_timed=steps),
+                dict(inputs="build", data_end_median_text=bd, steps_timed=steps)]
+        if order == "ba":
+            runs.reverse()
+        with open(os.path.join(d, name), "w") as f:
+            json.dump(dict(utc_start=start, order=order, counts=counts, why_not=why, runs=runs), f)
+    with tempfile.TemporaryDirectory() as tmp:
+        r5_books(tmp, r5=[10.0] * 10, main=[10.0] * 10, t18=[10.0] * 10)
+        pair_file(tmp, "pair_20261108T0005Z.json", "2026-11-08T00:05:10Z", "ab", "14.88", "9.70")
+        pair_file(tmp, "pair_20261108T0605Z.json", "2026-11-08T06:05:10Z", "ba", "11.37", "11.37")
+        pair_file(tmp, "pair_20261108T1205Z.json", "2026-11-08T12:05:10Z", "ab", "10.00", "10.01", counts=False, why="the build run met a refusal")
+        pair_file(tmp, "pair_20261111T0005Z.json", "2026-11-11T00:05:10Z", "ab", "10.00", "30.00")     # after the report's time
+        open(os.path.join(tmp, "reports", "owner", "step_pairs", "pair_bad.json"), "w").write("{not json")
+        sec = section(ps.build_report(tmp, NOW), "Rule progress for the fifth book")
+        check("pairs: each pair's start, order, both medians and difference are listed",
+              "| 2026-11-08 00:05 UTC | ab | 14.88 s | 9.70 s | -5.18 s | counts |" in sec
+              and "| 2026-11-08 06:05 UTC | ba | 11.37 s | 11.37 s | 0.00 s | counts |" in sec, sec[:2500])
+        check("pairs: a pair that does not count says why; a bad file does not count",
+              "| 2026-11-08 12:05 UTC | ab | 10.00 s | 10.01 s | 0.01 s | does not count: the build run met a refusal |" in sec
+              and "does not count: file could not be read" in sec)
+        a_row = [l for l in sec.splitlines() if l.startswith("| (a) Pairs that count")][0]
+        check("pairs: count and median of the pairs that count, two of eight needed: does not meet",
+              "| 2 pairs (8 needed); median -2.59 s; must be at or below 0.00 s | does not meet yet |" in a_row, a_row)
+    with tempfile.TemporaryDirectory() as tmp:
+        r5_books(tmp, r5=[10.0] * 10, main=[10.0] * 10, t18=[10.0] * 10)
+        for i in range(8):
+            pair_file(tmp, "pair_%d.json" % i, "2026-11-08T%02d:05:10Z" % i, "ab" if i % 2 == 0 else "ba", "10.00", "10.00" if i < 7 else "9.00")
+        a_row = [l for l in section(ps.build_report(tmp, NOW), "Rule progress for the fifth book").splitlines() if l.startswith("| (a) Pairs that count")][0]
+        check("pairs: eight pairs with median exactly 0.00 meet", "8 pairs (8 needed); median 0.00 s" in a_row and a_row.endswith("| meets |"), a_row)
+        pair_file(tmp, "pair_x.json", "2026-11-09T01:05:10Z", "ab", "10.00", "10.01")
+        pair_file(tmp, "pair_y.json", "2026-11-09T02:05:10Z", "ab", "10.00", "10.01")
+        pair_file(tmp, "pair_z.json", "2026-11-09T03:05:10Z", "ab", "10.00", "10.01")
+        a_row = [l for l in section(ps.build_report(tmp, NOW), "Rule progress for the fifth book").splitlines() if l.startswith("| (a) Pairs that count")][0]
+        check("pairs: 11 pairs (one at -1.00, seven at 0.00, three at +0.01): the median is 0.00 and meets", a_row.endswith("| meets |"), a_row)
+    ps_pairs = ps.load_pairs(os.path.join(tempfile.gettempdir(), "no_such_folder_for_pairs"))
+    check("pairs: a missing folder is no pairs", ps_pairs == [])
     # ---- item 3: only its second half
     with tempfile.TemporaryDirectory() as tmp:
         r5_books(tmp, r5=[16.0] * 10, main=[10.0] * 10, t18=[10.0] * 10, r5_counts={"tb_built": 540})
