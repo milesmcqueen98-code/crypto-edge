@@ -996,24 +996,43 @@ def load_pairs(directory):
     return out
 
 
-def pairs_measure(pairs, start=None, end=None, now=None, min_pairs=MIN_PAIRS):
+def pairs_measure(pairs, start=None, end=None, now=None, min_pairs=MIN_PAIRS, extend=False):
     """Measure 1 (a): the pairs that count whose start is in [start, end + 1 minute) (None: no limit; now: not after it),
     their number, and the median of build minus release 3 as an exact Fraction (None without pairs). Met when there are
-    at least min_pairs and the median is at or below zero."""
-    use = []
+    at least min_pairs and the median is at or below zero.
+    With extend=True and an end given: if fewer than min_pairs count in the period, the pairs that count and start at or
+    after end + 1 minute (the boundary above, so no pair is in both groups) are added oldest first, one at a time, until the
+    count reaches min_pairs; later pairs are not used. With min_pairs or more in the period nothing is added. The now limit
+    applies to the added pairs too. Extra keys: in_period (used pairs that started in the period), added (used pairs after
+    it), complete (the used pairs are at least min_pairs) and last_start (the start of the last used pair when pairs were
+    added, else None). With extend=False no pair after the period is used."""
+    use, later = [], []
+    stop = None if end is None else end + timedelta(minutes=1)
     for p in pairs:
         if not p["counts"]:
             continue
         if start is not None and p["start"] < start:
             continue
-        if end is not None and p["start"] >= end + timedelta(minutes=1):
-            continue
         if now is not None and p["start"] > now:
             continue
+        if stop is not None and p["start"] >= stop:
+            later.append(p)
+            continue
         use.append(p)
+    in_period = len(use)
+    added = 0
+    if extend and stop is not None and in_period < min_pairs:
+        later.sort(key=lambda p: (p["start"], p["file"]))
+        for p in later:
+            if len(use) >= min_pairs:
+                break
+            use.append(p)
+            added += 1
     med = median_exact([p["diff"] for p in use])
     return {"n": len(use), "needed": min_pairs, "enough": len(use) >= min_pairs, "median": med,
-            "met": len(use) >= min_pairs and med is not None and med <= 0, "used": use}
+            "met": len(use) >= min_pairs and med is not None and med <= 0, "used": use,
+            "in_period": in_period, "added": added, "complete": len(use) >= min_pairs,
+            "last_start": use[-1]["start"] if added else None}
 
 
 def startup_steps(events):
@@ -1106,7 +1125,8 @@ def r5_rule_section(st, loaded, rts, dqs, root, now=None):
     L += ["(a) Same-machine pairs: on one runner and the pinned commit, 30 minutes with release 3's inputs and 30 minutes "
           "with the build's, one after the other, the order alternating (scripts/owner/step_pairs/run_pair.py, "
           "step-pairs.yml). The measure is the median of the build's median data step minus release 3's over the pairs "
-          "that count: at or below zero, at least 8 pairs.", ""]
+          "that count: at or below zero, at least 8 pairs. If fewer than 8 count in the period, the read also takes the later "
+          "pairs, oldest first, up to the one that makes 8.", ""]
     if not pairs:
         L += ["No pairs yet.", ""]
     else:

@@ -1058,6 +1058,86 @@ def r5_tests():
               and "## Rule progress for the fifth book" in text and "against the fourth book, same way" not in text)
 
 
+def pairs_extend_tests():
+    from fractions import Fraction
+    t0 = datetime(2026, 11, 20, 0, 30, tzinfo=timezone.utc)
+    end = datetime(2026, 11, 23, 0, 29, tzinfo=timezone.utc)
+
+    def pp(diff, start, counts=True, name=None):
+        return dict(file=name or "pair_%s_%s.json" % (start.strftime("%d%H%M"), diff), start=start, order="ab", counts=counts,
+                    why=None if counts else "x", release3="10.00", build="10.00", diff=Fraction(diff))
+
+    def inside(diffs):
+        return [pp(d, t0 + timedelta(hours=i + 1)) for i, d in enumerate(diffs)]
+
+    def after(diffs, first_hours=1, counts=True):
+        return [pp(d, end + timedelta(hours=first_hours + i), counts) for i, d in enumerate(diffs)]
+
+    def pm(pairs, **kw):
+        return ps.pairs_measure(pairs, t0, end, **kw)
+    # 8 or more in the period: nothing added, later pairs ignored
+    r = pm(inside(["0"] * 8) + after(["9", "9", "9"]), extend=True)
+    check("extend: 8 in the period, nothing added, later pairs ignored", r["n"] == 8 and r["in_period"] == 8 and r["added"] == 0
+          and r["complete"] and r["met"] and r["median"] == 0 and r["last_start"] is None, r)
+    r = pm(inside(["-1"] * 9) + after(["9"] * 5), extend=True)
+    check("extend: 9 in the period are all used (more than 8 is fine)", r["n"] == 9 and r["added"] == 0 and r["met"], r)
+    # 7 in the period and 3 after: exactly the oldest later one
+    later = after(["1", "5", "5"])
+    r = pm(inside(["0"] * 7) + later, extend=True)
+    check("extend: 7 in the period and 3 after: one added, the oldest; the median's sign comes from it",
+          r["n"] == 8 and r["in_period"] == 7 and r["added"] == 1 and r["complete"] and r["median"] == 0 and r["met"]
+          and r["last_start"] == later[0]["start"] and r["used"][-1] is later[0] and later[1] not in r["used"] and later[2] not in r["used"], r)
+    base7 = ["-1"] * 3 + ["0"] + ["1"] * 3
+    r = pm(inside(base7) + after(["-1", "9", "9", "9"]), extend=True)
+    check("extend: the unused later pairs would turn the median positive (1/2 on all ten) but are not read: median -1/2, met",
+          r["n"] == 8 and r["added"] == 1 and r["median"] == Fraction(-1, 2) and r["met"]
+          and pm(inside(base7) + after(["-1", "9", "9", "9"]), extend=False)["median"] == 0, r)
+    r = pm(inside(["0"] * 4 + ["1"] * 3) + after(["1", "-9", "-9"]), extend=True)
+    check("extend: 4 at 0, 3 at 1 and the added 1: median 1/2 is above zero, not met",
+          r["n"] == 8 and r["median"] == Fraction(1, 2) and not r["met"] and r["complete"], r)
+    # 5 in the period and 2 after: 7 used, not complete
+    r = pm(inside(["-1"] * 5) + after(["-1", "-1"]), extend=True)
+    check("extend: 5 in the period and 2 after: 7 used, not complete, not met", r["n"] == 7 and r["in_period"] == 5 and r["added"] == 2
+          and not r["complete"] and not r["enough"] and not r["met"], r)
+    # a later pair that does not count is skipped
+    bad = after(["-1"], counts=False)
+    good = after(["-1", "-1"], first_hours=2)
+    r = pm(inside(["-1"] * 7) + bad + good, extend=True)
+    check("extend: a later pair that does not count is skipped and the next counting one is taken",
+          r["n"] == 8 and r["added"] == 1 and r["used"][-1] is good[0] and bad[0] not in r["used"], r)
+    # input order does not matter: oldest first
+    r = pm(inside(["-1"] * 6) + list(reversed(after(["-1", "5", "5"]))), extend=True)
+    check("extend: later pairs are taken oldest first whatever the input order", r["added"] == 2 and r["median"] == -1
+          and r["last_start"] == end + timedelta(hours=2), r)
+    # the boundary: end + 1 minute is the first minute after the period
+    p_in = pp("0", end + timedelta(seconds=59), name="pair_in.json")
+    p_out = pp("0", end + timedelta(minutes=1), name="pair_out.json")
+    r = pm(inside(["0"] * 6) + [p_in, p_out], extend=True)
+    check("extend: a start in the period's last minute is in the period, one a minute after is added, none in both",
+          r["in_period"] == 7 and r["added"] == 1 and p_in in r["used"] and p_out in r["used"] and r["n"] == 8, r)
+    r = pm(inside(["0"] * 7) + [p_in, p_out], extend=True)
+    check("extend: with the last-minute pair the period has 8: the pair a minute later is not used",
+          r["in_period"] == 8 and r["added"] == 0 and p_out not in r["used"], r)
+    r = pm(inside(["0"] * 6) + [p_in, p_out], extend=False)
+    check("extend=False: the pair a minute after is not used", r["n"] == 7 and p_out not in r["used"] and r["added"] == 0, r)
+    # now cuts the added pairs
+    later = after(["-1", "-1", "-1"])
+    r = pm(inside(["-1"] * 5) + later, now=later[1]["start"], extend=True)
+    check("extend: now cuts the added pairs (a pair after now is not used)", r["n"] == 7 and r["added"] == 2 and later[2] not in r["used"]
+          and not r["complete"], r)
+    r = pm(inside(["-1"] * 7) + later, now=later[0]["start"] - timedelta(minutes=1), extend=True)
+    check("extend: now before every later pair adds none", r["n"] == 7 and r["added"] == 0, r)
+    # extend=False is today's result on the same inputs
+    pairs = inside(["-1"] * 7) + after(["-1", "5", "5"])
+    r0, r1 = pm(pairs), pm(pairs, extend=False)
+    check("extend=False: today's result (7 used, later pairs left out)", r0["n"] == r1["n"] == 7 and not r1["enough"] and not r1["met"]
+          and r1["median"] == -1 and r1["used"] == pairs[:7] and r1["added"] == 0 and r1["in_period"] == 7 and not r1["complete"], r1)
+    r = ps.pairs_measure(pairs, t0, None, extend=True)
+    check("extend without an end changes nothing", r["n"] == 10 and r["added"] == 0, r)
+    r = pm(inside(["-1"] * 7) + after(["-1"]), extend=True, min_pairs=3)
+    check("extend: min_pairs is respected (7 in the period, 3 needed: nothing added)", r["n"] == 7 and r["added"] == 0 and r["complete"], r)
+
+
 def main():
     with tempfile.TemporaryDirectory() as tmp:
         build_root(tmp)
@@ -1216,6 +1296,7 @@ def main():
     ended_book_tests()
     r5_tests()
     test_a_start_tests()
+    pairs_extend_tests()
 
     print("\n" + ("all passed" if not FAILS else f"{len(FAILS)} failed: {FAILS}"))
     sys.exit(1 if FAILS else 0)
