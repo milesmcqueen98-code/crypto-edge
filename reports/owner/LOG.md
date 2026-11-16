@@ -1123,3 +1123,19 @@ FORWARD_TESTS.md.
     in what is there.
   - **Live check of the side-by-side build** (trades-workers plan, Part 2): job 43966296502 started 22:03 UTC,
     30 minutes with one worker and then 30 with three.
+- **18:35. Live check of the side-by-side build: no fault. Part 3 of its plan redesigned before any Part 3 run.**
+  - **Part 2** (job 43966296502, 22:20 to 23:25 UTC): one worker 2.65 s at the median and 4.49 s at the longest;
+    three workers 2.64 s and 3.79 s. No budget fallback, at most 7 requests in a second, none of 756 compared
+    rows differs in either half. No refusal, no rate limit, no crash.
+  - **What it showed:** the venue was fast again and both paths sat at the pace (2.43 s is the floor for 18
+    requests). My plan's measure 1 asked for a 0.2 s gain at the median, taken from a model fitted to another
+    runner. I had written that it does not depend on slow minutes. It does.
+  - **The change** (plan, deviation log, with what it does to the odds): Part 3 becomes runs that alternate one
+    worker and three minute by minute on one machine. No harm at the median (0.05 s); at most half the share of
+    passes over 6 s, with at least 30 such passes seen on the one-worker side and up to 14 days to see them; the
+    pace and the rows as before, the rows with a one-point tolerance.
+    - It is easier to pass than the first version when most minutes are quiet and some are slow. That is the
+      case the option is for. It is logged before any Part 3 data exist.
+    - If no slow spell comes in 14 days, the gain is not shown and the option stays off.
+  - **Part 4 unchanged:** the sixth book starts now. The alternating tool is the next piece of work for the
+    agent; the half-hour pair tool it built for this plan is not used.

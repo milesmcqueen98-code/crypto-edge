@@ -62,6 +62,8 @@
   three-worker half and not in the other. A fault is fixed and Parts 1 and 2 are run again before anything else.
 
 ### Part 3: same-machine pairs, one worker against three
+- **Replaced on Nov 16 2026, 18:35 ET, before any Part 3 run: see the deviation log. The lines below are the first
+  version, kept for the record.**
 - On one runner and the pinned commit: 30 minutes with `trades_workers` 1 and 30 with 3, one straight after the
   other, both with the build's inputs. The order alternates from job to job. Four jobs a day at 03:05, 09:05,
   15:05 and 21:05 UTC, for the three days of Part 4.
@@ -154,3 +156,69 @@
     called back. With three workers that is at most two requests. Nothing is sent once the stop is set.
   - **The bar-source plan's branch** named under "What follows" was corrected there at 15:32, before any read: it
     covers a fail on its measure 4, on item 1 of its measure 3, or on both, and on nothing else.
+- **Nov 16 2026, 18:35 ET (orchestrator), after Part 2 and before any Part 3 run.** Part 2 shows no fault. Part 3
+  is redesigned, and I say below what that change does to the odds.
+  - **Part 2** (job 43966296502, 22:20 to 23:25 UTC, one runner, commit 4c1717ac):
+
+| | One worker, 31 steps | Three workers, 31 steps |
+|---|---|---|
+| Trades pass, median | 2.65 s | 2.64 s |
+| Trades pass, longest | 4.49 s | 3.79 s |
+| Data step ends, median | 8.65 s | 8.64 s |
+| Budget fallbacks | 0 | 0 |
+| Most trades requests in one second | 7 | 7 |
+| Compared rows that differ from the venue's candles | 0 of 756 | 0 of 756 |
+
+    - No refusal, no rate-limit answer, no crash. Nothing to fix. Part 2 passes nothing.
+  - **What Part 2 showed about Part 3 as written.**
+    - Both paths sat at the pace: 18 requests at seven a second cannot take less than 2.43 s. In that hour almost
+      no request took longer than the gap between two sends, so there was nothing for workers to gain.
+    - The model's 0.6 s came from the probe's runner, where 13 to 16% of requests took longer than that gap. I
+      wrote that measure 1 "does not depend on slow minutes". That was wrong: it depends on the machine and the
+      hour.
+    - So measure 1 as written (a median gain of 0.2 s over half-hour pairs) tests the model's median. It does
+      not test what the option is for, which is the slow minutes.
+    - The half-hour pairs have a second weakness for slow minutes: slow spells come in runs, so one spell can fall
+      into one half of one pair and look like a gain or a loss.
+  - **What the change does to the odds, plainly:** as written, Part 3 would most likely fail unless most pairs
+    fell into slow hours. The new Part 3 can pass when most minutes are quiet and some are slow. It is easier to
+    pass in exactly that case. I make the change anyway because the written measure answers the wrong question,
+    and I make it before any Part 3 data exist. To keep it honest, the new measures ask for a shown gain where
+    the option claims one, with a floor on how many slow passes must have been seen and a time limit.
+  - **Part 3 as it now stands: alternating minutes on one machine.**
+    - Four jobs a day at 03:05, 09:05, 15:05 and 21:05 UTC. Each is one paper run of 60 minutes on one runner,
+      on the pinned commit, with the sixth book's config. The trades pass uses one worker in one minute and three
+      in the next, turn by turn. Which arm takes the even minutes alternates from job to job.
+    - Recorded for every step: the arm, the pass's duration by the engine's timer, budget fallbacks, rate-limit
+      and error counts, the most trades requests in any one second, and the bars the pass built. Afterwards the
+      bars are compared with the venue's candles, fetched at least three minutes later.
+    - A job counts if each arm has at least 20 timed steps. At least 8 jobs; with fewer, the jobs go on at the
+      same times and the read waits for the eighth.
+    - Measures, over all steps of the jobs that count:
+      1. **No harm in an ordinary minute.** The median pass with three workers is at most the median with one
+         worker plus 0.05 s.
+      2. **A gain in slow minutes.** A slow pass is one longer than 6.0 s, three quarters of the budget. The
+         one-worker minutes must hold at least 30 slow passes. The share of slow passes among the three-worker
+         minutes is at most half the share among the one-worker minutes. Budget fallbacks in the three-worker
+         minutes are no more than in the one-worker minutes.
+         - If the one-worker minutes hold fewer than 30 slow passes when Part 4's period ends, the jobs go on at
+           the same times until they do, for at most 14 days from the first job. If they still do not, the gain
+           is not shown and the option stays off until a slow spell can be tested.
+      3. **The pace.** In no three-worker minute are more than 8 trades requests sent in one second, and none
+         meets a rate-limit answer or a refusal. One such answer in a three-worker minute stops the jobs and the
+         sixth book until the cause is known.
+      4. **The rows.** The share of built bars that differ from the venue's candle is at most one point higher
+         for three workers than for one. (Two equal shares differ by chance, so "no higher" would fail half the
+         time. In Part 2's check the rows had already been replaced by the venue's candles, which is why it
+         showed none; here the bars are compared as built.)
+    - Reported, not ruled on: both arms' median and mean pass and their difference, beside the 0.2 s that the
+      first version asked for.
+    - **A known lean against the option:** a coin that falls back in a one-worker minute is repaired by the next
+      minute's pass, which is a three-worker one. So the three-worker minutes carry some of the one-worker
+      minutes' cost.
+    - **Why 6.0 s and 30:** on the probe's recorded requests 19.7% of passes on Nov 16 and 2.7% on Nov 14 were
+      longer than 6 s, against 1.0% and 0.3% in the model with three workers. With 30 slow passes on the
+      one-worker side, an option that did nothing would show 15 or fewer on the other side about once in fifty
+      tries (1.8%, slow passes taken as independent). With 20 it would be once in twenty, which is too often.
+  - **Part 4 is unchanged.** The sixth book starts now. Parts 3 and 4 are still read once, together; if Part 3
+    has to wait for slow minutes, the verdict waits with it.
