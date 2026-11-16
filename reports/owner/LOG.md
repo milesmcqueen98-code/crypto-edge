@@ -1051,3 +1051,5 @@ FORWARD_TESTS.md.
   - **Bar-source plan, deviation log:** if Part 3 fails on measure 4 alone, this is the corrected build and the
     sixth book's three days count for it, read by Part 3's own measures. Written before either book is read; no
     measure is added or loosened.
+- **14:41. The repeat of the suite on the pinned commit ended clean** (job 43927028467, 85 minutes): the same 22
+  files, none with a failure, the same 830 passing checks. Two clean runs on 9e6f53b3 on two runners.
