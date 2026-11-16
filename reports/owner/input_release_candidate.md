@@ -1,4 +1,12 @@
-# Release 4 candidate: facts for the release note
+# Input release candidate (for release 5): facts for the release note
+
+*Note, Nov 16 2026.* Merged onto `main` after release 4 (the order path) on branch `owner/release-5`. This build is
+no longer "release 4"; it is the candidate for release 5. Renamed at the merge: this file (was
+`reports/owner/release4_candidate.md`) and the runner driver's folder (`scripts/owner/release4/` is now
+`scripts/owner/input_release/`; the driver now runs the union of the order path's and this build's test files).
+The numbers below were made on branch `owner/release-4` before the merge; the runner commands quoted below are as
+prepared there (`--ref owner/release-4`, the driver's old path). They are confirmed again by the runner suite on
+`owner/release-5` (`scripts/owner/input_release/run_spot_tests.py`). Runner job: to be filled in by the owner.
 
 Branch `owner/release-4`. Prepared as a candidate; whether it ships is decided by the fourth paper book's registered
 read (reports/owner/bar_source_prereg.md, Part 2), due Nov 15. This file states facts only.
@@ -47,7 +55,7 @@ read (reports/owner/bar_source_prereg.md, Part 2), due Nov 15. This file states 
   line; the test lines.
 - **Tests.** `release_inputs_test.py` (new wording, three `describe` cases, a live file holding release 3's inputs);
   `live_sim_test.py` (`--switch-from`, and a made-up difference hook in its trades feed; the candle path is untouched);
-  `live_sim_inputs_test.py` (cases C2 and D); new `scripts/owner/release4/run_spot_tests.py`.
+  `live_sim_inputs_test.py` (cases C2 and D); new `scripts/owner/input_release/run_spot_tests.py`.
 - **Not changed.** `bot/market.py`, `bot/spot/run.py`, every safety check in `bot/spot`, `wickctl`, `configure.py`,
   `setup_vm.sh`, `watchdog.py`, the service file, `.github/`, `reports/owner/RELEASES.md` and the other owner files.
 
@@ -138,13 +146,13 @@ masked). Commands from the repository root of the copy.
 
 Not run here: `sandbox_test.py` (Coinbase sandbox), `trades_bar_check.py` and `tb_smoke.py` (network),
 `scripts/owner/bar_source/test_part2_rule.py` (needs `reports/owner/reconcile_tb/i2_t18`, not in this checkout),
-`scripts/owner/release4/run_spot_tests.py` and `scripts/owner/engine_c/run_spot_tests.py` themselves (their parts
+`scripts/owner/input_release/run_spot_tests.py` and `scripts/owner/engine_c/run_spot_tests.py` themselves (their parts
 were run one by one).
 
 ## Tests to be run on a runner
 Both use the generic runner `hunt2.yml` on this branch; `commit` stays empty, nothing is written back.
 
-- **Every offline spot test, one at a time** (`scripts/owner/release4/run_spot_tests.py`: release 3's list plus
+- **Every offline spot test, one at a time** (`scripts/owner/input_release/run_spot_tests.py`: release 3's list plus
   `candle_after_test.py`; it prints, per file, the exit code, the PASS/ok and FAIL counts, the result lines and the
   time, and exits non-zero if any file fails). The live-path inputs test now runs five simulations without the death
   and four with it. About 2 to 2.5 hours on the runner (the parity replay took 35 to 45 minutes here when it had a
@@ -241,7 +249,8 @@ Both use the generic runner `hunt2.yml` on this branch; `commit` stays empty, no
   of 20:30 to 21:00 are not in any heartbeat).
 - **The data step is about 3.5 s later than with five coins** (above): new bids go out later in the minute.
 - **README.** The engine-c text says the option is the fourth book's (`config.t18.json`); this branch's README now
-  also says `config.json` uses it from release 4. The release note and the other owner files are not touched.
+  also says `config.json` uses it from release 5 (it said release 4 before the merge). The release note and the
+  other owner files are not touched.
 - **Branch state.** No conflict came up in the cherry-pick: `main`'s README changes and the option's README lines
   merged by themselves at the place the brief named. Commits since `main`: the two picked commits (messages kept,
   the two trailer lines added), step B, a work-in-progress commit of step D's code (pushed at the coordinator's

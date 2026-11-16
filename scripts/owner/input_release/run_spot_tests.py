@@ -3,9 +3,10 @@ prints each file's tally: exit code, PASS/ok lines, FAIL lines, the result lines
 runs one script. One test at a time (memory). sandbox_test.py is not run: it needs Coinbase's sandbox (its own
 workflow, sandbox-test.yml). trades_bar_check.py and tb_smoke.py are not run: they need the network.
 
-  python scripts/owner/release4/run_spot_tests.py
+  python scripts/owner/input_release/run_spot_tests.py
 
-Release 4's list: release 3's (scripts/owner/release3/run_spot_tests.py) plus candle_after_test.py and
+The input release candidate's list (named release 4 before the merge onto main; now the candidate for release 5):
+release 3's (scripts/owner/release3/run_spot_tests.py) plus candle_after_test.py and
 candle_pass_test.py; the live-path inputs test now runs A, B, C1, C2, E and, without the death, D, F0 and F1, and
 prints the modelled clock of the data step (bot/spot/live_sim_inputs_test.py).
 

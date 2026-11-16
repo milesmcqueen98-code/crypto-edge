@@ -1,5 +1,13 @@
 # Data step candidate: facts (candle requests between steps, `"candles_at_s"`)
 
+*Note, Nov 16 2026.* Merged onto `main` after release 4 (the order path) on branch `owner/release-5`, as part of the
+candidate for release 5. Renamed at the merge: `reports/owner/release4_candidate.md` is now
+`reports/owner/input_release_candidate.md`, and `scripts/owner/release4/` is now `scripts/owner/input_release/` (the
+driver now runs the union of the order path's and this build's test files). The numbers below were made on branch
+`owner/release-4` before the merge; the runner commands quoted below are as prepared there (`--ref owner/release-4`,
+the driver's old path). They are confirmed again by the runner suite on `owner/release-5`. Runner job: to be filled in
+by the owner.
+
 Branch `owner/release-4`, from commit `cde92521`. Prepared as a candidate; whether a bot takes it is decided by the
 owner. This file states facts only.
 
@@ -46,7 +54,7 @@ owner. This file states facts only.
   (below) and, in the config commit, `candles_at_s` among the input keys and in the inputs line.
 - **`bot/spot/tb_smoke.py`**: `--set KEY=JSON`, `--then KEY=JSON` (a second run on the same runner) and a per-step
   timing table.
-- **`scripts/owner/release4/run_spot_tests.py`**: `candle_pass_test.py` added; the new result lines shown.
+- **`scripts/owner/input_release/run_spot_tests.py`**: `candle_pass_test.py` added; the new result lines shown.
 - **`bot/spot/README.md`**: a section "Candle requests between steps", the test lines; in the config commit the
   input keys and the emergency switch.
 - **`bot/spot/config.json`, `bot/spot/config.w2.json`** (config commit): `"candles_at_s": 45`.
@@ -84,7 +92,7 @@ equal line for line, heartbeats and their counters included (step timing removed
 - **Run by me:** `merge_test.py` 21 of 21, `trades_bar_test.py` 37, `usdc_test.py` 11, `newest_bar_test.py` 73 of
   73, `candle_after_test.py` 30 of 30, `release_inputs_test.py` 73 of 73, `deploy/watchdog_test.py` 31,
   `bash deploy/paper_next_test.sh` 11, `bash deploy/paper_commit_test.sh` 38, `bash deploy/wickctl_test.sh` 7,
-  `scripts/owner/bar_source/test_bar_source.py` 53. All equal to `release4_candidate.md`; stdout identical to the
+  `scripts/owner/bar_source/test_bar_source.py` 53. All equal to `input_release_candidate.md`; stdout identical to the
   previous agent's runs of the same code (watchdog: wall-clock times; release_inputs: a set printed in another order
   and a time stamp).
 - **Taken from the previous agent's kept outputs for this code state** (copied from its scratch folder `rel4/`,
@@ -176,7 +184,7 @@ candles plus eighteen coins' trades 13.4 s.
 ## Tests to be run on a runner (prepared here, not run)
 Both use the generic runner `hunt2.yml` on this branch; `commit` stays empty, nothing is written back.
 
-- **(a) Every offline spot test, one at a time,** through the driver `scripts/owner/release4/run_spot_tests.py`
+- **(a) Every offline spot test, one at a time,** through the driver `scripts/owner/input_release/run_spot_tests.py`
   (release 3's list, `candle_after_test.py` and `candle_pass_test.py`; per file the exit code, the PASS/ok and FAIL
   counts, the result lines and the time; exit code non-zero if any file fails):
 
@@ -230,7 +238,8 @@ Both use the generic runner `hunt2.yml` on this branch; `commit` stays empty, no
 - **The venue's cache.** No test here sees cached copies or the address sharing described above; the simulation's
   answers are never old.
 - **The step's real timing.** The seconds above are a model; the runner job (b) measures them.
-- **A real VM, `wickctl status` on it, the service.** As for release 4: `status` ran end to end on temp files only.
+- **A real VM, `wickctl status` on it, the service.** As for the input release candidate
+  (`input_release_candidate.md`): `status` ran end to end on temp files only.
 - **Python 3.8 to 3.10.** Checked only with Python 3.13 and `ast.parse(..., feature_version=(3, 8))` for the files
   `run.py` imports that changed (`engine.py`, `release_inputs.py`, `run.py`).
 - **The two runner jobs** were not run (they need the network or a runner).
@@ -241,8 +250,8 @@ Both use the generic runner `hunt2.yml` on this branch; `commit` stays empty, no
 - **The pass's request shares its address with the second-6 request of any client without the setting** (above).
   Where such a client asked first, the pass gets a copy about 39 s old; the row behind the newest one is then still
   the trades bar at the decision, where today's step would usually have had the venue's candle. In the fourth book
-  10,533 of 68,429 replaced rows (15.4%) had a candle close more than a tick from the trades bar (release 4's facts
-  file). The decisions in the simulation are equal only because its answers are never old.
+  10,533 of 68,429 replaced rows (15.4%) had a candle close more than a tick from the trades bar
+  (`input_release_candidate.md`). The decisions in the simulation are equal only because its answers are never old.
 - **The emergency switch needs one more key removed.** A VM set up from this release copies `config.json`, with
   `"candles_at_s": 45`, into its live file. The switch as release 3's note gives it (`"inputs_local": true,
   "newest_bar": "candles", "stale_guard": false`) then leaves `candles_at_s` in place, and the engine refuses to
@@ -260,7 +269,7 @@ Both use the generic runner `hunt2.yml` on this branch; `commit` stays empty, no
   about M + 45 s instead of M + 66 s. A take-profit that crosses in that time is sold at market with the close of the
   table as its reference (`_exit_market`); the live broker's sell itself does not use it. Not tested.
 - **The decision of every minute still uses the trades bar for that minute;** nothing here changes the late cut
-  that release 4's facts file describes.
+  that `input_release_candidate.md` describes.
 - **The paper books fill on whole-minute candles,** so the step's time does not reach their fills; the main book and
   W2 take the setting with this config, and their rows can still differ from today's through the cached copies
   above. Their heartbeats' `step_s` and the new counters show the change.
@@ -284,7 +293,7 @@ Both use the generic runner `hunt2.yml` on this branch; `commit` stays empty, no
 - **Config files:** the key sits after `"stale_guard"`, away from the end of the files.
 - **Tests that force candle mode** (`replay_test.py`, `live_sim_test.py`, `newest_bar_test.py`) drop the key, as
   they drop the other trades keys.
-- **The runner driver:** the existing `scripts/owner/release4/run_spot_tests.py` was extended (not a new one).
+- **The runner driver:** the existing `scripts/owner/input_release/run_spot_tests.py` was extended (not a new one).
 
 ## Commits on the branch (from `cde92521`)
 - `6f939920` Spot engine: candles_at_s, the candle pass, unit tests.
