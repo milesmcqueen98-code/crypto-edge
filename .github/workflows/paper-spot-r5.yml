@@ -1,0 +1,110 @@
+name: paper-spot-r5
+
+# Fifth paper book (reports/owner/bar_source_prereg.md, "Part 3: the build as a paper book"): the build on branch
+# owner/release-5 (main with the input build merged in), run with that commit's own bot/spot/config.json, the file the
+# release would ship: all 18 coins take the newest minute from trades, the venue's candle replaces it afterwards, and
+# the candle requests for those coins are made at second 45, between steps. $250,000 of paper money. The engine code
+# is checked out into code/ (workflow_dispatch input code_ref; an empty input and the schedule use the pinned commit
+# named once in CODE_REF below), while its STATE and log stay on main in paper_spot_r5 (paper_spot_r5/CODE names the
+# commit of each run). The commit is pinned on purpose: a different commit restarts the book's three days
+# (reports/owner/bar_source_prereg.md, Part 3). Controls: the fourth book (paper-spot-t18.yml) and the main book
+# (paper-spot.yml). Its own workflow, runner and folder, so the other books keep their runs, requests and rate as
+# before. Each job runs ~5h45m; the hand-over job starts the next run, the schedule is the backstop. State carries
+# over through paper_spot_r5/state.json.
+on:
+  schedule:
+    - cron: "18 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      minutes:
+        default: "345"
+      code_ref:
+        description: "engine commit the book runs; leave empty for the pinned commit (CODE_REF in this file, branch owner/release-5). Pinned on purpose: a different commit restarts the three-day test (reports/owner/bar_source_prereg.md, Part 3)"
+        default: ""
+
+# the pinned commit of branch owner/release-5: the only place it is written
+env:
+  CODE_REF: "PINNED_COMMIT_TO_BE_SET_BY_THE_OWNER"
+
+concurrency:
+  group: paper-spot-r5
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  paper_r5:
+    runs-on: ubuntu-latest
+    timeout-minutes: 358
+    steps:
+      # state, log and the commit script from main, in the workspace root (this checkout first: it cleans the workspace)
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: |
+            bot/spot/deploy
+            paper_spot_r5
+      # the engine code from code_ref, in code/ (a separate repository inside the workspace, never committed)
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.code_ref || env.CODE_REF }}
+          path: code
+          sparse-checkout: |
+            bot
+            edge
+            reports
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pandas numpy lightgbm requests pyarrow
+      - name: Record the engine commit
+        env:
+          RUN_REF: ${{ inputs.code_ref || env.CODE_REF }}
+        run: |
+          echo "code/" >> .git/info/exclude
+          mkdir -p paper_spot_r5
+          {
+            echo "code_ref: $RUN_REF"
+            echo "code_commit: $(git -C code rev-parse HEAD)"
+            echo "utc: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "code_branch_hint: owner/release-5"
+          } > paper_spot_r5/CODE
+          cat paper_spot_r5/CODE
+      - name: Paper trade the r5 book
+        run: |
+          M=${{ inputs.minutes || '345' }}
+          SD="$GITHUB_WORKSPACE/paper_spot_r5"
+          python code/bot/spot/run.py paper --minutes $M --config "$GITHUB_WORKSPACE/code/bot/spot/config.json" --state-dir "$SD" > r5.out 2>&1 || echo "paper run exited with code $?"
+          grep -E '"kind": "(fill_entry|fill_exit|halt|error|warning|catch_up|heartbeat)"' r5.out | tail -n 30 || true
+          python code/bot/spot/run.py report --state-dir "$SD" | tail -n 30
+      - name: Commit paper log
+        if: always()
+        run: |
+          git config user.name "crypto-edge-bot"
+          git config user.email "crypto-edge-bot.users.noreply.github.com"
+          bash bot/spot/deploy/paper_commit.sh "Spot paper log (r5 book) $(date -u +%Y-%m-%dT%H:%MZ)" paper_spot_r5
+
+  # hand-over: start the next run of this workflow on main when this one ran at least 30 minutes
+  # (bot/spot/deploy/paper_next.sh with WORKFLOW naming this file). The cron line above stays as the backstop.
+  next:
+    needs: [paper_r5]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: bot/spot/deploy
+      - name: Start the next run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          RUN_ID: ${{ github.run_id }}
+          REPO: ${{ github.repository }}
+          WORKFLOW: paper-spot-r5.yml
+        run: bash bot/spot/deploy/paper_next.sh
