@@ -1,15 +1,15 @@
 # Paper trading status
 
-Report made 2026-11-16 16:32 UTC.
+Report made 2026-11-16 17:06 UTC.
 
 | Book | Newest event | Age | Flag |
 |---|---|---|---|
-| Spot (main) | 2026-11-16 16:00 UTC | 0.5 h ago | ok |
-| Spot W2 | 2026-11-16 16:00 UTC | 0.5 h ago | ok |
-| Spot TB (trades input) | 2026-11-16 16:00 UTC | 0.5 h ago | ok |
-| Spot T18 (all coins on trades) | 2026-11-16 13:00 UTC | 3.5 h ago | ok |
-| Perp v1 (control) | 2026-11-16 16:31 UTC | 0.0 h ago | ok |
-| Perp R2-08 | 2026-11-16 16:31 UTC | 0.0 h ago | ok |
+| Spot (main) | 2026-11-16 16:00 UTC | 1.1 h ago | ok |
+| Spot W2 | 2026-11-16 16:00 UTC | 1.1 h ago | ok |
+| Spot TB (trades input) | 2026-11-16 16:00 UTC | 1.1 h ago | ok |
+| Spot T18 (all coins on trades) | 2026-11-16 13:00 UTC | 4.1 h ago | ok |
+| Perp v1 (control) | 2026-11-16 16:31 UTC | 0.6 h ago | ok |
+| Perp R2-08 | 2026-11-16 16:31 UTC | 0.6 h ago | ok |
 
 A book is flagged STALE when its newest event is more than 8 hours old.
 
@@ -56,7 +56,7 @@ The five longest gaps of each book (a gap is the time the book was not running b
 | Perp R2-08 | 2026-11-09 10:03 UTC | 5.0 |
 | Perp R2-08 | 2026-11-09 20:47 UTC | 4.4 |
 
-Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 0.5 h; Spot W2 0.5 h; Spot TB (trades input) 0.5 h; Spot T18 (all coins on trades) 3.5 h; Perp v1 (control) 0.0 h; Perp R2-08 0.0 h.
+Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 1.1 h; Spot W2 1.1 h; Spot TB (trades input) 1.1 h; Spot T18 (all coins on trades) 4.1 h; Perp v1 (control) 0.6 h; Perp R2-08 0.6 h.
 
 ## Summary
 
