@@ -1,15 +1,15 @@
 # Paper trading status
 
-Report made 2026-11-16 04:49 UTC.
+Report made 2026-11-16 07:32 UTC.
 
 | Book | Newest event | Age | Flag |
 |---|---|---|---|
-| Spot (main) | 2026-11-16 04:00 UTC | 0.8 h ago | ok |
-| Spot W2 | 2026-11-16 04:00 UTC | 0.8 h ago | ok |
-| Spot TB (trades input) | 2026-11-16 04:00 UTC | 0.8 h ago | ok |
-| Spot T18 (all coins on trades) | 2026-11-16 01:35 UTC | 3.2 h ago | ok |
-| Perp v1 (control) | 2026-11-16 04:49 UTC | 0.0 h ago | ok |
-| Perp R2-08 | 2026-11-16 04:49 UTC | 0.0 h ago | ok |
+| Spot (main) | 2026-11-16 04:00 UTC | 3.5 h ago | ok |
+| Spot W2 | 2026-11-16 04:00 UTC | 3.5 h ago | ok |
+| Spot TB (trades input) | 2026-11-16 04:00 UTC | 3.5 h ago | ok |
+| Spot T18 (all coins on trades) | 2026-11-16 07:30 UTC | 0.0 h ago | ok |
+| Perp v1 (control) | 2026-11-16 04:49 UTC | 2.7 h ago | ok |
+| Perp R2-08 | 2026-11-16 04:49 UTC | 2.7 h ago | ok |
 
 A book is flagged STALE when its newest event is more than 8 hours old.
 
@@ -22,7 +22,7 @@ GitHub drops scheduled runs. While a book is not running it places no new bids; 
 | Spot (main) | 2026-11-06 22:30 UTC | 2026-11-16 04:00 UTC | 221.5 | 176.8 | 79.8% |
 | Spot W2 | 2026-11-07 00:44 UTC | 2026-11-16 04:00 UTC | 219.3 | 174.6 | 79.6% |
 | Spot TB (trades input) | 2026-11-11 01:47 UTC | 2026-11-16 04:00 UTC | 122.2 | 122.0 | 99.9% |
-| Spot T18 (all coins on trades) | 2026-11-11 22:25 UTC | 2026-11-16 01:35 UTC | 99.2 | 99.2 | 100.0% |
+| Spot T18 (all coins on trades) | 2026-11-11 22:25 UTC | 2026-11-16 07:30 UTC | 105.1 | 105.1 | 100.0% |
 | Perp v1 (control) | 2026-11-06 14:34 UTC | 2026-11-16 04:49 UTC | 230.2 | 178.7 | 77.6% |
 | Perp R2-08 | 2026-11-06 22:45 UTC | 2026-11-16 04:49 UTC | 222.1 | 172.9 | 77.9% |
 
@@ -56,7 +56,7 @@ The five longest gaps of each book (a gap is the time the book was not running b
 | Perp R2-08 | 2026-11-09 10:03 UTC | 5.0 |
 | Perp R2-08 | 2026-11-09 20:47 UTC | 4.4 |
 
-Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 0.8 h; Spot W2 0.8 h; Spot TB (trades input) 0.8 h; Spot T18 (all coins on trades) 3.2 h; Perp v1 (control) 0.0 h; Perp R2-08 0.0 h.
+Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 3.5 h; Spot W2 3.5 h; Spot TB (trades input) 3.5 h; Spot T18 (all coins on trades) 0.0 h; Perp v1 (control) 2.7 h; Perp R2-08 2.7 h.
 
 ## Summary
 
@@ -65,7 +65,7 @@ Hours in real time are calendar hours (first event to last event) minus the gaps
 | Spot (main) | 9.2 | $251,067 | +0.43% | 89 | $631,533 | 16.9 bp | 70 / 46 | 52 (32 made money) | 1 |
 | Spot W2 | 9.1 | $251,128 | +0.45% | 86 | $538,306 | 21.0 bp | 64 / 46 | 54 (35 made money) | 1 |
 | Spot TB (trades input) | 5.1 | $249,964 | -0.01% | 70 | $537,290 | -0.7 bp | 33 / 35 | 37 (22 made money) | 0 |
-| Spot T18 (all coins on trades) | 4.1 | $249,771 | -0.09% | 72 | $539,242 | -4.3 bp | 30 / 35 | 38 (23 made money) | 0 |
+| Spot T18 (all coins on trades) | 4.4 | $249,771 | -0.09% | 72 | $539,242 | -4.3 bp | 30 / 35 | 38 (23 made money) | 0 |
 | Perp v1 (control) | 9.6 | $10,144 | +1.44% | 11 | n/a (not logged) | n/a | 4 / 7 | - | 0 |
 | Perp R2-08 | 9.3 | $10,130 | +1.30% | 10 | n/a (not logged) | n/a | 4 / 6 | - | 0 |
 
@@ -217,8 +217,8 @@ Heartbeats with a trades error (tb_err): 1. Last: BTC: ReadTimeout(ReadTimeoutEr
 | 2026-11-13 | 1,410 | 47 | 13.4 | 20.9 | btc_candle_old 438, candle_old 638, newest_absent 280, tb_built 24,304, tb_close_diff 1,049, tb_dropped 521, tb_empty 280, tb_fb_budget 3, tb_fb_unverified 1, tb_insert 1,219, tb_pending 78, tb_rebuilt 40, tb_replaced 23,747, tb_replaced_diff 3,493 |
 | 2026-11-14 | 1,410 | 47 | 13.3 | 23.4 | btc_candle_old 159, candle_old 275, newest_absent 378, skip_old 4, tb_built 24,017, tb_close_diff 915, tb_dropped 482, tb_empty 375, tb_fb_budget 247, tb_fb_unverified 3, tb_insert 1,203, tb_pending 31, tb_rebuilt 16, tb_replaced 23,471, tb_replaced_diff 3,098 |
 | 2026-11-15 | 1,440 | 48 | 13.5 | 24.6 | btc_candle_old 289, btc_stale 2, candle_old 207, newest_absent 412, skip_old 1, tb_built 23,943, tb_close_diff 979, tb_dropped 601, tb_empty 390, tb_fb_budget 324, tb_fb_error 1, tb_fb_unverified 2, tb_insert 1,343, tb_pending 50, tb_rebuilt 48, tb_replaced 23,301, tb_replaced_diff 3,693 |
-| 2026-11-16 | 120 | 4 | 14.9 | 19.6 | btc_candle_old 62, candle_old 27, newest_absent 37, skip_old 2, tb_built 2,077, tb_close_diff 45, tb_dropped 40, tb_empty 31, tb_fb_budget 52, tb_insert 176, tb_pending 3, tb_rebuilt 4, tb_replaced 2,042, tb_replaced_diff 324 |
-| Total | 5,855 | 196 | 13.5 | 24.6 | btc_candle_old 1,009, btc_stale 2, candle_old 1,891, newest_absent 1,664, skip_old 7, tb_built 99,341, tb_close_diff 4,205, tb_dropped 2,463, tb_empty 1,635, tb_fb_budget 627, tb_fb_error 1, tb_fb_unverified 6, tb_insert 5,092, tb_pending 197, tb_rebuilt 167, tb_replaced 96,688, tb_replaced_diff 14,660 |
+| 2026-11-16 | 480 | 16 | 14.4 | 20.0 | btc_candle_old 67, candle_old 27, newest_absent 225, skip_old 2, tb_built 8,047, tb_close_diff 94, tb_dropped 245, tb_empty 214, tb_fb_budget 109, tb_insert 776, tb_pending 20, tb_rebuilt 13, tb_replaced 7,794, tb_replaced_diff 1,439 |
+| Total | 6,215 | 208 | 13.5 | 24.6 | btc_candle_old 1,014, btc_stale 2, candle_old 1,891, newest_absent 1,852, skip_old 7, tb_built 105,311, tb_close_diff 4,254, tb_dropped 2,668, tb_empty 1,818, tb_fb_budget 684, tb_fb_error 1, tb_fb_unverified 6, tb_insert 5,692, tb_pending 214, tb_rebuilt 176, tb_replaced 102,440, tb_replaced_diff 15,775 |
 
 Heartbeats with a trades error (tb_err): 1. Last: BTC: ReadTimeout(ReadTimeoutError("HTTPSConnectionPool(host='api.exchange.coinbase.com', port=443): Read timed out. (read timeout=3)"))
 
@@ -267,13 +267,13 @@ Listed coins for item 1: BTC, ETH, SOL, XRP, LTC, ZEC (read from bot/spot/config
 
 ## Fourth book against the third book
 
-Period both ran: 2026-11-11 22:25 UTC to 2026-11-16 01:35 UTC (99.2 calendar hours; 99.0 hours with both live).
+Period both ran: 2026-11-11 22:25 UTC to 2026-11-16 04:00 UTC (101.6 calendar hours; 101.4 hours with both live).
 
 | Measure | Spot TB | Spot T18 | T18 minus TB |
 |---|---|---|---|
 | Rung fills | 70 | 72 | +2 |
-| Rung fills per calendar day | 16.94 | 17.43 |  |
-| Rung fills per running day | 16.96 | 17.43 |  |
+| Rung fills per calendar day | 16.54 | 17.01 |  |
+| Rung fills per running day | 16.56 | 17.01 |  |
 | First-bid fills (rung 4) | 55 | 58 | +3 |
 | Deeper rungs placed | 56 | 56 |  |
 | Dollars bought | $537,290 | $539,242 | $1,953 |
@@ -292,25 +292,25 @@ This comparison is for the record. The registered read is in reports/owner/bar_s
 
 ## Rule progress for the fourth book
 
-Engine commit: 58eba8b (full hash 58eba8bde756e36cfdc51e2541c32b772496ff6f), recorded 2026-11-15T19:53:57Z UTC.
+Engine commit: 58eba8b (full hash 58eba8bde756e36cfdc51e2541c32b772496ff6f), recorded 2026-11-16T01:42:53Z UTC.
 
 > Items 1 to 5 of the third book's rule are read for this book with 18 listed coins; item 3's median bar is 15 s (the 30-minute maximum stays 20 s or less in 95% or more of heartbeats). The values are provisional. The registered plan is reports/owner/bar_source_prereg.md.
 
-Real-time minutes run so far: 5,950.
+Real-time minutes run so far: 6,305.
 
 Listed coins for item 1: BTC, ETH, SOL, XRP, DOGE, LTC, LINK, BCH, SUI, XLM, HBAR, NEAR, AAVE, HYPE, ENA, PEPE, ONDO, ZEC (fixed list for this book).
 
 | Item | Current value | Verdict |
 |---|---|---|
-| 1. Verified trades bar share of listed coin-minutes (99% or more) | 99.38% (100,976 verified of 101,610 attempted coin-minutes: built 99,341, verified empty 1,635; fallbacks: unverified 6, error 1, budget 627, rate limit 0; listed coins: BTC, ETH, SOL, XRP, DOGE, LTC, LINK, BCH, SUI, XLM, HBAR, NEAR, AAVE, HYPE, ENA, PEPE, ONDO, ZEC) | meets |
+| 1. Verified trades bar share of listed coin-minutes (99% or more) | 99.36% (107,129 verified of 107,820 attempted coin-minutes: built 105,311, verified empty 1,818; fallbacks: unverified 6, error 1, budget 684, rate limit 0; listed coins: BTC, ETH, SOL, XRP, DOGE, LTC, LINK, BCH, SUI, XLM, HBAR, NEAR, AAVE, HYPE, ENA, PEPE, ONDO, ZEC) | meets |
 | 2. No rate-limit fallback (tb_fb_limited 0) and no refusal in any event | tb_fb_limited 0; events mentioning a refusal or rate limit 0 | meets |
-| 3. Data step median 15 s or less; 30-minute maximum 20 s or less in 95% or more of heartbeats | median 13.5 s of 196 heartbeats; maximum 20 s or less in 96.4% (largest 24.6 s) | meets |
+| 3. Data step median 15 s or less; 30-minute maximum 20 s or less in 95% or more of heartbeats | median 13.5 s of 208 heartbeats; maximum 20 s or less in 96.6% (largest 24.6 s) | meets |
 | 4. No error events and obs_error 0 | error events 0; obs_error 0 | meets |
-| 5. Unconfirmed rows (rows_open) 1% or less of coin-minutes | 0.000% (0 of 105,390 coin-minutes, 18 coins) | meets |
+| 5. Unconfirmed rows (rows_open) 1% or less of coin-minutes | 0.000% (0 of 111,870 coin-minutes, 18 coins) | meets |
 
-Rows still built from trades 3 to 6 minutes on (tb_pending): 197 of 105,390 coin-minutes
+Rows still built from trades 3 to 6 minutes on (tb_pending): 214 of 111,870 coin-minutes
 
-Totals: tb_replaced 96,688, tb_replaced_diff 14,660, tb_dropped 2,463.
+Totals: tb_replaced 102,440, tb_replaced_diff 15,775, tb_dropped 2,668.
 
 ## Perp books
 
