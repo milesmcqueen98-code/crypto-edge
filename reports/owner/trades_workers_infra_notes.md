@@ -8,30 +8,38 @@ Plain words. Nothing here changes a trading decision. The plan is `reports/owner
   commit of branch `owner/trades-workers` with that commit's own `bot/spot/config.tw.json` (the release build's config
   plus `"trades_workers": 3`). State and log go to `paper_spot_tw` on `main`. Schedule `3 */6 * * *`. Its control is the
   fifth book, unchanged.
-- `.github/workflows/step-pairs-tw.yml` and `scripts/owner/step_pairs/run_pair_workers.py`: the same-machine pairs, one
-  worker against three, on the sixth book's pinned commit. Four jobs a day at 03:05, 09:05, 15:05 and 21:05 UTC; the
-  order is one worker first at 03 and 15, three workers first at 09 and 21. Results land in
-  `reports/owner/step_pairs_tw/pair_<UTC start>Z.json`. The fifth book's pair tool (`run_pair.py`) is untouched and keeps
-  running; the new tool reads the candidate's longer `tb_smoke.py` output (seven table columns, the trades pass line, the
-  peak per second line).
-- `.github/workflows/owner-status.yml`: the status report also runs after `paper-spot-tw` and `step-pairs-tw`, and the new
-  folders are in its checkout.
+- `.github/workflows/workers-alt.yml` and `scripts/owner/workers_alt/run_alt.py`: Part 3 as alternating minutes, one worker
+  against three, inside one run on one runner and on the sixth book's pinned commit. The half-hour pair design is gone: its
+  tool (`run_pair_workers.py`), its test and its fixtures are removed, and so is `step-pairs-tw.yml`. One run is 60 minutes of
+  paper steps with the sixth book's config (no orders, public data only); the trades pass uses one worker in one UTC minute
+  and three in the next, turn by turn, and the arm of the first minute is the job's first arm. Four jobs a day at 03:05,
+  09:05, 15:05 and 21:05 UTC; one worker first at 03 and 15, three workers first at 09 and 21 (the UTC hour decides: 00 to
+  05 and 12 to 17 start with one). Results land in `reports/owner/workers_alt/alt_<UTC start>Z.json`: every step with its
+  arm, its pass time, its peak of trades requests in one second, and whether it was limited or refused; then, after the run,
+  the rows the trades pass built are compared with the venue's candles (the newest three minutes are left out). A row
+  counts as the same only when all five values, open, high, low, close and volume, are equal as floats (`==`, no tolerance),
+  as in `tb_smoke.py`. If a candle request fails, the comparison stops and the file says so (`rows_complete` false); the
+  run's steps still count. The fifth book's pair tool (`run_pair.py`) is untouched and keeps running.
+- `.github/workflows/owner-status.yml`: the status report also runs after `paper-spot-tw` and `workers-alt`, and the new
+  folder is in its checkout.
 - `scripts/owner/paper_status.py`: the sixth book appears in every table (newest event, running time, summary, data
-  quality). New sections "Sixth book against the fifth book" and "Rule progress for the sixth book" (the workers pairs,
-  items 1 to 5, requests inside a step against the fifth book, stops, and the reported figures). New functions only; the
-  fifth book's functions and the fifth book's rule script are as they were.
+  quality). New sections "Sixth book against the fifth book" and "Rule progress for the sixth book" (the alternating runs,
+  items 1 to 5, requests inside a step against the fifth book, stops, and the reported figures). The alternating runs
+  are shown one line per job (start, first arm, steps, medians, slow passes, fallbacks, peak, rows, and whether it counts)
+  with progress on the four clauses of Part 3. New functions only; the fifth book's functions and the fifth book's rule
+  script are as they were.
 - `scripts/owner/trades_workers/rule.py`: the rule of Parts 3 and 4 as code, for the one read.
-- Tests: `scripts/owner/step_pairs/test_run_pair_workers.py`, `scripts/owner/test_paper_status.py` (new checks added, old
+- Tests: `scripts/owner/workers_alt/test_run_alt.py`, `scripts/owner/test_paper_status.py` (new checks added, old
   ones unchanged) and `scripts/owner/trades_workers/test_rule.py`.
 
 ## What was set before the merge
 
 One line: `CODE_REF: "4c1717ac3cd711c3383e281ccb3eb2742f993b23"` near the top of `.github/workflows/paper-spot-tw.yml`:
 the commit of branch `owner/trades-workers` named in the plan's deviation log. It is written nowhere else: the
-checkout, the CODE file and the manual-run input (empty means this commit) all read it, and `step-pairs-tw.yml` takes
+checkout, the CODE file and the manual-run input (empty means this commit) all read it, and `workers-alt.yml` takes
 the commit from `paper_spot_tw/CODE` once the book has run. A different commit restarts the test.
 
-Also: the schedules only run from `main`, and `step-pairs-tw` does nothing until `paper_spot_tw/CODE` exists (the book
+Also: the schedules only run from `main`, and `workers-alt` does nothing until `paper_spot_tw/CODE` exists (the book
 must have run once).
 
 ## How the read is run, step by step
@@ -43,7 +51,7 @@ were live. Write START and END as UTC minutes, both included (for example START 
 1. Count the bids from the logs alone, before any research is fetched: arm events on the 17 coins at minutes that are
    decision minutes of both books, using `live_minutes` in `scripts/owner/reconcile/common.py` (as in the fifth book's
    read). If either book has fewer than 300, move END six hours later and count again.
-2. Make a read branch from `main` once the logs and the pair files are on it. Fetch the research on a runner:
+2. Make a read branch from `main` once the logs and the alt files are on it. Fetch the research on a runner:
    `gh workflow run hunt2.yml -R milesmcqueen98-code/crypto-edge --ref BRANCH -f script=scripts/owner/reconcile/fetch_and_compute.py -f args="--books paper_spot_r5,paper_spot_tw --start START_MINUS_5_MIN --end END --out reports/owner/reconcile_tb/tw/research" -f tag=reconcile-tw -f sparse="bot edge scripts/owner reports/owner reports/cfm_products.csv paper_spot_r5 paper_spot_tw" -f commit="reports/owner/reconcile_tb/tw/research"`
    (START_MINUS_5_MIN is five minutes before START.)
 3. The two books, the fifth as the first book and the sixth as the second:
@@ -54,29 +62,36 @@ were live. Write START and END as UTC minutes, both included (for example START 
    `python scripts/owner/paper_status.py SCRATCH_ROOT --now END_PLUS_ONE_MINUTE`, then read the section "Rule progress for
    the sixth book", "Part 4, measure 2: items 1 to 5". Item 3 there is its second half only. Say pass if all five items
    meet, else fail.
-5. The rule (it also reads the workers pair files, `--pairs reports/owner/step_pairs_tw` by default):
+5. The rule (it also reads the alternating-run files, `--alt reports/owner/workers_alt` by default, and the time of the read,
+   `--now`, which is the clock unless given):
    `python scripts/owner/trades_workers/rule.py --dir reports/owner/reconcile_tb/tw --start START --end END --sixth paper_spot_tw --fifth paper_spot_r5 --items-1-5 pass`
    (or `fail`). It writes `trades_workers_rule.md` and `trades_workers_rule.json` into the folder and prints the markdown.
    If it prints "PERIOD NOT COMPLETE" it gives no verdict; after the third extension add `--read-as-is`.
-   Part 3 may need pairs from after the period: if fewer than 8 pairs count among those that started in the period, the
-   script adds the pairs that count after END, oldest first, only until it has 8, and says how many started in the period,
-   how many were added and when the last one used started. If fewer than 8 count even then it prints
-   "PART 3 NOT COMPLETE: n of 8 pairs count; the pair jobs go on and the read waits" and gives no verdict: wait for the pair
-   jobs, then run it again. With `--read-as-is` the clauses that need 8 pairs count as not met.
+   Part 3 takes the jobs that count (`alt_*.json` with `counts` true) that started from the first one up to END, and may need
+   jobs from after the period: while there are fewer than 8 jobs, or the one-worker steps of those jobs hold fewer than 30
+   slow passes (above 6.0 s), the next job that counts is added, oldest first, if it started within 14 days of the first
+   job's start; adding stops when both hold, and the script says how many jobs started in the period, how many were added and
+   when the last one used started. If they do not hold and the 14 days have not passed at `--now`, it prints
+   "PART 3 NOT COMPLETE: n of 8 jobs, m of 30 slow one-worker passes; the jobs go on and the read waits" and gives no verdict:
+   wait for the jobs, then run it again. With `--read-as-is` clauses 1, 2 and 4 count as not met. If they do not hold and the
+   14 days have passed, Part 3 is complete, clause 2 is not met and the output says "the gain is not shown".
 
 ## Things to know
 
-- The status report on the live log is progress only: it reads the whole log and every pair file so far. The rule script
+- The status report on the live log is progress only: it reads the whole log and every alt file so far. The rule script
   reads only heartbeats inside the period and cuts the logs at END first.
-- Part 3, measure 3 (the pace) reads every pair file that started in the period, counting or not: a three-worker run with
-  more than 8 trades requests in one second, a refusal or a rate limit fails it, and so does a file that cannot be read.
-  The plan says one such answer in a three-worker half stops the pairs and the sixth book until the cause is known.
-- The workers pair tool marks a run limited only when its output has `Limited(`, `HTTP 429`, "rate limit" (or rate-limit),
-  "too many requests", or a heartbeat counter `"tb_fb_limited"` of 1 or more. The bare number 429 (a counter of 429, a
-  price of 429.5, a time ending in .429) does not mark a run. A pair marked limited does not count, and if it is the
-  three-worker run it also fails the pace clause; the pair file's `why_not` and the job log show which text did it.
-  The fifth book's pairs (`run_pair.py`) still use the old pattern with the bare 429; a pair it marks stays out. This is
-  logged in `reports/owner/bar_source_prereg.md`.
+- Part 3 has four clauses, over all steps of the jobs used: (1) no harm, the median pass with three at most the median
+  with one plus 0.05 s; (2) a gain in slow minutes, at least 30 slow one-worker passes, the share of slow passes with three
+  at most half of one's, and no more budget fallbacks with three; (3) the pace, over every alt file from the first job to the
+  last one used, counting or not: no three-worker step with more than 8 trades requests in one second, none limited or
+  refused, and a file that cannot be read is listed and fails it; (4) the rows, the share of built bars that differ from the
+  venue's candle with three at most one point above the share with one (jobs with a complete comparison only; no rows on
+  either side means not met). The median and mean pass of both arms and their difference are reported, deciding nothing,
+  with the line that the first version of the plan asked for a 0.2 s gain at the median over half-hour pairs. The plan says
+  one such answer in a three-worker step stops the runs and the sixth book until the cause is known.
+- A step is marked refused only when the engine's error text has `Refused(`, `HTTP 401`, `HTTP 403` or `HTTP 451`, and limited
+  only when the counter `tb_fb_limited` rose in that step; the bare number 429 marks nothing. A job whose run ended with an
+  exception, or with fewer than 20 timed steps in an arm, does not count; the file's `why_not` and the job log say why.
 - The rule script stops with an error (no verdict) if the folder's books are not the fifth and sixth, if its period differs
   from START and END, if the "all" group is not the 17 traded coins, or if a count from `item7_bids.csv` differs from
   `side_by_side.csv`.
