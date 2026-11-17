@@ -1237,3 +1237,7 @@ FORWARD_TESTS.md.
     look. A surplus, a larger shortfall, or one that is 10 minutes old is warned as before. Each such sell
     already alerts on its own, when it is sent and when it is resolved.
   - **The simulation gets a check of its own:** from now on a run with any balance warning fails.
+- **16:26. The changed hand-over script: first real use, the main book.** Its run ended at 21:19 UTC after 350
+  minutes and the script started the next one (44178580796) in the same second; no test job, as intended for
+  this book. A scheduled run that GitHub had queued four minutes earlier was cancelled by it, as on other days.
+  Next: the sixth book at about 23:43 UTC, with the first alternating job started this way.
