@@ -233,8 +233,17 @@ so fills are the same. It is off (`"quote": "USD"`) because the backtest assumes
   - `wickctl stop` only stops the process. Bids expire on their own; take-profits stay.
 - The bot also protects itself:
   - after 5 straight failed minutes, it cancels its resting bids;
-  - every 15 minutes, it cancels any of its own orders missing from its state, and warns if coin balances differ from
-    its positions.
+  - every 15 minutes, it cancels any of its own orders missing from its state, and compares each coin's balance at
+    Coinbase with its open positions (more than `reconcile_tol_usd`, 25 dollars, apart counts as a difference).
+    A difference is looked at twice. The first look only writes a `balance_look` event (`look` "first"), which does
+    not alert your phone: fills the bot has not booked yet (those of a restart's down time, or one in the seconds
+    before the look) explain most first looks. After the bot has booked fills, it looks again in the next minute
+    step (at a start, right after booking the down time's fills): if the difference is gone, a `balance_look` event
+    with `look` "cleared"; if it is still there, the `warning` "coin balance differs from the bot's open rungs: check
+    before trading", with `since` (the first look's time), which does alert. One exception: a shortfall no larger than
+    the coin's market sells whose outcome is not known yet is held (no event) until those sells are booked, for at
+    most 10 minutes from the first look. A difference that stays is warned about every 15 minutes, as before. The
+    heartbeat's `counts` show `bal_first`, `bal_cleared`, `bal_warned` and `bal_held`.
 - Last resort: revoke the key in the CDP portal, then sell by hand in the Coinbase app (`wickbot` portfolio).
 
 ## Day to day
