@@ -50,6 +50,7 @@ ORDER_TAG = "wk1m"              # client_order_id prefix: lets reconcile() find 
 REFRESH_S = 150                 # re-place a good-til-date bid this many seconds before it would expire
 PASS_TIMEOUT_S = 4.0            # candles_at_s: each candle request of the pass between steps gives up after this
 PASS_TRIES = 1                  # many seconds, on its one try (a failed one leaves the coin to the step)
+BAL_HOLD_MIN = 10               # balance look: a shortfall covered by market sells of unknown outcome waits this long
 warnings.filterwarnings("ignore", message="Mean of empty slice")
 warnings.filterwarnings("ignore", category=RuntimeWarning, module="edge.wick")
 
@@ -2329,13 +2330,21 @@ class Engine:
             px = self.last_close(c, t)
             if not np.isfinite(px):
                 continue                                   # no price: any suspect stays as it is
-            differs = abs(ex - mine) * px > self.cfg.get("reconcile_tol_usd", 25.0)
+            tol = self.cfg.get("reconcile_tol_usd", 25.0)
+            differs = abs(ex - mine) * px > tol
             s = sus.get(c)
             if differs and s is None:
                 sus[c] = dict(exchange=ex, bot=mine, t=pd.Timestamp(t).isoformat(), settled=False)
                 self.log("balance_look", t=t, coin=c, exchange=ex, bot=mine, look="first")
                 self.count("bal_first")
             elif differs and s["settled"]:
+                pend = sum(tr["size"] for lad in self.ladders(c) for tr in lad["tranches"].values()
+                           if tr.get("sell_order"))        # market sells sent, outcome unknown
+                short = mine - ex
+                if (pend > 0 and short > 0 and (short - pend) * px <= tol
+                        and pd.Timestamp(t) - pd.Timestamp(s["t"]) < pd.Timedelta(minutes=BAL_HOLD_MIN)):
+                    self.count("bal_held")                 # the venue sold what the bot will book: wait, no event
+                    continue
                 self.log("warning", t=t, msg="coin balance differs from the bot's open rungs: check before trading",
                          coin=c, exchange=ex, bot=mine, since=s["t"])
                 sus.pop(c)
