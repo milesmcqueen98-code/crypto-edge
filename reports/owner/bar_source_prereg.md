@@ -547,3 +547,16 @@ The run finished at 08:58 UTC on Nov 15 (job 43689717933, branch owner/read-c2).
     written). A fail on anything else follows the branches as they were.
   - No measure is added, loosened or re-read. This only settles, before either read, which three days a
     corrected build may use.
+- **Nov 17 2026, 08:20 ET (orchestrator).** Part 3, the pairs: how they are started.
+  - **GitHub's clock is not keeping the schedule.** Of the three scheduled jobs so far, 00:05 UTC never started,
+    06:05 started at 06:56, and 12:05 had not started at 13:18. Two pairs count: the one started by hand on Nov
+    16 as logged, and the 06:56 one.
+  - At that rate the eight pairs of measure 1(a) take about a week, and the release waits on a scheduler.
+  - **From now on a pair is also started each time a run of the fifth book ends,** about every 5 h 50 min, by
+    GitHub's event and not its clock. The scheduled times stay; a pair they start counts as before.
+  - No one chooses when a pair runs, so this is not a start by hand, and the entry of Nov 16 13:36 ("no other
+    pair is started by hand") stands. The order of the halves still follows the UTC hour of the start.
+  - Nothing about what a pair measures or which pairs count changes. A pair still belongs to the period by the
+    time its job started.
+  - The pair tool, its test and the pair workflow stay byte for byte as they are. The starter is a separate
+    small workflow.

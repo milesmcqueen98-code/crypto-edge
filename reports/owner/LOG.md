@@ -1151,3 +1151,30 @@ FORWARD_TESTS.md.
     built, comparison by arm). One fix sent back: the comparison's candle requests retried a rate limit five
     times and would have read "no answer" as "every bar differs". Now one try, and no answer stops the comparison.
   - **Tests run by me on the merged branch:** 58, 146, 57, 110, 63 checks and the status report's suite, passing.
+
+## Nov 17 2026 (times ET; UTC is five hours later)
+- **08:20. Morning look, faults only. No fault in any book. Two changes follow, both logged in the plans.**
+  - **Books since 19:00 UTC on Nov 16:** no error, warning or halt event in the main, fourth, fifth or sixth
+    book. All four hand over. Nothing from Miles on release 4's server steps.
+  - **The venue was calm overnight,** with one slow spell around 03:30 to 04:00 UTC. In that half hour the trades
+    pass ran out of budget for 12 coin-minutes in the fourth book, 14 in the fifth and 3 in the sixth (three
+    workers), whose longest pass was 8.01 s. Different runners, so this is not a comparison.
+  - **Fifth book, progress only** (36 heartbeats): data step at a median of 8.5 s (main book 9.6 to 11.2 s by
+    runner, fourth book 12 to 15 s); 35 budget fallbacks of 18,306 coin-minutes, 20 of them from its first half
+    hour; 26 candle requests inside a step of 19,440 coin-minutes (0.13%); no failed request between steps.
+  - **Sixth book, progress only** (25 heartbeats): data step 8.5 s, trades pass about 2.5 s, 3 budget fallbacks,
+    6 candle requests inside a step, one failed request between steps of 12,600.
+  - **Fifth book's pairs:** two count. Nov 16 19:27 UTC: the build 8.55 s, release 3's inputs 11.24 s. Nov 17
+    06:56 UTC: 8.46 s and 9.49 s. Both with the build first.
+  - **GitHub's clock** dropped the 00:05 pair, started the 06:05 one at 06:56 and had not started the 12:05 one
+    by 13:18. For the alternating jobs it dropped 03:05 and started 09:05 at 11:41.
+    - **Change:** a pair is also started when a run of the fifth book ends, and an alternating job when a run of
+      the sixth book ends. Event-driven, about every 5 h 50 min, nobody chooses the time (both plans, deviation
+      logs). A separate small workflow; the pair tool and its workflow are not touched.
+  - **First alternating job** (11:41 UTC): the tooling works on the real venue. 30 and 31 steps, both arms at
+    2.59 s, nothing slow, 7 requests a second at most. 242 and 236 of 522 bars differ from the candle.
+    - **Change:** with nearly half the bars differing in both arms, "at most one point more" would fail by
+      chance about one time in eight. Measure 4 and the budget-fallback clause of measure 2 now fail only when
+      three workers are worse by more than chance allows (trades-workers plan, deviation log). The first job
+      favoured three workers, so nothing seen is rescued.
+  - The side-by-side build asked for in last night's note to myself is already built and under test.

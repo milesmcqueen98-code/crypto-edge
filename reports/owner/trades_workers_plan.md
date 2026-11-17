@@ -243,3 +243,34 @@
     - a bar and a candle are equal when all five values are equal as numbers, as in the live check's tool; the
       newest three minutes of a job are left out.
   - The first job is the scheduled one at 03:05 UTC on Nov 17. No job is started by hand.
+- **Nov 17 2026, 08:20 ET (orchestrator), after the first alternating job.** An interim look, two clauses that
+  compared noisy counts, and how the jobs are started.
+  - **The first job** (11:41 to 12:48 UTC; it can find a fault and pass nothing): the tooling works on the real
+    venue. 30 one-worker and 31 three-worker steps, median pass 2.596 and 2.594 s, no pass over 6 s, no
+    fallback, 7 requests in a second at most in every step, no rate limit, no refusal, no engine warning. Bars
+    that differ from the venue's candle: 242 of 522 with one worker, 236 of 522 with three.
+  - **What that showed about measure 4.** Nearly half of the bars differ from the candle by the equality fixed
+    yesterday (all five values equal as numbers), in both arms alike. With a share that large, two equal arms
+    differ by more than one point by chance: at 12 jobs about one time in eight. Measure 4 as written would
+    then fail an option that builds the same bars.
+  - **The same flaw sits in measure 2's last clause** (budget fallbacks with three workers "no more than" with
+    one): two small counts with equal rates break "no more than" up to half the time. No alternating job has
+    had a fallback yet, so nothing seen bears on it.
+  - **Both clauses as they now stand: three workers must not be worse by more than chance allows.**
+    - Measure 4: the three-worker share of differing bars is at most the one-worker share plus one point, or, if
+      it is more than that, plus two standard errors of the difference (the usual formula for two shares, from
+      the pooled share).
+    - Measure 2, last clause: counted in passes, not coins. The number of three-worker passes that ran out of
+      budget is at most the one-worker number, or, if it is more, more by at most twice the square root of the
+      two numbers' sum. (A pass that runs out of budget drops several coins at once, so coins are not
+      independent; passes nearly are.)
+    - The first job's rows favoured three workers (236 against 242), so this change rescues nothing that was
+      seen. It loosens both clauses against chance only. The gain clause (at most half the share of slow
+      passes, 30 seen) is untouched.
+  - **How jobs are started.** GitHub's clock started one of the first two scheduled jobs (03:05 dropped; 09:05
+    started at 11:41). At that rate eight jobs take a week.
+    - From now on a job is also started each time a run of the sixth book ends, about every 5 h 50 min, by
+      GitHub's event and not its clock. The scheduled times stay; a job they start counts as before.
+    - No one chooses when a job runs, so this is not a start by hand. Which arm takes the even minutes still
+      follows the UTC hour of the start.
+    - Nothing about what a job measures or which jobs count changes.
