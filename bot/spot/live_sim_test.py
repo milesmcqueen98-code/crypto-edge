@@ -426,6 +426,16 @@ def main(start, end, death=None, death_min=20, config=None, inputs=None, switch=
     if inputs is not None:
         print(f"trades feed calls: {mkt.tb_calls}")
     LAST.update(eng=eng, mkt=mkt)
+    bw = int(ev[ev.kind == "warning"].msg.astype(str).str.startswith("coin balance differs").sum()) \
+        if "msg" in ev else 0
+    looks = ev[ev.kind == "balance_look"].look.astype(str) if "look" in ev else pd.Series([], dtype=str)
+    held = sum(int((h or {}).get("bal_held", 0)) for h in ev[ev.kind == "heartbeat"].counts) if "counts" in ev else 0
+    held += eng.counts.get("bal_held", 0)                  # since the last heartbeat
+    print(f"balance looks: {bw} 'coin balance differs' warnings; first {int((looks == 'first').sum())}, "
+          f"cleared {int((looks == 'cleared').sum())}, held {held}")
+    if bw:
+        ok = False
+        print("FAIL: a 'coin balance differs' warning was raised")
     print("LIVE-PATH TEST", "PASSED" if ok else "FAILED")
     return sd, ok
 
