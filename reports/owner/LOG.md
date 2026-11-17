@@ -1221,3 +1221,19 @@ FORWARD_TESTS.md.
       believable, not removed. It ships in a later release with a note; the full suite runs on a runner first.
   - **Bids that rest through a minute the stale guard skips: no change.** Since Nov 11 the four books' logs hold
     two such minutes, both in the fourth book on Nov 15. Too rare to be worth a change to the order path.
+- **14:57. The balance warning: first result, a correction, and one addition to the rule.**
+  - **The agent stopped as told** when the simulations did not match my brief. With the rule in place, entries,
+    exits, P&L and final balances are identical to before (111 entries and $11,723.34; with the server death 109
+    and $8,421.28).
+  - **Correction to the 14:38 entry.** Of the seven warnings in the run with the death, six come from the restart
+    and one from a 15-minute look. The run without a death has two warnings, not none. My brief had both wrong.
+  - **What the rule did:** the six restart warnings are gone (a first look, then cleared by the look after the
+    gap's fills were booked), and one of the other three as well.
+  - **A second harmless cause, found by the simulation:** a market sell whose outcome the bot cannot read yet. The
+    coins have left the venue, and the bot keeps the rung until it can read the sell (two to three minutes in
+    the simulation). Booking fills does not resolve that, so those warnings only moved by a minute.
+  - **Addition to the rule, decided now, before the build goes on:** while a coin has a market sell with an
+    unknown outcome, a shortfall no larger than those sells is not warned for up to 10 minutes after its first
+    look. A surplus, a larger shortfall, or one that is 10 minutes old is warned as before. Each such sell
+    already alerts on its own, when it is sent and when it is resolved.
+  - **The simulation gets a check of its own:** from now on a run with any balance warning fails.
