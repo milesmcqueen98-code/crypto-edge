@@ -1,17 +1,17 @@
 # Paper trading status
 
-Report made 2026-11-17 12:44 UTC.
+Report made 2026-11-17 12:48 UTC.
 
 | Book | Newest event | Age | Flag |
 |---|---|---|---|
-| Spot (main) | 2026-11-17 09:36 UTC | 3.1 h ago | ok |
-| Spot W2 | 2026-11-17 09:36 UTC | 3.1 h ago | ok |
-| Spot TB (trades input) | 2026-11-16 21:30 UTC | 15.2 h ago | ended |
-| Spot T18 (all coins on trades) | 2026-11-17 12:33 UTC | 0.2 h ago | ok |
-| Spot R5 (release 5 build) | 2026-11-17 07:00 UTC | 5.7 h ago | ok |
-| Spot TW (trades side by side) | 2026-11-17 12:00 UTC | 0.7 h ago | ok |
-| Perp v1 (control) | 2026-11-17 10:02 UTC | 2.7 h ago | ok |
-| Perp R2-08 | 2026-11-17 10:02 UTC | 2.7 h ago | ok |
+| Spot (main) | 2026-11-17 09:36 UTC | 3.2 h ago | ok |
+| Spot W2 | 2026-11-17 09:36 UTC | 3.2 h ago | ok |
+| Spot TB (trades input) | 2026-11-16 21:30 UTC | 15.3 h ago | ended |
+| Spot T18 (all coins on trades) | 2026-11-17 12:33 UTC | 0.3 h ago | ok |
+| Spot R5 (release 5 build) | 2026-11-17 07:00 UTC | 5.8 h ago | ok |
+| Spot TW (trades side by side) | 2026-11-17 12:00 UTC | 0.8 h ago | ok |
+| Perp v1 (control) | 2026-11-17 10:02 UTC | 2.8 h ago | ok |
+| Perp R2-08 | 2026-11-17 10:02 UTC | 2.8 h ago | ok |
 
 A book is flagged STALE when its newest event is more than 8 hours old. A book marked ended (Spot TB (trades input): 2026-11-16) is never flagged STALE.
 
@@ -60,7 +60,7 @@ The five longest gaps of each book (a gap is the time the book was not running b
 | Perp R2-08 | 2026-11-09 10:03 UTC | 5.0 |
 | Perp R2-08 | 2026-11-09 20:47 UTC | 4.4 |
 
-Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 3.1 h; Spot W2 3.1 h; Spot T18 (all coins on trades) 0.2 h; Spot R5 (release 5 build) 5.7 h; Spot TW (trades side by side) 0.7 h; Perp v1 (control) 2.7 h; Perp R2-08 2.7 h.
+Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 3.2 h; Spot W2 3.2 h; Spot T18 (all coins on trades) 0.3 h; Spot R5 (release 5 build) 5.8 h; Spot TW (trades side by side) 0.8 h; Perp v1 (control) 2.8 h; Perp R2-08 2.8 h.
 
 ## Summary
 
@@ -461,16 +461,18 @@ Engine commit: 4c1717a (full hash 4c1717ac3cd711c3383e281ccb3eb2742f993b23), rec
 
 One paper run of 60 minutes on one runner and the pinned commit, the trades pass with one worker in one minute and three in the next, the arm of the even minutes alternating from job to job (scripts/owner/workers_alt/run_alt.py, workers-alt.yml). Progress on every job so far that counts; the read (scripts/owner/trades_workers/rule.py) takes the jobs up to the period's end and adds later ones until there are 8 jobs and 30 slow one-worker passes, for at most 14 days from the first job.
 
-No jobs yet.
+| Start | First arm | Timed steps one / three | Median pass one / three | Slow passes one / three | Budget fallbacks one / three | Largest peak | Rows differing one / three | Counts |
+|---|---|---|---|---|---|---|---|---|
+| 2026-11-17 11:41 UTC | three | 30 / 31 | 2.60 s / 2.59 s | 0 / 0 | 0 / 0 | 7 | 242 of 522 / 236 of 522 | counts |
 
 | Part | Current value | Verdict |
 |---|---|---|
-| Jobs that count, and the slow one-worker passes | 0 jobs (8 needed); 0 slow one-worker passes (30 needed) | still waiting |
-| 1. No harm: the median pass with three at most the median with one plus 0.05 s | three n/a, one n/a, over 0 and 0 steps | does not meet yet |
-| 2. A gain in slow minutes: at least 30 slow one-worker passes, the three-worker share of slow passes at most half the one-worker share, fallbacks with three no more | slow passes 0 of 0 with three, 0 of 0 with one; fallbacks 0 with three, 0 with one | does not meet yet |
-| 3. The pace: over every file from the first job on, no three-worker step above 8 trades requests in one second, none limited or refused, every file readable | 0 files; most in one second n/a; 0 files above 8; 0 with a limit or refusal; 0 unreadable | meets |
-| 4. The rows: share of built bars differing from the venue's candle, three at most one point above one (jobs with a complete comparison) | three 0 of 0 = n/a; one 0 of 0 = n/a; 0 jobs | does not meet yet |
-| Reported, decides nothing: median and mean pass, three minus one | median n/a, mean n/a (first version of the plan asked for a 0.2 s gain at the median over half-hour pairs) | reported only |
+| Jobs that count, and the slow one-worker passes | 1 jobs (8 needed); 0 slow one-worker passes (30 needed) | still waiting |
+| 1. No harm: the median pass with three at most the median with one plus 0.05 s | three 2.59 s, one 2.60 s, over 31 and 30 steps | meets |
+| 2. A gain in slow minutes: at least 30 slow one-worker passes, the three-worker share of slow passes at most half the one-worker share, fallbacks with three no more | slow passes 0 of 31 with three, 0 of 30 with one; fallbacks 0 with three, 0 with one | does not meet yet |
+| 3. The pace: over every file from the first job on, no three-worker step above 8 trades requests in one second, none limited or refused, every file readable | 1 files; most in one second 7; 0 files above 8; 0 with a limit or refusal; 0 unreadable | meets |
+| 4. The rows: share of built bars differing from the venue's candle, three at most one point above one (jobs with a complete comparison) | three 236 of 522 = 45.211%; one 242 of 522 = 46.360%; 1 jobs | meets |
+| Reported, decides nothing: median and mean pass, three minus one | median -0.00 s, mean -0.00 s (first version of the plan asked for a 0.2 s gain at the median over half-hour pairs) | reported only |
 
 ### Part 4, measure 2: items 1 to 5
 
