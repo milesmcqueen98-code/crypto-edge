@@ -1209,3 +1209,15 @@ FORWARD_TESTS.md.
     sixth book about 23:42 (alternating job), fourth book about 00:23 (no test job), fifth book about 00:33
     (pair). I look after each one.
   - Nothing that changes a trading decision went to `main`.
+- **14:38. The two engine items queued on Nov 13: one is being built, one is left as it is.**
+  - **False balance warnings after a restart during fills** (Opus agent, branch owner/balance-look, from the
+    release 5 candidate 9e6f53b3). At a start the bot compares balances before it books the fills of the time it
+    was down, so each such fill is a phone alert (seven in the simulation with a server death). The 15-minute
+    check has the same weakness for a fill in the seconds before it.
+    - **The rule:** a difference is warned only when it is still there at a second look and the bot has booked
+      fills between the two looks. A first look that differs is logged as an event that does not alert. A
+      difference that stays is still warned about every 15 minutes, one step later than today.
+    - It changes no order, cancel or fill, and paper mode never runs it. It is the sweep's alert made
+      believable, not removed. It ships in a later release with a note; the full suite runs on a runner first.
+  - **Bids that rest through a minute the stale guard skips: no change.** Since Nov 11 the four books' logs hold
+    two such minutes, both in the fourth book on Nov 15. Too rare to be worth a change to the order path.
