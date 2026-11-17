@@ -1263,8 +1263,8 @@ FORWARD_TESTS.md.
   - **Hand-over at 23:41 UTC:** the script started the book's next run (44201542189, after 348 minutes) and, one
     second later, an alternating job (44201545168). Both lines are in the job's log. This is the first test job
     started this way.
-  - **That job waited 16 minutes.** GitHub had started the 21:05 scheduled alternating job at 22:50, and the
-    two share one queue. The scheduled one ended at 23:57 and the other began three seconds later.
+  - **That job waited 16 minutes.** GitHub had started a scheduled alternating job at 22:50 (most likely the 21:05
+    one, late), and the two share one queue. The scheduled one ended at 23:57 and the other began three seconds later.
   - **Second alternating job (22:50 UTC, three workers on even minutes): it counts.** 30 timed steps in each arm;
     median pass 2.647 s with one worker and 2.611 s with three; no pass over 6 s and no budget fallback in
     either arm; at most 7 requests in a second; nothing rate-limited or refused; rows that differ from the
