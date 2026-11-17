@@ -1139,3 +1139,15 @@ FORWARD_TESTS.md.
     - If no slow spell comes in 14 days, the gain is not shown and the option stays off.
   - **Part 4 unchanged:** the sixth book starts now. The alternating tool is the next piece of work for the
     agent; the half-hour pair tool it built for this plan is not used.
+- **19:22. The sixth paper book is running; Part 3's alternating jobs start at 03:05 UTC.**
+  - **Sixth book** (`paper_spot_tw`, pinned 4c1717ac, three workers): first run 23:37 to 00:21 UTC, first stepped
+    minute 23:41, 16 new bids, no error, warning or halt event, no fallback. Data step 8.66 s at the median,
+    trades pass 2.66 s. The hand-over started its normal runs. Period: 00:00 UTC Nov 17 to 23:59 UTC Nov 19.
+  - **Infrastructure on `main`** in two merges: the book's workflow alone first (4cd23be0), so that the half-hour
+    pair tool of the first design never reached `main`; then the alternating job, the rule script and the status
+    report's sections (d95b733e). The fifth book's workflows, pair tool and rule scripts are untouched, and on logs
+    without the sixth book the new status script writes the same report as before, byte for byte.
+  - **Reviewed by me:** the alternating tool line by line (arm by the minute's parity, counters by step, bars as
+    built, comparison by arm). One fix sent back: the comparison's candle requests retried a rate limit five
+    times and would have read "no answer" as "every bar differs". Now one try, and no answer stops the comparison.
+  - **Tests run by me on the merged branch:** 58, 146, 57, 110, 63 checks and the status report's suite, passing.

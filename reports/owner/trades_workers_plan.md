@@ -222,3 +222,24 @@
       tries (1.8%, slow passes taken as independent). With 20 it would be once in twenty, which is too often.
   - **Part 4 is unchanged.** The sixth book starts now. Parts 3 and 4 are still read once, together; if Part 3
     has to wait for slow minutes, the verdict waits with it.
+- **Nov 16 2026, 19:22 ET (orchestrator), after the sixth book's first run.** The period, and the tooling as merged.
+  - **The sixth book started** at 23:37 UTC on the pinned commit (`paper_spot_tw/CODE` names 4c1717ac). First
+    stepped minute 23:41 UTC. So Part 4's period runs from 00:00 UTC on Nov 17 to 23:59 UTC on Nov 19, before any
+    extension.
+  - **Interim look at its first heartbeat** (20 steps; it can find a fault and pass nothing): no error, warning or
+    halt event, no fallback of any kind, 360 between-step candle requests and none failed, data step at a median
+    of 8.66 s, trades pass 2.66 s at the median and 4.69 s at the longest.
+  - **Part 3's tooling is on `main`** (squash d95b733e; Sonnet agent, reviewed): the alternating job
+    (`scripts/owner/workers_alt/run_alt.py`, workflow `workers-alt`), the rule as code
+    (`scripts/owner/trades_workers/rule.py`, 146 offline checks) and the status report's sections. Points the plan
+    left open, as the code settles them:
+    - the first job is the earliest one that counts, and the 14 days run from its start;
+    - if the 14 days pass without 8 jobs and 30 slow one-worker passes, Part 3 is complete with the gain not shown,
+      whichever of the two is short;
+    - measure 3 (the pace, rate limits, refusals) is read on every job file from the first job to the last one
+      used, counting or not; a file that cannot be read fails it;
+    - measure 4 (the rows) leaves out a job whose comparison with the venue's candles could not be finished. That
+      comparison makes one request a coin, one try, and stops at the first one that gets no answer;
+    - a bar and a candle are equal when all five values are equal as numbers, as in the live check's tool; the
+      newest three minutes of a job are left out.
+  - The first job is the scheduled one at 03:05 UTC on Nov 17. No job is started by hand.
