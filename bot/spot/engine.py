@@ -844,6 +844,7 @@ class Engine:
         self.counts = {}
         self._tp_dirty = set()
         self._no_buys = False                              # set while market data or cash is unavailable
+        self._bal_sus = {}                                 # live, memory only: coin -> first look that differed
         # newest minute from trades (README, "Newest minute from trades"): "candles" (default) or "trades"
         self.newest_bar = self.cfg.get("newest_bar", "candles")
         if self.newest_bar not in ("candles", "trades"):
@@ -1575,6 +1576,8 @@ class Engine:
         self._refresh_tps(t)                               # rungs that filled while their bids were being cancelled
         if self.broker.live and t.minute % 15 == 7:
             self.reconcile(t)                              # orphan orders, balance drift, fee tier
+        elif self.broker.live:
+            self._look_settled(t)                          # the second look at a difference, once fills are booked
         self._heartbeat(t)
         self.state["last_minute"] = t.isoformat()
         self.save()
@@ -1656,6 +1659,8 @@ class Engine:
                         self._cancel(lad, key, t, minute=m)
                         self.count("remainder_cancel")
         self._refresh_tps(t)
+        for s in self._bal_sus.values():
+            s["settled"] = True                            # fills booked since each first look
 
     @staticmethod
     def _beyond_usd(bar, o):
@@ -2265,6 +2270,8 @@ class Engine:
         if self.broker.live:
             self.reconcile(end)
         self.catch_up(end)
+        if self.broker.live:
+            self._look_settled(end)                        # catch_up booked the gap's fills: the second look
         self.save()
 
     def catch_up(self, end):
@@ -2304,16 +2311,48 @@ class Engine:
                     self.log("warning", t=t, msg="cancelled a bot order missing from state", order=od.get("order_id"),
                              product=od.get("product_id"), side=od.get("side"))
             bal = self.broker.balances()
-            for c in self.coins:
-                mine = sum(tr["size"] for lad in self.ladders(c) for tr in lad["tranches"].values())
-                ex = sum(bal.get(c, (0.0, 0.0)))
-                px = self.last_close(c, t)
-                if np.isfinite(px) and abs(ex - mine) * px > self.cfg.get("reconcile_tol_usd", 25.0):
-                    self.log("warning", t=t, msg="coin balance differs from the bot's open rungs: check before trading",
-                             coin=c, exchange=ex, bot=mine)
+            self._balance_look(t, bal)
             self.log("fee_tier", t=t, **self.broker.fee_tier())
         except Exception as err:
             self.log("error", t=t, error=f"reconcile failed: {err!r}"[:300])
+
+    def _balance_look(self, t, bal=None):
+        """Live: compare each coin's balance at the venue with the bot's open rungs. A difference is warned only when it
+        is still there at a second look with fills booked (_settle run to its end) in between; a first look that
+        differs, and one that is gone at a later look, are logged as balance_look events (no alert)."""
+        if bal is None:
+            bal = self.broker.balances()
+        sus = self._bal_sus
+        for c in self.coins:
+            mine = sum(tr["size"] for lad in self.ladders(c) for tr in lad["tranches"].values())
+            ex = sum(bal.get(c, (0.0, 0.0)))
+            px = self.last_close(c, t)
+            if not np.isfinite(px):
+                continue                                   # no price: any suspect stays as it is
+            differs = abs(ex - mine) * px > self.cfg.get("reconcile_tol_usd", 25.0)
+            s = sus.get(c)
+            if differs and s is None:
+                sus[c] = dict(exchange=ex, bot=mine, t=pd.Timestamp(t).isoformat(), settled=False)
+                self.log("balance_look", t=t, coin=c, exchange=ex, bot=mine, look="first")
+                self.count("bal_first")
+            elif differs and s["settled"]:
+                self.log("warning", t=t, msg="coin balance differs from the bot's open rungs: check before trading",
+                         coin=c, exchange=ex, bot=mine, since=s["t"])
+                sus.pop(c)
+                self.count("bal_warned")
+            elif not differs and s is not None:
+                sus.pop(c)
+                self.log("balance_look", t=t, coin=c, exchange=ex, bot=mine, look="cleared")
+                self.count("bal_cleared")
+
+    def _look_settled(self, t):
+        """The balance look alone, outside reconcile, when a suspect has seen fills booked since its first look."""
+        if not any(s["settled"] for s in self._bal_sus.values()):
+            return
+        try:
+            self._balance_look(t)
+        except Exception as err:
+            self.log("error", t=t, error=f"balance look failed: {err!r}"[:300])
 
     def fast_poll(self):
         """Live, between minute steps (every fast_poll_s seconds): find 4-sigma fills and place the deeper rungs and the
