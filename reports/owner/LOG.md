@@ -1259,3 +1259,18 @@ FORWARD_TESTS.md.
     warning. For up to 10 minutes a real shortfall is not warned if it is no larger than that coin's market sells
     with an unknown outcome.
   - It stays on its branch until a release point.
+- **18:58. The sixth book's hand-over started its test job; the balance warning's suite passed.**
+  - **Hand-over at 23:41 UTC:** the script started the book's next run (44201542189, after 348 minutes) and, one
+    second later, an alternating job (44201545168). Both lines are in the job's log. This is the first test job
+    started this way.
+  - **That job waited 16 minutes.** GitHub had started the 21:05 scheduled alternating job at 22:50, and the
+    two share one queue. The scheduled one ended at 23:57 and the other began three seconds later.
+  - **Second alternating job (22:50 UTC, three workers on even minutes): it counts.** 30 timed steps in each arm;
+    median pass 2.647 s with one worker and 2.611 s with three; no pass over 6 s and no budget fallback in
+    either arm; at most 7 requests in a second; nothing rate-limited or refused; rows that differ from the
+    venue's candles 187 of 504 and 189 of 522.
+  - **Part 3 so far:** 2 of 8 jobs, 0 of 30 slow one-worker passes. The venue is calm, so the test can only
+    say something once slow minutes come back.
+  - **The balance warning's full suite on a runner** (job 44179920431, branch at 46e1ee84): 23 file runs, no
+    failure. Paper parity is identical (156 rungs, 88 parents). Both live-path simulations show no balance
+    warning, with entries, exits and P&L as before.
