@@ -282,8 +282,21 @@ def test_part3_clauses():
     check("part 3.2: 29 slow one-worker passes do not (the read waits)", not r["gain"]["met"] and not r["complete"] and r["slow_one"] == 29)
     check("part 3.2: slow is strictly above 6.0 s", p3res([dict(steps=asteps(20, 20, "6.000", "6.000"))] * 8)["gain"]["slow_one"] == 0
           and p3res([dict(steps=asteps(20, 20, "6.001", "6.001"))] * 8)["gain"]["slow_one"] == 160)
-    check("part 3.2: more fallbacks with three than with one do not meet", not p3res(sl(4, 2, fb1=0, fb3=1))["gain"]["met"])
-    check("part 3.2: equal fallbacks meet", p3res(sl(4, 2, fb1=1, fb3=1))["gain"]["met"])
+    # fallbacks in PASSES: met if s3 <= s1, or (s3 - s1) squared <= 4 * (s1 + s3). One job with 20 steps per arm; the slow
+    # passes needed for the gain come from 8 jobs, the fallback passes sit in the first job.
+    def fbp(s1, s3, coins=1):
+        st = asteps(20, 20, slow1=4)
+        for w, n in ((1, s1), (3, s3)):
+            for x in [x for x in st if x["workers"] == w][:n]:
+                x["tb_fb_budget"] = coins
+        return p3res([dict(steps=st)] + [dict(steps=asteps(20, 20, slow1=4))] * 7)["gain"]
+    for s1, s3, met in ((2, 2, True), (3, 1, True), (1, 5, True), (0, 4, True), (0, 5, False), (4, 10, True), (2, 11, False)):
+        g = fbp(s1, s3)
+        check(f"part 3.2: fallback passes one {s1}, three {s3}: {'meets' if met else 'does not meet'}", g["met"] == met and g["fallback_passes_one"] == s1
+              and g["fallback_passes_three"] == s3, g)       # (1,5): 16 <= 24; (0,4): 16 <= 16; (0,5): 25 > 20; (2,11): 81 > 52
+    check("part 3.2: a step with several coins fallen back is one pass (1 against 5 passes of 3 coins each still 16 <= 24)",
+          fbp(1, 5, coins=3)["met"] and fbp(1, 5, coins=3)["fallbacks_three"] == 15 and fbp(1, 5, coins=3)["fallbacks_one"] == 3)
+    check("part 3.2: the branch is in the result", fbp(0, 0)["fallbacks_branch"] == "no more" and fbp(0, 4)["fallbacks_branch"] == "chance" and fbp(0, 5)["fallbacks_branch"] == "more")
     check("part 3.2: summed over the jobs, not averaged (three 12 of 160 against one's 32 of 160 halved, 16: meets; 17 does not)",
           p3res([dict(steps=asteps(20, 20, slow1=4, slow3=3))] * 4 + [dict(steps=asteps(20, 20, slow1=4, slow3=0))] * 4)["gain"]["met"]
           and not p3res([dict(steps=asteps(20, 20, slow1=4, slow3=3))] * 4 + [dict(steps=asteps(20, 20, slow1=4, slow3=0))] * 3
@@ -315,10 +328,17 @@ def test_part3_clauses():
     check("part 3.3: no files at all: the clause itself is met, the read is not complete", run(jobs=[])["part3"]["pace"]["met"] and not run(jobs=[])["part3"]["complete"])
     # 4 the rows
     rw = lambda c1, d1, c3, d3, n=8, complete=True: [dict(steps=asteps(20, 20, slow1=4), rows=((c1, d1), (c3, d3)), rows_complete=complete)] * n    # noqa: E731
-    check("part 3.4: three exactly one point above one (2 of 100 and 3 of 100) meets", p3res(rw(100, 2, 100, 3))["rows"]["met"])
-    check("part 3.4: more than one point above (2 of 100 and 4 of 100) does not", not p3res(rw(100, 2, 100, 4))["rows"]["met"])
-    check("part 3.4: cross-multiplied with different sizes (1 of 100 and 4 of 200 is exactly a point: meets; 5 of 200 does not)",
-          p3res(rw(100, 1, 200, 4))["rows"]["met"] and not p3res(rw(100, 1, 200, 5))["rows"]["met"])
+    one = lambda c1, d1, c3, d3: p3res(rw(c1, d1, c3, d3, n=1))["rows"]                                   # noqa: E731
+    check("part 3.4: d exactly 1/100 (2 of 100 and 3 of 100) meets, no more", one(100, 2, 100, 3)["met"] and one(100, 2, 100, 3)["branch"] == "no more"
+          and one(100, 2, 100, 3)["difference"] == "1/100")
+    # d just above 1/100, small samples: 10 of 50 and 11 of 50, d = 22/100 - 20/100 = 1/50; p = 21/100;
+    # 4 * 0.21 * 0.79 * (1/50 + 1/50) = 0.026544 and d squared = 0.0004 <= 0.026544: within chance, met
+    check("part 3.4: d = 1/50 with 50 and 50 rows meets by the chance branch", one(50, 10, 50, 11)["met"] and one(50, 10, 50, 11)["branch"] == "chance")
+    # 4000 of 10000 and 4300 of 10000: d = 0.03; p = 0.415; 4 * 0.415 * 0.585 * 0.0002 = 0.00019422 < d squared = 0.0009: not met
+    check("part 3.4: d = 3 points with 10000 and 10000 rows is more than chance allows, not met", not one(10000, 4000, 10000, 4300)["met"]
+          and one(10000, 4000, 10000, 4300)["branch"] == "more")
+    check("part 3.4: equal shares meet", one(100, 30, 200, 60)["met"] and one(100, 30, 200, 60)["branch"] == "no more")
+    check("part 3.4: different sizes, exactly a point (1 of 100, 4 of 200) meets", one(100, 1, 200, 4)["met"])
     check("part 3.4: a zero denominator on either side does not meet", not p3res(rw(0, 0, 100, 0))["rows"]["met"] and not p3res(rw(100, 0, 0, 0))["rows"]["met"])
     r = p3res(rw(100, 0, 100, 0, n=7) + rw(100, 0, 100, 50, n=1, complete=False))
     check("part 3.4: a job with an incomplete comparison is left out", r["rows"]["met"] and r["rows"]["jobs"] == 7 and r["rows"]["compared_three"] == 700, r["rows"])
@@ -329,6 +349,16 @@ def test_part3_clauses():
           r["median_one_s"] == 1.0 and r["median_three_s"] == 0.9 and abs(r["diff_median_s"] + 0.1) < 1e-9 and abs(r["mean_one_s"] - 2.2) < 1e-9
           and r["note"] == "first version of the plan asked for a 0.2 s gain at the median over half-hour pairs" and len(r["jobs"]) == 8
           and r["jobs"][0]["steps_one"] == 20 and r["jobs"][0]["slow_one"] == 4 and r["decides"] == "nothing", r)
+
+
+def test_chance_branch_texts():
+    res = run(jobs=jobs_of([dict(G, steps=asteps(20, 20, slow1=20, fb3=1), rows=((50, 10), (50, 11)))] * 2 + [dict(G, steps=asteps(20, 20, slow1=20), rows=((50, 10), (50, 11)))] * 6))
+    md = rule.to_md(res)
+    check("markdown: the branch that decided is said plainly (fallbacks 0 against 2 passes, rows 1/50 apart)",
+          "more, but within chance (two standard deviations of the difference)" in md and res["part3"]["gain"]["fallbacks_branch"] == "chance"
+          and res["part3"]["rows"]["branch"] == "chance" and res["verdict"] == "pass", md[md.index("## Part 3"):][:1800])
+    res = run(jobs=jobs_of([dict(G, steps=asteps(20, 20, slow1=20, fb3=1), rows=((10000, 4000), (10000, 4300)))] * 5 + [dict(G, steps=asteps(20, 20, slow1=20), rows=((10000, 4000), (10000, 4300)))] * 3))
+    check("markdown: more than chance allows", rule.to_md(res).count("more than chance allows") == 2 and res["verdict"] == "fail")
 
 
 def test_job_selection():
@@ -647,7 +677,7 @@ def test_jobs_in_paper_status_are_the_same_numbers():
 
 
 def main():
-    for t in (test_baseline_and_labels, test_decisions, test_part3_clauses, test_job_selection, test_requests_and_stops,
+    for t in (test_baseline_and_labels, test_decisions, test_part3_clauses, test_chance_branch_texts, test_job_selection, test_requests_and_stops,
               test_verdict_and_period, test_cli_and_shared_numbers, test_jobs_in_paper_status_are_the_same_numbers):
         t()
     if FAILS:

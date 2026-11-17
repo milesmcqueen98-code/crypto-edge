@@ -1338,8 +1338,40 @@ def tw_tests():
     check("clause 2: three's slow share exactly half of one's meets (2/20 against 4/20 halved is 2/20... 4 of 20 and 2 of 20)", m["slow"] == {1: 32, 3: 16} and m["gain_met"])
     check("clause 2: one more slow pass with three does not meet", not meas([dict(steps=asteps(20, 20, slow1=4, slow3=2))] * 7 + [dict(steps=asteps(20, 20, slow1=4, slow3=3))])["gain_met"])
     check("clause 2: fewer than 30 slow one-worker passes does not meet", not meas([dict(steps=asteps(20, 20, slow1=2))] * 10)["gain_met"])
-    check("clause 2: fallbacks with three more than with one do not meet", not meas([dict(steps=asteps(20, 20, slow1=4, fb1=0, fb3=1))] * 8)["gain_met"])
-    check("clause 2: equal fallbacks meet", meas([dict(steps=asteps(20, 20, slow1=4, fb1=1, fb3=1))] * 8)["gain_met"])
+    # clause 2, last part: fallbacks counted in PASSES; met if s3 <= s1, or (s3 - s1)^2 <= 4 * (s1 + s3)
+    def fbm(s1, s3, coins=1, **kw):
+        """One job whose first s1 one-worker and first s3 three-worker steps ran out of budget (coins coins each)."""
+        st = asteps(20, 20, slow1=4, **kw)
+        for w, n in ((1, s1), (3, s3)):
+            for x in [x for x in st if x["workers"] == w][:n]:
+                x["tb_fb_budget"] = coins
+        return ps.alt_measure(*(lambda j: (j, ps.alt_select(j, None, NOW0)))(ajobs([dict(steps=st)])))
+    for s1, s3, branch in ((3, 3, "no more"), (3, 1, "no more"), (0, 0, "no more"),
+                           (1, 5, "chance"),     # 16 <= 4 * 6 = 24
+                           (0, 4, "chance"),     # 16 <= 4 * 4 = 16, exactly at the boundary
+                           (0, 5, "more"),       # 25 > 4 * 5 = 20
+                           (1, 6, "chance"),     # 25 <= 4 * 7 = 28
+                           (4, 10, "chance"),    # 36 <= 4 * 14 = 56
+                           (2, 11, "more")):     # 81 > 4 * 13 = 52
+        m = fbm(s1, s3)
+        check(f"clause 2 fallbacks: {s1} one-worker and {s3} three-worker passes: {branch}", m["fb_branch"] == branch and m["fb_passes"] == {1: s1, 3: s3}, m["fb_passes"])
+    jb = ajobs([dict(steps=asteps(20, 20, slow1=20, fb3=1))] * 2 + [dict(steps=asteps(20, 20, slow1=20))] * 6)
+    jb2 = ajobs([dict(steps=asteps(20, 20, slow1=20, fb3=1))] * 3 + [dict(steps=asteps(20, 20, slow1=20))] * 5)
+    m, m2 = ps.alt_measure(jb, ps.alt_select(jb, None, NOW0)), ps.alt_measure(jb2, ps.alt_select(jb2, None, NOW0))
+    check("clause 2: the whole clause: 0 against 2 passes (4 <= 8) meets; 0 against 3 would be 9 <= 12 meets; 0 against 5 does not",
+          m["gain_met"] and m["fb_passes"] == {1: 0, 3: 2} and m2["gain_met"] and m2["fb_branch"] == "chance")
+    jb3 = ajobs([dict(steps=asteps(20, 20, slow1=20, fb3=1))] * 5 + [dict(steps=asteps(20, 20, slow1=20))] * 3)
+    m3 = ps.alt_measure(jb3, ps.alt_select(jb3, None, NOW0))
+    check("clause 2: 0 against 5 passes does not meet the clause", m3["fb_branch"] == "more" and not m3["gain_met"] and m3["slow"][1] >= 30)
+    m = fbm(1, 5, coins=3)
+    check("clause 2: a step with several coins fallen back is ONE pass; the coin sums are still reported", m["fb_passes"] == {1: 1, 3: 5} and m["fb"] == {1: 3, 3: 15})
+    m = fbm(2, 2, coins=7)
+    check("clause 2: equal pass counts meet whatever the coins", m["fb_branch"] == "no more")
+    check("clause 2: the branch text is plain", ps.alt_branch_text("chance") == "more, but within chance (two standard deviations of the difference)"
+          and ps.alt_branch_text("more") == "more than chance allows" and ps.alt_branch_text("no more") == "no more")
+    jb = ajobs([dict(steps=asteps(20, 20, slow1=20, fb3=1))] * 2 + [dict(steps=asteps(20, 20, slow1=20))] * 6)
+    m = ps.alt_measure(jb, ps.alt_select(jb, None, NOW0))
+    check("clause 2: whole clause with a chance-branch fallback count (0 against 2 passes: 4 <= 8) still meets", m["gain_met"] and m["fb_branch"] == "chance" and m["fb_passes"] == {1: 0, 3: 2})
     check("clause 2: a slow pass is strictly above 6.0 (6.000 is not slow)", meas([dict(steps=asteps(20, 20, "6.000", "6.000"))] * 8)["slow"] == {1: 0, 3: 0}
           and meas([dict(steps=asteps(20, 20, "6.001", "6.001"))] * 8)["slow"] == {1: 160, 3: 160})
     # 3 over all files from the first job to the last used job's start
@@ -1361,10 +1393,21 @@ def tw_tests():
     r = lambda a, b: dict(steps=asteps(20, 20, slow1=4), rows=a if b is None else (a, b))      # noqa: E731
     def rows(c1, d1, c3, d3, n=8, complete=True):
         return [dict(steps=asteps(20, 20, slow1=4), rows=((c1, d1), (c3, d3)), rows_complete=complete)] * n
-    check("clause 4: three's share exactly one point above one's meets (2 of 100 and 3 of 100)", meas(rows(100, 2, 100, 3))["rows_met"])
-    check("clause 4: more than a point above does not (2 of 100 and 4 of 100)", not meas(rows(100, 2, 100, 4))["rows_met"])
-    check("clause 4: cross-multiplied with different sizes (1 of 100 against 4 of 200 is exactly 1 point: yes; 5 of 200 is 1.5 points: no)",
-          not meas(rows(100, 1, 200, 5))["rows_met"] and meas(rows(100, 1, 200, 4))["rows_met"])
+    one = lambda c1, d1, c3, d3: meas(rows(c1, d1, c3, d3, n=1))                                      # noqa: E731
+    m = one(100, 2, 100, 3)
+    check("clause 4: d exactly 1/100 (2 of 100 and 3 of 100) meets, by the first branch", m["rows_met"] and m["rows_d"] == ps.Fraction(1, 100) and m["rows_branch"] == "no more")
+    # d just above 1/100, small samples: 10 of 50 against 11 of 50: d = 22/100 - 20/100 = 1/50 > 1/100.
+    # p = 21/100; 4 * p * (1 - p) * (1/50 + 1/50) = 4 * 0.21 * 0.79 * 0.04 = 0.026544; d squared = 0.0004 <= 0.026544: chance branch
+    m = one(50, 10, 50, 11)
+    check("clause 4: d = 1/50 over 50 and 50 rows is within chance and meets", m["rows_met"] and m["rows_branch"] == "chance" and m["rows_d"] == ps.Fraction(1, 50))
+    # 4 of 20 against 8 of 20: d = 0.2, p = 0.3; 4 * 0.3 * 0.7 * 0.1 = 0.084; d squared = 0.04 <= 0.084: chance
+    check("clause 4: 4 of 20 against 8 of 20 is within chance (0.04 <= 0.084)", one(20, 4, 20, 8)["rows_branch"] == "chance" and one(20, 4, 20, 8)["rows_met"])
+    # 4000 of 10000 against 4300 of 10000: d = 0.03, p = 0.415; 4 * 0.415 * 0.585 * 0.0002 = 0.00019422; d squared = 0.0009 > : more
+    m = one(10000, 4000, 10000, 4300)
+    check("clause 4: d = 3 points over 10000 and 10000 rows is more than chance allows and does not meet", not m["rows_met"] and m["rows_branch"] == "more")
+    check("clause 4: equal shares meet", one(100, 30, 200, 60)["rows_met"] and one(100, 30, 200, 60)["rows_branch"] == "no more")
+    check("clause 4: three better than one meets", one(100, 30, 100, 10)["rows_met"])
+    check("clause 4: different sizes, d = 1 point exactly (1 of 100, 4 of 200) meets", one(100, 1, 200, 4)["rows_met"])
     check("clause 4: a zero denominator on either side is not met", not meas(rows(0, 0, 100, 0))["rows_met"] and not meas(rows(100, 0, 0, 0))["rows_met"])
     m = meas(rows(100, 0, 100, 0, n=7) + rows(100, 0, 100, 50, n=1, complete=False))
     check("clause 4: a job with an incomplete comparison is left out", m["rows_met"] and m["rows_jobs"] == 7 and m["rows3"] == (0, 700))
