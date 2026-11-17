@@ -30,6 +30,7 @@ DEATH = "--death=2025-10-10 21:10"
 PY = [("merge_test.py", []), ("trades_bar_test.py", []), ("usdc_test.py", []), ("newest_bar_test.py", []),
       ("candle_after_test.py", []), ("candle_pass_test.py", []), ("release_inputs_test.py", []),
       ("order_path_unit_test.py", []), ("order_check_test.py", []), ("order_status_test.py", []),
+      ("balance_look_test.py", []),
       ("replay_test.py", ["2025-10-10", "2025-10-12"]),
       ("live_sim_test.py", WINDOW), ("live_sim_test.py", WINDOW + [DEATH]),
       ("live_sim_inputs_test.py", WINDOW), ("live_sim_inputs_test.py", WINDOW + [DEATH]),
