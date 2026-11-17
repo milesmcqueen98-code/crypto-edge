@@ -1241,3 +1241,21 @@ FORWARD_TESTS.md.
   minutes and the script started the next one (44178580796) in the same second; no test job, as intended for
   this book. A scheduled run that GitHub had queued four minutes earlier was cancelled by it, as on other days.
   Next: the sixth book at about 23:43 UTC, with the first alternating job started this way.
+- **16:27. The balance warning build is reviewed; the full suite is running on a runner.**
+  - **The build** (branch owner/balance-look at 46e1ee84, six commits on the release 5 candidate): 62 changed
+    lines in the engine, a new test with 26 checks, and the live-path simulation now fails on any balance
+    warning. Facts in `reports/owner/balance_look_candidate.md` on the branch.
+  - **Simulations before and after** (run by the agent): entries, exits, P&L and final balances identical.
+    Balance warnings fell from 2 to 0 without the server death and from 7 to 0 with it. The three that came from
+    market sells with an unknown outcome are held and clear when the sell is booked, two minutes later at most.
+  - **What a restart for an update did before:** in the input simulations a fresh start now gives 9 and 14 first
+    looks that all clear. Each of those was a phone alert.
+  - **Tests the agent ran, none with a changed expectation:** the order path (116 unit checks and its two
+    simulations), the input simulations, release inputs (90), USDC, the watchdog (31), `wickctl` (15). I read
+    the whole change and ran the new test: 26 pass.
+  - **Full offline suite** on a runner (job 44179920431, started 21:27 UTC). It includes the paper parity
+    replay, which the agent did not run.
+  - **Limits:** a new fill on the same coin in the seconds before the second look can still raise a false
+    warning. For up to 10 minutes a real shortfall is not warned if it is no larger than that coin's market sells
+    with an unknown outcome.
+  - It stays on its branch until a release point.
