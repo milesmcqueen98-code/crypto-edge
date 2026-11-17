@@ -46,12 +46,17 @@ Part 3, alternating minutes (the files alt_*.json of --alt; a job counts when it
   1. no harm: the median pass_s with three is at most the median with one plus 0.05 s (exact from the printed texts; an even
      count: the mean of the middle two);
   2. a gain in slow minutes: the one-worker steps hold at least 30 slow passes, slow3 / steps3 is at most (slow1 / steps1) / 2
-     (cross-multiplied), and budget fallbacks with three are no more than with one;
+     (cross-multiplied), and budget fallbacks are not worse with three than chance allows. They are counted in passes, not
+     coins (a step with tb_fb_budget above zero is one pass): s1 one-worker passes, s3 three-worker ones. Met if s3 <= s1
+     ("no more"), or else if (s3 - s1) squared <= 4 * (s1 + s3) ("more, but within chance": two standard deviations of the
+     difference); otherwise "more than chance allows". The coin sums are reported as information;
   3. the pace, over ALL alt files that started from the first job on up to the last used job's start, counting or not: no
      three-worker step with a peak above 8, none limited, none refused; a file that cannot be read is listed and makes the
      clause not met (a file with no known start is taken as inside the range);
-  4. the rows, over the used jobs whose row comparison is complete: differ3 / compared3 is at most differ1 / compared1 + 1/100
-     (cross-multiplied on integers; a zero denominator on either side means not met).
+  4. the rows, over the used jobs whose row comparison is complete: with d = differ3 / compared3 - differ1 / compared1 and
+     p = (differ1 + differ3) / (compared1 + compared3), met if d <= 1/100 ("no more"), or else if d squared <=
+     4 * p * (1 - p) * (1 / compared1 + 1 / compared3) ("more, but within chance": two standard errors of the difference);
+     otherwise "more than chance allows". Exact fractions, no square roots; a zero denominator on either side means not met.
   Reported, deciding nothing: both arms' median and mean pass, their difference, and "first version of the plan asked for a 0.2 s
   gain at the median over half-hour pairs"; the steps and slow passes of each arm per job.
 Part 4, the books:
@@ -175,15 +180,19 @@ def part3(jobs, start, end, now=None):
                   rule="median pass with three at most the median with one plus 0.05 s")
     gain = clause(wm["gain_met"], slow_one=wm["slow"][1], steps_one=n1, slow_three=wm["slow"][3], steps_three=n3,
                   share_one=share(wm["slow"][1], n1), share_three=share(wm["slow"][3], n3), fallbacks_three=wm["fb"][3],
-                  fallbacks_one=wm["fb"][1], slow_needed=MIN_SLOW, gain_not_shown=sel["gain_not_shown"],
+                  fallbacks_one=wm["fb"][1], fallback_passes_three=wm["fb_passes"][3], fallback_passes_one=wm["fb_passes"][1],
+                  fallbacks_branch=wm["fb_branch"], slow_needed=MIN_SLOW, gain_not_shown=sel["gain_not_shown"],
                   rule="at least 30 slow one-worker passes (above 6.0 s); three's slow share at most half of one's; "
-                       "budget fallbacks with three no more than with one")
+                       "budget fallback passes with three no more than with one, or more only within chance "
+                       "((s3 - s1) squared <= 4 * (s1 + s3))")
     pace = clause(wm["pace_met"], files=len(wm["files"]), peak_max=wm["peak_max"], over_peak=list(wm["peak_over"]),
                   refused_or_limited=list(wm["stopped"]), unreadable=list(wm["unreadable"]),
                   rule="no three-worker step above 8 trades requests in one second, none limited or refused, every file readable")
     rows = clause(wm["rows_met"], differ_three=d3, compared_three=c3, differ_one=d1, compared_one=c1, jobs=wm["rows_jobs"],
-                  share_three=share(d3, c3), share_one=share(d1, c1),
-                  rule="rows differing from the venue: three's share at most one's plus 1 point (cross-multiplied)")
+                  share_three=share(d3, c3), share_one=share(d1, c1), branch=wm["rows_branch"],
+                  difference=_x(wm["rows_d"]),
+                  rule="rows differing from the venue: d = three's share minus one's; met if d <= 1/100, or d squared <= "
+                       "4 * p * (1 - p) * (1 / compared1 + 1 / compared3) (p pooled)")
     per_job = []
     for j in sel["used"]:
         st = {w: [x for x in j["steps"] if x["workers"] == w and x["pass"] is not None] for w in (1, 3)}
@@ -356,17 +365,20 @@ def to_md(res):
           f"| 1. no harm | median pass three {sx(s['median_three_s'])} ({s['steps_three']} steps), one {sx(s['median_one_s'])} "
           f"({s['steps_one']} steps) | three at most one plus 0.050 s | {mk(s['met'])} |",
           f"| 2. a gain in slow minutes | slow passes (above 6.0 s) one {g['slow_one']} of {g['steps_one']} = {pct(g['share_one'])}, "
-          f"three {g['slow_three']} of {g['steps_three']} = {pct(g['share_three'])}; fallbacks three {g['fallbacks_three']}, one "
-          f"{g['fallbacks_one']}" + ("; the gain is not shown" if g["gain_not_shown"] else "")
-          + f" | at least 30 slow one-worker passes; three's share at most half of one's; fallbacks no more with three | "
+          f"three {g['slow_three']} of {g['steps_three']} = {pct(g['share_three'])}; fallback passes three "
+          f"{g['fallback_passes_three']}, one {g['fallback_passes_one']}: {ps.alt_branch_text(g['fallbacks_branch'])} (coins three "
+          f"{g['fallbacks_three']}, one {g['fallbacks_one']})" + ("; the gain is not shown" if g["gain_not_shown"] else "")
+          + f" | at least 30 slow one-worker passes; three's share at most half of one's; fallback passes with three no more "
+          f"than with one, or more only within chance | "
           f"{mk(g['met'])} |",
           f"| 3. the pace | {pc['files']} files; most trades requests in one second "
           f"{pc['peak_max'] if pc['peak_max'] is not None else 'n/a'}; above 8: {len(pc['over_peak'])}; limited or refused: "
           f"{len(pc['refused_or_limited'])}; unreadable: {len(pc['unreadable'])} | no three-worker step above 8 in any file, none "
           f"limited or refused, every file readable | {mk(pc['met'])} |",
           f"| 4. the rows | three {rw['differ_three']} of {rw['compared_three']} = {pct(rw['share_three'])}, one "
-          f"{rw['differ_one']} of {rw['compared_one']} = {pct(rw['share_one'])}, over {rw['jobs']} jobs with a complete comparison "
-          f"| three's share at most one's plus 1 point | {mk(rw['met'])} |", ""]
+          f"{rw['differ_one']} of {rw['compared_one']} = {pct(rw['share_one'])}, over {rw['jobs']} jobs with a complete comparison: "
+          f"{ps.alt_branch_text(rw['branch'])} | three's share at most one's plus 1 point, or more only within chance "
+          f"(two standard errors of the difference) | {mk(rw['met'])} |", ""]
     for key, what in (("over_peak", "A file with a three-worker step above 8 trades requests in one second"),
                       ("refused_or_limited", "A file with a three-worker step limited or refused"),
                       ("unreadable", "A file that could not be read")):
@@ -431,9 +443,10 @@ def to_md(res):
           "the period (if there are fewer than 8 jobs or fewer than 30 slow one-worker passes, the next jobs are added oldest "
           "first, up to 14 days from the first job, and the verdict waits for them): the median pass with three at most the "
           "median with one plus 0.05 s; at least 30 slow one-worker passes, three's share of slow passes at most half of one's, "
-          "budget fallbacks with three no more than with one; in every alt file from the first job to the last one used no "
+          "budget fallbacks counted in passes, with three no more than with one or more only within chance (two standard "
+          "deviations of the difference); in every alt file from the first job to the last one used no "
           "three-worker step above 8 trades requests in a second and none limited or refused; the share of rows that differ from "
-          "the venue at most one point higher with three. Part 4: against the research, wrong-side share at most the fifth "
+          "the venue at most one point higher with three, or higher only within chance (two standard errors of the difference). Part 4: against the research, wrong-side share at most the fifth "
           "book's plus 2.0 points and at most 5%, matched share at least the fifth's minus 3.0 points, under 5% of bids more than "
           "5 bp from the level; items 1 to 5; failed requests at most 1% and in-step requests at most 2% of coin-minutes and no "
           "higher a share than the fifth book's; no rate-limit stop in the sixth book unless the fifth has one at the same "

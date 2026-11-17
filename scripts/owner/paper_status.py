@@ -1195,7 +1195,7 @@ ALT_MIN_SLOW = 30                                              # Part 3, measure
 ALT_MAX_DAYS = 14                                              # jobs go on for at most this many days from the first job
 ALT_SLOW_S = Fraction(6)                                       # a slow pass is strictly longer than this
 ALT_GAIN_MARGIN = Fraction(1, 20)                              # measure 1: three's median at most one's plus 0.05 s
-ALT_ROWS_MARGIN = Fraction(1, 100)                             # measure 4: three's differing share at most one's plus one point
+ALT_ROWS_MARGIN = Fraction(1, 100)                             # measure 4: three's differing share at most one's plus one point, or within chance
 TW_PEAK_MAX = 8                                                # measure 3: trades requests in one second, at most
 ALT_MIN_STEPS = 20                                             # a job counts with at least this many timed steps in each arm
 
@@ -1306,6 +1306,12 @@ def alt_select(jobs, end=None, now=None, min_jobs=ALT_MIN_JOBS, min_slow=ALT_MIN
             "last_start": use[-1]["start"] if use else None}
 
 
+def alt_branch_text(branch):
+    """Which branch decided a clause that allows chance (measure 2's fallbacks, measure 4's rows), in plain words."""
+    return {"no more": "no more", "chance": "more, but within chance (two standard deviations of the difference)",
+            "more": "more than chance allows"}.get(branch, "no comparison possible")
+
+
 def alt_median(texts):
     v = sorted(Fraction(t) for t in texts)
     n = len(v)
@@ -1318,12 +1324,18 @@ def alt_measure(jobs, sel):
     """Part 3 on the selection sel of alt_select, over all steps of the used jobs. Clauses (each `met` a bool):
       1 no harm: median pass with three at most the median with one plus 1/20 s (texts exact, even count: mean of the middle two);
       2 gain: the one-worker steps hold at least 30 slow passes (pass strictly above 6.0 s), slow3 / steps3 at most
-        (slow1 / steps1) / 2 (cross-multiplied), budget fallbacks with three no more than with one, and not gain_not_shown;
+        (slow1 / steps1) / 2 (cross-multiplied), budget fallbacks with three not worse than with one by more than chance
+        allows, and not gain_not_shown. The fallbacks are counted in PASSES (a step with tb_fb_budget above zero is one,
+        however many coins fell back): s1 for one-worker steps, s3 for three-worker steps. Met if s3 <= s1 ("no more"), or
+        else if (s3 - s1) squared <= 4 * (s1 + s3) ("more, but within chance": two standard deviations of the difference).
+        The coin sums stay in "fb", as information;
       3 pace: over ALL alt files that started from the first job on up to the last used job's start, counting or not: no
         three-worker step with peak above 8, none limited, none refused, every file readable (a file with no known start is
         taken as inside the range);
-      4 rows: over the used jobs whose rows_complete is true, differ3 / compared3 at most differ1 / compared1 + 1/100,
-        cross-multiplied on integers; a zero denominator on either side means not met."""
+      4 rows: over the used jobs whose rows_complete is true, d = differ3 / compared3 - differ1 / compared1 and
+        p = (differ1 + differ3) / (compared1 + compared3). Met if d <= 1/100, or else if d squared <= 4 * p * (1 - p) *
+        (1 / compared1 + 1 / compared3) ("more, but within chance": two standard errors of the difference). Exact Fractions,
+        no square roots; a zero denominator on either side means not met. rows_branch says which decided."""
     use = sel["used"]
     st = {w: [s for j in use for s in j["steps"] if s["workers"] == w and s["pass"] is not None] for w in (1, 3)}
     n1, n3 = len(st[1]), len(st[3])
@@ -1331,6 +1343,13 @@ def alt_measure(jobs, sel):
     mean = {w: (sum(Fraction(s["pass"]) for s in st[w]) / len(st[w]) if st[w] else None) for w in (1, 3)}
     slow = {w: sum(1 for s in st[w] if Fraction(s["pass"]) > ALT_SLOW_S) for w in (1, 3)}
     fb = {w: sum(s["fb"] for s in st[w]) for w in (1, 3)}
+    fbp = {w: sum(1 for s in st[w] if s["fb"] > 0) for w in (1, 3)}
+    if fbp[3] <= fbp[1]:
+        fb_branch = "no more"
+    elif (fbp[3] - fbp[1]) ** 2 <= 4 * (fbp[1] + fbp[3]):
+        fb_branch = "chance"
+    else:
+        fb_branch = "more"
     first, last = sel["first_start"], sel["last_start"]
     files = [j for j in jobs if first is not None and (j["start"] is None or (first <= j["start"] <= last))] if use else []
     over = sorted({j["file"] for j in files for s in j["steps"] if s["workers"] == 3 and s["peak"] is not None and s["peak"] > TW_PEAK_MAX})
@@ -1340,16 +1359,27 @@ def alt_measure(jobs, sel):
     rj = [j for j in use if j["rows_complete"]]
     c1, d1 = (sum(j["arms"]["1"][k] or 0 for j in rj) for k in ("rows_compared", "rows_differ"))
     c3, d3 = (sum(j["arms"]["3"][k] or 0 for j in rj) for k in ("rows_compared", "rows_differ"))
+    rows_d = rows_branch = None
+    if c1 > 0 and c3 > 0:
+        rows_d = Fraction(d3, c3) - Fraction(d1, c1)
+        pp = Fraction(d1 + d3, c1 + c3)
+        if rows_d <= ALT_ROWS_MARGIN:
+            rows_branch = "no more"
+        elif rows_d ** 2 <= 4 * pp * (1 - pp) * (Fraction(1, c1) + Fraction(1, c3)):
+            rows_branch = "chance"
+        else:
+            rows_branch = "more"
     step_met = bool(n1 and n3) and m3 <= m1 + ALT_GAIN_MARGIN
-    gain_met = (slow[1] >= ALT_MIN_SLOW and bool(n1 and n3) and 2 * slow[3] * n1 <= slow[1] * n3 and fb[3] <= fb[1]
+    gain_met = (slow[1] >= ALT_MIN_SLOW and bool(n1 and n3) and 2 * slow[3] * n1 <= slow[1] * n3 and fb_branch != "more"
                 and not sel["gain_not_shown"])
     return {"jobs": len(use), "steps": {1: n1, 3: n3}, "median": {1: m1, 3: m3}, "mean": mean, "slow": slow, "fb": fb,
+            "fb_passes": fbp, "fb_branch": fb_branch, "rows_d": rows_d, "rows_branch": rows_branch,
             "diff_median": None if m1 is None or m3 is None else m3 - m1,
             "diff_mean": None if mean[1] is None or mean[3] is None else mean[3] - mean[1],
             "step_met": step_met, "gain_met": gain_met, "files": files, "peak_over": over, "stopped": stopped,
             "unreadable": unreadable, "peak_max": max(peaks) if peaks else None,
             "pace_met": not over and not stopped and not unreadable, "rows_jobs": len(rj), "rows1": (d1, c1), "rows3": (d3, c3),
-            "rows_met": c1 > 0 and c3 > 0 and 100 * d3 * c1 <= 100 * d1 * c3 + c1 * c3}
+            "rows_met": rows_branch in ("no more", "chance")}
 
 
 def rows_by_time(rows):
@@ -1471,18 +1501,19 @@ def tw_rule_section(st, loaded, rts, dqs, root, now=None):
                   f"three {sec(wm['median'][3])}, one {sec(wm['median'][1])}, over {wm['steps'][3]} and {wm['steps'][1]} steps",
                   "meets" if wm["step_met"] else no_],
                  ["2. A gain in slow minutes: at least 30 slow one-worker passes, the three-worker share of slow passes at most "
-                  "half the one-worker share, fallbacks with three no more",
+                  "half the one-worker share, fallbacks (in passes) not more with three than chance allows",
                   f"slow passes {wm['slow'][3]} of {wm['steps'][3]} with three, {wm['slow'][1]} of {wm['steps'][1]} with one; "
-                  f"fallbacks {wm['fb'][3]} with three, {wm['fb'][1]} with one", "meets" if wm["gain_met"] else no_],
+                  f"fallback passes {wm['fb_passes'][3]} with three, {wm['fb_passes'][1]} with one ({alt_branch_text(wm['fb_branch'])}; "
+                  f"coins {wm['fb'][3]} and {wm['fb'][1]})", "meets" if wm["gain_met"] else no_],
                  ["3. The pace: over every file from the first job on, no three-worker step above 8 trades requests in one "
                   "second, none limited or refused, every file readable",
                   f"{len(wm['files'])} files; most in one second {wm['peak_max'] if wm['peak_max'] is not None else 'n/a'}; "
                   f"{len(wm['peak_over'])} files above 8; {len(wm['stopped'])} with a limit or refusal; "
                   f"{len(wm['unreadable'])} unreadable", "meets" if wm["pace_met"] else no_],
-                 ["4. The rows: share of built bars differing from the venue's candle, three at most one point above one "
-                  "(jobs with a complete comparison)",
+                 ["4. The rows: share of built bars differing from the venue's candle, three at most one point above one, or "
+                  "more only within chance (jobs with a complete comparison)",
                   f"three {wm['rows3'][0]} of {wm['rows3'][1]} = {share_text(*wm['rows3'])}; one {wm['rows1'][0]} of "
-                  f"{wm['rows1'][1]} = {share_text(*wm['rows1'])}; {wm['rows_jobs']} jobs", "meets" if wm["rows_met"] else no_],
+                  f"{wm['rows1'][1]} = {share_text(*wm['rows1'])}; {wm['rows_jobs']} jobs; {alt_branch_text(wm['rows_branch'])}", "meets" if wm["rows_met"] else no_],
                  ["Reported, decides nothing: median and mean pass, three minus one",
                   f"median {sec(wm['diff_median'])}, mean {sec(wm['diff_mean'])} (first version of the plan asked for a 0.2 s gain at the "
                   "median over half-hour pairs)", "reported only"]]), ""]

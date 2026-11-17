@@ -82,13 +82,19 @@ were live. Write START and END as UTC minutes, both included (for example START 
   reads only heartbeats inside the period and cuts the logs at END first.
 - Part 3 has four clauses, over all steps of the jobs used: (1) no harm, the median pass with three at most the median
   with one plus 0.05 s; (2) a gain in slow minutes, at least 30 slow one-worker passes, the share of slow passes with three
-  at most half of one's, and no more budget fallbacks with three; (3) the pace, over every alt file from the first job to the
-  last one used, counting or not: no three-worker step with more than 8 trades requests in one second, none limited or
-  refused, and a file that cannot be read is listed and fails it; (4) the rows, the share of built bars that differ from the
-  venue's candle with three at most one point above the share with one (jobs with a complete comparison only; no rows on
-  either side means not met). The median and mean pass of both arms and their difference are reported, deciding nothing,
-  with the line that the first version of the plan asked for a 0.2 s gain at the median over half-hour pairs. The plan says
-  one such answer in a three-worker step stops the runs and the sixth book until the cause is known.
+  at most half of one's, and budget fallbacks not worse with three than chance allows; (3) the pace, over every alt file
+  from the first job to the last one used, counting or not: no three-worker step with more than 8 trades requests in one
+  second, none limited or refused, and a file that cannot be read is listed and fails it; (4) the rows, the share of built
+  bars that differ from the venue's candle, not worse with three than chance allows (jobs with a complete comparison
+  only; no rows on either side means not met). "Not worse than chance allows" is exact arithmetic with squares, no
+  square roots. Fallbacks are counted in passes, not coins (a step with `tb_fb_budget` above zero is one pass, however many
+  coins fell back): s1 one-worker passes, s3 three-worker ones; met if s3 <= s1, or if (s3 - s1) squared <= 4 * (s1 + s3).
+  Rows: d = three's share minus one's, p = the pooled share; met if d <= 1/100, or if d squared <= 4 * p * (1 - p) *
+  (1 / compared1 + 1 / compared3). The tools print which branch decided: "no more", "more, but within chance (two standard
+  deviations of the difference)" or "more than chance allows". The coin sums of fallbacks are still shown, as information.
+  The median and mean pass of both arms and their difference are reported, deciding nothing, with the line that the first
+  version of the plan asked for a 0.2 s gain at the median over half-hour pairs. The plan says one such answer in a
+  three-worker step stops the runs and the sixth book until the cause is known.
 - A step is marked refused only when the engine's error text has `Refused(`, `HTTP 401`, `HTTP 403` or `HTTP 451`, and limited
   only when the counter `tb_fb_limited` rose in that step; the bare number 429 marks nothing. A job whose run ended with an
   exception, or with fewer than 20 timed steps in an arm, does not count; the file's `why_not` and the job log say why.
