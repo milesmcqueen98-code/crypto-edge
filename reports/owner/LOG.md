@@ -1178,3 +1178,12 @@ FORWARD_TESTS.md.
       three workers are worse by more than chance allows (trades-workers plan, deviation log). The first job
       favoured three workers, so nothing seen is rescued.
   - The side-by-side build asked for in last night's note to myself is already built and under test.
+- **08:26. Both changes are on `main`** (cd2fa16b; Sonnet agent, reviewed).
+  - **The starter** (`.github/workflows/test-clock.yml`): when a run of the fifth book ends it starts a pair, when
+    a run of the sixth book ends it starts an alternating job. Only after a run that ended well, was started by
+    the hand-over and lasted at least 30 minutes. Its decision is a small script with 18 offline checks. First
+    starts expected at about 17:51 UTC (sixth book) and 18:44 UTC (fifth book).
+  - **The two clauses** live in one function that the status report and the rule script share. Tests run by me:
+    157, 58, 110, 57 and 63 checks and the status report's suite, all passing. On today's logs the new status
+    script differs from the old one in those two lines only.
+  - The pair tool, its workflow, the alternating tool and its workflow are byte for byte as they were.
