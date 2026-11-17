@@ -560,3 +560,19 @@ The run finished at 08:58 UTC on Nov 15 (job 43689717933, branch owner/read-c2).
     time its job started.
   - The pair tool, its test and the pair workflow stay byte for byte as they are. The starter is a separate
     small workflow.
+- **Nov 17 2026, 14:21 ET (orchestrator).** Part 3, the pairs: the starter did not start anything.
+  - **What happened:** the sixth book's run ended at 17:52 UTC and the fifth book's at 18:43 UTC. GitHub delivered
+    no event for either: the starter workflow has no run at all, and the status report, which waits for the same
+    event, did not run after them either. GitHub's own clock is worse than this morning: the status report's
+    07:17 UTC job started at 16:54, and none of the pair or alternating jobs scheduled since 12:05 UTC has
+    started.
+  - **What does work** is a job starting another job directly. That is how each paper book starts its own next
+    run, and it has not missed once.
+  - **So the start moves into the hand-over.** When a run of the fifth book ends and its hand-over has started the
+    next run, the same script also starts a pair. Same moment, same cadence (about every 5 h 50 min), still nobody
+    choosing. The separate starter workflow is removed so that a late event cannot start a second pair.
+  - The fifth book's workflow file, the pair workflow and the pair tool stay byte for byte as they are. The one
+    file that changes is the hand-over script all paper books share; the addition runs only after the next run
+    has been started and cannot change whether it is.
+  - Nothing about what a pair measures or which pairs count changes. No pair is started by hand, including the
+    two that were missed today.

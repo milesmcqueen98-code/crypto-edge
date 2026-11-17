@@ -274,3 +274,16 @@
     - No one chooses when a job runs, so this is not a start by hand. Which arm takes the even minutes still
       follows the UTC hour of the start.
     - Nothing about what a job measures or which jobs count changes.
+- **Nov 17 2026, 14:21 ET (orchestrator).** How jobs are started: the starter did not start anything.
+  - **What happened:** the sixth book's run ended at 17:52 UTC and the fifth book's at 18:43 UTC. GitHub delivered
+    no event for either: the starter workflow has no run at all, and the status report, which waits for the same
+    event, did not run after them either. GitHub's own clock is worse than this morning: the status report's
+    07:17 UTC job started at 16:54, and none of the pair or alternating jobs scheduled since 12:05 UTC has
+    started.
+  - **What does work** is a job starting another job directly. That is how each paper book starts its own next
+    run, and it has not missed once.
+  - **So the start moves into the hand-over.** When a run of the sixth book ends and its hand-over has started the
+    next run, the same script also starts an alternating job. Same moment, same cadence, still nobody choosing.
+    The separate starter workflow is removed so that a late event cannot start a second job.
+  - The sixth book's workflow file, the alternating workflow and its tool stay as they are. Nothing about what a
+    job measures or which jobs count changes. No job is started by hand, including the one missed today.

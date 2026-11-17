@@ -1187,3 +1187,15 @@ FORWARD_TESTS.md.
     157, 58, 110, 57 and 63 checks and the status report's suite, all passing. On today's logs the new status
     script differs from the old one in those two lines only.
   - The pair tool, its workflow, the alternating tool and its workflow are byte for byte as they were.
+- **14:21. The starter did not fire. The start moves into the paper books' hand-over.**
+  - GitHub delivered no event when the sixth book's run ended (17:52 UTC) or the fifth book's (18:43 UTC): the
+    starter has no run, and the status report did not run after them either. The scheduler is also worse: the
+    status report's 07:17 UTC job started at 16:54, and no pair or alternating job has started since 12:05 UTC.
+    GitHub's status page shows no incident today.
+  - A job starting another job directly has never missed here (each book's hand-over). So the hand-over script
+    will also start a pair after a fifth-book run and an alternating job after a sixth-book run, once it has
+    started the book's own next run. The starter workflow goes. Logged in both plans before the change.
+  - The change is to the one script all paper books share, so it gets its own test run and a look right after
+    the first two hand-overs tonight (about 23:42 and 00:33 UTC). If a hand-over fails, I start that book's next
+    run at once: a book's continuity comes before a test job.
+  - The two starts missed today are not made up by hand.
