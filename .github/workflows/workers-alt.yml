@@ -1,0 +1,88 @@
+name: workers-alt
+
+# Part 3 of the trades-workers plan (reports/owner/trades_workers_plan.md): one worker against three, alternating by the
+# minute inside one run, on one runner, on the sixth book's pinned commit. scripts/owner/workers_alt/run_alt.py drives the
+# paper engine (no orders, public data only) for the run's minutes; in every other minute the trades pass uses one worker
+# and in the rest three, the first arm set by --first. It writes reports/owner/workers_alt/alt_<UTC start>Z.json, which
+# this job commits to main.
+# The pinned commit is read only from paper_spot_tw/CODE (code_commit), the sixth book's own record; this file names no
+# commit. Until that file exists (the sixth book has not run) the job says so and ends without a run.
+# Schedule: four times a day, at 03:05, 09:05, 15:05 and 21:05 UTC. The first arm is one worker when the UTC hour of the
+# job's start is in 00 to 05 or 12 to 17 and three workers otherwise, so the scheduled jobs alternate (one, three, one,
+# three). A run takes about the 60 minutes asked for plus the wait for the venue's candles; the 120-minute limit is twice that.
+on:
+  schedule:
+    - cron: "5 3,9,15,21 * * *"
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: "Minutes of paper steps (default 60)"
+        default: "60"
+
+concurrency:
+  group: workers-alt
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  alt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      # the run script, the commit script and the sixth book's CODE file, from main
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: |
+            scripts/owner/workers_alt
+            bot/spot/deploy
+            paper_spot_tw/CODE
+            reports/owner/workers_alt
+      - name: Read the pinned commit
+        id: pin
+        run: |
+          commit=""
+          if [ -f paper_spot_tw/CODE ]; then
+            commit=$(sed -n 's/^code_commit:[[:space:]]*//p' paper_spot_tw/CODE | head -n 1 | tr -d '[:space:]')
+          fi
+          if ! printf '%s' "$commit" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "The sixth book has not run yet (no paper_spot_tw/CODE with a code_commit): no run this time."
+            echo "commit=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "pinned commit from paper_spot_tw/CODE: $commit"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+      # the engine code at that commit, in code/ (a separate repository inside the workspace, never committed)
+      - if: steps.pin.outputs.commit != ''
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pin.outputs.commit }}
+          path: code
+          sparse-checkout: |
+            bot
+            edge
+            reports
+      - if: steps.pin.outputs.commit != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - if: steps.pin.outputs.commit != ''
+        run: pip install pandas numpy lightgbm requests pyarrow
+      - name: Run the alternating minutes
+        if: steps.pin.outputs.commit != ''
+        env:
+          INPUT_MINUTES: ${{ inputs.minutes }}
+        run: |
+          echo "code/" >> .git/info/exclude
+          h=$((10#$(date -u +%H)))
+          if [ "$h" -lt 6 ] || { [ "$h" -ge 12 ] && [ "$h" -lt 18 ]; }; then first=one; else first=three; fi
+          echo "first arm $first (UTC hour $(date -u +%H))"
+          python scripts/owner/workers_alt/run_alt.py --code "$GITHUB_WORKSPACE/code" --first "$first" --minutes "${INPUT_MINUTES:-60}" --out reports/owner/workers_alt
+      - name: Commit the run
+        if: ${{ !cancelled() && steps.pin.outputs.commit != '' }}
+        run: |
+          git config user.name "crypto-edge-bot"
+          git config user.email "crypto-edge-bot.users.noreply.github.com"
+          bash bot/spot/deploy/paper_commit.sh "Workers alternating run $(date -u +%Y-%m-%dT%H:%MZ)" reports/owner/workers_alt
