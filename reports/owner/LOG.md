@@ -1199,3 +1199,13 @@ FORWARD_TESTS.md.
     the first two hand-overs tonight (about 23:42 and 00:33 UTC). If a hand-over fails, I start that book's next
     run at once: a book's continuity comes before a test job.
   - The two starts missed today are not made up by hand.
+- **14:28. The hand-over change is on `main`** (c1f1a489; Sonnet agent, reviewed and tested by me).
+  - **What it does** (`bot/spot/deploy/paper_next.sh`): once it has started a book's next run, it starts a pair
+    after a fifth-book run and an alternating job after a sixth-book run. For the main and fourth books it does
+    nothing more. A test job that fails to start prints a line and never fails the hand-over.
+  - **Checks:** 27 in the script's test, the 10 old ones unchanged; the commit script's test passes. The starter
+    workflow and its script are deleted, so a late event cannot start a second job.
+  - **First uses tonight (UTC):** main book about 21:18 (no test job, but the first run of the changed script),
+    sixth book about 23:42 (alternating job), fourth book about 00:23 (no test job), fifth book about 00:33
+    (pair). I look after each one.
+  - Nothing that changes a trading decision went to `main`.
