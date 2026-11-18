@@ -287,3 +287,34 @@
     The separate starter workflow is removed so that a late event cannot start a second job.
   - The sixth book's workflow file, the alternating workflow and its tool stay as they are. Nothing about what a
     job measures or which jobs count changes. No job is started by hand, including the one missed today.
+- **Nov 18 2026, 08:26 ET (orchestrator), morning look, before any read.** One change to how often jobs run.
+  No measure, floor or period changes.
+  - **Part 3 so far:** 5 jobs count. 152 timed steps with one worker and 152 with three; no pass over 6 s in
+    either arm (the longest 3.4 s and 3.0 s); no budget fallback; at most 7 requests in a second; nothing
+    rate-limited or refused. Slow one-worker passes: 0 of the 30 needed.
+  - **Why that is a problem of the design and not yet a result.** A job samples one hour in about six. Slow
+    spells have come about once a day for half an hour since Nov 17, and none has fallen into a job. At this
+    rate I expect some 4 to 10 slow one-worker passes in the 14 days: the test would end as "the gain is not
+    shown" for lack of slow minutes in the sample, whatever the option does.
+  - **The change: from now to the end of the 14 days (Dec 1, 11:41 UTC) the jobs run back to back.** When an
+    alternating job ends, it starts the next one, the way a paper book starts its next run (the same hand-over
+    script, with the same rule that a run under 30 minutes starts nothing). The hand-over of the sixth book
+    still starts one too; at most one job runs at a time and at most one waits.
+    - What a job does and measures, which jobs count, the floor of 30, the 8 jobs, the four measures and the 14
+      days from the first job all stay as written. Which arm takes the even minutes still follows the hour of
+      the start.
+    - **Why this does not tilt the test:** the two arms sit on alternating minutes inside every job, so more
+      jobs add minutes to both arms alike. The read still happens once, when the counts are there, and the
+      counts that end the waiting (jobs, slow one-worker passes) do not depend on which arm does better.
+    - The alternating workflow gains one job that starts the next run. This replaces the sentence of Nov 17
+      that the workflow stays as it is. The tool is unchanged.
+  - **Said plainly: I have seen the two books side by side** before deciding this. In the half hour to 21:00 UTC
+    on Nov 17 the fourth book had 11 budget fallbacks, the fifth 8 and the sixth, with three workers, none
+    (longest pass 2.8 s). That is Part 4's material and one half hour; it decides nothing here, and it is not
+    why the jobs run more often: the reason is the arithmetic above.
+  - **The trades list stood still from 21:19 to 21:57 UTC on Nov 17** (bar-source plan, deviation log, today).
+    The sixth book stopped new bids for those 38 minutes exactly as the fifth did; it is the same build. Part 4
+    compares the two, so it does not move this test.
+  - **In the half hour to 08:00 UTC on Nov 18** a whole trades pass ran out of its budget in the sixth book and
+    in the fifth alike, after a failed candle request between steps (18 and 17 budget fallbacks). Counted by
+    Part 4 as it is.

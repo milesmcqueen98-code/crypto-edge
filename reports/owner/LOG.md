@@ -1286,3 +1286,41 @@ FORWARD_TESTS.md.
   - **Seen before the read, no rule changed:** all three pairs ran the build first. The order follows the hour
     of the start, as fixed, and with starts that no longer fall on the clock's four hours it need not come out
     even. The read will give the count of each order and the difference within each, next to the result.
+
+## Nov 18 2026 (times ET; UTC is five hours later)
+- **08:26. Morning look. One finding that matters: the release 5 build stops bidding when the venue's trades list
+  stands still.**
+  - **The four books:** all handing over (main 03:10 and 09:01 UTC; fourth 06:15 and 12:06; fifth 06:25 and
+    12:15; sixth 05:32 and 11:22). No error event, no halt, no refusal, no rate-limit stop in any book.
+  - **The finding** (both plans' deviation logs, today). From 21:19 to 21:57 UTC on Nov 17 the venue's trades
+    list showed no new trade for almost any coin while its candles kept coming.
+    - The fifth and sixth books (the build: candles asked between steps only) had no row for the newest minute,
+      the stale guard stopped new bids, and for 38 minutes they placed none.
+    - The fourth and main books (candles asked inside the step) carried on: 8 new bids each, on the same
+      coins in the same minutes.
+    - Once in the seven days the trades-reading books have run. It is the guard working, and a weakness of the
+      build that the plan did not foresee. Not a fault by the plan's list, so the test goes on to its one read.
+    - **Fixed now, before the read:** the repair is a fallback to candles asked inside the step when BTC's
+      newest minute has no trade but its candle has a row. It is built unless five or more of the fourth
+      book's eight bids in the window were wrong against the research. It would be a new commit with its own
+      test. A pass of Part 3 still makes the tested configuration release 5, with this said in the note.
+  - **Correction to yesterday's 14:38 entry.** "Two such minutes" was counted two hours before the standstill.
+    In the fifth and sixth books it made 38 minutes in a row in which bids already resting ran out after five
+    minutes and none was renewed. If the fallback is built such runs go away again; if the window speaks
+    against it, the question comes back.
+  - **Fifth book's pairs: 6 of 8 count,** the build ahead by 1.03 to 2.69 s in every one (five with the build
+    first, one with release 3 first). Two more are due today. Every ended run has started its pair.
+  - **Sixth book's alternating jobs: 5 count, and no slow pass in either arm** (152 steps each, longest 3.4 s).
+    At one hour in six the floor of 30 slow one-worker passes would probably not be reached in the 14 days, so
+    from today the jobs run back to back until Dec 1. Nothing about the rule changes (plan, deviation log).
+  - **The venue's speed since yesterday's look.** One slow half hour (to 21:00 UTC Nov 17): budget fallbacks 11
+    in the fourth book, 8 in the fifth, none in the sixth. One slow half hour in the fourth book alone (to
+    02:00 UTC, 7). One whole trades pass of the fifth and of the sixth book fell back in the half hour to
+    08:00 UTC, after a failed candle request between steps. Data step medians: main 11.2 s, fourth 13.1 s, fifth 8.5 s,
+    sixth 8.5 s.
+  - **Test A since release 3** (status report: CHECK): 32 rungs, $293K bought, net -38 bp. Still the one
+    market-wide minute of Nov 14 (logged Nov 16) plus one LINK ladder on Nov 17 that ended at +3 bp. The three
+    trades-reading books did not take that LINK fill; the read's research data will show which side was right.
+  - **GitHub:** its events arrive again (the status report ran after every book's run today). Its clock still
+    runs late; it started one pair and one alternating job hours late, which now only adds jobs.
+  - **Nothing from Miles** on release 4's server steps.

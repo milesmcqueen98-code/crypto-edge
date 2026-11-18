@@ -576,3 +576,41 @@ The run finished at 08:58 UTC on Nov 15 (job 43689717933, branch owner/read-c2).
     has been started and cannot change whether it is.
   - Nothing about what a pair measures or which pairs count changes. No pair is started by hand, including the
     two that were missed today.
+- **Nov 18 2026, 08:26 ET (orchestrator), morning look, before the read. No rule changed.**
+  - **Seen: the venue's trades list stood still for 38 minutes.** From 21:19 to 21:57 UTC on Nov 17 it showed no
+    new trade for almost any coin. In the half hour to 22:00 the three books that read all 18 coins from trades
+    each built 54 bars and found 486 minutes empty. The venue's candles kept coming.
+  - **What the books did.**
+    - The fifth book (and the sixth, the same build) had no row for the newest minute of any coin. The stale
+      guard saw BTC without one and stopped new bids: 38 minutes, no new bid.
+    - The fourth book and the main book ask for the candle inside the step, so they had rows and carried on:
+      8 new bids each in the window, on the same coins in the same minutes, and two stopped minutes each
+      (21:26 and 21:39).
+  - **This is the build doing what it was built to do, and it is a weakness this plan did not foresee.**
+    Release 3's way falls back on the candle by itself. The build asks for candles between steps only, so when
+    the trades list stands still it has nothing for the newest minute.
+  - **It is not a fault in the sense of "One read"** (no crash, refusal, rate-limit stop or error event). The test
+    goes on and is read once, by its four measures, as written.
+    - Item 1 does not see it: a minute found empty counts as verified.
+    - Measure 2 does: the research's bids in those minutes have no bid of the fifth book next to them. Eight
+      bids are 3.2% of the fourth book's 252 so far; the tolerance is 3.0 points on the whole period.
+  - **The read will give the window by itself, next to the result and deciding nothing:** each book's new bids,
+    the research's, and the fourth book's eight bids against the research.
+  - **What follows, fixed now.** The repair is a fallback: when BTC has no trade in the newest minute, ask for
+    BTC's candle inside the step; if it has a row for that minute, the trades list is behind, and the step takes
+    every coin's newest row from candles asked inside the step, as release 3 does.
+    - It is built unless the window speaks against it: if five or more of the fourth book's eight bids in the
+      window are bids the research would not have placed, or are more than 5 bp from the research level, the
+      candles were no better than nothing there and the stop stays as it is.
+    - A fallback is a new commit. It gets its own offline test and its own paper days before any release.
+  - **A pass of Part 3 still makes the tested configuration release 5, as written.** The release note will say
+    what the build does when the trades list stands still.
+  - **Also seen, counted by measures 3 and 4 as they are:** in the half hour to 08:00 UTC on Nov 18 a candle
+    request between steps failed and the trades pass of the fifth and of the sixth book ran out of its budget
+    for a whole pass (17 and 18 coin-minutes). Both asked for the candles inside the step; the data step
+    ended at 22 s and 21 s that time.
+  - **The third pair's release 3 half** (about 21:20 to 21:57 UTC) lay inside the standstill. The pair counts by
+    the tool's rule and stays in. Its release 3 median, 9.78 s, is in line with the other pairs (9.49 to 9.74 s).
+  - **Pairs so far: 6 of 8** (differences 2.69, 1.03, 1.18, 1.07, 1.27 and 1.20 s in the build's favour; five ran
+    the build first, one release 3 first). Every ended run of the fifth book has started its pair since the
+    hand-over does it.
