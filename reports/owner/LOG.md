@@ -1324,3 +1324,11 @@ FORWARD_TESTS.md.
   - **GitHub:** its events arrive again (the status report ran after every book's run today). Its clock still
     runs late; it started one pair and one alternating job hours late, which now only adds jobs.
   - **Nothing from Miles** on release 4's server steps.
+- **08:29. The alternating jobs' back-to-back start is on `main`** (923bfe99; Sonnet agent, reviewed by me).
+  - **What changed:** the alternating workflow has a second job that starts the next alternating job through
+    the paper books' hand-over script, until Dec 1 2026, 11:41 UTC. A run under 30 minutes starts nothing, so a
+    job that fails at once cannot loop.
+  - **Checked:** the existing job, the triggers and the queue compare equal to the file before; the new step's
+    script with an end time in the future, in the past and unreadable; the hand-over script's own test passes.
+  - **First use:** the job running now was started from the old file and will not start a successor. The chain
+    begins with the job the sixth book's hand-over starts at about 17:13 UTC. Nothing is started by hand.
