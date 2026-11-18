@@ -32,6 +32,12 @@ Plain words. Nothing here changes a trading decision. The plan is `reports/owner
 - Tests: `scripts/owner/workers_alt/test_run_alt.py`, `scripts/owner/test_paper_status.py` (new checks added, old
   ones unchanged) and `scripts/owner/trades_workers/test_rule.py`.
 
+- Back to back (decided Nov 18, plan deviation log): from Nov 18 until the end of the test's 14 days, Dec 1 2026 11:41 UTC,
+  the alternating jobs run one after the other. The job `next` in `.github/workflows/workers-alt.yml` starts the following
+  job through `bot/spot/deploy/paper_next.sh` (a run under 30 minutes starts nothing). The sixth book's hand-over and the cron
+  lines still start jobs too; at most one waits behind the running one. After 2026-12-01T11:41:00Z the job `next` starts
+  nothing and can be removed.
+
 ## What was set before the merge
 
 One line: `CODE_REF: "4c1717ac3cd711c3383e281ccb3eb2742f993b23"` near the top of `.github/workflows/paper-spot-tw.yml`:

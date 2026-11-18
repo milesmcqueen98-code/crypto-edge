@@ -10,6 +10,10 @@ name: workers-alt
 # Schedule: four times a day, at 03:05, 09:05, 15:05 and 21:05 UTC. The first arm is one worker when the UTC hour of the
 # job's start is in 00 to 05 or 12 to 17 and three workers otherwise, so the scheduled jobs alternate (one, three, one,
 # three). A run takes about the 60 minutes asked for plus the wait for the venue's candles; the 120-minute limit is twice that.
+# Back to back: from Nov 18 until the end of the test's 14 days (Dec 1 2026, 11:41 UTC) the jobs run one after the other.
+# The job next starts the following one through the paper books' hand-over script (a run under 30 minutes starts nothing).
+# The sixth book's hand-over and the cron lines still start jobs too, and at most one job waits behind the running one.
+# The reason is in the plan's deviation log of Nov 18 (reports/owner/trades_workers_plan.md).
 on:
   schedule:
     - cron: "5 3,9,15,21 * * *"
@@ -86,3 +90,39 @@ jobs:
           git config user.name "crypto-edge-bot"
           git config user.email "crypto-edge-bot.users.noreply.github.com"
           bash bot/spot/deploy/paper_commit.sh "Workers alternating run $(date -u +%Y-%m-%dT%H:%MZ)" reports/owner/workers_alt
+
+  # Back to back until END_UTC: when the alternating job ends, start the next one (see the header and the plan's deviation log
+  # of Nov 18). After END_UTC this job starts nothing and can be removed.
+  next:
+    needs: [alt]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: bot/spot/deploy
+      - name: Start the next alternating job
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          RUN_ID: ${{ github.run_id }}
+          REPO: ${{ github.repository }}
+          WORKFLOW: workers-alt.yml
+          END_UTC: "2026-12-01T11:41:00Z"
+        run: |
+          end=$(date -u -d "$END_UTC" +%s 2>/dev/null) || end=""
+          if [ -z "$end" ]; then
+            echo "no next job: unreadable end time"
+            exit 0
+          fi
+          now=$(date -u +%s)
+          if [ "$now" -ge "$end" ]; then
+            echo "no next job: the 14 days ended at $END_UTC"
+            exit 0
+          fi
+          bash bot/spot/deploy/paper_next.sh
