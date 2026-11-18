@@ -1274,3 +1274,15 @@ FORWARD_TESTS.md.
   - **The balance warning's full suite on a runner** (job 44179920431, branch at 46e1ee84): 23 file runs, no
     failure. Paper parity is identical (156 rungs, 88 parents). Both live-path simulations show no balance
     warning, with entries, exits and P&L as before.
+- **19:46. All four books have handed over with the changed script; the fifth book's hand-over started a pair.**
+  - **Fourth book, 00:24 UTC:** next run started after 351 minutes (44207572759); no test job, as intended.
+  - **Fifth book, 00:34 UTC:** next run started after 351 minutes (44208915239) and, two seconds later, a
+    same-machine pair (44208918421), which began at once. Both lines are in the job's log.
+  - So the start of test jobs no longer depends on GitHub's clock or its events. The clock still adds jobs when
+    it happens to fire: a scheduled pair started at 20:33 UTC, about two and a half hours late.
+  - **Third pair (20:33 UTC, the build first): it counts.** Data step 8.60 s with the build and 9.78 s with
+    release 3, a difference of 1.18 s; 31 timed steps in each half; nothing refused or rate-limited.
+  - **Pairs so far: 3 of 8, differences 2.69, 1.03 and 1.18 s in the build's favour.**
+  - **Seen before the read, no rule changed:** all three pairs ran the build first. The order follows the hour
+    of the start, as fixed, and with starts that no longer fall on the clock's four hours it need not come out
+    even. The read will give the count of each order and the difference within each, next to the result.
