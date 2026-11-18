@@ -1332,3 +1332,14 @@ FORWARD_TESTS.md.
     script with an end time in the future, in the past and unreadable; the hand-over script's own test passes.
   - **First use:** the job running now was started from the old file and will not start a successor. The chain
     begins with the job the sixth book's hand-over starts at about 17:13 UTC. Nothing is started by hand.
+- **08:33. The fallback for a standing trades list is being built today** (Opus agent, branch owner/standstill,
+  on the balance-look commit 46e1ee84), so that it is ready when the fifth book's read comes.
+  - **Whether it is used is still decided as fixed this morning:** by the fourth book's eight bids in the window
+    against the research, at the read. If they speak against it, the branch is dropped.
+  - **The design:** a switch, off unless set. With it on, a BTC minute without a trade in the trades list makes
+    the step look at BTC's candle. If that candle has trades, the list is behind: the step asks for the candles
+    of the coins whose minute came back empty and judges those rows as release 3 judges candle rows. If BTC's
+    candle is empty too, the guard stops the bids as today.
+  - **What it has to show offline:** with no standstill in the feed, not one log line differs, switch on or off.
+    With a 38-minute standstill in the feed, the build with the switch on decides exactly as the candle run
+    does, and with the switch off it stops as the books did on Nov 17.
