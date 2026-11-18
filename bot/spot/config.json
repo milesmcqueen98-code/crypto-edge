@@ -26,6 +26,7 @@
   "newest_bar": "trades",
   "stale_guard": true,
   "candles_at_s": 45,
+  "standstill_candles": true,
   "trades_coins": [
     "BTC",
     "ETH",

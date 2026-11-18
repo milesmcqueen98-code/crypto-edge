@@ -12,7 +12,7 @@ import os
 
 ORDER_KEYS = ("order_path", "orders_rate", "place_workers")       # README, "Order path"
 INPUT_KEYS = ("newest_bar", "trades_coins", "stale_guard", "trades_rows", "trades_budget_s", "confirm_s",
-              "candles_at_s") + ORDER_KEYS
+              "candles_at_s", "standstill_candles") + ORDER_KEYS
 LOCAL_SWITCH = "inputs_local"
 LIVE_NAME = "config.live.json"
 

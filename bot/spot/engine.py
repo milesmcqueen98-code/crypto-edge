@@ -882,6 +882,18 @@ class Engine:
                 raise ValueError(f"candles_at_s must be a number of seconds from confirm_s + 5 "
                                  f"({self.confirm_s + 5:g}) to 50, not {x!r}")
             self.candles_at_s = float(x)
+        # trades mode with candles_at_s: a verified answer with no BTC trade in the closed minute while BTC's candle
+        # has a traded row there means the trades list stands still; the step then takes the candles of the coins it
+        # left out (README, "Standstill of the trades list"); absent: false. Without trades or without candles_at_s
+        # the key is ignored (one warning event at start: the candle is asked inside the step already)
+        ss = self.cfg.get("standstill_candles", False)
+        self._ss_ignored = None
+        if ss not in (None, False) and (self.newest_bar != "trades" or self.candles_at_s is None):
+            self._ss_ignored, ss = ss, False
+        if not isinstance(ss, bool) and ss is not None:
+            raise ValueError(f"standstill_candles must be true or false, not {ss!r}")
+        self.standstill = bool(ss)
+        self._tb_empty = {}                                # trades pass: coin -> provenance of m before its empty mark
         self._cpass = {}                                   # candles_at_s: coin -> minute its candle pass was for
         self._cp_min, self._cp_todo, self._cp_d = None, [], 0.0
         self._skipped, self._fb, self._fb_stop = set(), [], False
@@ -1041,6 +1053,42 @@ class Engine:
             self.count("step_candles", len(todo))
             self.update_spot(t, todo)
 
+    def _standstill(self, t):
+        """standstill_candles, after the trades pass of the step for minute t (m = t - 1 closed): BTC trades every
+        minute, so a verified answer with no BTC trade in m means the trades list is behind (or trading stopped). BTC's
+        empty mark for m is taken away and its candle row for m judged as a candle row: the one the step's own request
+        brought, or, when the step left BTC out (its candle pass had run), one request made now, on demand. With a
+        traded row there the list stands still: tb_frozen is counted once, and every other coin verified empty in this
+        pass that the step left out loses its mark and gets its candle on demand (pre_ondemand, step_candles); the
+        stale guard then judges these rows as candle rows (_row_ok). Without a traded BTC row the mark is put back
+        (stale, as before). Nothing after a refusal or a rate limit in the trades pass (_fb_stop)."""
+        if not getattr(self, "standstill", False) or self._fb_stop or "BTC" not in self._tb_empty:
+            return
+        m = t - pd.Timedelta(minutes=1)
+        P = self._prov.setdefault("BTC", {})
+        mark = P.get(m)
+        if "BTC" in self._skipped:                         # the candle pass had run for BTC: one request now
+            P.pop(m, None)
+            self.count("pre_ondemand")
+            self.count("step_candles")
+            self.update_spot(t, ["BTC"])
+        elif self._tb_empty["BTC"] is None:                # the step asked BTC's candle: its merge's provenance back
+            P.pop(m, None)
+        else:
+            P[m] = self._tb_empty["BTC"]
+        df = self.spot.get("BTC")
+        if not (df is not None and m in df.index and df.loc[m, "volume"] > 0):
+            P[m] = mark                                    # no traded BTC row: BTC is stale, as before
+            return
+        self.count("tb_frozen")
+        todo = [c for c in self.coins if c in self._tb_empty and c in self._skipped]
+        for c in todo:
+            self._prov.get(c, {}).pop(m, None)
+        if todo:
+            self.count("pre_ondemand", len(todo))
+            self.count("step_candles", len(todo))
+            self.update_spot(t, todo)
+
     PROV_MIN = 15
 
     def _older(a, b):
@@ -1119,6 +1167,7 @@ class Engine:
         stop = getattr(self.market, "Refused", None)
         limited = getattr(self.market, "Limited", None)
         self._fb, self._fb_stop = [], False                # coins that fell back (candles_at_s: fetched on demand)
+        self._tb_empty = {}                                # coins verified empty for m (standstill_candles)
         for i, c in enumerate(todo):
             if self._timer() - t0 > budget:
                 self.count("tb_fb_budget", len(todo) - i)
@@ -1160,6 +1209,7 @@ class Engine:
             bar = r.get("bar")
             if bar is None:
                 self.count("tb_empty")                     # no trades: the candles have no row either
+                self._tb_empty[c] = self._prov.get(c, {}).get(m)
                 self._prov.setdefault(c, {})[m] = (None, True)
                 continue
             self._put_bar(c, m, bar)
@@ -1552,6 +1602,7 @@ class Engine:
             if self.newest_bar == "trades":
                 self.trades_pass(prev)
                 self._fetch_fallbacks(t)
+                self._standstill(t)                        # standstill_candles: BTC's minute empty in the trades list
             self.refresh_adv(t)
             if self.broker.live:
                 self.cash_live = self.broker.cash() - self.cfg.get("usd_reserve", 500.0)
@@ -2262,6 +2313,11 @@ class Engine:
             self.log("warning", t=end, msg='candles_at_s is set but newest_bar is not "trades": the setting is ignored '
                                            f'(candle requests stay in the step; candles_at_s {self._cp_ignored!r}, '
                                            f'newest_bar {self.newest_bar})')
+        if getattr(self, "_ss_ignored", None) is not None:  # once per start (the candle is asked inside the step)
+            self.log("warning", t=end, msg='standstill_candles is set but newest_bar is not "trades" or candles_at_s '
+                                           'is not set: the setting is ignored (the candle is asked inside the step '
+                                           f'already; standstill_candles {self._ss_ignored!r}, newest_bar '
+                                           f'{self.newest_bar}, candles_at_s {self.cfg.get("candles_at_s")!r})')
         self.update_spot(end)
         if self.newest_bar == "trades":
             self.trades_pass(end - pd.Timedelta(minutes=1))    # repairs the last minutes of the backfill too

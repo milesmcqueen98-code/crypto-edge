@@ -221,11 +221,11 @@ def part1():
           o8.endswith("; order path batch (ten requests a second, 1 placing threads)"), o8)
 
     # the order-path keys follow the release like the input keys
-    check("INPUT_KEYS holds the seven input keys (candles_at_s the last) and then the three order-path keys",
-          R.INPUT_KEYS[:7] == ("newest_bar", "trades_coins", "stale_guard", "trades_rows", "trades_budget_s",
-                               "confirm_s", "candles_at_s") and R.ORDER_KEYS == ("order_path", "orders_rate",
-                                                                                 "place_workers")
-          and R.INPUT_KEYS[7:] == R.ORDER_KEYS)
+    check("INPUT_KEYS holds the eight input keys (standstill_candles the last) and then the three order-path keys",
+          R.INPUT_KEYS[:8] == ("newest_bar", "trades_coins", "stale_guard", "trades_rows", "trades_budget_s",
+                               "confirm_s", "candles_at_s", "standstill_candles")
+          and R.ORDER_KEYS == ("order_path", "orders_rate", "place_workers")
+          and R.INPUT_KEYS[8:] == R.ORDER_KEYS)
     base_o = dict(base, order_path="batch", orders_rate=10, place_workers=3)
     new_o, notes_o = R.apply(dict(live, order_path="serial", place_workers=1), base_o)
     check("order keys: taken from the release, a differing value replaced and noted",

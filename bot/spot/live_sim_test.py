@@ -73,6 +73,9 @@ class TradesFeedMarket(LiveReplayMarket):
     is the trades bar served for minute m instead of the candle's values; (coin, m) in no_candle is a minute the
     venue's candle answers leave out while the trades list has its trades (the fake exchange still fills from the
     candle). served records which of those minutes the feed handed out as a trades bar.
+    A standstill of the trades list (empty unless a test sets it; live_sim_inputs_test.py, case G): for a minute in
+    frozen, the trades list answers "verified, no trade in that minute" for every coin, while the candle answers go
+    on as usual (with no_candle they can leave the minute out too).
     A candle request made mid-minute (the candle pass of "candles_at_s") is answered as the venue would: made at the
     request's own time, and no answer ever holds a row for the minute open at the request's time. calls records every
     request as (phase, minute of the request, "candles" or "trades", coin); main() sets the phase (start, step, fast,
@@ -83,6 +86,7 @@ class TradesFeedMarket(LiveReplayMarket):
         self.on, self.tb_calls = False, 0
         self.alter, self.no_candle, self.served = {}, set(), set()
         self.calls, self.phase = [], None
+        self.frozen = set()
 
     def spot_candles(self, coin, start, end, tries=5, timeout=15, need_answer=False):
         now = self.clock()
@@ -99,6 +103,8 @@ class TradesFeedMarket(LiveReplayMarket):
         return out.drop(gone) if gone else out
 
     def _bar(self, coin, m):
+        if m in self.frozen:                               # the trades list stands still: no trade in m
+            return None
         if (coin, m) in self.alter or (coin, m) in self.no_candle:
             self.served.add((coin, m))
             if (coin, m) in self.alter:
@@ -323,6 +329,7 @@ def main(start, end, death=None, death_min=20, config=None, inputs=None, switch=
     cfg.update(newest_bar="candles", stale_guard=False)
     cfg.pop("trades_coins", None)
     cfg.pop("candles_at_s", None)                          # a trades-mode setting (ignored with a warning)
+    cfg.pop("standstill_candles", None)                    # likewise (it needs trades and candles_at_s)
     cfg_in = None
     if inputs is not None:                                 # --inputs: the input settings of that file, taken the way
         from bot.spot import release_inputs as RI          # the live bot takes them from bot/spot/config.json
