@@ -8,7 +8,8 @@ workflow, sandbox-test.yml). trades_bar_check.py and tb_smoke.py are not run: th
 The input release candidate's list (named release 4 before the merge onto main; now the candidate for release 5):
 release 3's (scripts/owner/release3/run_spot_tests.py) plus candle_after_test.py and
 candle_pass_test.py; the live-path inputs test now runs A, B, C1, C2, E and, without the death, D, F0 and F1, and
-prints the modelled clock of the data step (bot/spot/live_sim_inputs_test.py).
+prints the modelled clock of the data step (bot/spot/live_sim_inputs_test.py); without the death it also runs G (a
+standstill of the trades list), and standstill_test.py checks "standstill_candles".
 
 On owner/release-5 (merged onto main after release 4) it runs the union of that list and the order path's
 (scripts/owner/order_path/run_spot_tests.py: order_path_unit_test.py, order_check_test.py, order_status_test.py and
@@ -31,6 +32,7 @@ PY = [("merge_test.py", []), ("trades_bar_test.py", []), ("usdc_test.py", []), (
       ("candle_after_test.py", []), ("candle_pass_test.py", []), ("release_inputs_test.py", []),
       ("order_path_unit_test.py", []), ("order_check_test.py", []), ("order_status_test.py", []),
       ("balance_look_test.py", []),
+      ("standstill_test.py", []),
       ("replay_test.py", ["2025-10-10", "2025-10-12"]),
       ("live_sim_test.py", WINDOW), ("live_sim_test.py", WINDOW + [DEATH]),
       ("live_sim_inputs_test.py", WINDOW), ("live_sim_inputs_test.py", WINDOW + [DEATH]),
@@ -43,7 +45,7 @@ KEY = re.compile(r"^(engine:|PARITY|MISMATCHES|paper settings|\d+ minutes in|ent
                  r"switch at|inputs from|trades feed|  first difference|  C[12], whole log|  (B|C1|C2): heartbeats|"
                  r"  D: |  (B|E|F0|F1): candles_at_s|    (B|E|F0|F1): steps|  model |"
                  r"  C, whole log|  [BC]: heartbeats|  \[i+\] |  i+ vs i: |  i+: batch|=== \(|"   # the order path's
-                 r"[A-Z ]+TEST (PASSED|FAILED)|.*: all passed)")
+                 r"  G[012]: |[A-Z ]+TEST (PASSED|FAILED)|.*: all passed)")
 
 
 def run(cmd, label):
