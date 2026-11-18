@@ -1,14 +1,14 @@
 {
  "run": "44324805282",
- "heartbeat": "2026-11-18T15:30:56Z",
+ "heartbeat": "2026-11-18T16:00:56Z",
  "started": "2026-11-18T14:29:52Z",
  "planned_end": "2026-11-18T20:14:51Z",
  "rows_last_hour": {
   "book": 1080,
   "hl": 1080,
-  "candles": 1244,
+  "candles": 1238,
   "cfm": 1740,
-  "tbar": 1036
+  "tbar": 1058
  },
  "bursts_last_hour": {
   "book": 60,
