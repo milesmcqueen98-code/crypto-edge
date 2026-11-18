@@ -17,14 +17,22 @@ Runs bot/spot/live_sim_test.py on the same window, in one process, against the s
   E  B's inputs with the setting "candles_at_s" the other way round: 45 when the inputs do not set it, absent when
      they do (the candle pass between steps, bot/spot/README.md);
   F  only without --death: B's inputs with release 3's five coins on the trades list, without and with the setting
-     (for the modelled clock below).
+     (for the modelled clock below);
+  G  only without --death: a standstill of the trades list (the fake market's frozen minutes): for 38 minutes from
+     90 minutes after the start, the trades list answers "verified, no trade in that minute" for every coin while the
+     candle answers go on. G1: B's inputs with "standstill_candles" true; G0: the same without the setting; G2: the
+     setting true and no BTC candle row in those minutes either (trading stopped for BTC).
 Checks: every run passes live_sim_test's own checks; B, C1, C2 and D asked the trades feed; the event log of B equals
 A's line for line, heartbeats aside, with order ids masked (they are random), and its heartbeats equal A's apart
 from the counters and step timing; the entries and exits of C1 and C2 equal A's, and both kept their open ladders
 across the switch. With "candle_after": B's candle replaced trades rows, none of them differed and none was dropped.
 D: after the run the engine's table holds the candle's values for every altered minute at least three minutes old,
 the candle-less minute has no row, and tb_replaced_diff and tb_dropped count exactly the altered and candle-less
-minutes the feed handed out. D need not equal A. E and F: the same checks as B (their decisions equal A's, so
+minutes the feed handed out. D need not equal A. G1: no stale_input event in the span, tb_frozen summed over the
+heartbeats equals the number of steps whose closed minute lies in the span, the candle requests of those steps (BTC
+and every coin, on demand) are counted as pre_ondemand, and the event log equals A's line for line (heartbeats aside,
+order ids masked). G0 and G2: a stale_input event for every step in the span, no arm event there, tb_frozen absent.
+E and F: the same checks as B (their decisions equal A's, so
 the setting changes no decision), and in the runs with the setting no candle request for a coin built from trades
 in a step whose minute before had a candle pass. On a difference it prints the first differing line and adjusts
 nothing.
@@ -157,6 +165,55 @@ def case_d(start, end, inputs):
     check("D: tb_dropped counts exactly the candle-less minute", cnt["tb_dropped"] == len(served_gone) == 1,
           str(cnt["tb_dropped"]))
     return sdD
+
+
+GCOUNT = ("tb_empty", "tb_frozen", "btc_stale", "skip_old", "pre_ondemand", "step_candles", "pre_missing")
+G_AFTER, G_MIN = 90, 38                                     # case G: the standstill starts 90 minutes in, for 38
+
+
+def case_g(start, end, inputs, A, on):
+    """Case G: the trades list stands still for G_MIN minutes (G1 switch on, G0 off, G2 on and BTC's candles gone)."""
+    span = set(pd.date_range(pd.Timestamp(start) + pd.Timedelta(minutes=G_AFTER), periods=G_MIN, freq="min"))
+    in_span = {m + pd.Timedelta(minutes=1) for m in span}  # the steps whose closed minute lies in the span
+    base = {} if on else {"candles_at_s": AT_S}
+    out = {}
+    for tag, sw, gone in (("G1", True, False), ("G0", None, False), ("G2", True, True)):
+        def feed(mkt, gone=gone):
+            mkt.frozen |= span
+            if gone:
+                mkt.no_candle |= {("BTC", m) for m in span}
+        print(f"\n=== {tag}: the inputs of {inputs}, the trades list standing still from {min(span)} to {max(span)}"
+              + (", standstill_candles true" if sw else ", without standstill_candles")
+              + ("; no BTC candle row in those minutes either" if gone else ""), flush=True)
+        sd, ok = L.main(start, end, inputs=inputs, feed=feed, over=dict(base, standstill_candles=sw))
+        check(f"{tag}: live-path checks pass", ok)
+        mkt = L.LAST["mkt"]
+        ev = [json.loads(x) for x in open(os.path.join(sd, "events.jsonl"))]
+        hb = [e for e in ev if e["kind"] == "heartbeat"]
+        t = {k: sum(h.get("counts", {}).get(k, 0) for h in hb) for k in GCOUNT}
+        at = lambda k: [e for e in ev if e["kind"] == k and pd.Timestamp(e["ts"]) in in_span]  # noqa: E731
+        st = steps(mkt)
+        req = sum(len(st[m]["candle_coins"]) for m in in_span if m in st)
+        ent, ext = [e for e in ev if e["kind"] == "fill_entry"], [e for e in ev if e["kind"] == "fill_exit"]
+        out[tag] = dict(sd=sd, t=t, stale=len(at("stale_input")), arm=len(at("arm")), req=req, every=1 + len(
+            L.LAST["eng"].coins))
+        print(f"  {tag}: entries {len(ent)}, exits {len(ext)}, P&L ${sum(e['pnl'] for e in ext):,.2f}; counters "
+              f"{t}; in the span ({len(in_span)} steps): stale_input {out[tag]['stale']}, arm {out[tag]['arm']}, "
+              f"candle requests in the step {req}", flush=True)
+    g1, g0, g2 = out["G1"], out["G0"], out["G2"]
+    n = len(in_span)
+    check("G1: no stale_input event in the span", g1["stale"] == 0, str(g1["stale"]))
+    check("G1: tb_frozen equals the number of steps whose closed minute lies in the span",
+          g1["t"]["tb_frozen"] == n, f"{g1['t']['tb_frozen']} vs {n}")
+    check("G1: the step asked BTC's and every coin's candle in those steps, counted as pre_ondemand (G1 minus G0)",
+          g1["req"] == g1["every"] * n and g1["t"]["pre_ondemand"] - g0["t"]["pre_ondemand"] == g1["req"],
+          f"{g1['req']} requests, pre_ondemand {g1['t']['pre_ondemand']} vs {g0['t']['pre_ondemand']}")
+    compare("G1", A, lines(g1["sd"]))
+    for tag, g in (("G0", g0), ("G2", g2)):
+        check(f"{tag}: a stale_input event for every step in the span", g["stale"] == n, f"{g['stale']} vs {n}")
+        check(f"{tag}: no new bid (arm) in the span", g["arm"] == 0, str(g["arm"]))
+        check(f"{tag}: tb_frozen absent", g["t"]["tb_frozen"] == 0, str(g["t"]["tb_frozen"]))
+    return [g["sd"] for g in out.values()]
 
 
 def steps(mkt):
@@ -305,9 +362,14 @@ def main():
         print("  D: not run with --death (run without it)", flush=True)
     else:
         sdD = case_d(start, end, inputs)
+    sdG = []
+    if death is not None:
+        print("  G: not run with --death (run without it)", flush=True)
+    else:
+        sdG = case_g(start, end, inputs, A, on)
     shutil.rmtree(tmp, ignore_errors=True)
     if not FAILS:
-        for sd in (sdA, sdB, sdC1, sdC2, sdD):
+        for sd in [sdA, sdB, sdC1, sdC2, sdD] + sdG:
             if sd:
                 shutil.rmtree(sd, ignore_errors=True)
 
