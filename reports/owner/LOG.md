@@ -1279,7 +1279,7 @@ FORWARD_TESTS.md.
   - **Fifth book, 00:34 UTC:** next run started after 351 minutes (44208915239) and, two seconds later, a
     same-machine pair (44208918421), which began at once. Both lines are in the job's log.
   - So the start of test jobs no longer depends on GitHub's clock or its events. The clock still adds jobs when
-    it happens to fire: a scheduled pair started at 20:33 UTC, about two and a half hours late.
+    it happens to fire: a scheduled pair started at 20:33 UTC (most likely the 18:05 one, late).
   - **Third pair (20:33 UTC, the build first): it counts.** Data step 8.60 s with the build and 9.78 s with
     release 3, a difference of 1.18 s; 31 timed steps in each half; nothing refused or rate-limited.
   - **Pairs so far: 3 of 8, differences 2.69, 1.03 and 1.18 s in the build's favour.**
