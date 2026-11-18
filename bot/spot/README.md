@@ -414,6 +414,34 @@ request: it serves only the rows behind the newest one.
   fast polls while it runs: about 4 s at most for one that times out (about 5 s for a 429, with the 1 s wait),
   where a candle request in the step can take about 83 s (five tries of 15 s and the waits between them).
 
+**Standstill of the trades list (`"standstill_candles"`; absent: false; `config.json` sets true).** BTC trades in
+every minute. When the venue's trades list answers, verified, that BTC had no trade in the minute that just closed,
+the list is behind (or trading has stopped). On Nov 17 2026, 21:19 to 21:57 UTC, it answered that way for almost
+every coin while the candles kept coming: with the candle requests between steps, the step had no row for the newest
+minute of any coin, BTC included, and the stale guard placed no bid for 38 minutes.
+- **What it does.** With the setting true, in such a step the engine takes BTC's "verified empty" mark for the
+  minute away and looks at BTC's candle for it: the row the step's own candle request brought, or, when the step left
+  BTC out (its candle pass had run), one candle request made then, on demand. If that candle has a traded row, the
+  trades list is standing still: `tb_frozen` is counted, and every other coin whose trades answer was "verified
+  empty" and which the step left out loses its mark too and gets its candle on demand. The stale guard then judges
+  all these rows exactly as candle rows (an answer made after the minute ended; an old one skips that coin for the
+  minute). If BTC's candle has no traded row either, the mark is put back: BTC is stale and no new bid is placed, as
+  before. After a refusal or a rate limit in the trades pass there is no on-demand request, as before.
+- **Where it has an effect.** Only with `"newest_bar": "trades"` and `"candles_at_s"` set. Anywhere else the step
+  asks every coin's candle itself already, which is what the setting would bring, so it changes nothing and writes no
+  warning (a `warning` event reaches the phone at every start). A value that is not true or false stops the engine
+  at start-up in every mode (`ValueError`).
+- **What it costs.** One more request in a step whose BTC minute is empty in the trades list, and up to 18 (BTC and
+  every coin) in a standstill step, so such a step ends about as late as release 3's, which asks every candle inside
+  the step. Counted as `pre_ondemand` and `step_candles`.
+- **One difference with the setting off.** When the step had asked BTC's candle itself (the pass had not run for
+  BTC) and BTC's trades answer is verified empty, BTC's row is now judged by the age of that candle answer: an answer
+  made before the minute ended makes BTC stale for the minute. With the setting off the verified-empty mark lets the
+  row pass.
+- **Limits.** A standstill that spares BTC's list is not seen (a coin other than BTC verified empty is never a
+  trigger). The rows taken in a standstill are first-seen candles, as on release 3. A standstill of the candles too
+  stops the bids as before.
+
 **Paper.** `.github/workflows/paper-spot.yml` runs the trades book (`config.tb.json`, `paper_spot_tb/`) in its own
 job (`paper_tb`) on its own runner, so the two registered books keep their requests and rate unchanged.
 
@@ -421,9 +449,9 @@ job (`paper_tb`) on its own runner, so the two registered books keep their reque
 The live bot runs with `bot/spot/config.live.json`. That file is not in the repository: setup made it once as a copy
 of `config.json`, and `configure` and `preflight` change only the capital, `coins_disabled` and `bid_ttl_s`. So that
 a code update also moves the live bot to the release's inputs:
-- At every start, `run.py` takes these seven keys from `bot/spot/config.json` for a file named `config.live.json`:
-  `newest_bar`, `trades_coins`, `stale_guard`, `trades_rows`, `trades_budget_s`, `confirm_s`, `candles_at_s`
-  (`bot/spot/release_inputs.py`), and the three keys of the order path: `order_path`, `orders_rate`,
+- At every start, `run.py` takes these eight keys from `bot/spot/config.json` for a file named `config.live.json`:
+  `newest_bar`, `trades_coins`, `stale_guard`, `trades_rows`, `trades_budget_s`, `confirm_s`, `candles_at_s`,
+  `standstill_candles` (`bot/spot/release_inputs.py`), and the three keys of the order path: `order_path`, `orders_rate`,
   `place_workers` (section "Order path"). A key that `config.json` does not set is dropped, so the code's default
   applies.
   Every other key (capital, coins, fees, risk limits, quote) stays as the live file has it. This holds for every
@@ -678,6 +706,11 @@ Run it locally the same way: `python bot/spot/run.py paper --minutes 60`.
   `candle_old`, the configuration errors). `live_sim_inputs_test.py` also runs the inputs with and without the setting
   (E), and five listed coins without and with it (F), compares their decisions with the candle run and prints a
   modelled clock of the data step.
+- **Standstill of the trades list:** `python bot/spot/standstill_test.py` checks `"standstill_candles"` on a fake
+  clock (the frozen path, BTC without a candle row, BTC asked by the step, an old on-demand answer, no request after a
+  refusal or a rate limit, another coin empty, the setting off and inert, bad values, the key taken from the
+  release). `live_sim_inputs_test.py` (without `--death`) also runs a 38-minute standstill of the trades list with
+  the setting on (G1, compared line for line with the candle run), off (G0) and on with BTC's candles gone too (G2).
 - **wickctl update:** `bash bot/spot/deploy/wickctl_test.sh` runs the real `update` branch against stub `sudo`, `systemctl`, `git` and
   `install`. It checks the order of calls for a bot that was active, activating, inactive or failed, and for a failed pull.
   Only a bot that was active or activating is started again. No network, no sudo.
