@@ -329,7 +329,6 @@ def main(start, end, death=None, death_min=20, config=None, inputs=None, switch=
     cfg.update(newest_bar="candles", stale_guard=False)
     cfg.pop("trades_coins", None)
     cfg.pop("candles_at_s", None)                          # a trades-mode setting (ignored with a warning)
-    cfg.pop("standstill_candles", None)                    # likewise (it needs trades and candles_at_s)
     cfg_in = None
     if inputs is not None:                                 # --inputs: the input settings of that file, taken the way
         from bot.spot import release_inputs as RI          # the live bot takes them from bot/spot/config.json

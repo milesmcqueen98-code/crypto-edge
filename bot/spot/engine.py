@@ -885,14 +885,12 @@ class Engine:
         # trades mode with candles_at_s: a verified answer with no BTC trade in the closed minute while BTC's candle
         # has a traded row there means the trades list stands still; the step then takes the candles of the coins it
         # left out (README, "Standstill of the trades list"); absent: false. Without trades or without candles_at_s
-        # the key is ignored (one warning event at start: the candle is asked inside the step already)
+        # the setting has no effect and no warning (the step asks the candle itself already); a value that is not
+        # true or false stops the start in every mode
         ss = self.cfg.get("standstill_candles", False)
-        self._ss_ignored = None
-        if ss not in (None, False) and (self.newest_bar != "trades" or self.candles_at_s is None):
-            self._ss_ignored, ss = ss, False
-        if not isinstance(ss, bool) and ss is not None:
+        if not isinstance(ss, bool):
             raise ValueError(f"standstill_candles must be true or false, not {ss!r}")
-        self.standstill = bool(ss)
+        self.standstill = ss and self.newest_bar == "trades" and self.candles_at_s is not None
         self._tb_empty = {}                                # trades pass: coin -> provenance of m before its empty mark
         self._cpass = {}                                   # candles_at_s: coin -> minute its candle pass was for
         self._cp_min, self._cp_todo, self._cp_d = None, [], 0.0
@@ -2313,11 +2311,6 @@ class Engine:
             self.log("warning", t=end, msg='candles_at_s is set but newest_bar is not "trades": the setting is ignored '
                                            f'(candle requests stay in the step; candles_at_s {self._cp_ignored!r}, '
                                            f'newest_bar {self.newest_bar})')
-        if getattr(self, "_ss_ignored", None) is not None:  # once per start (the candle is asked inside the step)
-            self.log("warning", t=end, msg='standstill_candles is set but newest_bar is not "trades" or candles_at_s '
-                                           'is not set: the setting is ignored (the candle is asked inside the step '
-                                           f'already; standstill_candles {self._ss_ignored!r}, newest_bar '
-                                           f'{self.newest_bar}, candles_at_s {self.cfg.get("candles_at_s")!r})')
         self.update_spot(end)
         if self.newest_bar == "trades":
             self.trades_pass(end - pd.Timedelta(minutes=1))    # repairs the last minutes of the backfill too

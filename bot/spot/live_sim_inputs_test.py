@@ -247,17 +247,14 @@ def main():
     runs = [("B", sdB, mB, on, src.get("trades_coins"))]
     print(f"\n=== E: the inputs of {inputs} " + ("without candles_at_s" if on else f"with candles_at_s {AT_S}"),
           flush=True)
-    # without candles_at_s, standstill_candles goes too (it needs candles_at_s; kept, it is ignored with a warning)
-    sdE, okE = L.main(start, end, death=death, inputs=inputs, over=dict({"candles_at_s": None if on else AT_S},
-                                                                       **({"standstill_candles": None} if on else {})))
+    sdE, okE = L.main(start, end, death=death, inputs=inputs, over={"candles_at_s": None if on else AT_S})
     runs.append(("E", sdE, L.LAST["mkt"], not on, src.get("trades_coins")))
     if death is None:
         for k, at in (("F0", False), ("F1", True)):
             print(f"\n=== {k}: the inputs of {inputs} with release 3's five coins on the trades list, "
                   + (f"candles_at_s {AT_S}" if at else "without candles_at_s"), flush=True)
-            sdF, okF = L.main(start, end, inputs=inputs, over=dict({"trades_coins": RELEASE3["trades_coins"],
-                                                                    "candles_at_s": AT_S if at else None},
-                                                                   **({} if at else {"standstill_candles": None})))
+            sdF, okF = L.main(start, end, inputs=inputs, over={"trades_coins": RELEASE3["trades_coins"],
+                                                               "candles_at_s": AT_S if at else None})
             check(f"{k}: live-path checks pass", okF)
             runs.append((k, sdF, L.LAST["mkt"], at, RELEASE3["trades_coins"]))
     else:
