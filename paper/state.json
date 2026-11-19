@@ -1,68 +1,68 @@
 {
  "positions": {},
  "orders": {
-  "HYPE": {
-   "id": "paper-26ca219528",
-   "side": "BUY",
-   "px": 65.16,
-   "contracts": 3,
-   "kind": "entry",
-   "active_from": "2026-11-18T21:05:00"
-  },
   "NEAR": {
-   "id": "paper-6dadedba93",
+   "id": "paper-a0bbb77f52",
    "side": "BUY",
-   "px": 3.148,
+   "px": 3.1964,
    "contracts": 1,
    "kind": "entry",
-   "active_from": "2026-11-18T21:06:00"
+   "active_from": "2026-11-19T02:56:00"
   },
   "ZEC": {
-   "id": "paper-286a5dbe72",
+   "id": "paper-302b9a5dc4",
    "side": "BUY",
-   "px": 881.0,
+   "px": 875.95,
    "contracts": 2,
    "kind": "entry",
-   "active_from": "2026-11-18T21:06:00"
-  },
-  "ENA": {
-   "id": "paper-a0adebbd48",
-   "side": "BUY",
-   "px": 0.10718000000000001,
-   "contracts": 4,
-   "kind": "entry",
-   "active_from": "2026-11-18T21:06:00"
+   "active_from": "2026-11-19T02:56:00"
   },
   "PEPE": {
-   "id": "paper-a4501b6b71",
+   "id": "paper-3f99eb0c1f",
    "side": "BUY",
-   "px": 0.003623,
+   "px": 0.0036339999999999996,
    "contracts": 6,
    "kind": "entry",
-   "active_from": "2026-11-18T21:06:00"
+   "active_from": "2026-11-19T02:56:00"
+  },
+  "HYPE": {
+   "id": "paper-5c0a22680f",
+   "side": "BUY",
+   "px": 64.98,
+   "contracts": 3,
+   "kind": "entry",
+   "active_from": "2026-11-19T02:56:00"
   },
   "AAVE": {
-   "id": "paper-356eb5b0f1",
+   "id": "paper-6d02ffcf82",
    "side": "BUY",
-   "px": 104.65,
+   "px": 105.9,
    "contracts": 4,
    "kind": "entry",
-   "active_from": "2026-11-18T21:06:00"
+   "active_from": "2026-11-19T02:56:00"
+  },
+  "ENA": {
+   "id": "paper-e665820368",
+   "side": "BUY",
+   "px": 0.1082,
+   "contracts": 4,
+   "kind": "entry",
+   "active_from": "2026-11-19T02:56:00"
   }
  },
  "equity": 10143.510309999998,
- "day": "2026-11-18",
+ "day": "2026-11-19",
  "day_start_equity": 10143.510309999998,
  "halted_day": null,
- "last_minute": "2026-11-18T21:06:00",
+ "last_minute": "2026-11-19T02:56:00",
  "pending_sig": {
-  "ENA": 0.007047424071138302,
-  "NEAR": 0.007111413626645147,
-  "PEPE": 0.00626383014482188,
-  "AAVE": 0.005957488368564742,
-  "ZEC": 0.007591968640720201,
+  "ENA": 0.007177885211431479,
+  "NEAR": 0.00711452341780602,
+  "PEPE": 0.006277454837167442,
+  "AAVE": 0.0059795760867951695,
+  "ZEC": 0.00745041272447478,
   "BCH": 0.005393891204773856,
-  "HYPE": 0.0063459487656360525,
+  "HYPE": 0.0061818844391398915,
   "SUI": 0.0038506075380518924,
   "ONDO": 0.004078348714085736,
   "XRP": 0.0038709532206092924,
