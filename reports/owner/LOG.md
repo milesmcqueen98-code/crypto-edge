@@ -1397,3 +1397,11 @@ FORWARD_TESTS.md.
     It stopped and reported. I did not do the action in its place. The refusal's own text allows a safer
     method, and the agent finished with ordinary edits of lines it had added, which the check accepted. Miles
     has been told.
+- **08:34. The standstill fallback is complete on its branch; the full suite is running on a runner.**
+  - **Branch owner/standstill at 815ea390** (the balance-look commit plus the switch `standstill_candles`): 49
+    new lines in the engine and 6 for the addition I asked for this morning. In a standstill step no coin keeps
+    its "empty" mark, and every row of that minute is judged as a candle row.
+  - **Its own test:** 73 checks; I ran it here. Three of the new ones fail against the engine without the
+    addition, so they test it (the agent's run).
+  - **Full offline suite** on a runner: job 44533821743, started 13:28 UTC. It repeats the standstill
+    simulations on the final commit, and the paper parity replay.
