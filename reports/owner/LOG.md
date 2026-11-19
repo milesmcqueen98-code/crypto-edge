@@ -1384,3 +1384,16 @@ FORWARD_TESTS.md.
     - Whether it is used is still decided by the window of Nov 17 at today's read.
   - **Today:** the fifth book's read at 15:40 ET.
   - **Miles** wrote to go on. Nothing yet on release 4's server steps.
+- **08:27. The hand-over script's retries are on `main`** (646de21b; Sonnet agent, reviewed and tested by me).
+  - **What it does:** the script tries its two requests that matter, the read of the run's start time and the
+    start of the next run, up to five times, 15 seconds apart. With one try and no wait it behaves as before.
+  - **Checks:** 50, of which the 27 old ones pass unchanged; I ran them here.
+  - **Earlier than I wrote this morning.** The change was ready 45 minutes before the main book's hand-over
+    (about 14:13 UTC). I watch that one anyway and it matters least for today's read, so merging now protects
+    the three hand-overs still inside the fifth book's period (16:33, 17:20 and 17:28 UTC). If the first use
+    fails, I start the book by hand and take the change back.
+  - **A permission refusal, for the record.** While writing the test, the agent's scripted rewrite of its own
+    half-written test file was refused by the session's permission check ("Destructive or Unwanted Actions").
+    It stopped and reported. I did not do the action in its place. The refusal's own text allows a safer
+    method, and the agent finished with ordinary edits of lines it had added, which the check accepted. Miles
+    has been told.
