@@ -96,11 +96,13 @@ E=()
 ncheck() {  # name workflow event started want_api want_dispatch want_testjob want_sleeps want_rc fragment... ("!x": absent)
   local name=$1 wf=$2 ev=$3 st=$4 wa=$5 wd=$6 wt=$7 ws=$8 wr=$9 out rc a d t s last frag ok=1
   shift 9
-  local disp=${wf:-paper-spot.yml} wfenv=(-u WORKFLOW)
-  [ -n "$wf" ] && wfenv=(WORKFLOW="$wf")
+  local disp=${wf:-paper-spot.yml} kv
   : > "$T/log"; rm -f "$T/cnt_api" "$T/cnt_run" "$T/sleeps"
-  out=$(env -u NEXT_TRIES -u NEXT_WAIT "${wfenv[@]}" LOG=$T/log EVENT=$ev STARTED=$st API_RC=0 RUN_RC=0 TEST_RC=0 \
-        RUN_ID=42 REPO=o/r NOW=$NOW0 "${E[@]}" PATH=$T/bin:$PATH bash "$HERE/paper_next.sh" 2>&1); rc=$?
+  out=$(unset NEXT_TRIES NEXT_WAIT WORKFLOW
+        export LOG=$T/log EVENT=$ev STARTED=$st API_RC=0 RUN_RC=0 TEST_RC=0 RUN_ID=42 REPO=o/r NOW=$NOW0
+        [ -n "$wf" ] && export WORKFLOW="$wf"
+        for kv in ${E[*]}; do export "$kv"; done   # the settings of this check: NAME=value, no spaces in values
+        PATH=$T/bin:$PATH bash "$HERE/paper_next.sh" 2>&1); rc=$?
   a=$(grep -c "^gh api " "$T/log")
   d=$(grep -c "gh workflow run $disp --ref main -R o/r" "$T/log")
   t=$(grep -c "gh workflow run \(step-pairs\|workers-alt\).yml --ref main -R o/r" "$T/log")
@@ -108,7 +110,7 @@ ncheck() {  # name workflow event started want_api want_dispatch want_testjob wa
   last=$(grep "gh workflow run" "$T/log" | tail -1)
   { [ "$a" = "$wa" ] && [ "$d" = "$wd" ] && [ "$t" = "$wt" ] && [ "$s" = "$ws" ] && [ "$rc" = "$wr" ]; } || ok=0
   if [ "$wt" != 0 ] && [[ "$last" != *step-pairs.yml* && "$last" != *workers-alt.yml* ]]; then ok=0; fi  # test job comes last
-  for frag in "$@"; do
+  for frag; do
     case "$frag" in
       "!"*) [[ "$out" == *"${frag#!}"* ]] && ok=0 ;;
       *) [[ "$out" == *"$frag"* ]] || ok=0 ;;
