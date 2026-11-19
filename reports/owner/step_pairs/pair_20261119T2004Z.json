@@ -1,0 +1,122 @@
+{
+ "utc_start": "2026-11-19T20:04:38Z",
+ "utc_end": "2026-11-19T21:26:13Z",
+ "order": "ba",
+ "minutes": 30.0,
+ "code_commit": "9e6f53b3aca8c15307f22a357f19431bff053e4c",
+ "keys": [
+  {
+   "key": "newest_bar",
+   "release3": "trades",
+   "build": "trades",
+   "differs": false
+  },
+  {
+   "key": "trades_coins",
+   "release3": [
+    "BTC",
+    "ETH",
+    "SOL",
+    "XRP",
+    "ZEC"
+   ],
+   "build": [
+    "BTC",
+    "ETH",
+    "SOL",
+    "XRP",
+    "DOGE",
+    "LTC",
+    "LINK",
+    "BCH",
+    "SUI",
+    "XLM",
+    "HBAR",
+    "NEAR",
+    "AAVE",
+    "HYPE",
+    "ENA",
+    "PEPE",
+    "ONDO",
+    "ZEC"
+   ],
+   "differs": true
+  },
+  {
+   "key": "stale_guard",
+   "release3": true,
+   "build": true,
+   "differs": false
+  },
+  {
+   "key": "trades_rows",
+   "release3": null,
+   "build": "candle_after",
+   "differs": true
+  },
+  {
+   "key": "trades_budget_s",
+   "release3": null,
+   "build": null,
+   "differs": false
+  },
+  {
+   "key": "confirm_s",
+   "release3": null,
+   "build": null,
+   "differs": false
+  },
+  {
+   "key": "candles_at_s",
+   "release3": null,
+   "build": 45,
+   "differs": true
+  }
+ ],
+ "argv": [
+  "bot/spot/tb_smoke.py",
+  "--parity",
+  "--minutes",
+  "30",
+  "--config",
+  "bot/spot/config.json",
+  "--state-dir",
+  "/tmp/step_pair_5p0u4pmb/s",
+  "--then",
+  "trades_coins=[\"BTC\",\"ETH\",\"SOL\",\"XRP\",\"ZEC\"]",
+  "--then",
+  "trades_rows=null",
+  "--then",
+  "candles_at_s=null"
+ ],
+ "runs": [
+  {
+   "inputs": "build",
+   "steps_timed": 31,
+   "data_end_median_s": 8.78,
+   "data_end_median_text": "8.78",
+   "data_end_max_s": 10.91,
+   "step_candles_median": 0.0,
+   "step_trades_median": 18.0,
+   "pass_candles_median": 18.0,
+   "refused": false,
+   "limited": false
+  },
+  {
+   "inputs": "release3",
+   "steps_timed": 30,
+   "data_end_median_s": 9.78,
+   "data_end_median_text": "9.78",
+   "data_end_max_s": 11.48,
+   "step_candles_median": 18.0,
+   "step_trades_median": 5.0,
+   "pass_candles_median": 0.0,
+   "refused": false,
+   "limited": false
+  }
+ ],
+ "build_minus_release3_s": -1.0,
+ "build_minus_release3_text": "-1.00",
+ "counts": true,
+ "why_not": null
+}
