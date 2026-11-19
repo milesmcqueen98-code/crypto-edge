@@ -2,20 +2,35 @@
 # Runs paper_next.sh against a stub gh. No network.
 # Usage: bash bot/spot/deploy/paper_next_test.sh
 set -u
+# The old checks below run with one try and no wait: today's behaviour. (The new checks at the end set their own.)
+export NEXT_TRIES=1 NEXT_WAIT=0
 HERE=$(cd "$(dirname "$0")" && pwd)
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 mkdir "$T/bin"
 cat > "$T/bin/gh" <<'S'
 #!/usr/bin/env bash
 echo "gh $*" >> "$LOG"
-if [ "$1" = "api" ]; then [ -n "$STARTED" ] && echo "$STARTED"; exit "${API_RC:-0}"; fi
+CNT=${LOG%/*}   # counters for the retry checks; API_FAIL_N, API_EMPTY_N, RUN_FAIL_N default to 0: never fail
+if [ "$1" = "api" ]; then
+  n=$(cat "$CNT/cnt_api" 2>/dev/null || echo 0); n=$((n + 1)); echo "$n" > "$CNT/cnt_api"
+  [ "$n" -le "${API_FAIL_N:-0}" ] && exit 1
+  [ "$n" -le $(( ${API_FAIL_N:-0} + ${API_EMPTY_N:-0} )) ] && exit 0
+  [ -n "$STARTED" ] && echo "$STARTED"; exit "${API_RC:-0}"
+fi
 if [ "$1" = "workflow" ]; then
   case "$3" in step-pairs.yml|workers-alt.yml) exit "${TEST_RC:-0}" ;; esac
+  n=$(cat "$CNT/cnt_run" 2>/dev/null || echo 0); n=$((n + 1)); echo "$n" > "$CNT/cnt_run"
+  [ "$n" -le "${RUN_FAIL_N:-0}" ] && exit 1
   exit "${RUN_RC:-0}"
 fi
 exit 0
 S
-chmod +x "$T/bin/gh"
+cat > "$T/bin/sleep" <<'S'
+#!/usr/bin/env bash
+echo "$*" >> "${LOG%/*}/sleeps"   # never really sleeps; the checks read what was asked for
+exit 0
+S
+chmod +x "$T/bin/gh" "$T/bin/sleep"
 NOW0=$(date -u -d "2026-11-10T18:00:00Z" +%s)
 fail=0
 unset WORKFLOW   # the checks below run with WORKFLOW unset, as paper-spot.yml does
@@ -73,4 +88,65 @@ tjcheck "r5: start time garbage: nothing"     paper-spot-r5.yml schedule not-a-t
 tjcheck "tw: start time unreadable: nothing"  paper-spot-tw.yml schedule "" 0 0 0 0 0 "could not read"
 unset WORKFLOW
 bash -n "$HERE/paper_next.sh" && echo "PASS  bash -n paper_next.sh" || { echo "FAIL  bash -n"; fail=1; }
+
+# Retries. E holds the settings of one check (NEXT_TRIES, NEXT_WAIT, API_FAIL_N, API_EMPTY_N, RUN_FAIL_N); anything
+# not in E is unset or "never fail". The stub sleep only records its argument.
+G=2026-11-10T12:15:00Z
+E=()
+ncheck() {  # name workflow event started want_api want_dispatch want_testjob want_sleeps want_rc fragment... ("!x": absent)
+  local name=$1 wf=$2 ev=$3 st=$4 wa=$5 wd=$6 wt=$7 ws=$8 wr=$9 out rc a d t s last frag ok=1
+  shift 9
+  local disp=${wf:-paper-spot.yml} wfenv=(-u WORKFLOW)
+  [ -n "$wf" ] && wfenv=(WORKFLOW="$wf")
+  : > "$T/log"; rm -f "$T/cnt_api" "$T/cnt_run" "$T/sleeps"
+  out=$(env -u NEXT_TRIES -u NEXT_WAIT "${wfenv[@]}" LOG=$T/log EVENT=$ev STARTED=$st API_RC=0 RUN_RC=0 TEST_RC=0 \
+        RUN_ID=42 REPO=o/r NOW=$NOW0 "${E[@]}" PATH=$T/bin:$PATH bash "$HERE/paper_next.sh" 2>&1); rc=$?
+  a=$(grep -c "^gh api " "$T/log")
+  d=$(grep -c "gh workflow run $disp --ref main -R o/r" "$T/log")
+  t=$(grep -c "gh workflow run \(step-pairs\|workers-alt\).yml --ref main -R o/r" "$T/log")
+  s=$(paste -sd' ' "$T/sleeps" 2>/dev/null)
+  last=$(grep "gh workflow run" "$T/log" | tail -1)
+  { [ "$a" = "$wa" ] && [ "$d" = "$wd" ] && [ "$t" = "$wt" ] && [ "$s" = "$ws" ] && [ "$rc" = "$wr" ]; } || ok=0
+  if [ "$wt" != 0 ] && [[ "$last" != *step-pairs.yml* && "$last" != *workers-alt.yml* ]]; then ok=0; fi  # test job comes last
+  for frag in "$@"; do
+    case "$frag" in
+      "!"*) [[ "$out" == *"${frag#!}"* ]] && ok=0 ;;
+      *) [[ "$out" == *"$frag"* ]] || ok=0 ;;
+    esac
+  done
+  if [ $ok = 1 ]; then echo "PASS  $name: api $a, dispatch $d, test job $t, sleeps \"$s\", rc $rc"
+  else echo "FAIL  $name: api $a (want $wa), dispatch $d (want $wd), test job $t (want $wt), sleeps \"$s\" (want \"$ws\"), rc $rc (want $wr), \"$out\""; fail=1; fi
+}
+E=(NEXT_TRIES=3 NEXT_WAIT=0 API_FAIL_N=2)
+ncheck "retry api: fails twice, then answers" "" schedule $G 3 1 0 "" 0 "after 345 min" "the start time was read at try 3"
+E=(NEXT_TRIES=3 NEXT_WAIT=0 API_EMPTY_N=2)
+ncheck "retry api: empty twice, then answers" "" schedule $G 3 1 0 "" 0 "after 345 min" "the start time was read at try 3"
+E=(NEXT_TRIES=3 NEXT_WAIT=0 API_FAIL_N=3)
+ncheck "retry api: fails 3 of 3: no dispatch" "" schedule $G 3 0 0 "" 0 "could not read" "!the start time was read"
+E=(NEXT_TRIES=3 NEXT_WAIT=0 API_FAIL_N=1 RUN_FAIL_N=1)
+ncheck "retry both: try 2 each" "" schedule $G 2 2 0 "" 0 "the start time was read at try 2" "the next run was started at try 2"
+E=(NEXT_TRIES=3 NEXT_WAIT=0 RUN_FAIL_N=2)
+ncheck "retry dispatch: fails twice, then works" "" schedule $G 1 3 0 "" 0 "next run started after 345 min" "the next run was started at try 3" "!the start time was read"
+ncheck "retry dispatch r5: test job once, after it" paper-spot-r5.yml schedule $G 1 3 1 "" 0 "next run started" "the next run was started at try 3" "test job started: step-pairs.yml"
+E=(NEXT_TRIES=3 NEXT_WAIT=0 RUN_FAIL_N=3)
+ncheck "retry dispatch: fails 3 of 3: exit 1" "" schedule $G 1 3 0 "" 1 "backstop" "!next run started"
+ncheck "retry dispatch r5: fails 3 of 3: no test job" paper-spot-r5.yml schedule $G 1 3 0 "" 1 "backstop"
+# defaults: nothing fails, so one call each and no sleep (the stub sleep cannot hang anyway)
+E=()
+ncheck "defaults, all works: one api, one dispatch, no sleep" "" schedule $G 1 1 0 "" 0 "after 345 min" "!at try"
+for v in abc 0 11 -1 2.5; do
+  E=(NEXT_TRIES=$v NEXT_WAIT=0 API_FAIL_N=99)
+  ncheck "NEXT_TRIES=$v counts as 5: api always fails" "" schedule $G 5 0 0 "" 0 "could not read"
+done
+E=(NEXT_WAIT=abc)
+ncheck "NEXT_WAIT=abc, nothing fails: works, no sleep" "" schedule $G 1 1 0 "" 0 "after 345 min"
+E=(NEXT_TRIES=3 NEXT_WAIT=abc API_FAIL_N=99)
+ncheck "NEXT_WAIT=abc counts as 15: 2 sleeps for 3 tries" "" schedule $G 3 0 0 "15 15" 0 "could not read"
+E=(NEXT_TRIES=3 NEXT_WAIT=7 RUN_FAIL_N=99)
+ncheck "NEXT_WAIT=7: dispatch waits 7 between tries only" "" schedule $G 1 3 0 "7 7" 1 "backstop"
+for v in 1 3 abc; do
+  E=(NEXT_TRIES=$v NEXT_WAIT=0)
+  ncheck "NEXT_TRIES=$v, under 30 min: no dispatch" "" schedule 2026-11-10T17:31:00Z 1 0 0 "" 0 "lasted 29 min"
+  ncheck "NEXT_TRIES=$v, push event: no api, no dispatch" "" push $G 0 0 0 "" 0 "event push"
+done
 [ $fail = 0 ] && echo "PAPER NEXT TEST PASSED" || { echo "PAPER NEXT TEST FAILED"; exit 1; }
