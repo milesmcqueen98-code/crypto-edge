@@ -1417,3 +1417,9 @@ FORWARD_TESTS.md.
   - **No balance warning** in any live-path simulation.
   - **Hand-overs with the retry script so far today:** main book 14:13 UTC, the alternating chain 14:28 and
     15:36, sixth book 16:33. Each started its next run.
+- **14:41. The fifth book's read waits for the logs, until about 18:25 ET.**
+  - The period ended at 18:59 UTC, but a paper book puts its log on `main` only when a run ends. The runs that
+    cover the period's end are still going: the fourth book's ends at about 23:11 UTC and the fifth book's at
+    about 23:19 UTC. On `main` both logs stop at 17:17 UTC. I set the read's time on Nov 16 without counting this.
+  - The last two hand-overs inside the period worked (fourth book 17:20 UTC, fifth book 17:28 UTC, with its pair).
+  - Nothing is read before the logs are complete: no bid count is logged and no research is fetched.
