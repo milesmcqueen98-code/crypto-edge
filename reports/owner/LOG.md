@@ -1423,3 +1423,8 @@ FORWARD_TESTS.md.
     about 23:19 UTC. On `main` both logs stop at 17:17 UTC. I set the read's time on Nov 16 without counting this.
   - The last two hand-overs inside the period worked (fourth book 17:20 UTC, fifth book 17:28 UTC, with its pair).
   - Nothing is read before the logs are complete: no bid count is logged and no research is fetched.
+- **18:27. The fifth book's read begins.** Logs on `main` now reach past the period's end (fourth book to 23:08
+  UTC, fifth to 23:11, main book to 20:00). All four books handed over this evening.
+  - **Period:** 2026-11-16 19:00 to 2026-11-19 18:59 UTC, 4,320 minutes.
+  - **New bids on the 17 coins, from the logs alone,** on the 4,168 minutes both books decided: fifth book 696,
+    fourth book 695. No extension. Written into the plan's deviation log before any research is fetched.

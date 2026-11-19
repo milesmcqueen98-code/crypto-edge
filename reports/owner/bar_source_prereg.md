@@ -614,3 +614,12 @@ The run finished at 08:58 UTC on Nov 15 (job 43689717933, branch owner/read-c2).
   - **Pairs so far: 6 of 8** (differences 2.69, 1.03, 1.18, 1.07, 1.27 and 1.20 s in the build's favour; five ran
     the build first, one release 3 first). Every ended run of the fifth book has started its pair since the
     hand-over does it.
+- **Nov 19 2026, 18:27 ET (orchestrator), at the read, before any research is fetched.**
+  - **The period:** 2026-11-16 19:00 to 2026-11-19 18:59 UTC, 4,320 minutes. The fifth book's first decision
+    minute was 18:44 UTC on Nov 16, so the first half-hour mark after it is 19:00.
+  - **New bids on the 17 coins, from the two logs alone,** on the 4,168 minutes in which both books decided: the
+    fifth book 696, the fourth book 695. Both are over 300, so the period is not extended.
+  - **Decision minutes in the period:** the fifth book 4,246, the fourth book 4,242.
+  - **Pairs on `main` at this moment:** 15 result files; the rule script says which count.
+  - **The read was planned for 15:40 ET and began at 18:27 ET.** A paper book puts its log on `main` only when a
+    run ends, and the runs that cover the period's end ended at 23:10 and 23:18 UTC. Nothing was read in between.
