@@ -1343,3 +1343,44 @@ FORWARD_TESTS.md.
   - **What it has to show offline:** with no standstill in the feed, not one log line differs, switch on or off.
     With a 38-minute standstill in the feed, the build with the switch on decides exactly as the candle run
     does, and with the switch off it stops as the books did on Nov 17.
+
+## Nov 19 2026 (times ET; UTC is five hours later)
+- **08:21. Morning look.** Yesterday's 14:45 check reached me only this morning (the session stood still from
+  about noon), so it is made here too.
+  - **A fault in a hand-over, covered by luck.** At 08:22 UTC the main book's hand-over got one HTTP 502 from
+    GitHub when it asked for its own run's start time. The script printed "no hand-over" and started nothing.
+    - The book went on because a scheduled run that GitHub had queued 33 minutes earlier was waiting. No minute
+      was lost. Without that run the book would have stood until the next scheduled start.
+    - **The repair:** the script tries its two requests again (the start time, and the start of the next run).
+      A Sonnet agent is building it. It goes onto `main` after the fifth book's period ends today (18:59 UTC);
+      until then I look at each hand-over (about 14:13, 16:33, 17:20 and 17:28 UTC) and start a book by hand if
+      one fails, as the rule of Nov 17 says.
+  - **The four books otherwise:** all handing over. No error event, warning, halt, refusal or rate-limit stop,
+    and no stale-guard minute since yesterday's look: the trades list has not stood still again.
+  - **The alternating jobs run back to back.** Since 17:13 UTC yesterday every job has started its successor: 18
+    jobs in 20 hours. 23 count in all. At most 7 requests in a second, nothing rate-limited or refused.
+    - **Part 3 so far, deciding nothing:** 706 timed steps with one worker hold 4 passes over 6 s and 2 budget
+      fallbacks; 695 with three workers hold 3 passes over 6 s and no fallback. That is 4 of the 30 slow
+      one-worker passes the read needs.
+    - In the two slow spells that fell into jobs, three workers also had passes over 6 s (6.8 and 6.9 s), though
+      none over the 8 s budget. So far the alternating jobs show no gain on the share of slow passes.
+  - **Fifth book's pairs: 13 count** (8 needed). The build is ahead in every one, by 1.03 to 2.80 s, median
+    1.70 s. Three ran release 3 first (1.07, 2.44 and 2.56 s), ten the build first.
+  - **New bids since the period began** (every coin but BTC; the read counts them properly): main 515, fourth
+    569, fifth 562, sixth 546. No extension looks needed.
+  - **The venue's speed.** One slow spell, 03:30 to 05:00 UTC today: budget fallbacks 21 in the fourth book, 16
+    in the fifth and none in the sixth (its longest pass 6.8 s). It is the second spell in which the two books
+    on one worker fell back and the book on three did not (Nov 17, 20:30 UTC: 11, 8 and none). That is Part 4's
+    material. Data step medians today: main 11.1 s, fourth 12.9 s, fifth 8.5 s, sixth 8.6 s.
+  - **Test A since release 3:** 34 rungs, net -37.9 bp. Two more rungs yesterday, -$99 on the day; the count is
+    still the one minute of Nov 14.
+  - **The fallback for a standing trades list** (branch owner/standstill at 1bfa413f) was built and tested by
+    the agent yesterday. By its runs, which the suite on a runner will repeat:
+    - with no standstill in the feed no log line differs from before, switch on or off;
+    - with a 38-minute standstill in the feed, the build with the switch on decides exactly as the candle run
+      does (111 entries, $11,723), and with the switch off it places 86 entries and makes $6,089. The window is
+      the busiest one of the test data, so this shows what such a stop can cost, not what it costs on average.
+    - I asked for one addition after reading the change: in a standstill step no coin keeps its "empty" mark.
+    - Whether it is used is still decided by the window of Nov 17 at today's read.
+  - **Today:** the fifth book's read at 15:40 ET.
+  - **Miles** wrote to go on. Nothing yet on release 4's server steps.
