@@ -1408,3 +1408,12 @@ FORWARD_TESTS.md.
 - **09:21. The hand-over script with retries: first real use, the main book.** Its run ended at 14:13 UTC and the
   script started the next one (44541407852) at the first try. The alternating chain is alive; its next
   hand-over, at about 14:27 UTC, is the second use.
+- **11:42. The standstill fallback passed the full suite on a runner** (job 44533821743, branch at 815ea390): 24 file
+  runs, no failure.
+  - **Paper parity** is identical (every rung: entry minute and price, exit minute, type and price).
+  - **The standstill simulations on the final commit:** with the switch on, every log line equals the candle
+    run's (1,489 lines) and the 38 standstill steps are all counted; with the switch off, 38 stale minutes, no
+    new bid in the span, 86 entries and $6,089 against 111 and $11,723.
+  - **No balance warning** in any live-path simulation.
+  - **Hand-overs with the retry script so far today:** main book 14:13 UTC, the alternating chain 14:28 and
+    15:36, sixth book 16:33. Each started its next run.
