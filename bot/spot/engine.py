@@ -1057,8 +1057,9 @@ class Engine:
         empty mark for m is taken away and its candle row for m judged as a candle row: the one the step's own request
         brought, or, when the step left BTC out (its candle pass had run), one request made now, on demand. With a
         traded row there the list stands still: tb_frozen is counted once, and every other coin verified empty in this
-        pass that the step left out loses its mark and gets its candle on demand (pre_ondemand, step_candles); the
-        stale guard then judges these rows as candle rows (_row_ok). Without a traded BTC row the mark is put back
+        pass loses its mark too: one the step left out gets its candle on demand (pre_ondemand, step_candles), one the
+        step asked gets back its candle answer's provenance; no mark of m is kept for any coin and the stale guard
+        judges every row of m as a candle row (_row_ok). Without a traded BTC row the mark is put back
         (stale, as before). Nothing after a refusal or a rate limit in the trades pass (_fb_stop)."""
         if not getattr(self, "standstill", False) or self._fb_stop or "BTC" not in self._tb_empty:
             return
@@ -1079,6 +1080,12 @@ class Engine:
             P[m] = mark                                    # no traded BTC row: BTC is stale, as before
             return
         self.count("tb_frozen")
+        for c in [c for c in self.coins if c in self._tb_empty and c not in self._skipped]:
+            Pc = self._prov.setdefault(c, {})              # the step asked this coin's candle: no request, its
+            if self._tb_empty[c] is None:                  # merge's provenance back (as for BTC above)
+                Pc.pop(m, None)
+            else:
+                Pc[m] = self._tb_empty[c]
         todo = [c for c in self.coins if c in self._tb_empty and c in self._skipped]
         for c in todo:
             self._prov.get(c, {}).pop(m, None)

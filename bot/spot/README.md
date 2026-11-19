@@ -425,7 +425,9 @@ minute of any coin, BTC included, and the stale guard placed no bid for 38 minut
   trades list is standing still: `tb_frozen` is counted, and every other coin whose trades answer was "verified
   empty" and which the step left out loses its mark too and gets its candle on demand. The stale guard then judges
   all these rows exactly as candle rows (an answer made after the minute ended; an old one skips that coin for the
-  minute). If BTC's candle has no traded row either, the mark is put back: BTC is stale and no new bid is placed, as
+  minute). A coin verified empty whose candle the step had asked itself (its candle pass had not run) loses its mark
+  too, with no further request: in a standstill step no "verified empty" mark of that minute is kept for any coin,
+  and every row of the minute is judged as a candle row. If BTC's candle has no traded row either, the mark is put back: BTC is stale and no new bid is placed, as
   before. After a refusal or a rate limit in the trades pass there is no on-demand request, as before.
 - **Where it has an effect.** Only with `"newest_bar": "trades"` and `"candles_at_s"` set. Anywhere else the step
   asks every coin's candle itself already, which is what the setting would bring, so it changes nothing and writes no

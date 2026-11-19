@@ -12,6 +12,8 @@ case sets. Checks, with the switch on and (as the comparison) off:
     log as with the switch off), one BTC request and nothing more;
   - BTC verified empty when the step itself had asked BTC's candle (no candle pass for BTC): the row already there
     is used, no second BTC request, the other coins handled the same;
+  - a coin the step itself had asked, verified empty: in a standstill step its mark goes too and its row is judged
+    as a candle row (an old answer skips it, a fresh one with or without a row does not), with no request for it;
   - a coin whose on-demand answer is old (made before T ended): skipped for the minute (_skip_old), the others not;
   - a refusal or a rate limit in the trades pass: no on-demand request, stale as today;
   - a coin other than BTC verified empty with BTC built: nothing happens (no request, no counter);
@@ -93,11 +95,14 @@ def kinds(sd, k):
     return [x for x in events(sd) if f'"kind": "{k}"' in x]
 
 
-def scenario(sw, tb=(), no_btc_candle=False, btc_in_step=False, old=(), at=45, newest_bar="trades", start=False):
+def scenario(sw, tb=(), no_btc_candle=False, btc_in_step=False, old=(), at=45, newest_bar="trades", start=False,
+             asked=(), no_row=()):
     """The step of T + 1 after the candle pass for T. tb: {coin: trades answer for T} (None: verified empty, an
     exception: raised). no_btc_candle: no BTC candle row for T in any answer. btc_in_step: the candle pass did not
     cover BTC (the step asks BTC's candle itself). old: coins whose candle answers in the step are made before T
-    ended. Returns (engine, state folder, the step's candle requests as (coin, end))."""
+    ended. asked: coins the candle pass did not cover (the step asks their candles itself). no_row: coins with no
+    candle row for T in any answer (a quiet minute). Returns (engine, state folder, the step's candle requests as
+    (coin, end))."""
     eng, sd, F = engine(sw, at=at, newest_bar=newest_bar)
     mk = eng.market
     if start:
@@ -108,11 +113,15 @@ def scenario(sw, tb=(), no_btc_candle=False, btc_in_step=False, old=(), at=45, n
         mk.tb[(c, T)] = v
     if no_btc_candle:
         mk.first[("BTC", T)] = None                          # every answer ending at T + 1 leaves T out
+    for c in no_row:
+        mk.first[(c, T)] = None
     if eng.candles_at_s is not None:
         F[0] = CP.ep(T) + 45
         eng.candle_pass(T)
         if btc_in_step:
             eng._cpass.pop("BTC", None)
+        for c in asked:
+            eng._cpass.pop(c, None)
         eng.counts = {}
     real = mk.spot_candles
 
@@ -208,6 +217,40 @@ def btc_in_step():
     check("BTC asked by the step, old answer, switch off: not stale (the mark passes, as today)",
           "btc_stale" not in off.counts and mark(off, "BTC") == (None, True), str(off.counts))
     shutil.rmtree(sd)
+
+
+def asked_coin():
+    """A standstill step: a coin the step itself had asked (no candle pass for it), verified empty in the trades pass."""
+    kw = dict(tb={"BTC": None, "ETH": None}, asked=("ETH",))
+    eng, sd, rq = scenario(True, old=("ETH",), **kw)
+    check("asked coin, its answer made before T ended: skipped for the minute (_skip_old), its mark taken away, "
+          "BTC on demand only", eng._skip_old == {"ETH"} and eng.counts.get("tb_frozen") == 1
+          and not (mark(eng, "ETH") or (None, False))[1] and rq == [("ETH", T + MIN), ("BTC", T + MIN)]
+          and eng.counts.get("pre_ondemand") == 1, f"{eng._skip_old} {rq} {eng.counts}")
+    off, sd0, rq0 = scenario(False, old=("ETH",), **kw)
+    check("asked coin, old answer, switch off: not skipped (its mark passes, as today)",
+          "ETH" not in off._skip_old and mark(off, "ETH") == (None, True) and rq0 == [("ETH", T + MIN)],
+          f"{off._skip_old} {rq0}")
+    for d in (sd, sd0):
+        shutil.rmtree(d)
+    eng, sd, rq = scenario(True, **kw)
+    g = [r["at"] for r in eng.market.req if r["coin"] == "ETH" and r["end"] == T + MIN][0]
+    check("asked coin, fresh answer with a traded row: the row is used (the candle's), not skipped, judged as that "
+          "answer's candle row", T in eng.spot["ETH"].index
+          and eng.spot["ETH"].loc[T, "close"] == eng.market.final["ETH"].loc[T, "close"] and not eng._skip_old
+          and mark(eng, "ETH") == (pd.Timestamp(g, unit="s"), False) and not kinds(sd, "stale_input"),
+          f"{mark(eng, 'ETH')} {eng._skip_old}")
+    shutil.rmtree(sd)
+    eng, sd, rq = scenario(True, no_row=("ETH",), **kw)
+    check("asked coin, fresh answer without a row for T (a quiet minute): not skipped, no row, its mark taken away, "
+          "no request for it beyond the step's own", "ETH" not in eng._skip_old and T not in eng.spot["ETH"].index
+          and not (mark(eng, "ETH") or (None, False))[1] and [c for c, e in rq if c == "ETH"] == ["ETH"]
+          and eng.counts.get("tb_frozen") == 1, f"{eng._skip_old} {rq} {mark(eng, 'ETH')}")
+    off, sd0, rq0 = scenario(False, no_row=("ETH",), **kw)
+    check("asked coin, quiet minute, switch off: not skipped either, its mark kept (today)",
+          "ETH" not in off._skip_old and mark(off, "ETH") == (None, True), str(off._skip_old))
+    for d in (sd, sd0):
+        shutil.rmtree(d)
 
 
 def old_answer():
@@ -307,6 +350,7 @@ def main():
         frozen()
         btc_no_row()
         btc_in_step()
+        asked_coin()
         old_answer()
         stopped()
         other_coin()

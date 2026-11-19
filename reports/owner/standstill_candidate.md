@@ -24,7 +24,10 @@ trades list is behind (or trading has stopped). Only BTC's answer is a trigger.
    every other coin whose trades answer in this pass was verified empty and which the step left out loses its mark
    and gets its candle on demand (one request each, counted the same way). The stale guard then judges all these rows
    as candle rows (`_row_ok`: an answer made after m ended; an old answer skips that coin for the minute through
-   `_skip_old`; BTC's row must exist, be traded and come from an answer made after m ended).
+   `_skip_old`; BTC's row must exist, be traded and come from an answer made after m ended). A coin verified empty
+   whose candle the step had asked itself gets back that answer's provenance, with no further request: in a
+   standstill step no "verified empty" mark of m is kept for any coin, and every row of m is judged as a candle row
+   (added after review, Nov 19 2026; `standstill_test.py` then 73 checks).
 3. If BTC's candle has no traded row for m, the mark is put back: BTC is stale and the guard stops new bids, as
    before.
 4. After a refusal or a rate limit in the trades pass (`_fb_stop`) nothing is done, as before.
@@ -92,7 +95,8 @@ span (one BTC request per step, which finds no row). The counters are summed ove
 - `live_sim_test.py` window: `LIVE-PATH TEST PASSED` (111, $11,723.34); with the death: `LIVE-PATH TEST PASSED` (109,
   $8,421.28).
 - `order_path_test.py` window: 23 PASS, `ORDER PATH TEST PASSED`; with the death: 23 PASS, `ORDER PATH TEST PASSED`.
-- `standstill_test.py` (new): 68 PASS, `STANDSTILL TEST PASSED`.
+- `standstill_test.py` (new): 68 PASS, `STANDSTILL TEST PASSED`; after the review addition 73 PASS, PASSED (the
+  simulations above were run before that addition; the runner suite covers them again).
 - `release_inputs_test.py`: 90 PASS, `RELEASE INPUTS TEST PASSED` (one expectation changed: the list of inherited
   names now holds `standstill_candles` after `candles_at_s`).
 - `candle_pass_test.py` 99 PASS, `candle_after_test.py` 30, `newest_bar_test.py` 73, `trades_bar_test.py` 47,
