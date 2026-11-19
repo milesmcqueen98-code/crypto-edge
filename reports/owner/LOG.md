@@ -1405,3 +1405,6 @@ FORWARD_TESTS.md.
     addition, so they test it (the agent's run).
   - **Full offline suite** on a runner: job 44533821743, started 13:28 UTC. It repeats the standstill
     simulations on the final commit, and the paper parity replay.
+- **09:21. The hand-over script with retries: first real use, the main book.** Its run ended at 14:13 UTC and the
+  script started the next one (44541407852) at the first try. The alternating chain is alive; its next
+  hand-over, at about 14:27 UTC, is the second use.
