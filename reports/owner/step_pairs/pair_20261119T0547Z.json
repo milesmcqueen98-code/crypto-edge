@@ -1,0 +1,128 @@
+{
+ "utc_start": "2026-11-19T05:47:48Z",
+ "utc_end": "2026-11-19T07:00:14Z",
+ "order": "ab",
+ "minutes": 30.0,
+ "code_commit": "9e6f53b3aca8c15307f22a357f19431bff053e4c",
+ "keys": [
+  {
+   "key": "newest_bar",
+   "release3": "trades",
+   "build": "trades",
+   "differs": false
+  },
+  {
+   "key": "trades_coins",
+   "release3": [
+    "BTC",
+    "ETH",
+    "SOL",
+    "XRP",
+    "ZEC"
+   ],
+   "build": [
+    "BTC",
+    "ETH",
+    "SOL",
+    "XRP",
+    "DOGE",
+    "LTC",
+    "LINK",
+    "BCH",
+    "SUI",
+    "XLM",
+    "HBAR",
+    "NEAR",
+    "AAVE",
+    "HYPE",
+    "ENA",
+    "PEPE",
+    "ONDO",
+    "ZEC"
+   ],
+   "differs": true
+  },
+  {
+   "key": "stale_guard",
+   "release3": true,
+   "build": true,
+   "differs": false
+  },
+  {
+   "key": "trades_rows",
+   "release3": null,
+   "build": "candle_after",
+   "differs": true
+  },
+  {
+   "key": "trades_budget_s",
+   "release3": null,
+   "build": null,
+   "differs": false
+  },
+  {
+   "key": "confirm_s",
+   "release3": null,
+   "build": null,
+   "differs": false
+  },
+  {
+   "key": "candles_at_s",
+   "release3": null,
+   "build": 45,
+   "differs": true
+  }
+ ],
+ "argv": [
+  "bot/spot/tb_smoke.py",
+  "--parity",
+  "--minutes",
+  "30",
+  "--config",
+  "bot/spot/config.json",
+  "--state-dir",
+  "/tmp/step_pair_8y67ciij/s",
+  "--set",
+  "trades_coins=[\"BTC\",\"ETH\",\"SOL\",\"XRP\",\"ZEC\"]",
+  "--set",
+  "trades_rows=null",
+  "--set",
+  "candles_at_s=null",
+  "--then",
+  "trades_coins=[\"BTC\",\"ETH\",\"SOL\",\"XRP\",\"DOGE\",\"LTC\",\"LINK\",\"BCH\",\"SUI\",\"XLM\",\"HBAR\",\"NEAR\",\"AAVE\",\"HYPE\",\"ENA\",\"PEPE\",\"ONDO\",\"ZEC\"]",
+  "--then",
+  "trades_rows=\"candle_after\"",
+  "--then",
+  "candles_at_s=45"
+ ],
+ "runs": [
+  {
+   "inputs": "release3",
+   "steps_timed": 31,
+   "data_end_median_s": 11.18,
+   "data_end_median_text": "11.18",
+   "data_end_max_s": 14.84,
+   "step_candles_median": 18.0,
+   "step_trades_median": 5.0,
+   "pass_candles_median": 0.0,
+   "refused": false,
+   "limited": false
+  },
+  {
+   "inputs": "build",
+   "steps_timed": 31,
+   "data_end_median_s": 8.62,
+   "data_end_median_text": "8.62",
+   "data_end_max_s": 16.94,
+   "step_candles_median": 0.0,
+   "step_trades_median": 18.0,
+   "pass_candles_median": 18.0,
+   "refused": false,
+   "limited": false
+  }
+ ],
+ "build_minus_release3_s": -2.56,
+ "build_minus_release3_text": "-2.56",
+ "counts": true,
+ "why_not": null
+}
