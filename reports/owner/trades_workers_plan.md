@@ -347,10 +347,11 @@
     Part 3 is untouched.
   - **The rule script** is changed to this before it is run (Sonnet agent, reviewed), with its tests.
 - **Nov 20 2026, 08:51 ET (orchestrator). The read, first pass: Part 4 is read; Part 3 is not complete; no verdict.**
-  - **Order kept:** the period and the counts and the restated cap were logged at 08:34; the rule script's change
-    reached `main` at 13:39 UTC (69d18dc6; Sonnet agent, reviewed, 177 checks); the research was fetched after that
-    (runner job 44745514044, ended 13:49 UTC; 1,224 answers, nothing refused); then the two books, the status report
-    on the cut logs, and the rule. Record: reports/owner/reconcile_tb/tw/README.md.
+  - **Order kept:** the period, the counts and the restated cap were logged and on `main` at 08:34 (13:34 UTC). The
+    research fetch was started after that, at 13:34:37 UTC, and ended at 13:49 (runner job 44745514044; 1,224
+    answers, nothing refused). The rule script's change reached `main` at 13:39 UTC (69d18dc6; Sonnet agent,
+    reviewed, 177 checks), while the fetch ran and before any of the research was looked at. Then the two books,
+    the status report on the cut logs, and the rule. Record: reports/owner/reconcile_tb/tw/README.md.
   - **The rule's line:** "PART 3 NOT COMPLETE: 45 of 8 jobs, 15 of 30 slow one-worker passes; the jobs go on and the
     read waits". No verdict.
   - **Part 4 on its period** (final; the period is over):
