@@ -1,0 +1,4 @@
+group,ts,coin,ladder,bot_px,res_px,final_low,research_armed,rung4_pnl,ladder_pnl,in_decision,settled,final_open,open_above_res_px,research_fill_ts,bot_arm_prev60,bot_cash_short_pm3
+both,2026-11-18 15:44:00,NEAR,NEAR-227,3.2018,3.2018,3.1971,True,-98.32,-98.32,True,True,3.2309,True,2026-11-18 15:44:00,,
+both,2026-11-19 01:34:00,BCH,BCH-450,203.65,203.65,202.71,True,16.59,16.6,True,True,206.89,True,2026-11-19 01:34:00,,
+research_only,2026-11-19 15:51:00,PEPE,,,3.76e-06,3.76e-06,True,,,True,True,3.76e-06,False,,True,False
