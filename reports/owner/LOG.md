@@ -1534,3 +1534,17 @@ FORWARD_TESTS.md.
   - **Not done:** the late bar is not named (it would be Q5), part B has not run, readings (b) and (c) are not
     made.
   - **Check when the books' logs reach `main`:** any rate-limit answer in the books between 00:48 and 02:09 UTC.
+
+## Nov 20 2026 (times ET; UTC is five hours later)
+- **00:26. The fifth book runs the corrected build.**
+  - **Run 44679000823** started at 05:08:20 UTC, from the hand-over of the last run on the old commit (which ended
+    at 05:08). The workflow it was started with pins 815ea390 (checked in the file at the run's own commit,
+    aa2018dc). Its step that records the engine commit passed, and the book has been stepping for 17 minutes. No
+    crash at start-up.
+  - **Not read from the run's own log:** a running job's log cannot be fetched. The commit the book wrote into
+    paper_spot_r5/CODE reaches `main` when the run ends, about 11:00 UTC. The period's start goes into the plan
+    then, not now.
+  - **The print job did not reach the books.** In the heartbeats from 00:30 to 02:30 UTC the fifth, fourth and
+    sixth books have no rate-limit answer, no refusal and no error. The main book's log on `main` ends at 01:53
+    UTC and shows none up to there; the rest of the window is checked in the morning.
+  - **Still waiting for Miles:** whether the 2022-23 job of the late-cut replay may be rerun (entry of 21:32).
