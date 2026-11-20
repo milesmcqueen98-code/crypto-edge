@@ -818,3 +818,19 @@ reports/owner/bar_source_p3/README.md.
   - **Pairs on `main` at this moment:** 15 result files; the rule script says which count.
   - **The read was planned for 15:40 ET and began at 18:27 ET.** A paper book puts its log on `main` only when a
     run ends, and the runs that cover the period's end ended at 23:10 and 23:18 UTC. Nothing was read in between.
+- **Nov 19 2026, 20:33 ET (orchestrator). Part 3, second run: set in motion, before the corrected build has run.**
+  - **The pin.** The fifth book's workflow names commit 815ea390 since 01:23 UTC on Nov 20 (`main` 99673d0d). The
+    book's run on the old commit (44636491089) began at 23:18 UTC on Nov 19 and ends about 05:05 UTC; its
+    hand-over starts the first run on the new commit.
+  - **The rule as code** is on `main` since 01:40 UTC (65b2c584; scripts/owner/bar_source/part3b_rule.py, 99 checks;
+    Sonnet agent, reviewed). part3_rule.py is unchanged. The read's first step is a tool as well now
+    (scripts/owner/reconcile/count_bids.py, 21 checks); on the first run's period it gives the counts logged on
+    Nov 19 (696 and 695 on 4,168 minutes).
+  - **Run once on the first run's data, to prove the script:** it prints pass. Against the main book the fifth
+    book has 48 wrong-side bids of 685 and the main book 47 of 669, on the 4,175 minutes both decided; on the five
+    coins 3 of 166. This is no evidence for the build. The rule was written knowing that data; only the second
+    run's days count.
+  - **Pairs.** The pair that starts at the hand-over into the first run on the new commit still reads the old
+    commit from the fifth book's record and is set aside by the rule. The first pair on the new commit starts at
+    the hand-over after that, about 11:00 UTC on Nov 20.
+  - **The read's steps** are in reports/owner/part3_infra_notes.md, "The second run's read".

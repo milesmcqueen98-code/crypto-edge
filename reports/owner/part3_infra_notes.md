@@ -105,3 +105,44 @@ both included (for example START 2026-11-19T01:30 and END 2026-11-22T01:29).
   differs from `side_by_side.csv`.
 - If the folder `paper_spot_r5` does not exist yet, the status report is written as usual and says nothing about the
   fifth book.
+
+## The second run's read (added Nov 19 2026, 20:33 ET; plan: "Part 3, second run: the corrected build")
+
+The first run's steps with the differences below. The folder is `reports/owner/reconcile_tb/part3b`. NEW is the
+corrected build's commit, 815ea3900e9e74c59a451ea0c2365e49fa631cd2.
+
+0. **The period and the commit.** START is the first half-hour mark after the first decision minute of the first run
+   on NEW (named in the plan's deviation log); END is 4,319 minutes later. Every run of the fifth book that overlaps
+   the period must have run NEW: on `main`, `git log --format='%h %cI' -- paper_spot_r5/CODE`, then
+   `git show COMMIT:paper_spot_r5/CODE` for the commits from the first run on NEW to the run that covers END. A run
+   on another commit inside the period restarts the three days.
+1. **The bid count, logs only:**
+   `python scripts/owner/reconcile/count_bids.py --first paper_spot_r5 --second paper_spot_t18 --start START --end END --names fifth,fourth`
+   Fewer than 300 in either book: END moves six hours later, at most three times. Log the counts in the plan's
+   deviation log before anything is fetched.
+2. **The research** on a runner, as step 2 above, with
+   `--out reports/owner/reconcile_tb/part3b/research`, `-f tag=reconcile-part3b` and
+   `-f commit="reports/owner/reconcile_tb/part3b/research"`.
+3. **The books against the research, twice:**
+   `python scripts/owner/reconcile/two_books.py --research reports/owner/reconcile_tb/part3b/research --main paper_spot_t18 --third paper_spot_r5 --start START --end END --out reports/owner/reconcile_tb/part3b`
+   `python scripts/owner/reconcile/two_books.py --research reports/owner/reconcile_tb/part3b/research --main paper_spot --third paper_spot_r5 --start START --end END --out reports/owner/reconcile_tb/part3b/vs_main`
+   In the first folder "main" means the fourth book, in the second the main book; "tb" is the fifth book in both.
+4. **Items 1 to 5** as step 4 above, with one more cut: the copy of the fifth book's log holds only the events
+   from the first event of the first run on NEW (its first `backfill` line) to END. The status report reads the
+   whole log it is given.
+5. **The rule:**
+   `python scripts/owner/bar_source/part3b_rule.py --dir reports/owner/reconcile_tb/part3b --dir-main reports/owner/reconcile_tb/part3b/vs_main --start START --end END --fifth paper_spot_r5 --fourth paper_spot_t18 --main paper_spot --items-1-5 pass --pair-commit 815ea3900e9e74c59a451ea0c2365e49fa631cd2`
+   (or `fail`). It writes `part3b_rule.md` and `part3b_rule.json`. Only pair files that ran NEW count; the pair that
+   starts at the hand-over into the first run on NEW still reads the old commit and is set aside. The same
+   "not complete" behaviour and `--read-as-is` as the first rule.
+6. **Reported with the result:** the all-17 share against the first run's 5% and the twelve and the five apart (in
+   the rule's output); the steps in which the fallback acted (`tb_frozen` in the fifth book's heartbeats of the
+   period) and what the book did in them; bids, fills and P&L side by side (the status report on the cut logs);
+   the pairs' order split.
+
+Things to know for the second run:
+- The status report on the live log mixes both runs in its section "Rule progress for the fifth book" (it reads the
+  whole log and lists the pairs of both commits). Until the read, use its per-day table for the fifth book.
+- The rule script was run once on the first run's data while it was written, with `--pair-commit` set to the first
+  run's commit. It prints pass there. That is expected: the rule was written knowing that data. Only the second
+  run's days count.

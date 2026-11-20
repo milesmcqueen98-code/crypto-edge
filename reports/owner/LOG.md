@@ -1499,3 +1499,15 @@ FORWARD_TESTS.md.
     all-17 figure is still reported against 5%.
   - **Next:** the fifth book's workflow pins the new commit from its next hand-over (about 05:10 UTC). The second
     rule script goes to `main` before the read.
+- **20:33. Second run set in motion: the pin and the rule as code are on `main`.**
+  - **The fifth book's workflow pins 815ea390** since 20:23 (99673d0d). It takes effect at the hand-over about
+    00:05; I check the first run on it at 00:25.
+  - **The rule as code** (part3b_rule.py, 65b2c584; Sonnet agent, reviewed): 99 checks, and the first rule's 110
+    unchanged. I sent it back once, for a cross-check of the five-coin counts that the restated cap reads.
+  - **The bid count is a tool now** (count_bids.py, 21 checks), not a scratch file. On the first run's period it
+    gives the logged counts.
+  - **Proved on the first run's data: pass, and that proves nothing about the build.** The rule was written
+    knowing that data. Worth noting from it: against the main book the build is level (48 of 685 against 47 of
+    669).
+  - **The read's steps** are written down (part3_infra_notes.md). The read falls on about Nov 23.
+  - **Still running:** the late-cut replay (Opus agent).
