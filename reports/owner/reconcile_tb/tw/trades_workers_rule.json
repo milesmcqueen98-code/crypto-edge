@@ -1,0 +1,1192 @@
+{
+ "period": {
+  "start": "2026-11-17 00:00:00",
+  "end": "2026-11-19 23:59:00"
+ },
+ "books": {
+  "main": "paper_spot_r5",
+  "tb": "paper_spot_tw"
+ },
+ "label_mapping": {
+  "main": "fifth book (paper_spot_r5)",
+  "tb": "sixth book (paper_spot_tw)"
+ },
+ "minutes": {
+  "main": 4246,
+  "tb": 4248,
+  "common": 4174
+ },
+ "coins": [
+  "AAVE",
+  "BCH",
+  "DOGE",
+  "ENA",
+  "ETH",
+  "HBAR",
+  "HYPE",
+  "LINK",
+  "LTC",
+  "NEAR",
+  "ONDO",
+  "PEPE",
+  "SOL",
+  "SUI",
+  "XLM",
+  "XRP",
+  "ZEC"
+ ],
+ "condition": {
+  "new_bids_sixth": 725,
+  "new_bids_fifth": 725,
+  "needed": 300,
+  "met": true,
+  "read_as_is": false,
+  "part3_complete": false
+ },
+ "counts": {
+  "sixth": {
+   "n": 725,
+   "ns": 725,
+   "w": 48,
+   "nl": 725,
+   "l": 2,
+   "m": 672,
+   "r": 720
+  },
+  "fifth": {
+   "n": 725,
+   "ns": 725,
+   "w": 48,
+   "nl": 725,
+   "l": 2,
+   "m": 670,
+   "r": 718
+  },
+  "sixth_five": {
+   "w": 3,
+   "ns": 179
+  }
+ },
+ "five": [
+  "ETH",
+  "LTC",
+  "SOL",
+  "XRP",
+  "ZEC"
+ ],
+ "twelve": [
+  "AAVE",
+  "BCH",
+  "DOGE",
+  "ENA",
+  "HBAR",
+  "HYPE",
+  "LINK",
+  "NEAR",
+  "ONDO",
+  "PEPE",
+  "SUI",
+  "XLM"
+ ],
+ "part3": {
+  "step": {
+   "met": true,
+   "steps_three": 1360,
+   "steps_one": 1382,
+   "median_three_s": 2.609,
+   "median_one_s": 2.632,
+   "median_three_exact": "2609/1000",
+   "median_one_exact": "329/125",
+   "margin_s": 0.05,
+   "rule": "median pass with three at most the median with one plus 0.05 s"
+  },
+  "gain": {
+   "met": false,
+   "slow_one": 15,
+   "steps_one": 1382,
+   "slow_three": 6,
+   "steps_three": 1360,
+   "share_one": 0.01085383502170767,
+   "share_three": 0.004411764705882353,
+   "fallbacks_three": 0,
+   "fallbacks_one": 12,
+   "fallback_passes_three": 0,
+   "fallback_passes_one": 3,
+   "fallbacks_branch": "no more",
+   "slow_needed": 30,
+   "gain_not_shown": false,
+   "rule": "at least 30 slow one-worker passes (above 6.0 s); three's slow share at most half of one's; budget fallback passes with three no more than with one, or more only within chance ((s3 - s1) squared <= 4 * (s1 + s3))"
+  },
+  "pace": {
+   "met": true,
+   "files": 45,
+   "peak_max": 7,
+   "over_peak": [],
+   "refused_or_limited": [],
+   "unreadable": [],
+   "rule": "no three-worker step above 8 trades requests in one second, none limited or refused, every file readable"
+  },
+  "rows": {
+   "met": true,
+   "differ_three": 10075,
+   "compared_three": 23490,
+   "differ_one": 10133,
+   "compared_one": 23424,
+   "jobs": 45,
+   "share_three": 0.42890591741166456,
+   "share_one": 0.43259050546448086,
+   "branch": "no more",
+   "difference": "-67579/18340992",
+   "rule": "rows differing from the venue: d = three's share minus one's; met if d <= 1/100, or d squared <= 4 * p * (1 - p) * (1 / compared1 + 1 / compared3) (p pooled)"
+  },
+  "reported": {
+   "median_one_s": 2.632,
+   "median_three_s": 2.609,
+   "mean_one_s": 2.814749638205499,
+   "mean_three_s": 2.678058823529412,
+   "diff_median_s": -0.023,
+   "diff_mean_s": -0.1366908146760875,
+   "note": "first version of the plan asked for a 0.2 s gain at the median over half-hour pairs",
+   "jobs": [
+    {
+     "file": "alt_20261117T1141Z.json",
+     "start": "2026-11-17T11:41:05Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261117T2250Z.json",
+     "start": "2026-11-17T22:50:39Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261117T2357Z.json",
+     "start": "2026-11-17T23:57:42Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T0532Z.json",
+     "start": "2026-11-18T05:32:55Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T1122Z.json",
+     "start": "2026-11-18T11:22:48Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T1228Z.json",
+     "start": "2026-11-18T12:28:30Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T1713Z.json",
+     "start": "2026-11-18T17:13:49Z",
+     "first": "one",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 1,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T1822Z.json",
+     "start": "2026-11-18T18:22:04Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T1929Z.json",
+     "start": "2026-11-18T19:29:46Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T2037Z.json",
+     "start": "2026-11-18T20:37:49Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T2143Z.json",
+     "start": "2026-11-18T21:43:41Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T2251Z.json",
+     "start": "2026-11-18T22:51:42Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T2357Z.json",
+     "start": "2026-11-18T23:57:54Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T0103Z.json",
+     "start": "2026-11-19T01:03:44Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T0210Z.json",
+     "start": "2026-11-19T02:10:53Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T0316Z.json",
+     "start": "2026-11-19T03:16:42Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 2,
+     "slow_three": 2
+    },
+    {
+     "file": "alt_20261119T0422Z.json",
+     "start": "2026-11-19T04:22:41Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T0528Z.json",
+     "start": "2026-11-19T05:28:42Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T0636Z.json",
+     "start": "2026-11-19T06:36:45Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T0744Z.json",
+     "start": "2026-11-19T07:44:54Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 1,
+     "slow_three": 1
+    },
+    {
+     "file": "alt_20261119T0852Z.json",
+     "start": "2026-11-19T08:52:50Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T0959Z.json",
+     "start": "2026-11-19T09:59:41Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T1105Z.json",
+     "start": "2026-11-19T11:05:56Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T1213Z.json",
+     "start": "2026-11-19T12:13:43Z",
+     "first": "one",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T1321Z.json",
+     "start": "2026-11-19T13:21:41Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T1428Z.json",
+     "start": "2026-11-19T14:28:45Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T1536Z.json",
+     "start": "2026-11-19T15:36:45Z",
+     "first": "one",
+     "steps_one": 30,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T1642Z.json",
+     "start": "2026-11-19T16:42:46Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T1750Z.json",
+     "start": "2026-11-19T17:50:40Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T1856Z.json",
+     "start": "2026-11-19T18:56:46Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T2004Z.json",
+     "start": "2026-11-19T20:04:50Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T2113Z.json",
+     "start": "2026-11-19T21:13:42Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 1,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T2221Z.json",
+     "start": "2026-11-19T22:21:54Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T2327Z.json",
+     "start": "2026-11-19T23:27:40Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0034Z.json",
+     "start": "2026-11-20T00:34:43Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0142Z.json",
+     "start": "2026-11-20T01:42:52Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0248Z.json",
+     "start": "2026-11-20T02:48:44Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0354Z.json",
+     "start": "2026-11-20T03:54:45Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0502Z.json",
+     "start": "2026-11-20T05:02:40Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0608Z.json",
+     "start": "2026-11-20T06:08:42Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0716Z.json",
+     "start": "2026-11-20T07:16:43Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0823Z.json",
+     "start": "2026-11-20T08:23:40Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0929Z.json",
+     "start": "2026-11-20T09:29:43Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T1037Z.json",
+     "start": "2026-11-20T10:37:40Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 4,
+     "slow_three": 2
+    },
+    {
+     "file": "alt_20261120T1145Z.json",
+     "start": "2026-11-20T11:45:43Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 6,
+     "slow_three": 1
+    }
+   ],
+   "decides": "nothing"
+  },
+  "complete": false,
+  "holds": false,
+  "wait": true,
+  "gain_not_shown": false,
+  "jobs": 45,
+  "jobs_needed": 8,
+  "slow_one": 15,
+  "slow_needed": 30,
+  "in_period": 34,
+  "added": 11,
+  "job_files": [
+   "alt_20261117T1141Z.json",
+   "alt_20261117T2250Z.json",
+   "alt_20261117T2357Z.json",
+   "alt_20261118T0532Z.json",
+   "alt_20261118T1122Z.json",
+   "alt_20261118T1228Z.json",
+   "alt_20261118T1713Z.json",
+   "alt_20261118T1822Z.json",
+   "alt_20261118T1929Z.json",
+   "alt_20261118T2037Z.json",
+   "alt_20261118T2143Z.json",
+   "alt_20261118T2251Z.json",
+   "alt_20261118T2357Z.json",
+   "alt_20261119T0103Z.json",
+   "alt_20261119T0210Z.json",
+   "alt_20261119T0316Z.json",
+   "alt_20261119T0422Z.json",
+   "alt_20261119T0528Z.json",
+   "alt_20261119T0636Z.json",
+   "alt_20261119T0744Z.json",
+   "alt_20261119T0852Z.json",
+   "alt_20261119T0959Z.json",
+   "alt_20261119T1105Z.json",
+   "alt_20261119T1213Z.json",
+   "alt_20261119T1321Z.json",
+   "alt_20261119T1428Z.json",
+   "alt_20261119T1536Z.json",
+   "alt_20261119T1642Z.json",
+   "alt_20261119T1750Z.json",
+   "alt_20261119T1856Z.json",
+   "alt_20261119T2004Z.json",
+   "alt_20261119T2113Z.json",
+   "alt_20261119T2221Z.json",
+   "alt_20261119T2327Z.json",
+   "alt_20261120T0034Z.json",
+   "alt_20261120T0142Z.json",
+   "alt_20261120T0248Z.json",
+   "alt_20261120T0354Z.json",
+   "alt_20261120T0502Z.json",
+   "alt_20261120T0608Z.json",
+   "alt_20261120T0716Z.json",
+   "alt_20261120T0823Z.json",
+   "alt_20261120T0929Z.json",
+   "alt_20261120T1037Z.json",
+   "alt_20261120T1145Z.json"
+  ],
+  "first_job_start": "2026-11-17T11:41:05Z",
+  "days_end": "2026-12-01T11:41:05Z",
+  "last_used_start": "2026-11-20T11:45:43Z",
+  "met": false
+ },
+ "part4": {
+  "decisions": {
+   "wrong_side_vs_fifth": {
+    "met": true,
+    "sixth": "48/725",
+    "fifth": "48/725",
+    "sixth_share": 0.06620689655172414,
+    "fifth_share": 0.06620689655172414,
+    "rule": "sixth share <= fifth share + 2.0 points"
+   },
+   "wrong_side_cap": {
+    "met": true,
+    "sixth": "3/179",
+    "sixth_share": 0.01675977653631285,
+    "coins": [
+     "ETH",
+     "LTC",
+     "SOL",
+     "XRP",
+     "ZEC"
+    ],
+    "rule": "sixth share on ETH, LTC, SOL, XRP, ZEC <= 5%"
+   },
+   "matched": {
+    "met": true,
+    "sixth": "672/720",
+    "fifth": "670/718",
+    "sixth_share": 0.9333333333333333,
+    "fifth_share": 0.9331476323119777,
+    "rule": "sixth share >= fifth share - 3.0 points"
+   },
+   "level": {
+    "met": true,
+    "sixth": "2/725",
+    "sixth_share": 0.002758620689655172,
+    "rule": "sixth share < 5% (strictly)"
+   },
+   "met": true,
+   "reported": {
+    "first_version_cap": {
+     "sixth": "48/725",
+     "sixth_share": 0.06620689655172414,
+     "would_be_met": false
+    },
+    "groups": {
+     "twelve": {
+      "fifth": "45/543",
+      "fifth_share": 0.08287292817679558,
+      "sixth": "45/546",
+      "sixth_share": 0.08241758241758242
+     },
+     "five": {
+      "fifth": "3/182",
+      "fifth_share": 0.016483516483516484,
+      "sixth": "3/179",
+      "sixth_share": 0.01675977653631285
+     }
+    },
+    "decides": "nothing"
+   }
+  },
+  "items_1_5": {
+   "value": "pass",
+   "met": true
+  },
+  "requests": {
+   "heartbeats": 144,
+   "counters_present": [
+    "pre_error",
+    "pre_fetched",
+    "pre_missing",
+    "pre_ondemand",
+    "step_candles"
+   ],
+   "counters": {
+    "pre_fetched": 73690,
+    "pre_error": 2,
+    "pre_missing": 2,
+    "pre_ondemand": 24,
+    "step_candles": 26
+   },
+   "requests": 73692,
+   "failed": 2,
+   "failed_share": 2.7139988058405254e-05,
+   "in_step": 26,
+   "left_out_first_steps": 0,
+   "coin_minutes": 77634.0,
+   "in_step_share": 0.00033490480974830613,
+   "failed_clause": {
+    "met": true,
+    "rule": "pre_error / (pre_fetched + pre_error) <= 1%"
+   },
+   "in_step_clause": {
+    "met": true,
+    "rule": "(pre_missing + pre_ondemand, first step after each start left out) / (18 x minutes run) <= 2%"
+   },
+   "against_fifth": {
+    "met": true,
+    "common_heartbeat_times": 142,
+    "sixth_in_step": 26.0,
+    "sixth_coin_minutes": 76554.0,
+    "fifth_in_step": 60.0,
+    "fifth_coin_minutes": 76680.0,
+    "sixth_share": 0.0003396295425451315,
+    "fifth_share": 0.000782472613458529,
+    "rule": "sixth in-step share no higher than the fifth's over the heartbeat times both books have (cross-multiplied)"
+   },
+   "met": true
+  },
+  "stops": {
+   "limited_sixth": 0,
+   "limited_fifth": 0,
+   "limited_sixth_alone": [],
+   "errors_sixth": 2,
+   "errors_fifth": 2,
+   "allowed_errors": 4,
+   "limited_clause": {
+    "met": true,
+    "rule": "no sixth-book heartbeat with tb_fb_limited above 0 unless the fifth's heartbeat at the same time has it too"
+   },
+   "error_clause": {
+    "met": true,
+    "rule": "sixth heartbeats with tb_fb_error above 0 at most the fifth's plus 2"
+   },
+   "met": true
+  }
+ },
+ "reported": {
+  "part3": {
+   "median_one_s": 2.632,
+   "median_three_s": 2.609,
+   "mean_one_s": 2.814749638205499,
+   "mean_three_s": 2.678058823529412,
+   "diff_median_s": -0.023,
+   "diff_mean_s": -0.1366908146760875,
+   "note": "first version of the plan asked for a 0.2 s gain at the median over half-hour pairs",
+   "jobs": [
+    {
+     "file": "alt_20261117T1141Z.json",
+     "start": "2026-11-17T11:41:05Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261117T2250Z.json",
+     "start": "2026-11-17T22:50:39Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261117T2357Z.json",
+     "start": "2026-11-17T23:57:42Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T0532Z.json",
+     "start": "2026-11-18T05:32:55Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T1122Z.json",
+     "start": "2026-11-18T11:22:48Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T1228Z.json",
+     "start": "2026-11-18T12:28:30Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T1713Z.json",
+     "start": "2026-11-18T17:13:49Z",
+     "first": "one",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 1,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T1822Z.json",
+     "start": "2026-11-18T18:22:04Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T1929Z.json",
+     "start": "2026-11-18T19:29:46Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T2037Z.json",
+     "start": "2026-11-18T20:37:49Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T2143Z.json",
+     "start": "2026-11-18T21:43:41Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T2251Z.json",
+     "start": "2026-11-18T22:51:42Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261118T2357Z.json",
+     "start": "2026-11-18T23:57:54Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T0103Z.json",
+     "start": "2026-11-19T01:03:44Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T0210Z.json",
+     "start": "2026-11-19T02:10:53Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T0316Z.json",
+     "start": "2026-11-19T03:16:42Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 2,
+     "slow_three": 2
+    },
+    {
+     "file": "alt_20261119T0422Z.json",
+     "start": "2026-11-19T04:22:41Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T0528Z.json",
+     "start": "2026-11-19T05:28:42Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T0636Z.json",
+     "start": "2026-11-19T06:36:45Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T0744Z.json",
+     "start": "2026-11-19T07:44:54Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 1,
+     "slow_three": 1
+    },
+    {
+     "file": "alt_20261119T0852Z.json",
+     "start": "2026-11-19T08:52:50Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T0959Z.json",
+     "start": "2026-11-19T09:59:41Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T1105Z.json",
+     "start": "2026-11-19T11:05:56Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T1213Z.json",
+     "start": "2026-11-19T12:13:43Z",
+     "first": "one",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T1321Z.json",
+     "start": "2026-11-19T13:21:41Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T1428Z.json",
+     "start": "2026-11-19T14:28:45Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T1536Z.json",
+     "start": "2026-11-19T15:36:45Z",
+     "first": "one",
+     "steps_one": 30,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T1642Z.json",
+     "start": "2026-11-19T16:42:46Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T1750Z.json",
+     "start": "2026-11-19T17:50:40Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T1856Z.json",
+     "start": "2026-11-19T18:56:46Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T2004Z.json",
+     "start": "2026-11-19T20:04:50Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T2113Z.json",
+     "start": "2026-11-19T21:13:42Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 1,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T2221Z.json",
+     "start": "2026-11-19T22:21:54Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261119T2327Z.json",
+     "start": "2026-11-19T23:27:40Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0034Z.json",
+     "start": "2026-11-20T00:34:43Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0142Z.json",
+     "start": "2026-11-20T01:42:52Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0248Z.json",
+     "start": "2026-11-20T02:48:44Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0354Z.json",
+     "start": "2026-11-20T03:54:45Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0502Z.json",
+     "start": "2026-11-20T05:02:40Z",
+     "first": "one",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0608Z.json",
+     "start": "2026-11-20T06:08:42Z",
+     "first": "three",
+     "steps_one": 30,
+     "steps_three": 31,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0716Z.json",
+     "start": "2026-11-20T07:16:43Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0823Z.json",
+     "start": "2026-11-20T08:23:40Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T0929Z.json",
+     "start": "2026-11-20T09:29:43Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 0,
+     "slow_three": 0
+    },
+    {
+     "file": "alt_20261120T1037Z.json",
+     "start": "2026-11-20T10:37:40Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 4,
+     "slow_three": 2
+    },
+    {
+     "file": "alt_20261120T1145Z.json",
+     "start": "2026-11-20T11:45:43Z",
+     "first": "three",
+     "steps_one": 31,
+     "steps_three": 30,
+     "slow_one": 6,
+     "slow_three": 1
+    }
+   ],
+   "decides": "nothing"
+  },
+  "data_step": {
+   "common_heartbeat_times": 142,
+   "sixth_median_s": 8.565,
+   "fifth_median_s": 8.614999999999998,
+   "sixth_own_median_s": 8.58,
+   "sixth_heartbeats": 144,
+   "decides": "nothing"
+  },
+  "step_s_trades": {
+   "heartbeats": 144,
+   "median_of_medians_s": 2.58,
+   "largest_max_s": 8.01,
+   "decides": "nothing"
+  }
+ },
+ "holds": {
+  "part3.1_no_harm": true,
+  "part3.2_gain": false,
+  "part3.3_pace": true,
+  "part3.4_rows": true,
+  "part4.1_decisions": true,
+  "part4.2_items_1_5": true,
+  "part4.3_requests": true,
+  "part4.4_stops": true
+ },
+ "verdict": null
+}
