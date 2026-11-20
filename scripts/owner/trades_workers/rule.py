@@ -60,8 +60,16 @@ Part 3, alternating minutes (the files alt_*.json of --alt; a job counts when it
   Reported, deciding nothing: both arms' median and mean pass, their difference, and "first version of the plan asked for a 0.2 s
   gain at the median over half-hour pairs"; the steps and slow passes of each arm per job.
 Part 4, the books:
-  1. decisions, exact on integers: wrong side w6/ns6 <= w5/ns5 + 2/100 and w6/ns6 <= 5/100; matched m6/r6 >= m5/r5 - 3/100;
-     level l6/nl6 < 5/100 (strictly); a zero denominator means that clause is not met;
+  1. decisions, exact on integers: wrong side w6/ns6 <= w5/ns5 + 2/100 (all 17 coins) and, as the cap, the sixth book's share on
+     the FIVE coins at most 5/100 (the cap is on the five, not on all 17); matched m6/r6 >= m5/r5 - 3/100; level l6/nl6 < 5/100
+     (strictly); a zero denominator means that clause is not met. The cap's coins are those of two_books.json's group
+     "trades list", which must be exactly ETH, LTC, SOL, XRP, ZEC (else an error and no verdict); its counts are the rows of
+     item7_bids.csv of label tb with a research score on those coins, cross-checked against side_by_side.csv (measure
+     m2_score_error, group "trades list", book tb, statistics n and n_other_side; a mismatch or a missing row is an error and
+     no verdict). They are read by part3b_rule.five_coins and part3b_rule.five_counts, imported, not copied.
+     Reported, deciding nothing, next to clause 1: the sixth book's share on all 17 coins against 5% ("the first version's cap
+     (reported only): would be met" or "would not be met"), and the fifth and sixth books' shares on the twelve (group
+     "candle path") and on the five;
   2. --items-1-5;
   3. requests inside a step, the sixth book, heartbeats in the period (paper_status.measure4 and startup_steps, imported
      through paper_status): failed share at most 1% and in-step share at most 2%; and the sixth's in-step share no higher
@@ -99,6 +107,7 @@ import pandas as pd             # noqa: E402
 
 import paper_status as ps       # noqa: E402
 import part3_rule as p3         # noqa: E402
+import part3b_rule as p3b       # noqa: E402
 
 MIN_BIDS = p3.MIN_BIDS
 MIN_JOBS = ps.ALT_MIN_JOBS
@@ -213,23 +222,40 @@ def part3(jobs, start, end, now=None):
 
 
 # ---------------------------------------------------------------- Part 4
-def decisions(c6, c5):
-    """Part 4, clause 1. c6, c5: the counts of the sixth and the fifth book (part3_rule.book_counts)."""
+def decisions(c6, c5, five6):
+    """Part 4, clause 1. c6, c5: the counts of the sixth and the fifth book (part3_rule.book_counts); five6: (w, ns) of the sixth
+    book on the five coins ETH, LTC, SOL, XRP, ZEC (part3b_rule.five_counts). The cap is on the five coins; the share on all 17
+    coins decides nothing (see cap_reported)."""
     n6, n5 = c6["ns"], c5["ns"]
     ws = bool(n6 and n5) and Fraction(c6["w"], n6) <= Fraction(c5["w"], n5) + WRONG_SIDE_TOLERANCE
-    wc = bool(n6) and Fraction(c6["w"], n6) <= WRONG_SIDE_CAP
+    w5c, n5c = five6
+    wc = bool(n5c) and Fraction(w5c, n5c) <= WRONG_SIDE_CAP
     mt = bool(c6["r"] and c5["r"]) and Fraction(c6["m"], c6["r"]) >= Fraction(c5["m"], c5["r"]) - MATCHED_TOLERANCE
     lv = bool(c6["nl"]) and Fraction(c6["l"], c6["nl"]) < LEVEL_CAP
     out = dict(
         wrong_side_vs_fifth=clause(ws, sixth=f"{c6['w']}/{n6}", fifth=f"{c5['w']}/{n5}", sixth_share=share(c6["w"], n6),
                                    fifth_share=share(c5["w"], n5), rule="sixth share <= fifth share + 2.0 points"),
-        wrong_side_cap=clause(wc, sixth=f"{c6['w']}/{n6}", sixth_share=share(c6["w"], n6), rule="sixth share <= 5%"),
+        wrong_side_cap=clause(wc, sixth=f"{w5c}/{n5c}", sixth_share=share(w5c, n5c), coins=list(p3b.FIVE),
+                              rule="sixth share on ETH, LTC, SOL, XRP, ZEC <= 5%"),
         matched=clause(mt, sixth=f"{c6['m']}/{c6['r']}", fifth=f"{c5['m']}/{c5['r']}", sixth_share=share(c6["m"], c6["r"]),
                        fifth_share=share(c5["m"], c5["r"]), rule="sixth share >= fifth share - 3.0 points"),
         level=clause(lv, sixth=f"{c6['l']}/{c6['nl']}", sixth_share=share(c6["l"], c6["nl"]),
                      rule="sixth share < 5% (strictly)"))
     out["met"] = ws and wc and mt and lv
     return out
+
+
+def cap_reported(B, c6, twelve, five):
+    """Reported, deciding nothing, next to clause 1: the sixth book's share on all 17 coins against 5% (the first version's cap),
+    and the fifth and sixth books' shares on the twelve and on the five."""
+    groups = {}
+    for name, coins in (("twelve", twelve), ("five", five)):
+        w5, n5 = p3b.scored(B, FIFTH, coins)
+        w6, n6 = p3b.scored(B, SIXTH, coins)
+        groups[name] = dict(fifth=f"{w5}/{n5}", fifth_share=share(w5, n5), sixth=f"{w6}/{n6}", sixth_share=share(w6, n6))
+    met = bool(c6["ns"]) and Fraction(c6["w"], c6["ns"]) <= WRONG_SIDE_CAP
+    return dict(first_version_cap=dict(sixth=f"{c6['w']}/{c6['ns']}", sixth_share=share(c6["w"], c6["ns"]), would_be_met=met),
+                groups=groups, decides="nothing")
 
 
 def requests(rows6, starts6, rows5, starts5):
@@ -279,7 +305,10 @@ def evaluate(meta, B, S, rows6, starts6, rows5, starts5, trades6, items, jobs=No
     if items not in ("pass", "fail"):
         raise ValueError(f"items 1 to 5 must be pass or fail, not {items}")
     coins = guard(meta, fifth_folder, sixth_folder, start, end)
+    five = p3b.five_coins(meta)
+    twelve = sorted(set(coins) - set(five))
     c5, c6 = p3.book_counts(B, S, FIFTH, coins), p3.book_counts(B, S, SIXTH, coins)
+    five6 = p3b.five_counts(B, S)           # label tb = the sixth book here, as in part3b_rule
     period_ok = c5["n"] >= min_bids and c6["n"] >= min_bids
     P3 = part3(jobs, start, end, now)
     sel, wm = P3.pop("_sel"), P3.pop("_wm")
@@ -287,7 +316,9 @@ def evaluate(meta, B, S, rows6, starts6, rows5, starts5, trades6, items, jobs=No
         for k in ("step", "gain", "rows"):
             P3[k]["met"] = False
         P3["met"] = False
-    P4 = dict(decisions=decisions(c6, c5), items_1_5=dict(value=items, met=items == "pass"),
+    dec = decisions(c6, c5, five6)
+    dec["reported"] = cap_reported(B, c6, twelve, five)
+    P4 = dict(decisions=dec, items_1_5=dict(value=items, met=items == "pass"),
               requests=requests(rows6, starts6, rows5, starts5), stops=stops(rows6, rows5))
     m1 = ps.measure1(rows6, rows5)
     reported = dict(
@@ -310,7 +341,7 @@ def evaluate(meta, B, S, rows6, starts6, rows5, starts5, trades6, items, jobs=No
                minutes=meta.get("minutes"), coins=coins,
                condition=dict(new_bids_sixth=c6["n"], new_bids_fifth=c5["n"], needed=min_bids, met=period_ok,
                               read_as_is=bool(read_as_is), part3_complete=P3["complete"]),
-               counts=dict(sixth=c6, fifth=c5), part3=P3, part4=P4, reported=reported, holds=holds, verdict=verdict)
+               counts=dict(sixth=c6, fifth=c5, sixth_five=dict(w=five6[0], ns=five6[1])), five=five, twelve=twelve, part3=P3, part4=P4, reported=reported, holds=holds, verdict=verdict)
     return res
 
 
@@ -393,7 +424,18 @@ def to_md(res):
         x = d[key]
         L.append(f"| {name} | {x['sixth']} = {pct(x['sixth_share'])} | {x.get('fifth', '-')}"
                  + (f" = {pct(x['fifth_share'])}" if "fifth" in x else "") + f" | {x['rule']} | {mk(x['met'])} |")
-    L += ["", f"Part 4, measure 1: {mk(d['met'])}.", "",
+    rp = d["reported"]
+    fv = rp["first_version_cap"]
+    L += ["", "Reported, deciding nothing:", "",
+          f"- All 17 coins, wrong side {fv['sixth']} = {pct(fv['sixth_share'])} of scored bids in the sixth book: the first "
+          f"version's cap (reported only): {'would be met' if fv['would_be_met'] else 'would not be met'} (5%).",
+          f"- Wrong-side share on the twelve (candle path): fifth book {rp['groups']['twelve']['fifth']} = "
+          f"{pct(rp['groups']['twelve']['fifth_share'])}, sixth book {rp['groups']['twelve']['sixth']} = "
+          f"{pct(rp['groups']['twelve']['sixth_share'])}.",
+          f"- Wrong-side share on the five (trades list): fifth book {rp['groups']['five']['fifth']} = "
+          f"{pct(rp['groups']['five']['fifth_share'])}, sixth book {rp['groups']['five']['sixth']} = "
+          f"{pct(rp['groups']['five']['sixth_share'])}.",
+          "", f"Part 4, measure 1: {mk(d['met'])}.", "",
           "## Part 4, measure 2: items 1 to 5 of the sixth book", "",
           f"Read by the owner from the status report on the cut log: {P4['items_1_5']['value']}. "
           f"Measure 2: {mk(P4['items_1_5']['met'])}.", ""]
@@ -447,7 +489,8 @@ def to_md(res):
           "deviations of the difference); in every alt file from the first job to the last one used no "
           "three-worker step above 8 trades requests in a second and none limited or refused; the share of rows that differ from "
           "the venue at most one point higher with three, or higher only within chance (two standard errors of the difference). Part 4: against the research, wrong-side share at most the fifth "
-          "book's plus 2.0 points and at most 5%, matched share at least the fifth's minus 3.0 points, under 5% of bids more than "
+          "book's plus 2.0 points on all 17 coins and, on the five coins ETH, LTC, SOL, XRP, ZEC (the trades list), at most 5% "
+          "(there is no cap on all 17 coins: that share is reported against the first version's 5% and decides nothing), matched share at least the fifth's minus 3.0 points, under 5% of bids more than "
           "5 bp from the level; items 1 to 5; failed requests at most 1% and in-step requests at most 2% of coin-minutes and no "
           "higher a share than the fifth book's; no rate-limit stop in the sixth book unless the fifth has one at the same "
           "heartbeat, and its error half hours at most the fifth's plus 2. Shares are compared exactly on the counts. A PASS puts "

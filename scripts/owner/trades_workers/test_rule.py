@@ -48,22 +48,34 @@ def raises(fn, text):
 
 
 # ---------------------------------------------------------------- the reconciliation folder (labels: main = fifth, tb = sixth)
-def spec(n=300, w=0, ns=None, l=0, nl=None, m=None, r=None):
+def spec(n=300, w=0, ns=None, l=0, nl=None, m=None, r=None, fw=None):
     """One book: n bids, ns with a score (w on the wrong side), nl with a level (l of them more than 5 bp away), research
-    matched m of r."""
+    matched m of r. fw: how many of the w wrong-side bids are on the five coins of the trades list (default: the share of
+    the five among the scored bids, rounded down, so the five's share does not exceed the share on all 17)."""
     return dict(n=n, w=w, ns=n if ns is None else ns, l=l, nl=n if nl is None else nl, m=n if m is None else m,
-                r=n if r is None else r)
+                r=n if r is None else r, fw=fw)
+
+
+def wrong_set(s):
+    """The indices of the wrong-side bids: fw on the five coins (bid i is on ALL[i % 17]; the first five are the trades list),
+    the rest on the twelve."""
+    five = [i for i in range(s["ns"]) if i % 17 < 5]
+    twelve = [i for i in range(s["ns"]) if i % 17 >= 5]
+    fw = s["fw"] if s["fw"] is not None else (s["w"] * len(five) // s["ns"] if s["ns"] else 0)
+    fw = max(fw, s["w"] - len(twelve))
+    return set(five[:fw]) | set(twelve[:s["w"] - fw])
 
 
 def rows_for(label, s):
     out = []
+    wrong = wrong_set(s)
     for i in range(s["n"]):
         has_sc, has_lv = i < s["ns"], i < s["nl"]
         err = float("nan")
         if has_lv:
             err = (6.0 if i % 2 == 0 else -6.0) if i < s["l"] else (5.0 if i % 2 == 0 else -4.0)
         out.append(dict(book=label, ts="2026-11-21 00:00:00", coin=ALL[i % 17], err_bp=err,
-                        res_score=1.0 if has_sc else float("nan"), res_other_side=bool(has_sc and i < s["w"])))
+                        res_score=1.0 if has_sc else float("nan"), res_other_side=i in wrong))
     return out
 
 
@@ -79,13 +91,24 @@ def side(label, s, over):
     return out
 
 
-def tables(fifth, sixth, over=None, groups=None, books=("paper_spot_r5", "paper_spot_tw"), start=START, end=END):
+def five_side(label, rows, over):
+    """The side_by_side.csv rows of group "trades list" (measure m2_score_error, statistics n and n_other_side) of one book,
+    counted here from the made-up bid rows themselves (not through the rule's own reading)."""
+    sc = [r for r in rows if r["coin"] in TRADES and r["res_score"] == r["res_score"]]
+    vals = {"n": len(sc), "n_other_side": sum(1 for r in sc if r["res_other_side"])}
+    return [dict(measure="m2_score_error", statistic=st, group="trades list", book=label,
+                 value=float(over.get((label, "five", st), v))) for st, v in vals.items()]
+
+
+def tables(fifth, sixth, over=None, groups=None, books=("paper_spot_r5", "paper_spot_tw"), start=START, end=END, drop_five=False):
     over = over or {}
     meta = dict(period=dict(start=start, end=end), books=dict(main=books[0], tb=books[1]),
                 minutes=dict(main=4300, tb=4310, common=4290),
                 groups=groups or {"all": ALL, "trades list": TRADES, "candle path": CANDLE})
-    B = pd.DataFrame(rows_for("main", fifth) + rows_for("tb", sixth))
-    S = pd.DataFrame(side("main", fifth, over) + side("tb", sixth, over))
+    r5, r6 = rows_for("main", fifth), rows_for("tb", sixth)
+    B = pd.DataFrame(r5 + r6)
+    S = pd.DataFrame(side("main", fifth, over) + side("tb", sixth, over)
+                     + ([] if drop_five else five_side("main", r5, over) + five_side("tb", r6, over)))
     return meta, B, S
 
 
@@ -213,7 +236,8 @@ def test_decisions():
     x = d(spec(300, w=9), spec(300, w=15))
     check("wrong side: sixth exactly the fifth's share plus 2.0 points (and exactly 5%) is met", x["wrong_side_vs_fifth"]["met"] and x["wrong_side_cap"]["met"] and x["met"], x)
     x = d(spec(300, w=9), spec(300, w=16))
-    check("wrong side: one bid more fails both clauses", not x["wrong_side_vs_fifth"]["met"] and not x["wrong_side_cap"]["met"] and not x["met"])
+    check("wrong side: one bid more fails the comparison with the fifth; the cap is on the five coins and stays met (4 of 90)",
+          not x["wrong_side_vs_fifth"]["met"] and x["wrong_side_cap"]["met"] and not x["met"])
     x = d(spec(300, w=30), spec(300, w=15))
     check("wrong side: a fifth book far above still leaves the 5% cap", x["wrong_side_vs_fifth"]["met"] and x["wrong_side_cap"]["met"])
     x = d(spec(300, w=0), spec(300, w=7))
@@ -245,11 +269,101 @@ def test_decisions():
         for m6 in (270, 271, 290):
             for l6 in (0, 14, 15):
                 a, b = spec(300, w=w6, m=m6, l=l6), spec(300, w=9, m=280, l=3)
-                mine = rule.decisions(p3.book_counts(*tables(b, a)[1:], "tb", ALL), p3.book_counts(*tables(b, a)[1:], "main", ALL))
+                c6g = p3.book_counts(*tables(b, a)[1:], "tb", ALL)
+                mine = rule.decisions(c6g, p3.book_counts(*tables(b, a)[1:], "main", ALL), (c6g["w"], c6g["ns"]))
                 ref = p3.measure2(p3.book_counts(*tables(b, a)[1:], "tb", ALL), p3.book_counts(*tables(b, a)[1:], "main", ALL))
                 agree = agree and mine["met"] == ref["met"] and mine["level"]["met"] == ref["level"]["met"] \
                     and mine["matched"]["met"] == ref["matched"]["met"]
     check("decisions: the same results as part3_rule.measure2 on a grid of counts", agree)
+
+
+def run_tables(meta, B, S, items="pass"):
+    return rule.evaluate(meta, B, S, good_rows(), [], good_rows(), [], dict(n=0, median=None, max=None), items, GOOD_JOBS,
+                         start=START, end=END, now=NOW0)
+
+
+def test_cap_on_the_five():
+    # 340 bids: bid i is on ALL[i % 17], so 100 of the scored bids are on the five coins and 240 on the twelve
+    def d(sixth, fifth=None):
+        return run(fifth=fifth or spec(340, w=0), sixth=sixth)["part4"]["decisions"]
+    x = d(spec(340, w=5, fw=5))
+    check("cap on the five: exactly 5 of 100 is met", x["wrong_side_cap"]["met"] and x["wrong_side_cap"]["sixth"] == "5/100"
+          and x["wrong_side_cap"]["sixth_share"] == 0.05 and x["met"], x["wrong_side_cap"])
+    x = d(spec(340, w=6, fw=6))
+    check("cap on the five: one more wrong bid (6 of 100) is not met, the other clauses still are",
+          not x["wrong_side_cap"]["met"] and x["wrong_side_vs_fifth"]["met"] and x["matched"]["met"] and x["level"]["met"]
+          and not x["met"], x["wrong_side_cap"])
+    x = d(spec(340, w=6, fw=0))
+    check("cap on the five: wrong bids on the twelve do not count against it (0 of 100)",
+          x["wrong_side_cap"]["met"] and x["wrong_side_cap"]["sixth"] == "0/100" and x["met"])
+    check("cap on the five: the coins are named in the clause", x["wrong_side_cap"]["coins"] == TRADES
+          and "ETH, LTC, SOL, XRP, ZEC" in x["wrong_side_cap"]["rule"])
+    # a zero denominator on the five: no scored bid of the sixth book on the five coins
+    meta, B, S = tables(spec(340), spec(340, w=6, fw=0))
+    z = (B["book"] == "tb") & B["coin"].isin(TRADES)
+    B.loc[z, "res_score"] = float("nan")
+    B.loc[z, "res_other_side"] = False
+    ns_all = int(((B["book"] == "tb") & B["res_score"].notna()).sum())
+    over = {("tb", "m2_score_error", "n"): ns_all, ("tb", "five", "n"): 0, ("tb", "five", "n_other_side"): 0}
+    S = pd.DataFrame(side("main", spec(340), {}) + side("tb", spec(340, w=6, fw=0), over)
+                     + five_side("main", rows_for("main", spec(340)), {}) + five_side("tb", [], {("tb", "five", "n"): 0, ("tb", "five", "n_other_side"): 0}))
+    res = run_tables(meta, B, S)
+    dd = res["part4"]["decisions"]
+    check("cap on the five: a zero denominator on the five is not met (the sixth still has scored bids on the twelve)",
+          ns_all > 0 and dd["wrong_side_cap"]["sixth"] == "0/0" and dd["wrong_side_cap"]["sixth_share"] is None
+          and not dd["wrong_side_cap"]["met"] and not dd["met"] and res["verdict"] == "fail", (ns_all, dd["wrong_side_cap"]))
+    # all 17 coins above 5%, the five under: clause 1 met, and the report says the first version's cap would not be met
+    res = run(fifth=spec(300, w=20), sixth=spec(300, w=20, fw=0))
+    dd = res["part4"]["decisions"]
+    md = rule.to_md(res)
+    check("cap on the five: 20 of 300 on all 17 (6.67%) with 0 of 90 on the five and every other clause met gives clause 1 met",
+          dd["met"] and dd["wrong_side_cap"]["met"] and dd["wrong_side_vs_fifth"]["met"] and res["verdict"] == "pass", dd)
+    check("reported: the first version's cap would not be met (json and md)",
+          dd["reported"]["first_version_cap"]["would_be_met"] is False and dd["reported"]["first_version_cap"]["sixth"] == "20/300"
+          and "the first version's cap (reported only): would not be met" in md, dd["reported"])
+    res2 = run(fifth=spec(300, w=9), sixth=spec(300, w=15, fw=0))
+    check("reported: the first version's cap would be met at exactly 5% on all 17 (json and md)",
+          res2["part4"]["decisions"]["reported"]["first_version_cap"]["would_be_met"] is True
+          and "the first version's cap (reported only): would be met" in rule.to_md(res2))
+    # the reported shares on the twelve and the five, fifth and sixth, and that the md and the json agree
+    res = run(fifth=spec(340, w=8, fw=2), sixth=spec(340, w=12, fw=4))
+    dd = res["part4"]["decisions"]
+    rp = json.loads(json.dumps(rule.public(res)))["part4"]["decisions"]["reported"]
+    md = rule.to_md(res)
+    check("reported: five (fifth 2/100, sixth 4/100) and twelve (fifth 6/240, sixth 8/240) in the json",
+          rp["groups"]["five"]["fifth"] == "2/100" and rp["groups"]["five"]["sixth"] == "4/100"
+          and rp["groups"]["twelve"]["fifth"] == "6/240" and rp["groups"]["twelve"]["sixth"] == "8/240"
+          and rp["groups"]["five"]["sixth_share"] == 0.04 and rp["decides"] == "nothing", rp)
+    check("md and json agree on the new clause",
+          "| wrong side, cap | 4/100 = 4.000% | - | sixth share on ETH, LTC, SOL, XRP, ZEC <= 5% | met |" in md
+          and dd["wrong_side_cap"]["sixth"] == "4/100" and dd["wrong_side_cap"]["met"])
+    check("md and json agree on the reported lines",
+          "fifth book 2/100 = 2.000%, sixth book 4/100 = 4.000%" in md and "fifth book 6/240 = 2.500%, sixth book 8/240 = 3.333%" in md
+          and "All 17 coins, wrong side 12/340 = 3.529% of scored bids in the sixth book" in md
+          and rp["first_version_cap"]["sixth"] == "12/340" and rp["first_version_cap"]["would_be_met"] is True, md)
+    check("reported: the reported lines decide nothing (a failing five with a passing all-17 report still fails the clause)",
+          not run(fifth=spec(340, w=0), sixth=spec(340, w=6, fw=6))["part4"]["decisions"]["met"])
+    check("counts and groups are in the result", res["counts"]["sixth_five"] == dict(w=4, ns=100) and res["five"] == TRADES
+          and res["twelve"] == sorted(CANDLE))
+    # guards of the new clause
+    meta, B, S = tables(spec(), spec(), groups={"all": ALL, "trades list": TRADES[:4] + ["BCH"], "candle path": ["ZEC"] + [c for c in CANDLE if c != "BCH"]})
+    check("the group trades list not being the five is an error and no verdict",
+          raises(lambda: run_tables(meta, B, S), "not exactly ETH, LTC, SOL, XRP, ZEC"))
+    meta, B, S = tables(spec(), spec())
+    check("the group trades list with six coins is an error", raises(lambda: rule.p3b.five_coins(dict(meta, groups=dict(meta["groups"], **{"trades list": TRADES + ["BCH"]}))), "not exactly"))
+    meta, B, S = tables(spec(), spec(w=6, fw=3), over={("tb", "five", "n"): 91})
+    check("side_by_side.csv: n on the five differing from item7_bids.csv is an error", raises(lambda: run_tables(meta, B, S), "scored bids on the five coins"))
+    meta, B, S = tables(spec(), spec(w=6, fw=3), over={("tb", "five", "n_other_side"): 2})
+    check("side_by_side.csv: n_other_side on the five differing from item7_bids.csv is an error", raises(lambda: run_tables(meta, B, S), "wrong-side bids on the five coins"))
+    meta, B, S = tables(spec(), spec(), drop_five=True)
+    check("side_by_side.csv without the trades list rows is an error", raises(lambda: run_tables(meta, B, S), "expected one row"))
+    meta, B, S = tables(spec(), spec())
+    S = S[~((S["group"] == "trades list") & (S["statistic"] == "n_other_side") & (S["book"] == "tb"))]
+    check("side_by_side.csv missing just the n_other_side row of the five is an error", raises(lambda: run_tables(meta, B, S), "expected one row"))
+    # the fifth book's rows in the trades list group are not needed (only the sixth is cross-checked)
+    meta, B, S = tables(spec(), spec())
+    S = S[~((S["group"] == "trades list") & (S["book"] == "main"))]
+    check("only the sixth book's trades list rows are required", run_tables(meta, B, S)["verdict"] == "pass")
 
 
 def test_part3_clauses():
@@ -677,7 +791,7 @@ def test_jobs_in_paper_status_are_the_same_numbers():
 
 
 def main():
-    for t in (test_baseline_and_labels, test_decisions, test_part3_clauses, test_chance_branch_texts, test_job_selection, test_requests_and_stops,
+    for t in (test_baseline_and_labels, test_decisions, test_cap_on_the_five, test_part3_clauses, test_chance_branch_texts, test_job_selection, test_requests_and_stops,
               test_verdict_and_period, test_cli_and_shared_numbers, test_jobs_in_paper_status_are_the_same_numbers):
         t()
     if FAILS:
