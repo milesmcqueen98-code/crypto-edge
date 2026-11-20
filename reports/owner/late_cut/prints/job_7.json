@@ -1,0 +1,14 @@
+{
+ "shard": 7,
+ "windows": 2135,
+ "status": {
+  "complete": 2135
+ },
+ "derived_rows": 2826,
+ "candidates": 2826,
+ "prints": 1167215,
+ "requests": 24829,
+ "answers_429": 860,
+ "refused": null,
+ "seconds": 4787
+}
