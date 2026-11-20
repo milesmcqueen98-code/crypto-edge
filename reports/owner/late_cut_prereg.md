@@ -240,3 +240,17 @@ owner/charter; the work runs from branch owner/late-cut (cut from owner/late-btc
   - **The candidate table is read with exact float parsing** (pandas float_precision round_trip); the default
     parser is off by one unit in the last place for some values, which would break the check that the replay's
     candidates and levels equal the exported table.
+- **Nov 19 2026, 21:25 ET (agent): the replay stops here.**
+  - **Part A, main (run 44659388510):** gate passed, exactness passed (20,000 values at 800 candidates: sel bars 0,
+    5, 10 and chk bar 0, 200 each; largest relative difference 2.8e-12), placebo read, scenarios priced. Outputs in
+    reports/owner/late_cut/runs/main_partA.
+  - **Part A, 2022-23 (run 44659391550): the gate failed** and the job stopped before any scenario other than S0
+    (outputs: reports/owner/late_cut/runs/early_partA, S0 only). The same 744 trades, predictions within 8.5e-14,
+    0 armed-state differences in the every-minute panel, Sharpe 1.913 and 11.14% a year, largest daily difference
+    from R2-08's cell 1.6e-15; trades_identical false, which (given equal predictions and trade counts) points to
+    trade prices unequal in the last bit (only PEPE has a spot tick, so other coins' prices are raw exp(...) levels).
+    The same code passed the gate on 2022-23 in the export run 44647845456. The gate file does not record which test
+    failed.
+  - **A rerun of the 2022-23 part A job was attempted and denied by a permission check.** Nothing of it ran. As the
+    brief says, the replay stops: no 2022-23 scenario, no naming of the late bar, no part B, no write-up. The late
+    bar is not named in this log, so part B stays locked.
