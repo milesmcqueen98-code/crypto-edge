@@ -1428,3 +1428,34 @@ FORWARD_TESTS.md.
   - **Period:** 2026-11-16 19:00 to 2026-11-19 18:59 UTC, 4,320 minutes.
   - **New bids on the 17 coins, from the logs alone,** on the 4,168 minutes both books decided: fifth book 696,
     fourth book 695. No extension. Written into the plan's deviation log before any research is fetched.
+- **19:14. The fifth book's read: fail on one clause of measure 2. No release 5.**
+  - **The clause:** bids the research would not have placed are capped at 5%; the fifth book has 49 of 696
+    (7.04%). Everything else is met: measure 1 (the build's data step 1.49 s earlier than release 3's over 14
+    pairs; 8.61 s against the main book's 11.05 s), the rest of measure 2 (against the fourth book 49 against 46;
+    matched 641 of 688 against 645 of 692; level 2 of 696), measure 3 (items 1 to 5) and measure 4 (1 failed
+    request of 72,792; 70 requests inside a step of 76,518 coin-minutes).
+  - **The build is not worse than its control.** The fourth book has 46 of 695 (6.62%) and misses the cap too;
+    its 46 are all among the fifth's 49. The main book, on release 3's inputs, has 47 of 677 over the same
+    period (run after the verdict).
+  - **One read, rule as written:** fail. By the plan: no release, the cause first, then a corrected build and a
+    new three days.
+  - **The standstill window of Nov 17:** the fourth book's 8 bids there were all bids the research placed, on
+    the level. The veto rule of Nov 18 is not triggered; the fallback stays.
+  - **After the verdict, exploratory.** The books agree with one another to 0.1 point at the bids in question
+    and differ from the research by a median 11.6 points, with the bid level on the tick. The share is 8% to 9%
+    on the twelve and under 2% on the five, in every book. The unchanged fourth book had 4.1% on the twelve in
+    Part 2. A first guess (coarse ticks) was checked and dropped.
+  - **Leading cause, known since Nov 10:** for the twelve the venue's final candle runs into the next minute
+    after a quiet minute (8% to 41% of boundaries, 7 to 11 s). The research decides on that candle; a bar cut at
+    the minute cannot equal it. The row "What the candle's late cut gives the research on thin coins" has been
+    waiting in FORWARD_TESTS.md since then.
+  - **My error in the rule:** the 5% cap was written on Part 2's level and left no room for this gap moving
+    with a quiet market and with more bids on the twelve (77% of bids now, 61% then). The verdict stands.
+  - **Next, fixed in the plan before it is run:** Part 1's tool on Part 3's period. If the fourth book's inputs
+    emulated on the collector's record give the book's own scores at the bids in question (80% or more within
+    0.5 point), the cause is the cut of the newest row.
+  - **Then:** the corrected build is the tested build with the standstill fallback (815ea390), on a new three
+    days and a rule fixed first. And the replay that prices the late cut for the research moves to the top of
+    the list: if the research on the twelve leans on those seconds, the live return on them is lower than the
+    research's.
+  - **Tables:** reports/owner/reconcile_tb/part3/ (README.md is the record).

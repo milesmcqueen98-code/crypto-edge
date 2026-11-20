@@ -313,6 +313,112 @@ The run finished at 08:58 UTC on Nov 15 (job 43689717933, branch owner/read-c2).
   - on measure 2 or 3: no release; the cause is found first, and a corrected build starts a new three days;
   - on measure 4 alone: the same, since requests inside the step are what the build exists to avoid.
 
+## Result of Part 3 (read Nov 19 2026, 19:14 ET)
+Run as fixed: the bid count from the two logs first (deviation log, Nov 19), then the research on a runner, the
+status report on the logs cut at the period's end, the two books against the research, and the rule script. One
+read, rule as written. The record is reports/owner/reconcile_tb/part3/README.md.
+
+- **Part 3: fail, on one clause of measure 2. No release 5.** The cap on bids the research would not have placed
+  is not met: 49 of 696 (7.04%) against 5%. Every other clause of measure 2 and measures 1, 3 and 4 are met.
+- **Period:** 2026-11-16 19:00 to 2026-11-19 18:59 UTC, 4,320 minutes; both books decided in 4,168 of them. New
+  bids on the 17 coins in those minutes: fifth book 696, fourth book 695.
+- **Research:** runner job 44637871745 on branch owner/read-part3, 1,224 answers, nothing refused or dropped,
+  fetched about four and a half hours after the last minute.
+- **The rule** (scripts/owner/bar_source/part3_rule.py; part3_rule.md is its own output):
+
+  | Measure | Value | Rule | Result |
+  |---|---|---|---|
+  | 1 (a) Same-machine pairs, build minus release 3 | median -1.485 s over 14 pairs | at or below zero, at least 8 pairs | met |
+  | 1 (b) Fifth book against main book, same half hours | 8.61 s against 11.05 s, 140 half hours | fifth no higher | met |
+  | 2 Bids the research would not have placed, against the fourth book | 49 of 696 (7.04%) against 46 of 695 (6.62%) | at most the fourth's share plus 2.0 points | met |
+  | 2 The same, cap | 49 of 696 (7.04%) | at most 5% | **not met** |
+  | 2 Research's new bids with a bot bid within a minute | 641 of 688 (93.17%) against 645 of 692 (93.21%) | at least the fourth's share minus 3.0 points | met |
+  | 2 Bids more than 5 bp from the research level | 2 of 696 (0.29%) | under 5% | met |
+  | 3 Items 1 to 5, fifth book | 72,965 of 73,044 trades bars verified (99.89%); no refusal, no rate-limit stop; half-hour maximum 20 s or less in 99.3% of 142 heartbeats; no error event; no unconfirmed row | all five | met |
+  | 4 Failed candle requests between steps | 1 of 72,792 (0.001%) | at most 1% | met |
+  | 4 Candle requests inside a step | 70 of 76,518 coin-minutes (0.09%) | at most 2% | met |
+
+- **What the fail is.**
+  - **The build is not worse than its control.** The fourth book's 46 wrong-side bids are all among the fifth
+    book's 49; 686 of the bids are the same bid in both books. The clause that compares the two is met with
+    room.
+  - **The cap is an absolute bound, and the control misses it as well.** So does the main book, on release 3's
+    inputs: 47 of 677 (6.94%) over the same period (run after the verdict; it decides nothing).
+  - **By the rule as written it is a fail.** The plan's branch for measure 2: no release; the cause is found
+    first, and a corrected build starts a new three days.
+- **Reported, not part of the rule.**
+  - **The twelve and the five apart** (fifth book, then fourth):
+    - bids the research would not have placed: the twelve 46 of 530 (8.68%) and 43 of 534 (8.05%); the five
+      (ETH, SOL, XRP, LTC, ZEC) 3 of 166 (1.81%) and 3 of 161 (1.86%);
+    - research bids matched: the twelve 481 of 525 (91.62%) and 487 of 531 (91.71%); the five 160 of 163
+      (98.16%) and 158 of 161 (98.14%);
+    - level more than 5 bp off: one bid on the twelve and one on the five in each book.
+  - **Fills and P&L.** Both books had the same two first-bid fills (NEAR at 15:44 UTC on Nov 18, BCH at 01:34 on
+    Nov 19), and the research had both. The research had a third, PEPE at 15:51 on Nov 19, that neither book
+    had. Exit P&L -$81.73 (fifth) and -$81.63 (fourth) on $23,095 and $23,076 bought.
+  - **Trades rows at a decision,** as far as the counters show it: 3,545 times a row three to six minutes old
+    was still built from trades, of about 306,000 such rows looked at (1.2%).
+  - **The standstill window of Nov 17** (21:19 to 21:57 UTC). The research placed 8 new bids. The fourth book
+    placed the same 8: none on the wrong side, none off the level, seven of the eight scores within 0.1 point.
+    The fifth book placed none (38 stopped minutes). **The veto rule of Nov 18 is not triggered** (0 of 8 wrong;
+    five were needed), so the fallback to candles inside the step stays in the corrected build.
+  - **The pairs.** 14 count. The build's data step ended earlier in every one, by 1.03 to 2.80 s. Four pairs
+    ran release 3 first (differences -1.07, -2.44, -2.56, -1.14 s) and ten the build first.
+
+## After Part 3: the cause (written Nov 19 2026, 19:14 ET, before the check below was run)
+- **Looked at after the verdict.** All of it is exploratory and changes nothing above.
+  - **The books agree with one another; the difference is against the research.** At the 64 bids that the main
+    and the fourth book share and whose score is more than 2 points from the research, the two books logged the
+    same score within 0.1 point in all 64. Their newest rows come by different ways (a candle as first seen, a
+    trades bar), so what they share is what a bot can see at the minute, not a fault of one way.
+  - **The differences are large and the level is right.** At a wrong-side bid the book's score is a median 11.6
+    points from the research's; the bid level is on the same tick. The level is anchored on the coin's close an
+    hour back and on BTC (edge/wick.py), so a different newest close of the coin moves the score and not the
+    level.
+  - **It is not new and it is not the build's.** The fourth book has run one commit since Nov 11. On the twelve
+    it had 18 wrong-side bids of 435 in Part 2 (4.1%) and has 43 of 534 now (8.1%). A score more than 2 points
+    from the research: 8.7% of its bids on the twelve then, 12.4% now; on the five 0.4% then, 1.8% now.
+  - **Mostly a minute apart.** At 29 of the fourth book's 46 wrong-side bids the research has a new bid of its
+    own on that coin within a minute.
+  - **A first guess was checked and dropped:** that coarse price ticks make these coins' scores jump. The share
+    of large differences by coin does not follow tick size (rank correlation 0.07 to 0.15 over the 17 coins).
+- **The leading explanation is on record since Nov 10** (candle clock study, candle_clock_prereg.md, "Result").
+  - For the twelve coins the venue's final candle of a quiet minute holds trades from the first seconds of the
+    next minute: in 8% to 41% of boundaries, by a median of 7 to 11 s. The research decides on that candle. A bar
+    cut at the minute cannot equal it, whichever way the bot gets it.
+  - For BTC and the five the candle is cut at the minute or nearly so, and there the books agree with the
+    research (wrong side under 2% in both parts).
+  - This is the gap left open on Nov 10 and the row "What the candle's late cut gives the research on thin
+    coins" in FORWARD_TESTS.md.
+- **The cap was badly set, and that was my error.** I wrote 5% on Part 2's level for all 17 coins (2.7% to
+  3.4%). The gap moves with how quiet the market is and with the share of bids that fall on the twelve (61% of
+  the fourth book's bids in Part 2, 77% now), and the cap left no room for either. The verdict stands as read.
+- **The check, fixed now, before it is run.** It decides nothing about Part 3.
+  - **Run:** Part 1's tool on Part 3's period (scripts/owner/bar_source/build.py on a runner: the collector's
+    record and the venue's final candles). Its pass C18 is the fourth book's inputs emulated: row t-1 from the
+    collector's trades bar, cut at the minute, every older row the final candle. Pass A is the main book's.
+  - **(i) The emulation stands for the book** if pass C18's score is within 0.5 points of the fourth book's
+    logged score at 90% or more of its new bids in the period. This is Part 1's own bar.
+  - **(ii) The explanation is confirmed** if, at the fourth book's bids whose logged score is more than 2 points
+    from the research, pass C18 is within 0.5 points of the book's score at 80% or more. C18 differs from the
+    research in one thing only, the cut of row t-1, so the difference then comes from that row, the coin's own
+    or another coin's. Under 50%: not explained by the newest row, and every input at those bids is compared
+    next. In between: explained in part, and reported as that.
+  - **Reported with it:** the same for the main book against pass A; C18's disagreement on arming and its share
+    of scores more than 1.0 point off for this period next to Part 1's (0.30% and 1.95%); the twelve and the
+    five apart.
+- **What follows if it is confirmed.**
+  - The gap is common to every input path, the live bot's included. No input build removes it, and it is not
+    the fifth book's fault.
+  - **The corrected build** is the tested build plus the fallback for a trades list that stands still, the one
+    weakness this test did find: commit 815ea390 on branch owner/standstill (it also carries the balance look;
+    full offline suite passed on a runner, job 44533821743). It starts a new three days, as the fail branch
+    asks, on a rule written into this plan before its first run.
+  - **What the late cut gives the research on the twelve** moves to the top of the research list. If the
+    research's result on those coins leans on seeing a few seconds into the minute it bids in, the live bot's
+    return on them is lower than the research's, and no input fix will show it. Its plan is written before any
+    trade print is fetched.
+
 ## Deviation log
 - **Nov 11 2026, 09:17 ET (orchestrator).** Made after the tool's development run and before any minute of either
   registered window was read for this plan.
