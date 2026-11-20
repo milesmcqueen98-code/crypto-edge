@@ -221,3 +221,4 @@ owner/charter; the work runs from branch owner/late-cut (cut from owner/late-btc
   - **A refused shard** writes and commits what it derived before the refusal, with the refusal in its job file, and
     exits normally, so the record reaches the branch. Its unfinished windows are status not_run.
   - *Correction (19:48 ET):* the entry above was written at 19:47 ET by the shell clock, not 19:51 as stamped.
+  - *Correction (19:48 ET):* the correction line above was also written at 19:47 ET, not 19:48.
