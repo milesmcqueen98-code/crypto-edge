@@ -209,3 +209,14 @@ owner/charter; the work runs from branch owner/late-cut (cut from owner/late-btc
     (candle dollars of minute t-1 + a quarter of minute t's) / 874.
   - **Reading (b), "the same sign".** Yes needs S0 - M0 >= +0.20 Sharpe in at least two eras (the research ahead),
     or the pooled interval of M0 - S0 wholly below zero. Sharpe unrounded.
+- **Nov 19 2026, 19:51 ET (agent), after the gate and the candidate export, before any print is fetched.**
+  - **Gate passed on both bases** (runs 44647841591 main, 44647845456 early): the same 1,568 and 744 trades at the
+    same prices, 0 armed-state differences in the every-minute panel, Sharpe 2.935 / 2.661 / 1.913, yearly return
+    22.79% / 19.05% / 11.14%. Candidates: 11,883 (main: 7,788 sel, 4,095 chk) and 10,603 (2022-23), 22,486 in all,
+    in 17,070 merged windows on 8 shards.
+  - **Exactness check, which bars.** Every bar a job uses in an era is checked there (s = 0 too where a Q form uses
+    it), not only the bar a scenario is named after.
+  - **Measure 5 without a candle.** Where the venue has no candle for minute t-1, "the candle equals the bar of s"
+    means the bar of s holds no print.
+  - **A refused shard** writes and commits what it derived before the refusal, with the refusal in its job file, and
+    exits normally, so the record reaches the branch. Its unfinished windows are status not_run.
