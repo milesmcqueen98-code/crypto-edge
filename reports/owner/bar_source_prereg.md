@@ -419,6 +419,95 @@ read, rule as written. The record is reports/owner/reconcile_tb/part3/README.md.
     return on them is lower than the research's, and no input fix will show it. Its plan is written before any
     trade print is fetched.
 
+## Result of the cause check (read Nov 19 2026, 20:22 ET)
+Run as fixed in the section above: runner job 44644238137 on branch owner/read-part3 (4,320 decision minutes, 30,240
+engine steps, 1,224 candle answers, nothing refused), then scripts/owner/bar_source/book_check.py. The record is
+reports/owner/bar_source_p3/README.md.
+
+- **(i) The emulation stands for the book:** pass C18 is within 0.5 point of the fourth book's logged score at 671
+  of its 709 new bids (94.6%; 90% needed).
+- **(ii) Confirmed:** of the 70 bids whose logged score is more than 2 points from the research, pass C18 gives the
+  book's score at 67 (95.7%; 80% needed). The other three are minutes in which the collector's trades bar was empty.
+  All 46 wrong-side bids are on the book's side in the emulation.
+- **Reported with it.**
+  - The fifth book against the same pass: 665 of 702 within (94.7%); 66 of its 71 far bids (93.0%); 47 of its 49
+    wrong-side bids on the book's side.
+  - The twelve and the five apart, fourth book: (i) 519 of 542 and 152 of 167; (ii) 64 of 67 and 3 of 3.
+  - On every minute, pass C18 against the research, this period and Part 1's: disagreement on arming 275 of 60,757
+    (0.45%) against 0.30%; scores more than 1.0 point off 1,390 of 73,437 (1.89%) against 1.95%; levels more than
+    5 bp off 2.01% against 0.99%.
+  - **The main book against pass A cannot be read.** In that pass BTC keeps its trades rows and a minute without
+    trades has no row; in the 38 minutes of Nov 17 in which the trades list stood still that leaves BTC flat for
+    good, where the real book took candles. The main book's bids are within 0.5 point of pass A at 80 of 92 before
+    the standstill and at 328 of 546 after it. Nothing is concluded from it.
+- **What is established.** Put a trades bar cut at the minute in place of the newest row, leave everything else as
+  the research has it, and the book's score comes out at the bids where book and research disagree. The cause of
+  the wrong-side bids is the cut of the newest row. It is common to every book, and no input build controls it.
+- **What is not established here:** why the bar cut at the minute differs from the venue's final candle. The Nov 10
+  study says the final candle of the twelve runs into the next minute, and the split agrees (67 of the 70 far bids
+  are on the twelve). The late-cut replay (late_cut_prereg.md) sets prints against candles at the minutes that
+  matter, and prices the difference.
+- **On every minute nothing got worse.** The share of scores off is what it was in Part 1's period. The share at
+  new bids doubled because a new bid is placed where the score crosses the line.
+
+## Part 3, second run: the corrected build (plan fixed Nov 19 2026, 20:22 ET, before the book has run the new commit)
+- **Why.** The first run failed on measure 2, and the branch for that is: the cause first, then a corrected build
+  and a new three days. The cause is found (above).
+- **The corrected build** is commit 815ea3900e9e74c59a451ea0c2365e49fa631cd2 on branch owner/standstill: the build of the first run plus two things.
+  - *The fallback for a trades list that stands still* (`standstill_candles`): when BTC's trades answer is verified
+    and holds no trade in the closed minute, the step asks for BTC's candle; if that has a traded row the list is
+    behind, and every coin's newest row is taken from a candle asked inside the step, as release 3 does. This is
+    the weakness the first run found; the window of Nov 17 did not veto it.
+  - *The balance look* for the live bot (two looks before a balance warning). A paper book places no real order,
+    so it does nothing here.
+  - The full offline suite passed on this commit on a runner (job 44533821743; 24 file runs, no failure).
+- **The book.** The fifth book (`paper_spot_r5`) goes on with its paper money, state and log. Only the commit its
+  workflow pins changes, and with it the file it runs: that commit's own bot/spot/config.json, the first run's
+  settings plus `standstill_candles`. The change takes effect at the book's next hand-over. Controls, unchanged:
+  the fourth book (58eba8b) and the main book.
+- **Period.** From the first half-hour mark after the first decision minute of the first run on the new commit
+  (named in the deviation log from paper_spot_r5/CODE once it has started), 4,320 minutes. Extended as in the
+  first run: by six hours, at most three times, while the fifth or the fourth book has fewer than 300 new bids on
+  the 17 coins on the minutes both decided.
+- **Measures. All four must hold.**
+  1. **The step,** as in the first run after its revision of Nov 16: (a) same-machine pairs on the new commit (the
+     pair file names the commit it ran), the median of the build's data step minus release 3's at or below zero
+     over at least 8 pairs; (b) over the half hours in which both the fifth and the main book have a heartbeat,
+     the fifth book's median no higher than the main book's.
+  2. **Decisions against the research** (Part 2's tools):
+     - against the fourth book, all 17 coins, the minutes both decided: the fifth book's wrong-side share at most
+       the fourth's plus 2.0 points; its matched share at least the fourth's minus 3.0 points; its bids more than
+       5 bp from the research level under 5%. As in the first run.
+     - **against the main book,** all 17 coins, the minutes the fifth and the main book both decided: the fifth
+       book's wrong-side share at most the main book's plus 2.0 points. New.
+     - **the cap, restated:** on the five coins whose candles are cut at the minute (ETH, SOL, XRP, LTC, ZEC), the
+       fifth book's wrong-side share at most 5% (the minutes it shares with the fourth book).
+  3. **Items 1 to 5** for the fifth book with all 18 coins listed, on its log from the first event of the first
+     run on the new commit to the period's end; item 3's median is measure 1.
+  4. **The candle requests between steps,** as in the first run: failed requests at most 1% of requests made;
+     requests inside a step at most 2% of coin-minutes, the first step after each start left out. A step in which
+     the fallback acts asks for candles inside the step by design; those requests count like any other.
+- **What changed in the rule against the first run, and why.** Said plainly, because a rule changed after a fail is
+  weaker evidence than a rule that held.
+  - The first run capped the wrong-side share at 5% on all 17 coins. It failed at 7.0% with the control at 6.6%
+    and the main book at 6.9%, on a gap no build controls. A cap is there to catch a fault the controls share. It
+    is now set where the research can be matched: on the five, where the fifth book had 1.8% in the first run and
+    the fourth 0.4% in Part 2.
+  - A second control on a different input path is added: the main book reads the twelve from candles. A fault of
+    the trades path shared by the fourth and fifth books would pass the first comparison and not this one.
+  - What limits the weakness: the rule is fixed before the new commit has run a minute; both controls must be
+    passed; and the first run's clause is still computed and reported next to the result (the all-17 share against
+    5%), deciding nothing.
+- **Reported, not part of the rule:** the all-17 wrong-side share against the first run's 5%; the twelve and the
+  five apart; bids, fills and P&L side by side; the steps in which the fallback acted (`tb_frozen`) and what the
+  book did in them; the pairs' order split.
+- **One read.** Interim looks may stop the test for a fault (a crash, a refusal, a rate-limit stop, an error
+  event). They cannot pass it and change no rule.
+- **A pass** makes this commit's configuration release 5 for the main book, W2 and the live bot, with a release
+  note that says what the fallback and the balance look do. **A fail:** the first run's branches.
+- **The rule as code** (a second rule script next to part3_rule.py, which stays as the first run's record) is on
+  `main` before the read.
+
 ## Deviation log
 - **Nov 11 2026, 09:17 ET (orchestrator).** Made after the tool's development run and before any minute of either
   registered window was read for this plan.

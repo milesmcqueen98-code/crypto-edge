@@ -1475,3 +1475,27 @@ FORWARD_TESTS.md.
     minute? And would a bar the bot keeps open for 5 or 10 s, which it can have by the time its bids rest, bring
     the decisions back? The five coins with clean candles are the placebo. It uses the late-BTC replay's harness
     and the timing study's print tools, on branch owner/late-cut. An Opus agent runs it.
+- **20:22. The cause check: confirmed. The corrected build gets its three days, on a rule fixed now.**
+  - **The check** (runner job 44644238137, ended 01:18 UTC on Nov 20). With the newest row replaced by a trades
+    bar cut at the minute and nothing else changed, the emulation is within 0.5 point of the fourth book's logged
+    score at 671 of 709 bids (94.6%; 90% needed). Of the 70 bids more than 2 points from the research it gives
+    the book's score at 67 (95.7%; 80% needed). All 46 wrong-side bids are on the book's side in the emulation.
+    The fifth book: 665 of 702, 66 of 71, 47 of 49.
+  - **So the cause is the cut of the newest row.** It is common to every book and no input build controls it.
+    On every minute nothing got worse against Part 1's period (scores more than 1.0 point off: 1.89% against
+    1.95%). The share at new bids doubled because a bid is placed where the score crosses the line.
+  - **Not established by this check:** why the bar cut at the minute differs from the final candle. The Nov 10
+    study and the split (67 of 70 on the twelve) say the candle's late cut; the replay's print table will show
+    it directly.
+  - **One part cannot be read:** the main book against its own emulation. The tool's pass with kept trades rows
+    leaves BTC flat through the 38 standstill minutes of Nov 17, which the real book filled from candles (80 of
+    92 bids within before the standstill, 328 of 546 after). Nothing is concluded from it.
+  - **Part 3's second run is in the plan** (bar_source_prereg.md), fixed before the new commit has run. The fifth
+    book goes on with commit 815ea390: the first run's build plus the fallback for a trades list that stands
+    still, and the balance look. Three days from its first half-hour mark on that commit.
+  - **The rule changes in one place, and I say so:** the 5% cap on all 17 coins becomes a 5% cap on the five
+    coins whose candles are cut at the minute, and the main book is added as a second control (wrong-side share
+    at most its share plus 2.0 points). A rule changed after a fail is weaker evidence than one that held. The
+    all-17 figure is still reported against 5%.
+  - **Next:** the fifth book's workflow pins the new commit from its next hand-over (about 05:10 UTC). The second
+    rule script goes to `main` before the read.
