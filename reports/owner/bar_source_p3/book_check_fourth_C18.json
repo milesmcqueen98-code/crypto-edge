@@ -1,0 +1,121 @@
+{
+ "book": "fourth",
+ "pass_": "C18",
+ "period_start": "2026-11-16 19:00:00",
+ "period_end": "2026-11-19 18:59:00",
+ "within": 0.5,
+ "research_gap": 2.0,
+ "threshold": 30.394930635804318,
+ "set_apart": {
+  "no_row": 0,
+  "left_out": 0,
+  "outside_period": 1067,
+  "not_traded": 0
+ },
+ "groups": {
+  "all": {
+   "n": 709,
+   "emu_valid": 709,
+   "within": 671,
+   "share_i": [
+    671,
+    709
+   ],
+   "res_valid": 709,
+   "far": 70,
+   "near": 639,
+   "far_within": 67,
+   "far_res_within_not_book": 3,
+   "far_neither": 0,
+   "near_within": 604,
+   "near_not_within": 35,
+   "share_ii": [
+    67,
+    70
+   ],
+   "wrong_side_n": 46,
+   "wrong_side_emu_valid": 46,
+   "wrong_side_emu_research_side": 0,
+   "wrong_side_emu_book_side": 46,
+   "wrong_side_no_valid_emu": 0,
+   "far_by_src": {
+    "empty": 4,
+    "trades": 66
+   },
+   "far_by_answer_old": {
+    "NA": 70
+   },
+   "reading_i": "stands for the book",
+   "reading_ii": "confirmed"
+  },
+  "twelve": {
+   "n": 542,
+   "emu_valid": 542,
+   "within": 519,
+   "share_i": [
+    519,
+    542
+   ],
+   "res_valid": 542,
+   "far": 67,
+   "near": 475,
+   "far_within": 64,
+   "far_res_within_not_book": 3,
+   "far_neither": 0,
+   "near_within": 455,
+   "near_not_within": 20,
+   "share_ii": [
+    64,
+    67
+   ],
+   "wrong_side_n": 43,
+   "wrong_side_emu_valid": 43,
+   "wrong_side_emu_research_side": 0,
+   "wrong_side_emu_book_side": 43,
+   "wrong_side_no_valid_emu": 0,
+   "far_by_src": {
+    "empty": 4,
+    "trades": 63
+   },
+   "far_by_answer_old": {
+    "NA": 67
+   },
+   "reading_i": "stands for the book",
+   "reading_ii": "confirmed"
+  },
+  "five": {
+   "n": 167,
+   "emu_valid": 167,
+   "within": 152,
+   "share_i": [
+    152,
+    167
+   ],
+   "res_valid": 167,
+   "far": 3,
+   "near": 164,
+   "far_within": 3,
+   "far_res_within_not_book": 0,
+   "far_neither": 0,
+   "near_within": 149,
+   "near_not_within": 15,
+   "share_ii": [
+    3,
+    3
+   ],
+   "wrong_side_n": 3,
+   "wrong_side_emu_valid": 3,
+   "wrong_side_emu_research_side": 0,
+   "wrong_side_emu_book_side": 3,
+   "wrong_side_no_valid_emu": 0,
+   "far_by_src": {
+    "trades": 3
+   },
+   "far_by_answer_old": {
+    "NA": 3
+   },
+   "reading_i": "stands for the book",
+   "reading_ii": "confirmed"
+  }
+ }
+}
