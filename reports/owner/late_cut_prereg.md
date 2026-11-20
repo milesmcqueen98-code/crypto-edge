@@ -132,3 +132,80 @@ owner/charter; the work runs from branch owner/late-cut (cut from owner/late-btc
   - **A tie in (c)** goes to the shorter bar, then to the Q form.
   - **Part B is not computed early.** M5, M10, Q5 and Q10 for the check era and for 2022-23 are run only after the
     commit that names the late bar from the selection era is pushed. Until then those numbers do not exist.
+- **Nov 19 2026, 19:33 ET (agent), before any code of this replay is run and before any print is fetched.**
+  Readings of details the plan leaves open. Code: scripts/owner/late_cut/; outputs: reports/owner/late_cut/.
+  - **Harness.** scripts/owner/late_btc/replay.py's Research, gate, simulator configuration (S_0.5, $250K), eras and
+    summary measures, copied into scripts/owner/late_cut/replay.py (late_btc's files are not changed). R2-08's models
+    are fitted as there (core.walk_forward's code path, boosters kept).
+  - **Candidate minutes.** S0's candidates as the harness finds them: the level set's candidate minutes in the test
+    period (open above the posted level, low at or below the level minus one tick, row above 1500), all 17 coins.
+    The era of a candidate is the era whose dates hold its minute t.
+  - **What the scenario changes at a candidate (c, t).** Coin c's row t-1 gets the bar's close and volume. From it
+    the level, sigma, 7-day beta and the 23 features of coin c at t are rebuilt; the model scores them (mean of the
+    quarter's three boosters); the trade, if any, carries the scenario's level and sigma (the take-profit target and
+    the rungs follow sigma), as the late-BTC harness passes them. The every-minute armed panel takes the scenario's
+    prediction at these minutes and S0's everywhere else. Other coins' rows and decisions are S0's.
+  - **A candidate whose changed level is no longer touched.** The harness's fill rule is applied again with the
+    scenario's posted (tick-rounded) level against the true open and low. If it fails, the minute is not a candidate
+    in the scenario: no first bid fills there. Minutes that are not S0 candidates are never added (their rows are not
+    rebuilt). In measure 1 a scenario decision is "armed" only if the minute is still a candidate and the prediction
+    is above the quarter's threshold; S0's "armed" is the prediction above the threshold (core.simulate's keep, float64).
+    The counts of candidates no longer touched, and of arming by the prediction alone, are reported beside it.
+    Readings (a) and (c) count changed decisions with this "armed".
+  - **Score difference.** |scenario prediction - S0 prediction| in the model's own units (predicted net, bp), over all
+    candidates of the group.
+  - **The print cut.** A print's time is the venue's stamp (UTC, microseconds). Minute t-1 is [start of t-1, start of
+    t): start included, end excluded. The bar of second s (0 to 15) holds the prints with start of t-1 <= time <
+    start of t + s seconds. The window fetched is [start of t-1, start of t + 15 s), the fetcher keeping start <= time
+    < end. M0 is s = 0, M5 is s = 5, M10 is s = 10.
+  - **The close when prints share the last stamp.** Prints are de-duplicated by trade id and ordered by (time, trade
+    id); the close is the price of the last one (the highest trade id among those with the latest stamp).
+  - **Volume unit.** The candle's volume and a print's size are both in the coin's base units; the bar's volume is the
+    sum of sizes, compared with the candle's volume without conversion.
+  - **No print in the bar.** No row: the close is the research's close of minute t-1 as the bot would fill it, that is
+    the research's close of t-2 carried forward (NaN if that carry would pass the 30-minute fill limit), and the
+    volume is 0.
+  - **Q5, Q10.** "Minute t-1 holds five prints or fewer" = at most 5 prints in [start of t-1, start of t), zero
+    included; then the bar of s = 5 (Q5) or s = 10 (Q10), else the bar of s = 0.
+  - **A candidate whose window is not complete** (status other than complete: capped, history_start, failed,
+    not_run) keeps S0's row in every scenario. Their number is reported by coin and era.
+  - **Measure 1, "differs from the candle".** Close: the bar's close not equal to the candle's close of t-1 as the
+    research holds it (cf). Volume: |bar volume / candle volume - 1| > 1%, and any bar volume above 0 where the candle
+    volume is 0.
+  - **Measure 2.** Fills = first-bid fills (k = 4, filled) of the replay's minute bound, keyed (minute, coin): dropped =
+    S0 only, added = scenario only, kept = both. Net per dollar = blended print-priced P&L of the parent's tranches
+    (first bid and its rungs) over blended dollars filled, both bounds blended as fsim.lat_share; dropped priced in
+    S0's book, added in the scenario's, kept in both.
+  - **Measure 3** as the late-BTC replay: fsim.stats Sharpe and yearly return of the blended print-priced daily
+    series, first-bid fills of the minute bound, worst day.
+  - **Measure 4, bootstrap.** The late-BTC replay's: daily difference of the blended print-priced returns; stationary
+    bootstrap of the mean, mean block 7 days, 5,000 draws, numpy default_rng(11), 90% interval.
+  - **Measure 4, pooled.** The mean over all days of the eras pooled (each day weighted once). Each bootstrap draw
+    resamples each era's series on its own (stationary, mean block 7, eras in the order sel, chk, early from the one
+    default_rng(11) stream) and takes the mean of all drawn days; 5,000 draws; 90% interval. For (c) the same over
+    chk and early only.
+  - **Measure 5.** For each candidate of the twelve with at least one print in [start of t, start of t + 15 s): for
+    s = 0 to 15, whether the candle of t-1 equals the bar of s (close equal, volume within 1e-6 relative). Tabled by
+    the number of prints in minute t-1 (0, 1, 2-5, 6-20, over 20) and era: the share equal at each s, and the share
+    equal at no s.
+  - **Each scenario-era is built on its own.** A scenario changes only the candidates of one era and is priced in that
+    era only (so the selection-era build of M5, M10, Q5, Q10 holds no number of the other eras). S0 is one build per
+    base, as in the harness.
+  - **Exactness check.** For each era and each bar s = 0, 5, 10 that a job prices: 200 candidates drawn without
+    replacement (numpy default_rng(7)) among the era's candidates whose bar differs from the candle's row (close or
+    volume not equal). At each, late-BTC's bot_arrays (11 days, close filled forward with limit 30, volume 0 when
+    missing) with coin c's row t-1 replaced by the bar (volume 0 = no row, filled forward), and the unmodified
+    edge.wick.panel (wbeta 7 days, as late-BTC's check). Compared: level (before tick rounding), sigma and the 23
+    features of coin c at t. Fail as late-BTC: a NaN mismatch, or absolute difference above 1e-9 and relative above
+    1e-6. Q5 and Q10 take the same per-bar values (selection tested offline). A failure stops the job before any
+    scenario other than S0 is priced.
+  - **The fetcher and the venue.** scripts/owner/timing/prints_runner.py's strict_get and fetch are imported and used
+    unchanged (pacing 7 per second; HTTP 401, 403, 451 or a non-JSON reply raise at once; a 429 is retried by the
+    fetcher's own rule and 10 of them in a row raise; a raise stops the shard). Every 429 answer is also counted
+    (bookkeeping only, through the session, no change of behaviour) and reported. If any shard reports a refusal
+    or a 429, no further fetch is started.
+  - **Windows and shards.** One window per candidate, [start of t-1, start of t + 15 s), merged per product as
+    windows.py merges (overlapping or touching); 8 shards balanced on windows.py's cost model with estimated prints =
+    (candle dollars of minute t-1 + a quarter of minute t's) / 874.
+  - **Reading (b), "the same sign".** Yes needs S0 - M0 >= +0.20 Sharpe in at least two eras (the research ahead),
+    or the pooled interval of M0 - S0 wholly below zero. Sharpe unrounded.
