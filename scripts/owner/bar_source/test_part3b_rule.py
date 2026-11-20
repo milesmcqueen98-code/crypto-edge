@@ -64,6 +64,9 @@ def side(label, s, over):
             ("m1_level_error", "n"): s["nl"], ("m3_bids", "research_matched"): s["m"],
             ("m3_bids", "research_new_bids_ex_blocked"): s["r"]}
     out = []
+    for st, v in (("n", s["five"][1]), ("n_other_side", s["five"][2])):
+        out.append(dict(measure="m2_score_error", statistic=st, group="trades list", book=label,
+                        value=float(over.get((label, "trades list", st), v))))
     for (me, st), v in vals.items():
         v = over.get((label, me, st), v)
         out.append(dict(measure=me, statistic=st, group="all", book=label, value=float(v)))
@@ -274,6 +277,15 @@ def test_guards():
     check("a count mismatch in --dir (wrong-side bids of the fifth book) is an error",
           raises(lambda: run(over={("tb", "m2_score_error", "n_other_side"): 5}), "wrong-side"))
     check("a count mismatch in --dir (new bids of the fourth book) is an error", raises(lambda: run(over={("main", "m3_bids", "bot_new_bids"): 301}), "new bids"))
+    check("the five-coin counts are cross-checked: a matching case passes", run()["verdict"] == "pass")
+    check("a mismatch in the five's scored bids (n) against side_by_side.csv is an error",
+          raises(lambda: run(over={("tb", "trades list", "n"): 99}), "scored bids on the five coins"))
+    check("a mismatch in the five's wrong-side bids (n_other_side) against side_by_side.csv is an error",
+          raises(lambda: run(over={("tb", "trades list", "n_other_side"): 3}), "wrong-side bids on the five coins"))
+    meta, B, S = folder(spec(), spec(), BOOKS)
+    S3 = S[S.group != "trades list"]
+    check("a side_by_side.csv without the 'trades list' rows is an error", raises(lambda: p3b.five_counts(B, S3), "expected one row"))
+    check("the five's counts equal side_by_side.csv when they match", p3b.five_counts(B, S) == (0, 100))
     meta, B, S = folder(spec(), spec(), BOOKS_MAIN)
     S2 = S[~((S.book == "main") & (S.statistic == "research_matched"))]
     check("a missing side_by_side row in --dir-main is an error",

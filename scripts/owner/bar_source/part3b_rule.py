@@ -26,6 +26,8 @@ Measure 2, decisions (exact; a zero denominator means the clause is not met):
   (2b) against the main book, --dir-main, all 17 coins:  w5b/ns5b <= wm/nsm + 0.02  (w5b/ns5b: the fifth book's counts there)
   (2c) the cap, restated: --dir, item7_bids.csv rows of label tb with a research score on the five coins ETH, LTC, SOL, XRP,
        ZEC:  w5(five)/ns5(five) <= 0.05
+       (these two counts are cross-checked against side_by_side.csv, measure m2_score_error, group "trades list", book tb,
+       statistics n_other_side and n; a mismatch or a missing row is an error and no verdict)
   (2d) matched, --dir:  m5/r5 >= m4/r4 - 0.03
   (2e) level, --dir:  l5/nl5 < 0.05 (strictly)
   There is no cap on all 17 coins. Reported, deciding nothing: w5/ns5 against 5% ("the first run's cap (reported only): would
@@ -102,6 +104,26 @@ def scored(B, label, coins):
     A = B[(B["book"] == label) & (B["coin"].isin(coins))]
     sc = A[A["res_score"].notna()]
     return int((sc["res_other_side"].astype(str).str.lower() == "true").sum()), int(len(sc))
+
+
+def side_group_value(S, measure, statistic, group, book):
+    """Like part3_rule.side_value but for a named coin group of side_by_side.csv (exactly one row, a whole number)."""
+    r = S[(S["measure"] == measure) & (S["statistic"] == statistic) & (S["group"] == group) & (S["book"] == book)]
+    if len(r) != 1:
+        raise ValueError(f"side_by_side.csv: expected one row for {measure} / {statistic} / {group} / {book}, found {len(r)}")
+    return p3.to_int(r["value"].iloc[0], f"side_by_side.csv {measure} / {statistic} / {group} / {book}")
+
+
+def five_counts(B, S):
+    """(w, ns) of the fifth book on the five coins from item7_bids.csv, checked against side_by_side.csv (measure
+    m2_score_error, group "trades list", book tb, statistics n and n_other_side); a mismatch or a missing row is an error."""
+    w, ns = scored(B, p3.FIFTH, FIVE)
+    for what, mine, stat in (("scored bids on the five coins", ns, "n"), ("wrong-side bids on the five coins", w, "n_other_side")):
+        theirs = side_group_value(S, "m2_score_error", stat, "trades list", p3.FIFTH)
+        if mine != theirs:
+            raise ValueError(f"inconsistent folder: {what} of the tb book from item7_bids.csv ({mine}) differ from "
+                             f"side_by_side.csv ({theirs})")
+    return w, ns
 
 
 def frac_le(k, n, k2, n2, add):
@@ -183,7 +205,7 @@ def evaluate(meta, B, S, meta_main, Bm, Sm, rows5, starts5, rows_main, rows_four
     twelve = sorted(set(coins) - set(five))
     c4, c5 = p3.book_counts(B, S, p3.FOURTH, coins), p3.book_counts(B, S, p3.FIFTH, coins)
     cm, c5b = p3.book_counts(Bm, Sm, p3.FOURTH, coins_main), p3.book_counts(Bm, Sm, p3.FIFTH, coins_main)
-    w5five, ns5five = scored(B, p3.FIFTH, five)
+    w5five, ns5five = five_counts(B, S)
     period_ok = c4["n"] >= min_bids and c5["n"] >= min_bids
     m1 = p3.measure1(rows5, rows_main, rows_fourth, pairs, start, end, min_heartbeats, min_pairs)
     m1["pairs_of_another_commit"] = int(pairs_other)
