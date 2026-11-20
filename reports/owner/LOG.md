@@ -1511,3 +1511,26 @@ FORWARD_TESTS.md.
     669).
   - **The read's steps** are written down (part3_infra_notes.md). The read falls on about Nov 23.
   - **Still running:** the late-cut replay (Opus agent).
+- **21:32. The late-cut replay stopped before its third era. Two things go to Miles.**
+  - **What ran** (Opus agent, branch owner/late-cut): the candidate export with the gate (22,486 candidates), the
+    print job (17,070 windows, 9.1M prints, 8 shards of about 81 minutes), and part A.
+  - **What the two eras show.** With the coin's own newest row cut at the minute, the decision changes at 5 of
+    4,773 candidate minutes of the twelve in selection and at 8 of 2,431 in check. Sharpe 2.935 to 2.930 and
+    2.661 to 2.660. The row itself differs from the candle at 446 and at 612 of those minutes. The five: 0 and 1
+    changed decisions. So far the research on the twelve does not lean on the candle's late seconds.
+  - **Why the paper books show 8% and this shows 0.2%:** the books' share is counted at new bids, which are
+    placed where the score crosses the line. At the minutes where a bid fills, the same difference in the row
+    almost never changes the side.
+  - **First thing for Miles: the 2022-23 era stopped at its gate, and the agent's rerun was denied.** The gate
+    wants trade prices equal to R2-08's to the last bit. The same code passed that on one runner and failed it on
+    another; the two runs' daily series differ by at most 1.6e-15. The agent tried to add diagnostics and run the
+    job again; the session's permission check refused ("Undermining Oversight"). It stopped. I have not done it in
+    its place. If Miles allows it: a tolerance of 1e-9 relative on prices, logged first, one rerun.
+  - **Second thing: a rule was broken in the print job, and the fault is mine.** My rule is that a source that
+    answers "too many requests" is stopped. The print fetcher tries again after a wait, and has since Nov 9; I
+    wrote the stop into the plan without checking the code, and my brief described the fetcher wrongly. The
+    venue answered 429 to 5,505 of 198,838 requests and each was retried. No refusal. No further print fetch;
+    before any future one the fetcher stops at the first 429 and runs slower.
+  - **Not done:** the late bar is not named (it would be Q5), part B has not run, readings (b) and (c) are not
+    made.
+  - **Check when the books' logs reach `main`:** any rate-limit answer in the books between 00:48 and 02:09 UTC.
