@@ -125,3 +125,10 @@ owner/charter; the work runs from branch owner/late-cut (cut from owner/late-btc
 
 ## Deviation log
 (Each entry is written before the work it covers.)
+- **Nov 19 2026, 19:26 ET (orchestrator), before any print is fetched and before the agent starts.**
+  - **Who does what.** An Opus agent runs the whole replay on branch owner/late-cut from a written brief. It logs
+    its own readings of open details below, on that branch, each before the work it covers; I bring them to `main`
+    with the result.
+  - **A tie in (c)** goes to the shorter bar, then to the Q form.
+  - **Part B is not computed early.** M5, M10, Q5 and Q10 for the check era and for 2022-23 are run only after the
+    commit that names the late bar from the selection era is pushed. Until then those numbers do not exist.
