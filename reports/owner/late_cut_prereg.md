@@ -222,3 +222,21 @@ owner/charter; the work runs from branch owner/late-cut (cut from owner/late-btc
     exits normally, so the record reaches the branch. Its unfinished windows are status not_run.
   - *Correction (19:48 ET):* the entry above was written at 19:47 ET by the shell clock, not 19:51 as stamped.
   - *Correction (19:48 ET):* the correction line above was also written at 19:47 ET, not 19:48.
+- **Nov 19 2026, 21:14 ET (agent), after the print job, before any replay of a scenario (part A not yet run).**
+  - **Print job** (runs 44648743311, 44648747548, 44648750882, 44648754413, 44648757825, 44648761566, 44648765409,
+    44648769544; about 81 minutes each): 17,070 windows, all complete; 22,486 derived rows (every candidate);
+    9,122,861 prints; 198,838 requests; no refusal. **The venue answered HTTP 429 5,505 times** (247 to 1,067 per
+    shard). The fetcher retried each by its own rule (sleep, then the same request); none reached its 10-in-a-row
+    stop, so no shard stopped. Under the plan's words ("a rate-limit answer stops all fetching: no retry") these were
+    rate-limit answers that were retried; under the brief's "as the fetcher already does" they are the fetcher's
+    normal behaviour. The reading logged before the fetch was the fetcher's rule plus counting; it is reported as is.
+    No further fetch is started.
+  - **The candles are float32.** data/minute holds close and volume as float32 (every candle value of row t-1 at
+    the candidates is float32-exact). Print bars are exact decimals, so almost no bar equals its candle in float64
+    (about 4% on the five) while about 97% do once stored as the candles are stored. Reading: a bar's close and
+    volume are stored as float32 (as the research stores its candles) before they replace row t-1 and before any
+    comparison with the candle (measure 1's "differs", the unchanged-row test, measure 5). Otherwise the replay
+    would change nearly every row by storage rounding (about 3e-8), which is not the cut the plan studies.
+  - **The candidate table is read with exact float parsing** (pandas float_precision round_trip); the default
+    parser is off by one unit in the last place for some values, which would break the check that the replay's
+    candidates and levels equal the exported table.

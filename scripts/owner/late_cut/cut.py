@@ -50,6 +50,11 @@ def order(D):
             D["size"].to_numpy(np.float64))
 
 
+def as_candle(x):
+    """A bar value as the research's candles hold it (data/minute stores close and volume as float32)."""
+    return np.asarray(x, np.float64).astype(np.float32).astype(np.float64)
+
+
 def pick_bar(n0, s_late, quiet_only):
     """The second whose bar a scenario uses: M<s> always s; Q<s> s when minute t-1 holds at most 5 prints, else 0."""
     n0 = np.asarray(n0)

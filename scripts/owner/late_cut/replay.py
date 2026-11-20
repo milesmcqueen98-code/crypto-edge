@@ -589,7 +589,8 @@ class Bars:
     def __init__(self, Dv, need):
         """need: {s: set of eras}: the bars (seconds) and eras the job may compute."""
         d = R.data
-        E = pd.read_csv(os.path.join(DATA, f"candidates_{BASE}.csv.gz"), parse_dates=["ts"])
+        E = pd.read_csv(os.path.join(DATA, f"candidates_{BASE}.csv.gz"), parse_dates=["ts"],
+                        float_precision="round_trip")
         self.cand = {}
         for c in R.ls.coins:
             t = S0C[c]
@@ -605,10 +606,10 @@ class Bars:
             carry = cut.carry_close(D["cf"], D["vol"], u)
             info = dict(t=t, ts=ts, era=era_of_ts(ts), complete=ok, n0=k["n_0"].fillna(-1).to_numpy(np.int64),
                         close_prev=D["cf"][u], vol_prev=D["vol"][u], bar={})
-            for s in cut.SECONDS:
+            for s in cut.SECONDS:                 # stored as the research stores its candles: float32
                 n = k[f"n_{s}"].fillna(0).to_numpy(np.int64)
-                cl = np.where(n > 0, k[f"close_{s}"].to_numpy(np.float64), carry)
-                vo = np.where(n > 0, k[f"vol_{s}"].to_numpy(np.float64), 0.0)
+                cl = np.where(n > 0, cut.as_candle(k[f"close_{s}"].to_numpy(np.float64)), carry)
+                vo = np.where(n > 0, cut.as_candle(k[f"vol_{s}"].to_numpy(np.float64)), 0.0)
                 info["bar"][s] = (cl, vo, n)
             self.cand[c] = info
         self.val = {}

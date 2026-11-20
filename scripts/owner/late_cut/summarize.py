@@ -91,7 +91,8 @@ def dailies():
 
 def venue_cut():
     """Measure 5: candidates of the twelve whose window is complete and holds a print in [t, t + 15 s)."""
-    E = pd.concat([pd.read_csv(os.path.join(OUT, "data", f"candidates_{b}.csv.gz"), parse_dates=["ts"])
+    E = pd.concat([pd.read_csv(os.path.join(OUT, "data", f"candidates_{b}.csv.gz"), parse_dates=["ts"],
+                               float_precision="round_trip")
                    for b in ("main", "early")], ignore_index=True)
     pdir = os.path.join(OUT, "prints")
     fs = [f for f in os.listdir(pdir) if f.startswith("derived_")] if os.path.isdir(pdir) else []
@@ -105,8 +106,8 @@ def venue_cut():
     match = {}
     for s in cut.SECONDS:
         with np.errstate(invalid="ignore", divide="ignore"):
-            eq = (M[f"n_{s}"] > 0) & (M[f"close_{s}"] == M.close_prev) & \
-                 ((M[f"vol_{s}"] / M.vol_prev - 1.0).abs() <= 1e-6)
+            eq = (M[f"n_{s}"] > 0) & (cut.as_candle(M[f"close_{s}"]) == M.close_prev) & \
+                 ((cut.as_candle(M[f"vol_{s}"]) / M.vol_prev - 1.0).abs() <= 1e-6)
         match[s] = np.where(cand, eq.to_numpy(), (M[f"n_{s}"] == 0).to_numpy())
     Mt = np.vstack([match[s] for s in cut.SECONDS]).T
     M["bucket"] = pd.cut(M.n_0, [-1, 0, 1, 5, 20, np.inf], labels=["0", "1", "2-5", "6-20", "21+"]).astype(str)
