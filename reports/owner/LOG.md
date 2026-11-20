@@ -1428,3 +1428,50 @@ FORWARD_TESTS.md.
   - **Period:** 2026-11-16 19:00 to 2026-11-19 18:59 UTC, 4,320 minutes.
   - **New bids on the 17 coins, from the logs alone,** on the 4,168 minutes both books decided: fifth book 696,
     fourth book 695. No extension. Written into the plan's deviation log before any research is fetched.
+- **19:14. The fifth book's read: fail on one clause of measure 2. No release 5.**
+  - **The clause:** bids the research would not have placed are capped at 5%; the fifth book has 49 of 696
+    (7.04%). Everything else is met: measure 1 (the build's data step 1.49 s earlier than release 3's over 14
+    pairs; 8.61 s against the main book's 11.05 s), the rest of measure 2 (against the fourth book 49 against 46;
+    matched 641 of 688 against 645 of 692; level 2 of 696), measure 3 (items 1 to 5) and measure 4 (1 failed
+    request of 72,792; 70 requests inside a step of 76,518 coin-minutes).
+  - **The build is not worse than its control.** The fourth book has 46 of 695 (6.62%) and misses the cap too;
+    its 46 are all among the fifth's 49. The main book, on release 3's inputs, has 47 of 677 over the same
+    period (run after the verdict).
+  - **One read, rule as written:** fail. By the plan: no release, the cause first, then a corrected build and a
+    new three days.
+  - **The standstill window of Nov 17:** the fourth book's 8 bids there were all bids the research placed, on
+    the level. The veto rule of Nov 18 is not triggered; the fallback stays.
+  - **After the verdict, exploratory.** The books agree with one another to 0.1 point at the bids in question
+    and differ from the research by a median 11.6 points, with the bid level on the tick. The share is 8% to 9%
+    on the twelve and under 2% on the five, in every book. The unchanged fourth book had 4.1% on the twelve in
+    Part 2. A first guess (coarse ticks) was checked and dropped.
+  - **Leading cause, known since Nov 10:** for the twelve the venue's final candle runs into the next minute
+    after a quiet minute (8% to 41% of boundaries, 7 to 11 s). The research decides on that candle; a bar cut at
+    the minute cannot equal it. The row "What the candle's late cut gives the research on thin coins" has been
+    waiting in FORWARD_TESTS.md since then.
+  - **My error in the rule:** the 5% cap was written on Part 2's level and left no room for this gap moving
+    with a quiet market and with more bids on the twelve (77% of bids now, 61% then). The verdict stands.
+  - **Next, fixed in the plan before it is run:** Part 1's tool on Part 3's period. If the fourth book's inputs
+    emulated on the collector's record give the book's own scores at the bids in question (80% or more within
+    0.5 point), the cause is the cut of the newest row.
+  - **Then:** the corrected build is the tested build with the standstill fallback (815ea390), on a new three
+    days and a rule fixed first. And the replay that prices the late cut for the research moves to the top of
+    the list: if the research on the twelve leans on those seconds, the live return on them is lower than the
+    research's.
+  - **Tables:** reports/owner/reconcile_tb/part3/ (README.md is the record).
+- **19:22. The cause check is running, its tool is on `main`, and the late-cut replay has its plan.**
+  - **Runner job 44644238137** (branch owner/read-part3, started 00:14 UTC on Nov 20): Part 1's tool on Part 3's
+    period. About an hour.
+  - **The check's tool** (scripts/owner/bar_source/book_check.py; Sonnet agent, reviewed, 31 checks; d073a124):
+    for a book's new bids it sets the score the book logged next to the emulated score and the research's, and
+    prints the two readings fixed in the plan.
+  - **Seen while the tool was built, on Part 1's period, which is not the check:** the fourth book against its
+    emulation, Nov 11 22:30 to Nov 14 01:59 UTC. 508 of 521 bids within 0.5 point. Of the 31 bids more than 2
+    points from the research, the emulation gives the book's score at 30. All 17 wrong-side bids are on the
+    book's side in the emulation too. So on those three days the difference was the cut of the newest row. The
+    registered check is the same count on Part 3's period.
+  - **Plan fixed for the replay that prices the late cut** (reports/owner/late_cut_prereg.md), before any print is
+    fetched. It asks two things. Is the research on the twelve flattered by a candle that runs into the next
+    minute? And would a bar the bot keeps open for 5 or 10 s, which it can have by the time its bids rest, bring
+    the decisions back? The five coins with clean candles are the placebo. It uses the late-BTC replay's harness
+    and the timing study's print tools, on branch owner/late-cut. An Opus agent runs it.
