@@ -1459,3 +1459,19 @@ FORWARD_TESTS.md.
     the list: if the research on the twelve leans on those seconds, the live return on them is lower than the
     research's.
   - **Tables:** reports/owner/reconcile_tb/part3/ (README.md is the record).
+- **19:22. The cause check is running, its tool is on `main`, and the late-cut replay has its plan.**
+  - **Runner job 44644238137** (branch owner/read-part3, started 00:14 UTC on Nov 20): Part 1's tool on Part 3's
+    period. About an hour.
+  - **The check's tool** (scripts/owner/bar_source/book_check.py; Sonnet agent, reviewed, 31 checks; d073a124):
+    for a book's new bids it sets the score the book logged next to the emulated score and the research's, and
+    prints the two readings fixed in the plan.
+  - **Seen while the tool was built, on Part 1's period, which is not the check:** the fourth book against its
+    emulation, Nov 11 22:30 to Nov 14 01:59 UTC. 508 of 521 bids within 0.5 point. Of the 31 bids more than 2
+    points from the research, the emulation gives the book's score at 30. All 17 wrong-side bids are on the
+    book's side in the emulation too. So on those three days the difference was the cut of the newest row. The
+    registered check is the same count on Part 3's period.
+  - **Plan fixed for the replay that prices the late cut** (reports/owner/late_cut_prereg.md), before any print is
+    fetched. It asks two things. Is the research on the twelve flattered by a candle that runs into the next
+    minute? And would a bar the bot keeps open for 5 or 10 s, which it can have by the time its bids rest, bring
+    the decisions back? The five coins with clean candles are the placebo. It uses the late-BTC replay's harness
+    and the timing study's print tools, on branch owner/late-cut. An Opus agent runs it.
