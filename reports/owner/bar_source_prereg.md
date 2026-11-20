@@ -834,3 +834,12 @@ reports/owner/bar_source_p3/README.md.
     commit from the fifth book's record and is set aside by the rule. The first pair on the new commit starts at
     the hand-over after that, about 11:00 UTC on Nov 20.
   - **The read's steps** are in reports/owner/part3_infra_notes.md, "The second run's read".
+- **Nov 20 2026, 08:34 ET (orchestrator). Part 3, second run: the period.**
+  - **The first run on the corrected build** is run 44679000823: start-up at 05:08 UTC on Nov 20, and
+    paper_spot_r5/CODE on `main` names commit 815ea3900e9e74c59a451ea0c2365e49fa631cd2 (written at 05:08:54 UTC).
+    The run ended and handed over; the book's log on `main` reaches 10:57 UTC.
+  - **First decision minute on that commit: 05:14 UTC,** by the reconciliation's start-up rule (no step-only event
+    within six minutes of the start-up, so the rule takes six minutes; scripts/owner/reconcile/common.py).
+  - **So the period is 05:30 UTC on Nov 20 to 05:29 UTC on Nov 23** (4,320 minutes), before any extension. The read
+    is made once every book's log reaches the last minute on `main`, on the morning of Nov 23.
+  - **Items 1 to 5** are read on the fifth book's log from its start-up line at 05:08 UTC on Nov 20.
