@@ -318,3 +318,31 @@
   - **In the half hour to 08:00 UTC on Nov 18** a whole trades pass ran out of its budget in the sixth book and
     in the fifth alike, after a failed candle request between steps (18 and 17 budget fallbacks). Counted by
     Part 4 as it is.
+- **Nov 20 2026, 08:34 ET (orchestrator), at the read's start, before any research is fetched.** The period and
+  the counts, and one clause of Part 4 restated with what I know.
+  - **Period:** 00:00 UTC on Nov 17 to 23:59 UTC on Nov 19 (the sixth book's first event at 23:37 and first stepped
+    minute at 23:41 on Nov 16). Counted from the two logs alone (scripts/owner/reconcile/count_bids.py): 725 new
+    bids in the sixth book and 725 in the fifth on the 4,174 minutes both decided (decision minutes 4,248 and 4,246
+    of 4,320). No extension.
+  - **The control:** the fifth book ran commit 9e6f53b3 through the whole period. It changed to the bar-source
+    plan's corrected build at 05:08 UTC on Nov 20, after the period.
+  - **Part 4, measure 1: the cap is restated before the read, and I know what the old one would say.**
+    - As written: bids the research would not have placed at most the fifth book's share plus 2.0 points *and at
+      most 5%*. The 5% is the bar-source plan's cap.
+    - That cap failed the fifth book on Nov 19: 7.04%, on a period that overlaps this one by 67 of its 72 hours,
+      with the fourth book at 6.62% and the main book at 6.94%. The cause was checked and confirmed: the cut of
+      the newest row, common to every book, which no input build controls (bar_source_prereg.md, "Result of the
+      cause check"). The bar-source plan restated its cap for its second run for that reason.
+    - **So I know the sixth book would fail the cap as written.** It reads the same rows as the fifth; I expect
+      about 7%. I have not fetched the research for this read and have not seen the sixth book against it.
+    - **The clause as it now stands:** at most the fifth book's share plus 2.0 points (unchanged), and at most 5%
+      on the five coins whose candles are cut at the minute (ETH, SOL, XRP, LTC, ZEC). The share on all 17 coins
+      is reported against 5%, deciding nothing.
+    - **What this does to the odds, plainly:** it turns a fail I can foresee into a clause the book will probably
+      meet. I make it anyway because the old cap measures a gap that has nothing to do with the number of
+      workers, so failing on it would say nothing about the option. What the clause is for, catching a fault, is
+      kept twice: against the control, and where the research can be matched.
+    - A reader who discounts a rule changed this late can read the old clause in the output.
+  - The matched share, the level share, items 1 to 5, the requests inside a step and the stops are unchanged.
+    Part 3 is untouched.
+  - **The rule script** is changed to this before it is run (Sonnet agent, reviewed), with its tests.
