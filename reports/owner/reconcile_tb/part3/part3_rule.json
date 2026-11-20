@@ -1,0 +1,196 @@
+{
+ "period": {
+  "start": "2026-11-16 19:00:00",
+  "end": "2026-11-19 18:59:00"
+ },
+ "books": {
+  "main": "paper_spot_t18",
+  "tb": "paper_spot_r5"
+ },
+ "label_mapping": {
+  "main": "fourth book (paper_spot_t18)",
+  "tb": "fifth book (paper_spot_r5)"
+ },
+ "minutes": {
+  "main": 4242,
+  "tb": 4246,
+  "common": 4168
+ },
+ "coins": [
+  "AAVE",
+  "BCH",
+  "DOGE",
+  "ENA",
+  "ETH",
+  "HBAR",
+  "HYPE",
+  "LINK",
+  "LTC",
+  "NEAR",
+  "ONDO",
+  "PEPE",
+  "SOL",
+  "SUI",
+  "XLM",
+  "XRP",
+  "ZEC"
+ ],
+ "condition": {
+  "new_bids_fifth": 696,
+  "new_bids_fourth": 695,
+  "needed": 300,
+  "met": true,
+  "read_as_is": false,
+  "part_a_complete": true
+ },
+ "counts": {
+  "fifth": {
+   "n": 696,
+   "ns": 696,
+   "w": 49,
+   "nl": 696,
+   "l": 2,
+   "m": 641,
+   "r": 688
+  },
+  "fourth": {
+   "n": 695,
+   "ns": 695,
+   "w": 46,
+   "nl": 695,
+   "l": 2,
+   "m": 645,
+   "r": 692
+  }
+ },
+ "measures": {
+  "step": {
+   "a": {
+    "met": true,
+    "pairs": 14,
+    "needed": 8,
+    "enough": true,
+    "median_s": -1.485,
+    "median_exact": "-297/200",
+    "pair_files": [
+     "pair_20261116T1927Z.json",
+     "pair_20261117T0656Z.json",
+     "pair_20261117T2033Z.json",
+     "pair_20261118T0034Z.json",
+     "pair_20261118T0618Z.json",
+     "pair_20261118T0727Z.json",
+     "pair_20261118T1215Z.json",
+     "pair_20261118T1805Z.json",
+     "pair_20261118T2005Z.json",
+     "pair_20261118T2356Z.json",
+     "pair_20261119T0547Z.json",
+     "pair_20261119T0700Z.json",
+     "pair_20261119T1137Z.json",
+     "pair_20261119T1728Z.json"
+    ],
+    "rule": "median of build minus release 3 at or below 0",
+    "complete": true,
+    "in_period": 14,
+    "added": 0,
+    "last_used_start": null
+   },
+   "b": {
+    "met": true,
+    "paired_half_hours": 140,
+    "fifth_heartbeats": 142,
+    "needed": 100,
+    "fifth_median_s": 8.61,
+    "main_median_s": 11.05,
+    "enough": true
+   },
+   "reported": {
+    "fifth_own_median_s": 8.61,
+    "fifth_heartbeats": 142,
+    "bar_s": 10.3,
+    "at_or_below_bar": true,
+    "decides": "nothing"
+   },
+   "fourth_for_information": {
+    "paired_half_hours": 140,
+    "fifth_median_s": 8.61,
+    "fourth_median_s": 13.1125
+   },
+   "met": true
+  },
+  "decisions": {
+   "wrong_side_vs_fourth": {
+    "met": true,
+    "fifth": "49/696",
+    "fourth": "46/695",
+    "fifth_share": 0.07040229885057471,
+    "fourth_share": 0.06618705035971223,
+    "rule": "fifth share <= fourth share + 2.0 points"
+   },
+   "wrong_side_cap": {
+    "met": false,
+    "fifth": "49/696",
+    "fifth_share": 0.07040229885057471,
+    "rule": "fifth share <= 5%"
+   },
+   "matched": {
+    "met": true,
+    "fifth": "641/688",
+    "fourth": "645/692",
+    "fifth_share": 0.9316860465116279,
+    "fourth_share": 0.9320809248554913,
+    "rule": "fifth share >= fourth share - 3.0 points"
+   },
+   "level": {
+    "met": true,
+    "fifth": "2/696",
+    "fifth_share": 0.0028735632183908046,
+    "rule": "fifth share < 5% (strictly)"
+   },
+   "met": false
+  },
+  "items_1_5": {
+   "value": "pass",
+   "met": true
+  },
+  "candle_requests": {
+   "heartbeats": 142,
+   "counters_present": [
+    "pre_error",
+    "pre_fetched",
+    "pre_missing",
+    "pre_ondemand",
+    "step_candles"
+   ],
+   "counters": {
+    "pre_fetched": 72791,
+    "pre_error": 1,
+    "pre_missing": 1,
+    "pre_ondemand": 69,
+    "step_candles": 70
+   },
+   "requests": 72792,
+   "failed": 1,
+   "failed_share": 1.3737773381690295e-05,
+   "in_step": 70,
+   "left_out_first_steps": 0,
+   "coin_minutes": 76518.0,
+   "in_step_share": 0.0009148174285788965,
+   "failed_clause": {
+    "met": true,
+    "rule": "pre_error / (pre_fetched + pre_error) <= 1%"
+   },
+   "in_step_clause": {
+    "met": true,
+    "rule": "(pre_missing + pre_ondemand, first step after each start left out) / (18 x minutes run) <= 2%"
+   },
+   "met": true
+  }
+ },
+ "holds": {
+  "1": true,
+  "2": false,
+  "3": true,
+  "4": true
+ },
+ "verdict": "fail"
+}
