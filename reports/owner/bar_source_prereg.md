@@ -822,7 +822,7 @@ reports/owner/bar_source_p3/README.md.
   - **The pin.** The fifth book's workflow names commit 815ea390 since 01:23 UTC on Nov 20 (`main` 99673d0d). The
     book's run on the old commit (44636491089) began at 23:18 UTC on Nov 19 and ends about 05:05 UTC; its
     hand-over starts the first run on the new commit.
-  - **The rule as code** is on `main` since 01:40 UTC (65b2c584; scripts/owner/bar_source/part3b_rule.py, 99 checks;
+  - **The rule as code** is on `main` since 01:33 UTC (65b2c584; scripts/owner/bar_source/part3b_rule.py, 99 checks;
     Sonnet agent, reviewed). part3_rule.py is unchanged. The read's first step is a tool as well now
     (scripts/owner/reconcile/count_bids.py, 21 checks); on the first run's period it gives the counts logged on
     Nov 19 (696 and 695 on 4,168 minutes).
