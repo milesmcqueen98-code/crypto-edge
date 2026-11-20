@@ -11,6 +11,10 @@ name: paper-spot-r5
 # (paper-spot.yml). Its own workflow, runner and folder, so the other books keep their runs, requests and rate as
 # before. Each job runs ~5h45m; the hand-over job starts the next run, the schedule is the backstop. State carries
 # over through paper_spot_r5/state.json.
+# Second run (reports/owner/bar_source_prereg.md, "Part 3, second run", fixed Nov 19 2026): the first run's build
+# (9e6f53b3 of owner/release-5) failed measure 2's cap on Nov 19. From the first run started after this change the
+# book runs the corrected build, commit 815ea390 of branch owner/standstill: the same inputs plus the fallback to
+# candles inside the step when the trades list stands still (standstill_candles) and the balance look.
 on:
   schedule:
     - cron: "18 */6 * * *"
@@ -19,12 +23,13 @@ on:
       minutes:
         default: "345"
       code_ref:
-        description: "engine commit the book runs; leave empty for the pinned commit (CODE_REF in this file, branch owner/release-5). Pinned on purpose: a different commit restarts the three-day test (reports/owner/bar_source_prereg.md, Part 3)"
+        description: "engine commit the book runs; leave empty for the pinned commit (CODE_REF in this file, branch owner/standstill). Pinned on purpose: a different commit restarts the three-day test (reports/owner/bar_source_prereg.md, Part 3 and its second run)"
         default: ""
 
-# the pinned commit of branch owner/release-5: the only place it is written
+# the pinned commit of branch owner/standstill (the second run; the first run's was 9e6f53b3 of owner/release-5):
+# the only place it is written
 env:
-  CODE_REF: "9e6f53b3aca8c15307f22a357f19431bff053e4c"
+  CODE_REF: "815ea3900e9e74c59a451ea0c2365e49fa631cd2"
 
 concurrency:
   group: paper-spot-r5
@@ -68,7 +73,7 @@ jobs:
             echo "code_ref: $RUN_REF"
             echo "code_commit: $(git -C code rev-parse HEAD)"
             echo "utc: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            echo "code_branch_hint: owner/release-5"
+            echo "code_branch_hint: owner/standstill"
           } > paper_spot_r5/CODE
           cat paper_spot_r5/CODE
       - name: Paper trade the r5 book
