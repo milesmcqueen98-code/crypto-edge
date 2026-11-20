@@ -577,7 +577,7 @@ def load_prints():
     """Derived print rows of this base's candidates and the window status."""
     fs = sorted(f for f in os.listdir(PRINTS) if f.startswith("derived_") and f.endswith(".parquet"))
     Dv = pd.concat([pd.read_parquet(os.path.join(PRINTS, f)) for f in fs], ignore_index=True)
-    Dv["ts"] = pd.to_datetime(Dv.ts)
+    Dv["ts"] = pd.to_datetime(Dv.ts).astype("datetime64[ns]")
     Dv = Dv[Dv.base == BASE]
     assert not Dv.duplicated(["coin", "ts"]).any()
     return Dv
@@ -596,8 +596,9 @@ class Bars:
             e = E[E.coin == c]
             assert np.array_equal(e.pos.to_numpy(), t), f"{c}: candidates differ from the exported table"
             assert np.array_equal(e.level.to_numpy(), R.ls.lvl[c][t], equal_nan=True), f"{c}: levels differ"
-            ts = d.idx[t]
+            ts = pd.DatetimeIndex(d.idx[t]).astype("datetime64[ns]")
             k = pd.DataFrame({"coin": c, "ts": ts}).merge(Dv, on=["coin", "ts"], how="left")
+            assert len(k) == len(t) and (k.ts.to_numpy() == ts.to_numpy()).all()
             ok = (k.status == "complete").to_numpy()
             D = d.D[c]
             u = t - 1
