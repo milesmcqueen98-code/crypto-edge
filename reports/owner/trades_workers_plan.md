@@ -346,3 +346,27 @@
   - The matched share, the level share, items 1 to 5, the requests inside a step and the stops are unchanged.
     Part 3 is untouched.
   - **The rule script** is changed to this before it is run (Sonnet agent, reviewed), with its tests.
+- **Nov 20 2026, 08:51 ET (orchestrator). The read, first pass: Part 4 is read; Part 3 is not complete; no verdict.**
+  - **Order kept:** the period and the counts and the restated cap were logged at 08:34; the rule script's change
+    reached `main` at 13:39 UTC (69d18dc6; Sonnet agent, reviewed, 177 checks); the research was fetched after that
+    (runner job 44745514044, ended 13:49 UTC; 1,224 answers, nothing refused); then the two books, the status report
+    on the cut logs, and the rule. Record: reports/owner/reconcile_tb/tw/README.md.
+  - **The rule's line:** "PART 3 NOT COMPLETE: 45 of 8 jobs, 15 of 30 slow one-worker passes; the jobs go on and the
+    read waits". No verdict.
+  - **Part 4 on its period** (final; the period is over):
+    - Measure 1, decisions: bids the research would not have placed 48 of 725 in the sixth book and 48 of 725 in
+      the fifth (6.62% each); on the five coins 3 of 179 (1.68%; the cap as restated, 5%); research bids matched
+      672 of 720 against 670 of 718; level 2 of 725. Met.
+    - **The first version's cap would not be met** (6.62% on all 17 coins against 5%), as foreseen at 08:34.
+    - Measure 2, items 1 to 5: all five meet (99.97% of trades bars verified; no rate-limit answer, no refusal;
+      half-hour maximum 20 s or less in 99.3% of heartbeats; no error event; no unconfirmed row).
+    - Measure 3, requests inside a step: 2 failed of 73,692; 26 inside a step of 77,634 coin-minutes (0.033%), and
+      0.034% against the fifth book's 0.078% on the same heartbeat times. Met.
+    - Measure 4, stops: no rate-limit stop in either book; request errors in 2 half hours each. Met.
+  - **Part 3 so far, which decides nothing until it is complete:** median pass 2.609 s with three workers and
+    2.632 s with one; passes over 6 s 6 of 1,360 and 15 of 1,382; passes out of budget 0 and 3; at most 7 requests
+    in a second, nothing limited or refused; differing bars 42.89% and 43.26%. Ten of the 15 slow one-worker passes
+    came in two jobs this morning (10:37 and 11:45 UTC).
+  - **What happens now.** The alternating jobs go on by themselves. The rule is run again, unchanged, when the
+    one-worker minutes hold 30 slow passes, or after 11:41 UTC on Dec 1 if they never do. Part 4's folder is not
+    recomputed. No job is started by hand.
