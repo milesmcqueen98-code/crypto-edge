@@ -1569,3 +1569,28 @@ FORWARD_TESTS.md.
   - **The print job did not reach the main book either:** its heartbeats of 00:30 to 02:30 UTC show no rate-limit
     answer and no refusal. That closes the check for all four books.
   - **Still waiting for Miles:** whether the 2022-23 job of the late-cut replay may be rerun (Nov 19, 21:32).
+
+## Nov 21 2026 (times ET; UTC is five hours later)
+- **08:34. Morning: the paper books' worst day so far; no fault; Part 3 at 17 of 30.**
+  - **Every paper book lost about 1.3% of its capital in 20 hours.** From 15:00 UTC on Nov 20 to 09:00 UTC on
+    Nov 21 the market fell in several legs, and the ladder bought each one.
+    - Main book: 88 fills, $538,863 bought, 31 ladders closed (13 made money), ladder P&L -$3,389. Equity
+      $247,441, which is 1.0% under the start and 2.5% under its peak. The worst ladders: ETH -$1,134 (16:43 UTC),
+      then ZEC, SUI, DOGE and LTC, -$370 to -$549 each, in one minute cluster at 04:32 UTC.
+    - The other three books: -$3,424, -$3,034 and -$3,421, on the same fills within a few.
+    - **The first bid carries the loss:** exits of rung 4 lost $3,092 in the main book, rung 6 lost $686, rung 8
+      made $389.
+    - The book was fully used: 45 times it wanted a bid and had no cash.
+    - No limit was near: the daily loss limit is 8% and the drawdown limit 25%.
+  - **Where that leaves forward rule A** (main book since release 3): 123 rungs, mean net per dollar -54.2 bp.
+    The rule reads on Dec 5 and asks for a mean above zero. As it stands it would not pass.
+  - **What I do not know yet:** whether the research would have taken the same fills. That is read on Nov 23
+    with the second run (fills side by side, the main book included). I am not looking at it early: the days are
+    inside that test's period.
+  - **For scale:** the research's worst day at this size is about -2.1%. A day like this is in its tail, not
+    outside it. Two losing market-wide clusters in a week (Nov 14, Nov 20 to 21) is more than I expected.
+  - **Faults: none.** Since yesterday morning no book has an error, a refusal or a rate-limit answer, and no step
+    used the standstill fallback. The fifth book's record names commit 815ea390 at every start.
+  - **Trades-workers:** the rule run again, unchanged, on 67 jobs: 17 of the 30 slow one-worker passes. No verdict.
+    Its output of Nov 20 stays as committed.
+  - **Still waiting for Miles:** the 2022-23 rerun of the late-cut replay.
