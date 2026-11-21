@@ -1,17 +1,17 @@
 # Paper trading status
 
-Report made 2026-11-21 11:08 UTC.
+Report made 2026-11-21 12:48 UTC.
 
 | Book | Newest event | Age | Flag |
 |---|---|---|---|
-| Spot (main) | 2026-11-21 06:39 UTC | 4.5 h ago | ok |
-| Spot W2 | 2026-11-21 06:39 UTC | 4.5 h ago | ok |
-| Spot TB (trades input) | 2026-11-16 21:30 UTC | 109.6 h ago | ended |
-| Spot T18 (all coins on trades) | 2026-11-21 10:00 UTC | 1.1 h ago | ok |
-| Spot R5 (release 5 build) | 2026-11-21 10:00 UTC | 1.1 h ago | ok |
-| Spot TW (trades side by side) | 2026-11-21 09:00 UTC | 2.1 h ago | ok |
-| Perp v1 (control) | 2026-11-21 07:31 UTC | 3.6 h ago | ok |
-| Perp R2-08 | 2026-11-21 07:31 UTC | 3.6 h ago | ok |
+| Spot (main) | 2026-11-21 12:48 UTC | 0.0 h ago | ok |
+| Spot W2 | 2026-11-21 12:48 UTC | 0.0 h ago | ok |
+| Spot TB (trades input) | 2026-11-16 21:30 UTC | 111.3 h ago | ended |
+| Spot T18 (all coins on trades) | 2026-11-21 10:00 UTC | 2.8 h ago | ok |
+| Spot R5 (release 5 build) | 2026-11-21 10:00 UTC | 2.8 h ago | ok |
+| Spot TW (trades side by side) | 2026-11-21 09:00 UTC | 3.8 h ago | ok |
+| Perp v1 (control) | 2026-11-21 07:31 UTC | 5.3 h ago | ok |
+| Perp R2-08 | 2026-11-21 07:31 UTC | 5.3 h ago | ok |
 
 A book is flagged STALE when its newest event is more than 8 hours old. A book marked ended (Spot TB (trades input): 2026-11-16) is never flagged STALE.
 
@@ -21,8 +21,8 @@ GitHub drops scheduled runs. While a book is not running it places no new bids; 
 
 | Book | First event | Last event | Calendar hours | Hours in real time | Share |
 |---|---|---|---|---|---|
-| Spot (main) | 2026-11-06 22:30 UTC | 2026-11-21 06:39 UTC | 344.1 | 299.4 | 87.0% |
-| Spot W2 | 2026-11-07 00:44 UTC | 2026-11-21 06:39 UTC | 341.9 | 297.2 | 86.9% |
+| Spot (main) | 2026-11-06 22:30 UTC | 2026-11-21 12:48 UTC | 350.3 | 305.6 | 87.2% |
+| Spot W2 | 2026-11-07 00:44 UTC | 2026-11-21 12:48 UTC | 348.1 | 303.4 | 87.2% |
 | Spot TB (trades input) | 2026-11-11 01:47 UTC | 2026-11-16 21:30 UTC | 139.7 | 139.5 | 99.9% |
 | Spot T18 (all coins on trades) | 2026-11-11 22:25 UTC | 2026-11-21 10:00 UTC | 227.6 | 227.6 | 100.0% |
 | Spot R5 (release 5 build) | 2026-11-16 18:39 UTC | 2026-11-21 10:00 UTC | 111.3 | 111.3 | 100.0% |
@@ -60,14 +60,14 @@ The five longest gaps of each book (a gap is the time the book was not running b
 | Perp R2-08 | 2026-11-09 10:03 UTC | 5.0 |
 | Perp R2-08 | 2026-11-09 20:47 UTC | 4.4 |
 
-Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 4.5 h; Spot W2 4.5 h; Spot T18 (all coins on trades) 1.1 h; Spot R5 (release 5 build) 1.1 h; Spot TW (trades side by side) 2.1 h; Perp v1 (control) 3.6 h; Perp R2-08 3.6 h.
+Hours in real time are calendar hours (first event to last event) minus the gaps the log itself records (each restart logs a catch_up event with the minutes the book was not running). A run whose log was never saved would show as a gap, so the share can read too low. Time since the last event, not counted above: Spot (main) 0.0 h; Spot W2 0.0 h; Spot T18 (all coins on trades) 2.8 h; Spot R5 (release 5 build) 2.8 h; Spot TW (trades side by side) 3.8 h; Perp v1 (control) 5.3 h; Perp R2-08 5.3 h.
 
 ## Summary
 
 | Book | Days | Equity | Change | Rung fills | Dollars bought | Net per dollar | Exit events TP / time | Ladders closed | Errors |
 |---|---|---|---|---|---|---|---|---|---|
-| Spot (main) | 14.3 | $247,799 | -0.88% | 181 | $1,185,821 | -18.6 bp | 91 / 97 | 84 (47 made money) | 1 |
-| Spot W2 | 14.2 | $248,674 | -0.53% | 181 | $1,062,785 | -12.5 bp | 83 / 101 | 86 (50 made money) | 1 |
+| Spot (main) | 14.6 | $247,441 | -1.02% | 185 | $1,229,620 | -20.8 bp | 91 / 101 | 87 (47 made money) | 1 |
+| Spot W2 | 14.5 | $248,405 | -0.64% | 185 | $1,096,368 | -14.6 bp | 83 / 105 | 89 (50 made money) | 1 |
 | Spot TB (trades input) | 5.8 | $249,964 | -0.01% | 70 | $537,290 | -0.7 bp | 33 / 35 | 37 (22 made money) | 0 |
 | Spot T18 (all coins on trades) | 9.5 | $246,107 | -1.56% | 168 | $1,122,267 | -34.7 bp | 51 / 87 | 72 (37 made money) | 0 |
 | Spot R5 (release 5 build) | 4.6 | $246,726 | -1.31% | 97 | $583,732 | -56.1 bp | 21 / 52 | 34 (14 made money) | 0 |
@@ -87,11 +87,11 @@ Counted from 2026-11-14 17:27 UTC (release 3): the main book's inputs changed th
 
 | Measure | So far |
 |---|---|
-| Days (calendar) | 6.5 of 21 |
-| Days in real time | 6.5 |
-| Rungs | 119 of 60 |
-| Rung fills a day (rule text: 1-6 rung fills a day) | 18.17 per calendar day; 18.17 per running day |
-| Mean net per dollar | -52.7 bp |
+| Days (calendar) | 6.8 of 21 |
+| Days in real time | 6.8 |
+| Rungs | 123 of 60 |
+| Rung fills a day (rule text: 1-6 rung fills a day) | 18.07 per calendar day; 18.08 per running day |
+| Mean net per dollar | -54.2 bp |
 | Errors (total) | 0 |
 | Explained | 0 |
 | Unexplained | 0 |
@@ -117,8 +117,8 @@ Fills and net per dollar by rung:
 
 | Rung | Fills | Dollars bought | Exit events | Exit P&L | Net per dollar |
 |---|---|---|---|---|---|
-| 4 | 115 | $762,753 | 129 | -$3,186 | -41.8 bp |
-| 6 | 44 | $288,629 | 41 | $602.32 | 20.9 bp |
+| 4 | 118 | $785,901 | 132 | -$3,457 | -44.0 bp |
+| 6 | 45 | $309,279 | 42 | $516.03 | 16.7 bp |
 | 8 | 22 | $134,439 | 18 | $382.46 | 28.4 bp |
 
 P&L of exits by day, last 14 days:
@@ -138,34 +138,34 @@ P&L of exits by day, last 14 days:
 | 2026-11-18 | -$98.77 | 24.0 |
 | 2026-11-19 | $16.59 | 24.0 |
 | 2026-11-20 | -$641.07 | 24.0 |
-| 2026-11-21 | -$2,549 | 6.7 |
+| 2026-11-21 | -$2,907 | 12.8 |
 
 Cash shortfalls: 76. Wanted $1,020,074 in total (average $13,422) against an average of $347.92 free.
 
-Share of capital held by resting bids (committed over equity, mean of 591 heartbeats): 59.26%.
+Share of capital held by resting bids (committed over equity, mean of 602 heartbeats): 59.57%.
 
-Largest single-day loss so far: -$2,549 on 2026-11-21.
+Largest single-day loss so far: -$2,907 on 2026-11-21.
 
 ## W2 against the main spot book
 
 | Measure | Spot (main) | W2 | W2 minus main |
 |---|---|---|---|
-| Days (calendar) | 14.3 | 14.2 | -0.1 |
-| Hours in real time | 299.4 | 297.2 |  |
-| Equity | $247,799 | $248,674 | $875.27 |
-| Change | -0.88% | -0.53% | +0.35 pp |
-| Rung fills | 181 | 181 | +0 |
-| Rung fills per calendar day | 12.62 | 12.70 |  |
-| Rung fills per running day | 14.51 | 14.61 |  |
-| Dollars bought | $1,185,821 | $1,062,785 | -$123,036 |
-| Net per dollar | -18.6 bp | -12.5 bp | +6.1 bp |
-| Exit events TP / time | 91 / 97 | 83 / 101 |  |
-| Ladders closed (made money) | 84 (47) | 86 (50) |  |
+| Days (calendar) | 14.6 | 14.5 | -0.1 |
+| Hours in real time | 305.6 | 303.4 |  |
+| Equity | $247,441 | $248,405 | $963.57 |
+| Change | -1.02% | -0.64% | +0.39 pp |
+| Rung fills | 185 | 185 | +0 |
+| Rung fills per calendar day | 12.67 | 12.76 |  |
+| Rung fills per running day | 14.53 | 14.63 |  |
+| Dollars bought | $1,229,620 | $1,096,368 | -$133,252 |
+| Net per dollar | -20.8 bp | -14.6 bp | +6.3 bp |
+| Exit events TP / time | 91 / 101 | 83 / 105 |  |
+| Ladders closed (made money) | 87 (47) | 89 (50) |  |
 | Errors | 1 | 1 | +0 |
 
 W2 started 2.2 hours after the main book, so the windows are not identical.
 
-Difference in equity (W2 minus main): $875.27.
+Difference in equity (W2 minus main): $963.57.
 
 A few days and a few dozen fills cannot separate the two weightings; a gap this size is within what chance alone produces.
 
@@ -187,8 +187,8 @@ From the heartbeats of each spot book (one every 30 minutes while it runs). Coun
 | 2026-11-18 | 1,440 | 48 | 11.1 | 14.8 | btc_candle_old 516, candle_old 1,488, newest_absent 2,069, rows_open 14, skip_old 1,026, tb_built 6,924, tb_close_diff 707, tb_fb_unverified 1, tb_insert 650, tb_rebuilt 9 |
 | 2026-11-19 | 1,440 | 48 | 11.0 | 15.7 | btc_candle_old 507, candle_old 1,409, newest_absent 1,819, rows_open 8, skip_old 833, tb_built 6,938, tb_close_diff 744, tb_empty 2, tb_insert 841, tb_rebuilt 13 |
 | 2026-11-20 | 1,440 | 48 | 9.7 | 16.8 | btc_candle_old 932, candle_old 956, newest_absent 1,270, rows_open 43, skip_old 384, tb_built 6,874, tb_close_diff 253, tb_fb_unverified 1, tb_insert 1,835, tb_rebuilt 13 |
-| 2026-11-21 | 420 | 14 | 9.9 | 13.6 | btc_candle_old 199, candle_old 182, newest_absent 357, rows_open 3, skip_old 68, tb_built 2,035, tb_close_diff 45, tb_insert 595 |
-| Total | 13,803 | 461 | 10.3 | 23.2 | btc_candle_old 6,427, btc_stale 3,616, candle_old 20,724, newest_absent 19,274, rows_open 75, skip_old 4,858, tb_built 44,757, tb_close_diff 3,417, tb_empty 170, tb_fb_budget 19, tb_fb_error 3, tb_fb_unverified 6, tb_insert 6,110, tb_rebuilt 56 |
+| 2026-11-21 | 750 | 25 | 9.9 | 13.6 | btc_candle_old 356, candle_old 328, newest_absent 660, rows_open 8, skip_old 96, tb_built 3,675, tb_close_diff 48, tb_insert 1,150, tb_rebuilt 4 |
+| Total | 14,133 | 472 | 10.2 | 23.2 | btc_candle_old 6,584, btc_stale 3,616, candle_old 20,870, newest_absent 19,577, rows_open 80, skip_old 4,886, tb_built 46,397, tb_close_diff 3,420, tb_empty 170, tb_fb_budget 19, tb_fb_error 3, tb_fb_unverified 6, tb_insert 6,665, tb_rebuilt 60 |
 
 130 earlier heartbeat(s) carry none of these fields and are not counted.
 
@@ -208,8 +208,8 @@ Heartbeats with a trades error (tb_err): 2. Last: BTC: ReadTimeout(ReadTimeoutEr
 | 2026-11-18 | 1,440 | 48 | 11.1 | 14.8 | btc_candle_old 491, candle_old 1,460, newest_absent 2,069, rows_open 12, skip_old 994, tb_built 6,924, tb_close_diff 707, tb_fb_unverified 1, tb_insert 650, tb_rebuilt 11 |
 | 2026-11-19 | 1,440 | 48 | 11.0 | 15.7 | btc_candle_old 559, candle_old 1,365, newest_absent 1,819, rows_open 8, skip_old 791, tb_built 6,938, tb_close_diff 744, tb_empty 2, tb_insert 841, tb_rebuilt 11 |
 | 2026-11-20 | 1,440 | 48 | 9.7 | 16.8 | btc_candle_old 912, candle_old 986, newest_absent 1,270, rows_open 37, skip_old 387, tb_built 6,874, tb_close_diff 253, tb_fb_unverified 1, tb_insert 1,835, tb_rebuilt 12 |
-| 2026-11-21 | 420 | 14 | 10.0 | 13.6 | btc_candle_old 223, candle_old 150, newest_absent 357, rows_open 2, skip_old 39, tb_built 2,035, tb_close_diff 45, tb_insert 595, tb_rebuilt 6 |
-| Total | 13,803 | 461 | 10.3 | 28.1 | btc_candle_old 6,730, btc_stale 3,616, candle_old 22,554, newest_absent 19,274, rows_open 65, skip_old 4,858, tb_built 44,760, tb_close_diff 3,417, tb_empty 170, tb_fb_budget 16, tb_fb_error 3, tb_fb_unverified 6, tb_insert 6,110, tb_rebuilt 59 |
+| 2026-11-21 | 750 | 25 | 9.9 | 13.6 | btc_candle_old 400, candle_old 303, newest_absent 660, rows_open 9, skip_old 68, tb_built 3,675, tb_close_diff 48, tb_insert 1,150, tb_rebuilt 8 |
+| Total | 14,133 | 472 | 10.2 | 28.1 | btc_candle_old 6,907, btc_stale 3,616, candle_old 22,707, newest_absent 19,577, rows_open 72, skip_old 4,887, tb_built 46,400, tb_close_diff 3,420, tb_empty 170, tb_fb_budget 16, tb_fb_error 3, tb_fb_unverified 6, tb_insert 6,665, tb_rebuilt 61 |
 
 126 earlier heartbeat(s) carry none of these fields and are not counted.
 
@@ -435,14 +435,15 @@ Engine commit: 815ea39 (full hash 815ea3900e9e74c59a451ea0c2365e49fa631cd2), rec
 | 2026-11-20 23:56 UTC | ba | 11.14 s | 8.54 s | -2.60 s | counts |
 | 2026-11-21 04:29 UTC | ab | 9.59 s | 8.60 s | -0.99 s | counts |
 | 2026-11-21 05:56 UTC | ab | 9.87 s | 8.74 s | -1.13 s | counts |
+| 2026-11-21 10:18 UTC | ba | 11.12 s | 8.66 s | -2.46 s | counts |
 
 | Part | Current value | Verdict |
 |---|---|---|
-| (a) Pairs that count, and the median of build minus release 3 | 25 pairs (8 needed); median -1.27 s; must be at or below 0.00 s | meets |
+| (a) Pairs that count, and the median of build minus release 3 | 26 pairs (8 needed); median -1.49 s; must be at or below 0.00 s | meets |
 
 | Part | Current value | Verdict |
 |---|---|---|
-| (b) Against the main book, over the half hours both have a heartbeat (same heartbeat time) | fifth 8.62 s, main 10.54 s, 210 half hours; the fifth's must be no higher | meets |
+| (b) Against the main book, over the half hours both have a heartbeat (same heartbeat time) | fifth 8.62 s, main 10.48 s, 216 half hours; the fifth's must be no higher | meets |
 | Reported, decides nothing: the fifth book's own median of its half-hour data-step medians | 8.62 s over 219 heartbeats; for comparison 10.3 s (release 3's figure of Nov 11 to 14, which moves with the period and the runner) | reported only |
 | For information: against the fourth book, same way | fifth 8.62 s, fourth 13.12 s, 217 half hours | not part of the rule |
 
@@ -573,14 +574,15 @@ One paper run of 60 minutes on one runner and the pinned commit, the trades pass
 | 2026-11-21 07:48 UTC | three | 30 / 31 | 2.76 s / 2.69 s | 0 / 0 | 0 / 0 | 7 | 201 of 522 / 210 of 522 | counts |
 | 2026-11-21 08:56 UTC | three | 30 / 31 | 2.49 s / 2.50 s | 0 / 0 | 0 / 0 | 7 | 242 of 522 / 244 of 522 | counts |
 | 2026-11-21 10:02 UTC | three | 30 / 31 | 2.45 s / 2.46 s | 0 / 0 | 0 / 0 | 7 | 244 of 522 / 248 of 522 | counts |
+| 2026-11-21 11:08 UTC | three | 30 / 31 | 2.45 s / 2.47 s | 0 / 0 | 0 / 0 | 7 | 202 of 522 / 218 of 522 | counts |
 
 | Part | Current value | Verdict |
 |---|---|---|
-| Jobs that count, and the slow one-worker passes | 65 jobs (8 needed); 17 slow one-worker passes (30 needed) | still waiting |
-| 1. No harm: the median pass with three at most the median with one plus 0.05 s | three 2.61 s, one 2.64 s, over 1964 and 1997 steps | meets |
-| 2. A gain in slow minutes: at least 30 slow one-worker passes, the three-worker share of slow passes at most half the one-worker share, fallbacks (in passes) not more with three than chance allows | slow passes 6 of 1964 with three, 17 of 1997 with one; fallback passes 0 with three, 3 with one (no more; coins 0 and 12) | does not meet yet |
-| 3. The pace: over every file from the first job on, no three-worker step above 8 trades requests in one second, none limited or refused, every file readable | 65 files; most in one second 7; 0 files above 8; 0 with a limit or refusal; 0 unreadable | meets |
-| 4. The rows: share of built bars differing from the venue's candle, three at most one point above one, or more only within chance (jobs with a complete comparison) | three 13392 of 33930 = 39.469%; one 13431 of 33846 = 39.683%; 65 jobs; no more | meets |
+| Jobs that count, and the slow one-worker passes | 66 jobs (8 needed); 17 slow one-worker passes (30 needed) | still waiting |
+| 1. No harm: the median pass with three at most the median with one plus 0.05 s | three 2.61 s, one 2.63 s, over 1995 and 2027 steps | meets |
+| 2. A gain in slow minutes: at least 30 slow one-worker passes, the three-worker share of slow passes at most half the one-worker share, fallbacks (in passes) not more with three than chance allows | slow passes 6 of 1995 with three, 17 of 2027 with one; fallback passes 0 with three, 3 with one (no more; coins 0 and 12) | does not meet yet |
+| 3. The pace: over every file from the first job on, no three-worker step above 8 trades requests in one second, none limited or refused, every file readable | 66 files; most in one second 7; 0 files above 8; 0 with a limit or refusal; 0 unreadable | meets |
+| 4. The rows: share of built bars differing from the venue's candle, three at most one point above one, or more only within chance (jobs with a complete comparison) | three 13610 of 34452 = 39.504%; one 13633 of 34368 = 39.668%; 66 jobs; no more | meets |
 | Reported, decides nothing: median and mean pass, three minus one | median -0.02 s, mean -0.11 s (first version of the plan asked for a 0.2 s gain at the median over half-hour pairs) | reported only |
 
 ### Part 4, measure 2: items 1 to 5
