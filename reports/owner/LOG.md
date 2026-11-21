@@ -1594,3 +1594,19 @@ FORWARD_TESTS.md.
   - **Trades-workers:** the rule run again, unchanged, on 67 jobs: 17 of the 30 slow one-worker passes. No verdict.
     Its output of Nov 20 stays as committed.
   - **Still waiting for Miles:** the 2022-23 rerun of the late-cut replay.
+- **08:36. How rare the books' week is in the research's own record.**
+  - **Source:** the research's daily series as the late-cut replay rebuilt them (S0, the gate runs on branch
+    owner/late-cut; $250K, best estimate). No new run.
+  - **A day at or below -1%:** 4 of 455 days in the selection era, none of 219 in the check era, 1 of 730 in
+    2022-23. The main book has -1.16% for Nov 21 with half the day run.
+  - **Seven days summing to -1.3% or worse:** 2.0% of windows in the selection era, none in the check era, 0.14%
+    in 2022-23. Worst seven days: -3.0%, -0.7%, -2.0%.
+  - **Fourteen days summing to -1.0% or worse** (the main book's whole record is -1.0% in 14.6 days): 5.9% of
+    windows in the selection era, none in the check era, 0.14% in 2022-23.
+  - **Fill rate:** the rule's text expects 1 to 6 rung fills a day; the main book has had 18 a day since
+    release 3.
+  - **Reading:** the research has had weeks like this, rarely. One such week early in a forward record does not
+    show the research is wrong, and it is not nothing. If the research took the same fills on these days (read
+    on Nov 23), the loss is the model's own, in a market it rates as rare. If it did not, the difference is in
+    the inputs and is the first thing to find.
+  - **Nothing changes on two days of data.** The pilot stays on hold behind rule A, as it was.
