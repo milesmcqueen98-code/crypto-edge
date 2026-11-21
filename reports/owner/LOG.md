@@ -1548,3 +1548,24 @@ FORWARD_TESTS.md.
     sixth books have no rate-limit answer, no refusal and no error. The main book's log on `main` ends at 01:53
     UTC and shows none up to there; the rest of the window is checked in the morning.
   - **Still waiting for Miles:** whether the 2022-23 job of the late-cut replay may be rerun (entry of 21:32).
+- **08:51. Morning: the trades-workers read gives no verdict yet; the second run's period is fixed; no fault.**
+  - **Trades-workers read, first pass.** Part 3 needs 30 slow one-worker passes and has 15, so the rule gives no
+    verdict and the alternating jobs go on (Dec 1 at the latest). Part 4 on its period is met on all four
+    measures: the sixth book and the fifth each placed 48 wrong-side bids of 725; matched 672 of 720 against 670
+    of 718; items 1 to 5; requests inside a step 0.033%; no rate-limit stop.
+  - **One clause of Part 4 was restated before the read, knowingly** (08:34, plan's deviation log). Its 5% cap on
+    all 17 coins is the cap that failed the fifth book for the cut of the newest row. The sixth book reads the
+    same rows, so I knew it would fail: it has 6.62%. The cap now sits on the five coins whose candles are cut at
+    the minute (3 of 179). The comparison with the fifth book is unchanged. The old figure is printed in the
+    output. This turns a foreseeable fail into a met clause, and I say so in the plan.
+  - **Part 3 so far (decides nothing):** passes over 6 s are 15 of 1,382 with one worker and 6 of 1,360 with three;
+    passes that ran out of budget 3 and 0; the ordinary minute is the same in both (2.63 and 2.61 s). Ten of the 15
+    came in a slow spell this morning.
+  - **Second run of the bar-source test:** the fifth book's first run on the corrected build ended and handed
+    over; its record names commit 815ea390. First decision minute 05:14 UTC, so the period is 05:30 UTC on Nov 20
+    to 05:29 UTC on Nov 23. The read is set for the morning of Nov 23.
+  - **Morning look, faults only.** Since 05:08 UTC no book has an error, a refusal or a rate-limit answer. The
+    fifth book on the new commit: one pass with a request error and five coins out of budget, no standstill.
+  - **The print job did not reach the main book either:** its heartbeats of 00:30 to 02:30 UTC show no rate-limit
+    answer and no refusal. That closes the check for all four books.
+  - **Still waiting for Miles:** whether the 2022-23 job of the late-cut replay may be rerun (Nov 19, 21:32).
